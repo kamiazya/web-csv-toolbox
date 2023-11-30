@@ -94,5 +94,27 @@ describe("ParserTransformer", () => {
         { name: "Charlie", age: "30" },
       ]);
     });
+
+    it("should parse empty field", async () => {
+      const parser = new ParserTransformar({
+        header: ["name", "age"],
+      });
+      const rows = await transform(parser, [
+        { type: RecordDelimiter, value: EOL },
+        { type: Field, value: "Bob" },
+        { type: FieldDelimiter, value: "," },
+        { type: RecordDelimiter, value: EOL },
+        { type: FieldDelimiter, value: "," },
+        { type: Field, value: "30" },
+        // @ts-ignore
+        ...(EOF ? [{ type: RecordDelimiter, value: EOL }] : []),
+      ]);
+
+      expect(rows).toEqual([
+        { name: undefined, age: undefined },
+        { name: "Bob", age: undefined },
+        { name: undefined, age: "30" },
+      ]);
+    });
   });
 });

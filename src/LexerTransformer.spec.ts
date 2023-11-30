@@ -70,6 +70,18 @@ describe("LexerTransformer(EOL=$title)", () => {
         assert.deepEqual(actual, expected);
       });
 
+      it("should parse empty fields", async () => {
+        const chunk = "a,,c";
+        const expected = [
+          { type: Field, value: "a" },
+          { type: FieldDelimiter, value: "," },
+          { type: FieldDelimiter, value: "," },
+          { type: Field, value: "c" },
+        ];
+        const actual = await transform(new LexerTransformer(), chunk);
+        assert.deepEqual(actual, expected);
+      });
+
       it("should parse quoted strings", async () => {
         const chunk = 'a,"b,c",d';
         const expected = [

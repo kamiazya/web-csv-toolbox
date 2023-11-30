@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/kamiazya/web-stream-csv-parser#readme",
   "devDependencies": {
+    "@fast-check/vitest": "^0.0.8",
     "typescript": "^5.3.2",
     "vitest": "^0.34.6"
   }
