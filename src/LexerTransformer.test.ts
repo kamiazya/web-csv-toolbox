@@ -390,7 +390,7 @@ describe("LexerTransformer", () => {
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s}${EOL}${s}`
+                `${s}${EOL}${s}${EOF ? EOL : ''}`
               );
               expect(result).toStrictEqual([
                 {
@@ -405,6 +405,12 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
+                ...(EOF ? [
+                  {
+                    type: RecordDelimiter,
+                    value: EOL,
+                  },
+                ]: [])
               ]);
             }
           )
@@ -420,7 +426,7 @@ describe("LexerTransformer", () => {
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s}${EOL}${s}`
+                `${s}${EOL}${s}${EOF ? EOL : ''}`
               );
               expect(result).toStrictEqual([
                 {
@@ -435,6 +441,12 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
+                ...(EOF ? [
+                  {
+                    type: RecordDelimiter,
+                    value: EOL,
+                  },
+                ]: [])
               ]);
             }
           )
@@ -448,7 +460,7 @@ describe("LexerTransformer", () => {
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}"${EOL}"${s}"`
+                `"${s}"${EOL}"${s}"${EOF ? EOL : ''}`
               );
               expect(result).toStrictEqual([
                 {
@@ -463,6 +475,12 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
+                ...(EOF ? [
+                  {
+                    type: RecordDelimiter,
+                    value: EOL,
+                  },
+                ]: [])
               ]);
             }
           )
@@ -478,7 +496,7 @@ describe("LexerTransformer", () => {
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}"${EOL}"${s}"`
+                `"${s}"${EOL}"${s}"${EOF ? EOL : ''}`
               );
               expect(result).toStrictEqual([
                 {
@@ -493,6 +511,12 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
+                ...(EOF ? [
+                  {
+                    type: RecordDelimiter,
+                    value: EOL,
+                  },
+                ]: [])
               ]);
             }
           )
