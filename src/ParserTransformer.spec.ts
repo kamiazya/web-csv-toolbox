@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ParserTransformar } from "./ParserTransformer";
 import { Token } from "./common/types";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import { CRLF, Field, FieldDelimiter, LF, RecordDelimiter } from "./common/constants";
 
 describe("ParserTransformer", () => {
   async function transform(parser: ParserTransformar<any>, tokens: Token[]) {
@@ -34,10 +34,10 @@ describe("ParserTransformer", () => {
   }
 
   describe.each([
-    { title: "EOL=LF, EOF=true", EOL: "\n", EOF: true },
-    { title: "EOL=LF, EOF=false", EOL: "\n", EOF: false },
-    { title: "EOL=CRLF, EOF=true", EOL: "\r\n", EOF: true },
-    { title: "EOL=CRLF, EOF=false", EOL: "\r\n", EOF: false },
+    { title: "EOL=LF, EOF=true", EOL: LF, EOF: true },
+    { title: "EOL=LF, EOF=false", EOL: LF, EOF: false },
+    { title: "EOL=CRLF, EOF=true", EOL: CRLF, EOF: true },
+    { title: "EOL=CRLF, EOF=false", EOL: CRLF, EOF: false },
   ])("Context: $title", ({ EOL, EOF }) => {
     it("should parse a CSV with headers by data", async () => {
       const parser = new ParserTransformar();

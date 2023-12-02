@@ -1,7 +1,7 @@
 import { describe, expect } from "vitest";
 import { test, fc } from "@fast-check/vitest";
 import { LexerTransformer } from "./LexerTransformer";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import { CRLF, Field, FieldDelimiter, LF, RecordDelimiter } from "./common/constants";
 
 describe("LexerTransformer", () => {
   async function transform(
@@ -378,10 +378,10 @@ describe("LexerTransformer", () => {
     });
 
     describe.each([
-      { title: "EOL=LF, EOF=true", EOL: "\n", EOF: true },
-      { title: "EOL=LF, EOF=false", EOL: "\n", EOF: false },
-      { title: "EOL=CRLF, EOF=true", EOL: "\r\n", EOF: true },
-      { title: "EOL=CRLF, EOF=false", EOL: "\r\n", EOF: false },
+      { title: "EOL=LF, EOF=true", EOL: LF, EOF: true },
+      { title: "EOL=LF, EOF=false", EOL: LF, EOF: false },
+      { title: "EOL=CRLF, EOF=true", EOL: CRLF, EOF: true },
+      { title: "EOL=CRLF, EOF=false", EOL: CRLF, EOF: false },
     ])("RecordDelimiter($title)", ({ EOL, EOF }) => {
       test("string", async () => {
         await fc.assert(

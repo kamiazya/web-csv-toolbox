@@ -1,5 +1,24 @@
-import { RecordDelimiter, FieldDelimiter, Field } from "./common/constants";
+import {
+  RecordDelimiter,
+  FieldDelimiter,
+  Field,
+  CRLF,
+  LF,
+  COMMA,
+  DOUBLE_QUATE,
+} from "./common/constants";
 import { Token } from "./common/types";
+
+export interface LexerOptions {
+  /**
+   * @default ','
+   */
+  demiliter?: string;
+  /**
+   * @default '"'
+   */
+  quoteChar?: string;
+}
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -26,9 +45,16 @@ import { Token } from "./common/types";
  * ```
  */
 export class LexerTransformer extends TransformStream<string, Token> {
+  public readonly demiliter: string;
+  public readonly quoteChar: string;
+  public readonly matcher: RegExp;
+
   private buffer: string = "";
 
-  constructor() {
+  constructor({
+    demiliter = COMMA,
+    quoteChar = DOUBLE_QUATE,
+  }: LexerOptions = {}) {
     super({
       transform: (
         chunk: string,
@@ -41,6 +67,10 @@ export class LexerTransformer extends TransformStream<string, Token> {
         }
       },
     });
+
+    this.demiliter = demiliter;
+    this.quoteChar = quoteChar;
+    this.matcher = new RegExp(`^[^${this.demiliter}${this.quoteChar}\r\n]+`);
   }
 
   private nextToken(): Token | null {
@@ -49,30 +79,30 @@ export class LexerTransformer extends TransformStream<string, Token> {
     }
 
     // Check for CRLF
-    if (this.buffer.startsWith("\r\n")) {
+    if (this.buffer.startsWith(CRLF)) {
       this.buffer = this.buffer.slice(2);
-      return { type: RecordDelimiter, value: "\r\n" };
+      return { type: RecordDelimiter, value: CRLF };
     }
 
     // Check for LF
-    if (this.buffer.startsWith("\n")) {
+    if (this.buffer.startsWith(LF)) {
       this.buffer = this.buffer.slice(1);
-      return { type: RecordDelimiter, value: "\n" };
+      return { type: RecordDelimiter, value: LF };
     }
 
     // Check for Delimiter
-    if (this.buffer.startsWith(",")) {
+    if (this.buffer.startsWith(this.demiliter)) {
       this.buffer = this.buffer.slice(1);
-      return { type: FieldDelimiter, value: "," };
+      return { type: FieldDelimiter, value: this.demiliter };
     }
 
     // Check for Quoted String
-    if (this.buffer.startsWith('"')) {
+    if (this.buffer.startsWith(this.quoteChar)) {
       return this.extractQuotedString();
     }
 
     // Check for Unquoted String
-    const match = /^[^,"\r\n]+/.exec(this.buffer);
+    const match = this.matcher.exec(this.buffer);
     if (match) {
       this.buffer = this.buffer.slice(match[0].length);
       return { type: Field, value: match[0] };
@@ -88,14 +118,17 @@ export class LexerTransformer extends TransformStream<string, Token> {
 
     while (end < this.buffer.length) {
       // Escaped quote
-      if (this.buffer[end] === '"' && this.buffer[end + 1] === '"') {
-        value += '"';
+      if (
+        this.buffer[end] === this.quoteChar &&
+        this.buffer[end + 1] === this.quoteChar
+      ) {
+        value += this.quoteChar;
         end += 2;
         continue;
       }
 
       // Closing quote
-      if (this.buffer[end] === '"') {
+      if (this.buffer[end] === this.quoteChar) {
         this.buffer = this.buffer.slice(end + 1);
         return { type: Field, value };
       }

@@ -1,9 +1,16 @@
-import { assert, describe, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
+import { fc } from "@fast-check/vitest";
 import { LexerTransformer } from "./LexerTransformer";
 import { Token } from "./common/types";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import {
+  CRLF,
+  LF,
+  Field,
+  FieldDelimiter,
+  RecordDelimiter,
+} from "./common/constants";
 
-describe("LexerTransformer(EOL=$title)", () => {
+describe("LexerTransformer", () => {
   async function transform(transformer: LexerTransformer, ...chunks: string[]) {
     const tokens: Token[] = [];
     await new ReadableStream({
@@ -33,9 +40,142 @@ describe("LexerTransformer(EOL=$title)", () => {
     return tokens;
   }
 
+  it("should use comma for CSV field demiliter by default", async () => {
+    fc.asyncProperty(
+      fc
+        .array(
+          fc.string({
+            minLength: 1,
+          }),
+          {
+            minLength: 2,
+            maxLength: 2,
+          }
+        )
+        .filter(
+          ([field1, field2]) =>
+            !field1.includes(",") &&
+            !field1.includes('"') &&
+            field2.includes(",") &&
+            !field2.includes('"')
+        ),
+      async ([field1, field2]) => {
+        const lexer = new LexerTransformer();
+        expect(lexer.demiliter).toBe(",");
+        expect(await transform(lexer, `${field1},${field2}`)).toStrictEqual([
+          {
+            type: Field,
+            value: field1,
+          },
+          {
+            type: FieldDelimiter,
+            value: ",",
+          },
+          {
+            type: Field,
+            value: field2,
+          },
+        ]);
+      }
+    );
+  });
+
+  it("should be use given string for CSV field demiliter", () => {
+    fc.asyncProperty(
+      fc
+        .array(
+          fc.string({
+            minLength: 1,
+          }),
+          {
+            minLength: 3,
+            maxLength: 3,
+          }
+        )
+        .filter(
+          ([demiliter, field1, field2]) =>
+            !field1.includes(demiliter) &&
+            !field1.includes('"') &&
+            field2.includes(demiliter) &&
+            !field2.includes('"')
+        ),
+      async ([demiliter, field1, field2]) => {
+        const lexer = new LexerTransformer({
+          demiliter,
+        });
+        expect(lexer.demiliter).toBe(demiliter);
+
+        expect(
+          await transform(lexer, `${field1}${demiliter}${field2}`)
+        ).toStrictEqual([
+          {
+            type: Field,
+            value: field1,
+          },
+          {
+            type: FieldDelimiter,
+            value: demiliter,
+          },
+          {
+            type: Field,
+            value: field2,
+          },
+        ]);
+      }
+    );
+  });
+
+  it("should be use double quate for CSV field quatation by default", async () => {
+    fc.asyncProperty(
+      fc
+        .string({
+          minLength: 1,
+        })
+        .filter((field) => !field.includes(",") && !field.includes('"')),
+      async (field) => {
+        const lexer = new LexerTransformer();
+        expect(lexer.quoteChar).toBe('"');
+        expect(await transform(lexer, `"${field}"`)).toStrictEqual([
+          {
+            type: Field,
+            value: field,
+          },
+        ]);
+      }
+    );
+  });
+
+  it("should be use given string for CSV field quatation", () => {
+    fc.asyncProperty(
+      fc
+        .array(fc.string(), {
+          minLength: 2,
+          maxLength: 2,
+        })
+        .filter(
+          ([quoteChar, field]) => !field.includes(quoteChar) && field.length > 0
+        ),
+      async ([quoteChar, field]) => {
+        const lexer = new LexerTransformer({
+          quoteChar,
+        });
+        expect(lexer.quoteChar).toBe(quoteChar);
+
+        expect(
+          await transform(lexer, `${quoteChar}${field}${quoteChar}`)
+        ).toStrictEqual([
+          {
+            type: Field,
+            value: field,
+          },
+        ]);
+      }
+    );
+  });
+
   describe.each([
-    { title: "LF", EOL: "\n" },
-    { title: "CRLF", EOL: "\r\n" },
+    { title: "LF", EOL: LF },
+    { title: "CRLF", EOL: CRLF },
   ])("Context: $title", ({ EOL }) => {
     describe("single chunk", () => {
       it("should parse a single line", async () => {
@@ -423,8 +563,8 @@ describe("LexerTransformer(EOL=$title)", () => {
         });
 
         describe.each([
-          { title: "LF", EOL: "\n" },
-          { title: "CRLF", EOL: "\r\n" },
+          { title: "LF", EOL: LF },
+          { title: "CRLF", EOL: CRLF },
         ])("chunk with newline", () => {
           it("should parse a single line", async () => {
             const chunk1 = "a,b,";
