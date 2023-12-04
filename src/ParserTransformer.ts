@@ -54,6 +54,7 @@ export type ParserOptions<Header extends ReadonlyArray<string>> =
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
  * // { name: "Charlie", age: "30" }
+ * ```
  */
 export class ParserTransformar<
   Header extends ReadonlyArray<string>
