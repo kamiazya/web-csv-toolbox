@@ -2,7 +2,7 @@ import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 import { Token } from "./common/types";
 
 export interface HeaderAbsentParserOptions<
-  Header extends ReadonlyArray<string>
+  Header extends ReadonlyArray<string>,
 > {
   header: Header;
 }
@@ -57,7 +57,7 @@ export type ParserOptions<Header extends ReadonlyArray<string>> =
  * ```
  */
 export class ParserTransformar<
-  Header extends ReadonlyArray<string>
+  Header extends ReadonlyArray<string>,
 > extends TransformStream<Token, Record<Header[number], string | undefined>> {
   private fieldIndex = 0;
   private row: string[] = [];
@@ -69,7 +69,7 @@ export class ParserTransformar<
         token: Token,
         controller: TransformStreamDefaultController<
           Record<Header[number], string>
-        >
+        >,
       ) => {
         switch (token.type) {
           case Field:
@@ -88,8 +88,8 @@ export class ParserTransformar<
                   this.header.map((header, index) => [
                     header,
                     this.row.at(index),
-                  ])
-                )
+                  ]),
+                ),
               );
             }
             // Reset the row fields buffer.
@@ -101,14 +101,14 @@ export class ParserTransformar<
       flush: (
         controller: TransformStreamDefaultController<
           Record<Header[number], string>
-        >
+        >,
       ) => {
         if (this.fieldIndex !== 0 && this.header !== undefined) {
           controller.enqueue(
             // @ts-ignore
             Object.fromEntries(
-              this.header.map((header, index) => [header, this.row.at(index)])
-            )
+              this.header.map((header, index) => [header, this.row.at(index)]),
+            ),
           );
         }
       },

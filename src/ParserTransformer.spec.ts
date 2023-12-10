@@ -1,7 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ParserTransformar } from "./ParserTransformer";
+import {
+  CRLF,
+  Field,
+  FieldDelimiter,
+  LF,
+  RecordDelimiter,
+} from "./common/constants";
 import { Token } from "./common/types";
-import { CRLF, Field, FieldDelimiter, LF, RecordDelimiter } from "./common/constants";
 
 describe("ParserTransformer", () => {
   async function transform(parser: ParserTransformar<any>, tokens: Token[]) {
@@ -28,7 +34,7 @@ describe("ParserTransformer", () => {
           write(chunk) {
             rows.push(chunk);
           },
-        })
+        }),
       );
     return rows;
   }

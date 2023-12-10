@@ -1,11 +1,12 @@
+import escapeStringRegexp from "escape-string-regexp";
 import {
-  RecordDelimiter,
-  FieldDelimiter,
-  Field,
-  CRLF,
-  LF,
   COMMA,
+  CRLF,
   DOUBLE_QUATE,
+  Field,
+  FieldDelimiter,
+  LF,
+  RecordDelimiter,
 } from "./common/constants";
 import { Token } from "./common/types";
 
@@ -45,35 +46,62 @@ export interface LexerOptions {
  * ```
  */
 export class LexerTransformer extends TransformStream<string, Token> {
-  public readonly demiliter: string;
-  public readonly quoteChar: string;
-  public readonly matcher: RegExp;
+  #demiliter: string;
+  #quoteChar: string;
+  #matcher: RegExp;
+  public get demiliter(): string {
+    return this.#demiliter;
+  }
+  public get quoteChar(): string {
+    return this.#quoteChar;
+  }
 
-  private buffer: string = "";
+  private buffer = "";
 
   constructor({
     demiliter = COMMA,
     quoteChar = DOUBLE_QUATE,
   }: LexerOptions = {}) {
+    if (typeof quoteChar === "string" && quoteChar.length !== 1) {
+      throw new Error("quoteChar must be a single character");
+    }
+    if (typeof demiliter === "string" && demiliter.length !== 1) {
+      throw new Error("demiliter must be a single character");
+    }
+    if (demiliter === quoteChar) {
+      throw new Error("demiliter and quoteChar must be different");
+    }
+
     super({
       transform: (
         chunk: string,
-        controller: TransformStreamDefaultController<Token>
+        controller: TransformStreamDefaultController<Token>,
       ) => {
         this.buffer += chunk;
-        let token: Token | null;
-        while ((token = this.nextToken())) {
+        for (let token: Token | null; (token = this.nextToken()); ) {
+          controller.enqueue(token);
+        }
+      },
+      flush: (controller: TransformStreamDefaultController<Token>) => {
+        for (
+          let token: Token | null;
+          (token = this.nextToken({ flush: true }));
+        ) {
           controller.enqueue(token);
         }
       },
     });
 
-    this.demiliter = demiliter;
-    this.quoteChar = quoteChar;
-    this.matcher = new RegExp(`^[^${this.demiliter}${this.quoteChar}\r\n]+`);
+    this.#demiliter = demiliter;
+    this.#quoteChar = quoteChar;
+    this.#matcher = new RegExp(
+      `^[^${escapeStringRegexp(this.demiliter)}${escapeStringRegexp(
+        this.quoteChar,
+      )}\r\n]+`,
+    );
   }
 
-  private nextToken(): Token | null {
+  private nextToken({ flush = false } = {}): Token | null {
     if (this.buffer.length === 0) {
       return null;
     }
@@ -98,12 +126,22 @@ export class LexerTransformer extends TransformStream<string, Token> {
 
     // Check for Quoted String
     if (this.buffer.startsWith(this.quoteChar)) {
+      // If we're flushing and the buffer doesn't end with a quote, then return null
+      // because we're not done with the quoted string
+      if (flush === false && this.buffer.endsWith(this.quoteChar)) {
+        return null;
+      }
       return this.extractQuotedString();
     }
 
     // Check for Unquoted String
-    const match = this.matcher.exec(this.buffer);
+    const match = this.#matcher.exec(this.buffer);
     if (match) {
+      // If we're flushing and the match doesn't consume the entire buffer,
+      // then return null
+      if (flush === false && match[0].length === this.buffer.length) {
+        return null;
+      }
       this.buffer = this.buffer.slice(match[0].length);
       return { type: Field, value: match[0] };
     }

@@ -1,12 +1,18 @@
+import { fc, test } from "@fast-check/vitest";
 import { describe, expect } from "vitest";
-import { test, fc } from "@fast-check/vitest";
 import { LexerTransformer } from "./LexerTransformer";
-import { CRLF, Field, FieldDelimiter, LF, RecordDelimiter } from "./common/constants";
+import {
+  CRLF,
+  Field,
+  FieldDelimiter,
+  LF,
+  RecordDelimiter,
+} from "./common/constants";
 
 describe("LexerTransformer", () => {
   async function transform(
     transformer: LexerTransformer,
-    s: string
+    s: string,
   ): Promise<any[]> {
     const result: any[] = [];
     await new ReadableStream({
@@ -21,7 +27,7 @@ describe("LexerTransformer", () => {
           write(chunk) {
             result.push(chunk);
           },
-        })
+        }),
       );
     return result;
   }
@@ -31,7 +37,9 @@ describe("LexerTransformer", () => {
       test("string", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(new LexerTransformer(), s);
               expect(result).toStrictEqual([
@@ -40,15 +48,17 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with double quote", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(new LexerTransformer(), `"${s}"`);
               expect(result).toStrictEqual([
@@ -57,19 +67,21 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with comma", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}"`
+                `"${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -77,8 +89,8 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -86,8 +98,8 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",\s]/gi.test(s) === false),
             async (s) => {
               const result = await transform(new LexerTransformer(), s);
               expect(result).toStrictEqual([
@@ -96,8 +108,8 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -105,8 +117,8 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(new LexerTransformer(), `"${s}"`);
               expect(result).toStrictEqual([
@@ -115,8 +127,8 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -124,12 +136,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}"`
+                `"${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -137,8 +149,8 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
     });
@@ -147,11 +159,13 @@ describe("LexerTransformer", () => {
       test("string", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s},${s}`
+                `${s},${s}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -167,8 +181,8 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -177,11 +191,11 @@ describe("LexerTransformer", () => {
           fc.asyncProperty(
             fc
               .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .filter((s) => /[\",\s]/gi.test(s) === false && s !== ""),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s},${s}`
+                `${s},${s}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -197,19 +211,21 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with double quote", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}","${s}"`
+                `"${s}","${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -225,8 +241,8 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -234,12 +250,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}","${s}"`
+                `"${s}","${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -255,19 +271,21 @@ describe("LexerTransformer", () => {
                   value: s,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with comma", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}","${s},${s}"`
+                `"${s},${s}","${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -283,8 +301,8 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -292,12 +310,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}","${s},${s}"`
+                `"${s},${s}","${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -313,19 +331,21 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with double quote and comma", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}","${s},${s}"`
+                `"${s},${s}","${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -341,8 +361,8 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -350,12 +370,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s},${s}","${s},${s}"`
+                `"${s},${s}","${s},${s}"`,
               );
               expect(result).toStrictEqual([
                 {
@@ -371,8 +391,8 @@ describe("LexerTransformer", () => {
                   value: `${s},${s}`,
                 },
               ]);
-            }
-          )
+            },
+          ),
         );
       });
     });
@@ -386,11 +406,13 @@ describe("LexerTransformer", () => {
       test("string", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s}${EOL}${s}${EOF ? EOL : ''}`
+                `${s}${EOL}${s}${EOF ? EOL : ""}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -405,15 +427,17 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
-                ...(EOF ? [
-                  {
-                    type: RecordDelimiter,
-                    value: EOL,
-                  },
-                ]: [])
+                ...(EOF
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: EOL,
+                      },
+                    ]
+                  : []),
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -421,12 +445,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",\s]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `${s}${EOL}${s}${EOF ? EOL : ''}`
+                `${s}${EOL}${s}${EOF ? EOL : ""}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -441,26 +465,30 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
-                ...(EOF ? [
-                  {
-                    type: RecordDelimiter,
-                    value: EOL,
-                  },
-                ]: [])
+                ...(EOF
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: EOL,
+                      },
+                    ]
+                  : []),
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
       test("string with double quote", async () => {
         await fc.assert(
           fc.asyncProperty(
-            fc.string().filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+            fc
+              .string({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}"${EOL}"${s}"${EOF ? EOL : ''}`
+                `"${s}"${EOL}"${s}"${EOF ? EOL : ""}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -475,15 +503,17 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
-                ...(EOF ? [
-                  {
-                    type: RecordDelimiter,
-                    value: EOL,
-                  },
-                ]: [])
+                ...(EOF
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: EOL,
+                      },
+                    ]
+                  : []),
               ]);
-            }
-          )
+            },
+          ),
         );
       });
 
@@ -491,12 +521,12 @@ describe("LexerTransformer", () => {
         await fc.assert(
           fc.asyncProperty(
             fc
-              .unicodeString()
-              .filter((s) => /[\",]/gi.test(s) === false && s !== ""),
+              .unicodeString({ minLength: 1 })
+              .filter((s) => /[\",]/gi.test(s) === false),
             async (s) => {
               const result = await transform(
                 new LexerTransformer(),
-                `"${s}"${EOL}"${s}"${EOF ? EOL : ''}`
+                `"${s}"${EOL}"${s}"${EOF ? EOL : ""}`,
               );
               expect(result).toStrictEqual([
                 {
@@ -511,15 +541,17 @@ describe("LexerTransformer", () => {
                   type: Field,
                   value: s,
                 },
-                ...(EOF ? [
-                  {
-                    type: RecordDelimiter,
-                    value: EOL,
-                  },
-                ]: [])
+                ...(EOF
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: EOL,
+                      },
+                    ]
+                  : []),
               ]);
-            }
-          )
+            },
+          ),
         );
       });
     });
