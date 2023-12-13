@@ -18,7 +18,7 @@ export interface LexerOptions {
   /**
    * @default '"'
    */
-  quoteChar?: string;
+  quotationMark?: string;
 }
 
 /**
@@ -47,31 +47,35 @@ export interface LexerOptions {
  */
 export class LexerTransformer extends TransformStream<string, Token> {
   #demiliter: string;
-  #quoteChar: string;
+  #demiliterLength: number;
+  #quotationMark: string;
+  #quotationMarkLength: number;
   #matcher: RegExp;
   public get demiliter(): string {
     return this.#demiliter;
   }
-  public get quoteChar(): string {
-    return this.#quoteChar;
+  public get quotationMark(): string {
+    return this.#quotationMark;
   }
 
   private buffer = "";
 
   constructor({
     demiliter = COMMA,
-    quoteChar = DOUBLE_QUATE,
+    quotationMark = DOUBLE_QUATE,
   }: LexerOptions = {}) {
-    if (typeof quoteChar === "string" && quoteChar.length !== 1) {
-      throw new Error("quoteChar must be a single character");
+    if (typeof quotationMark === "string" && quotationMark.length === 0) {
+      throw new Error("quotationMark must not be empty");
     }
-    if (typeof demiliter === "string" && demiliter.length !== 1) {
-      throw new Error("demiliter must be a single character");
-    }
-    if (demiliter === quoteChar) {
-      throw new Error("demiliter and quoteChar must be different");
+    if (typeof demiliter === "string" && demiliter.length === 0) {
+      throw new Error("demiliter must not be empty");
     }
 
+    if (demiliter.includes(quotationMark) || quotationMark.includes(demiliter)) {
+      throw new Error(
+        "demiliter and quotationMark must not include each other as a substring",
+      );
+    }
     super({
       transform: (
         chunk: string,
@@ -93,10 +97,12 @@ export class LexerTransformer extends TransformStream<string, Token> {
     });
 
     this.#demiliter = demiliter;
-    this.#quoteChar = quoteChar;
+    this.#demiliterLength = demiliter.length;
+    this.#quotationMark = quotationMark;
+    this.#quotationMarkLength = quotationMark.length;
     this.#matcher = new RegExp(
-      `^[^${escapeStringRegexp(this.demiliter)}${escapeStringRegexp(
-        this.quoteChar,
+      `^[^${escapeStringRegexp(this.#demiliter)}${escapeStringRegexp(
+        this.quotationMark,
       )}\r\n]+`,
     );
   }
@@ -119,16 +125,16 @@ export class LexerTransformer extends TransformStream<string, Token> {
     }
 
     // Check for Delimiter
-    if (this.buffer.startsWith(this.demiliter)) {
-      this.buffer = this.buffer.slice(1);
-      return { type: FieldDelimiter, value: this.demiliter };
+    if (this.buffer.startsWith(this.#demiliter)) {
+      this.buffer = this.buffer.slice(this.#demiliterLength);
+      return { type: FieldDelimiter, value: this.#demiliter };
     }
 
     // Check for Quoted String
-    if (this.buffer.startsWith(this.quoteChar)) {
+    if (this.buffer.startsWith(this.#quotationMark)) {
       // If we're flushing and the buffer doesn't end with a quote, then return null
       // because we're not done with the quoted string
-      if (flush === false && this.buffer.endsWith(this.quoteChar)) {
+      if (flush === false && this.buffer.endsWith(this.#quotationMark)) {
         return null;
       }
       return this.extractQuotedString();
@@ -151,23 +157,30 @@ export class LexerTransformer extends TransformStream<string, Token> {
   }
 
   private extractQuotedString(): Token | null {
-    let end = 1; // Skip the opening quote
+    let end = this.#quotationMarkLength; // Skip the opening quote
     let value = "";
 
     while (end < this.buffer.length) {
       // Escaped quote
       if (
-        this.buffer[end] === this.quoteChar &&
-        this.buffer[end + 1] === this.quoteChar
+        this.buffer.slice(end, end + this.#quotationMarkLength) ===
+          this.quotationMark &&
+        this.buffer.slice(
+          end + this.#quotationMarkLength,
+          end + this.#quotationMarkLength * 2,
+        ) === this.quotationMark
       ) {
-        value += this.quoteChar;
-        end += 2;
+        value += this.quotationMark;
+        end += this.#quotationMarkLength * 2;
         continue;
       }
 
+
       // Closing quote
-      if (this.buffer[end] === this.quoteChar) {
-        this.buffer = this.buffer.slice(end + 1);
+      if (
+        this.buffer.slice(end, end + this.#quotationMarkLength) === this.quotationMark
+      ) {
+        this.buffer = this.buffer.slice(end + this.#quotationMarkLength);
         return { type: Field, value };
       }
 

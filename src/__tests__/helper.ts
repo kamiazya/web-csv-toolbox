@@ -13,32 +13,87 @@ export namespace FC {
     };
   }
 
-  export interface FieldConstraints {
-    excludes?: string[];
-    minLength?: number;
+  export type StringKind =
+    | "hexa"
+    | "string"
+    | "ascii"
+    | "unicode"
+    | "fullUnicode"
+    | "string16bits";
+  export const stringKinds: StringKind[] = [
+    "hexa",
+    "string",
+    "ascii",
+    "unicode",
+    "fullUnicode",
+    "string16bits",
+  ];
+
+  export interface CustomStringConstraints extends fc.StringSharedConstraints {
+    kind?: StringKind;
   }
+
+  export function string({
+    kind = "string",
+    ...constraints
+  }: CustomStringConstraints = {}): fc.Arbitrary<string> {
+    switch (kind) {
+      case "hexa":
+        return fc.hexaString(constraints);
+      case "string":
+        return fc.string(constraints);
+      case "ascii":
+        return fc.asciiString(constraints);
+      case "unicode":
+        return fc.unicodeString(constraints);
+      case "fullUnicode":
+        return fc.fullUnicodeString(constraints);
+      case "string16bits":
+        return fc.string16bits(constraints);
+    }
+  }
+
+  export interface FieldConstraints extends CustomStringConstraints {
+    excludes?: string[];
+  }
+
   export function field({
     excludes = [],
     minLength = 0,
+    ...constraints
   }: FieldConstraints = {}): fc.Arbitrary<string> {
-    return fc.string({ minLength }).filter(_excludeFilter(excludes));
+    return string({ minLength, ...constraints }).filter(
+      _excludeFilter(excludes),
+    );
   }
 
-  export interface DemiliterConstraints {
+  export interface DemiliterConstraints extends CustomStringConstraints {
     excludes?: string[];
   }
   export function demiliter({
     excludes = [],
+    ...constraints
   }: DemiliterConstraints = {}): fc.Arbitrary<string> {
-    return fc.char().filter(_excludeFilter(excludes));
+    return string({
+      minLength: 1,
+      // TODO : remove maxLenght
+      maxLength: 1,
+      ...constraints,
+    }).filter(_excludeFilter(excludes));
   }
 
-  export interface QuoteCharConstraints {
+  export interface QuoteCharConstraints extends CustomStringConstraints {
     excludes?: string[];
   }
 
-  export function quoteChar({ excludes = [] }: QuoteCharConstraints = {}) {
-    return fc.char().filter(_excludeFilter(excludes));
+  export function quotationMark({
+    excludes = [],
+    ...constraints
+  }: QuoteCharConstraints = {}) {
+    return string({
+      ...constraints,
+      minLength: 1,
+    }).filter(_excludeFilter(excludes));
   }
 
   export function eol() {
