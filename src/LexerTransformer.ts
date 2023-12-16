@@ -1,4 +1,3 @@
-import escapeStringRegexp from "escape-string-regexp";
 import {
   COMMA,
   CRLF,
@@ -9,6 +8,7 @@ import {
   RecordDelimiter,
 } from "./common/constants";
 import { Token } from "./common/types";
+import { escapeRegExp } from "./common/utils";
 
 export interface LexerOptions {
   /**
@@ -100,11 +100,12 @@ export class LexerTransformer extends TransformStream<string, Token> {
     this.#demiliterLength = demiliter.length;
     this.#quotationMark = quotationMark;
     this.#quotationMarkLength = quotationMark.length;
+
+    const d = escapeRegExp(demiliter);
+    const q = escapeRegExp(quotationMark);
     this.#matcher = new RegExp(
-      `^[^${escapeStringRegexp(this.#demiliter)}${escapeStringRegexp(
-        this.quotationMark,
-      )}\r\n]+`,
-    );
+      `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
+      );
   }
 
   private nextToken({ flush = false } = {}): Token | null {

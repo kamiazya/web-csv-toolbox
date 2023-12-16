@@ -11,6 +11,11 @@ import {
   RecordDelimiter,
 } from "./common/constants";
 import { Token } from "./common/types";
+import { escapeRegExp } from "./common/utils";
+
+fc.configureGlobal({
+  endOnFailure: true,
+});
 
 describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
   async function transform(transformer: LexerTransformer, ...chunks: string[]) {
@@ -37,7 +42,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
           write(token) {
             tokens.push(token);
           },
-        }),
+        })
       );
     return tokens;
   }
@@ -49,15 +54,17 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
   it.prop([FC.string({ maxLength: 0 })])(
     "should be throw error if quotationMark is not a single character",
     (quotationMark) => {
-      expect(() => new LexerTransformer({ quotationMark: quotationMark })).toThrow(Error);
-    },
+      expect(
+        () => new LexerTransformer({ quotationMark: quotationMark })
+      ).toThrow(Error);
+    }
   );
 
   it.prop([FC.string({ maxLength: 0 }).filter((v) => v.length !== 1)])(
     "should be throw error if demiliter is not a single character",
     (demiliter) => {
       expect(() => new LexerTransformer({ demiliter })).toThrow(Error);
-    },
+    }
   );
 
   it.prop([fc.gen()])(
@@ -73,15 +80,15 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
         g(FC.string, {
           minLength: 0, // Allow empty string
           kind,
-        }),
+        })
       );
       expect(
-        () => new LexerTransformer({ quotationMark: a, demiliter: b }),
+        () => new LexerTransformer({ quotationMark: a, demiliter: b })
       ).toThrow(Error);
       expect(
-        () => new LexerTransformer({ quotationMark: b, demiliter: a }),
+        () => new LexerTransformer({ quotationMark: b, demiliter: a })
       ).toThrow(Error);
-    },
+    }
   );
 
   it.prop({
@@ -117,7 +124,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
           value: field2,
         },
       ]);
-    },
+    }
   );
 
   it.prop([fc.gen()], { endOnFailure: true })(
@@ -141,7 +148,6 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
       });
       expect(lexer.demiliter).toBe(demiliter);
       const actual = await transform(lexer, `${field1}${demiliter}${field2}`);
-      console.log({ demiliter, field1, field2, actual});
       expect(actual).toStrictEqual([
         {
           type: Field,
@@ -156,7 +162,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
           value: field2,
         },
       ]);
-    },
+    }
   );
 
   it.prop([
@@ -176,44 +182,69 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
           value: field,
         },
       ]);
-    },
+    }
   );
 
-  it.prop([fc.gen()], { endOnFailure: true })(
+  it.prop(
+    [
+      fc.gen().map((g) => {
+        const quotationMark = g(FC.quotationMark, {
+          kind,
+          excludes: [COMMA, ...CRLF],
+        });
+        const field = g(FC.field, {
+          kind,
+          excludes: [quotationMark, COMMA, ...CRLF],
+          minLength: 1,
+        });
+
+        const chunks = chunker(g)`${quotationMark}${field}${quotationMark}`;
+
+        return {
+          quotationMark,
+          field,
+          chunks,
+        };
+      }),
+    ],
+  )(
     "should be use given string for CSV field quatation",
-    async (g) => {
-      const quotationMark = g(FC.quotationMark, { kind, excludes: [COMMA, ...CRLF] });
-      const field = g(FC.field, {
-        kind,
-        excludes: [quotationMark, COMMA, ...CRLF],
-        minLength: 1,
-      });
-      const chunks = chunker(g)`${quotationMark}${field}${quotationMark}`;
+    async ({ quotationMark, field, chunks }) => {
       const lexer = new LexerTransformer({
         quotationMark: quotationMark,
       });
       expect(lexer.quotationMark).toBe(quotationMark);
-
-      expect(await transform(lexer, ...chunks)).toStrictEqual([
+      const actual = await transform(lexer, ...chunks);
+      expect(actual).toStrictEqual([
         {
           type: Field,
           value: field,
         },
       ]);
-    },
+    }
   );
 
-  it.prop({
-    row: FC.row({
-      fieldConstraints: {
-        kind,
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      },
+  it.prop([
+    fc.gen().map((g) => {
+      // generate row what has fileds that not contains deafult demiliter(comma),
+      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
+      const row = g(() =>
+        FC.row({
+          fieldConstraints: {
+            kind,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+            minLength: 1,
+          },
+        })
+      );
+      // generate chunks from row.
+      const chunks = autoChunk(g, row.join(","));
+      return {
+        row,
+        chunks,
+      };
     }),
-    g: fc.gen(),
-  })("should parse a single line", async ({ row, g }) => {
-    const chunks = autoChunk(g, row.join(","));
+  ])("should parse a single line", async ({ row, chunks }) => {
     const expected = [
       ...row.flatMap((value, index) => [
         { type: Field, value },
@@ -227,18 +258,30 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop({
-    row: FC.row({
-      fieldConstraints: {
-        kind,
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      },
+  it.prop([
+    fc.gen().map((g) => {
+      // generate row what has fileds that not contains deafult demiliter(comma),
+      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
+      const row = g(() =>
+        FC.row({
+          fieldConstraints: {
+            kind,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+            minLength: 1,
+          },
+        })
+      );
+      // generate EOL(LF, CRLF).
+      const EOL = g(() => FC.eol());
+      // generate chunks from row.
+      const chunks = chunker(g)`${row.join(",")}${EOL}`;
+      return {
+        row,
+        EOL,
+        chunks,
+      };
     }),
-    EOL: FC.eol(),
-    g: fc.gen(),
-  })("should parse a single line with EOL", async ({ row, EOL, g }) => {
-    const chunks = chunker(g)`${row.join(",")}${EOL}`;
+  ])("should parse a single line with EOL", async ({ row, EOL, chunks }) => {
     const expected = [
       ...row.flatMap((value, index) => [
         { type: Field, value },
@@ -252,21 +295,33 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop({
-    data: FC.csvData({
-      fieldConstraints: {
-        kind,
-        minLength: 1,
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-      },
+  it.prop([
+    fc.gen().map((g) => {
+      // generate row what has fileds that not contains deafult demiliter(comma),
+      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
+      const data = g(() =>
+        FC.csvData({
+          fieldConstraints: {
+            kind,
+            minLength: 1,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+          },
+        })
+      );
+      // generate EOL(LF, CRLF).
+      const EOL = g(() => FC.eol());
+      // generate chunks from data.
+      const chunks = autoChunk(
+        g,
+        data.map((row) => row.join(",")).join(EOL) + EOL
+      );
+      return {
+        data,
+        EOL,
+        chunks,
+      };
     }),
-    EOL: FC.eol(),
-    g: fc.gen(),
-  })("should parse multiple lines", async ({ data, EOL, g }) => {
-    const chunks = autoChunk(
-      g,
-      data.map((row) => row.join(",")).join(EOL) + EOL,
-    );
+  ])("should parse multiple lines", async ({ data, EOL, chunks }) => {
     const actual = await transform(new LexerTransformer(), ...chunks);
     const expected = [
       ...data.flatMap((row) => [
@@ -285,17 +340,27 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop({
-    row: FC.row({
-      sparse: true,
-      fieldConstraints: {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        kind,
-      },
+  it.prop([
+    fc.gen().map((g) => {
+      // generate row what has fileds that not contains deafult demiliter(comma),
+      // quotation(double quate), and EOL(LF, CRLF) and has at filed length 0 or more.
+      const row = g(() =>
+        FC.row({
+          sparse: true,
+          fieldConstraints: {
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+            kind,
+          },
+        })
+      );
+      // generate chunks from row.
+      const chunks = autoChunk(g, row.join(","));
+      return {
+        row,
+        chunks,
+      };
     }),
-    g: fc.gen(),
-  })("should parse empty fields", async ({ row, g }) => {
-    const chunks = autoChunk(g, row.join(","));
+  ])("should parse empty fields", async ({ row, chunks }) => {
     const expected = [
       ...[...row].flatMap((value, index) => [
         ...(value ? [{ type: Field, value }] : []),
@@ -308,17 +373,24 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop({
-    row: FC.row({
-      fieldConstraints: {
-        kind,
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      },
+  it.prop([
+    fc.gen().map((g) => {
+      const row = g(() =>
+        FC.row({
+          fieldConstraints: {
+            kind,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+            minLength: 1,
+          },
+        })
+      );
+      const chunks = autoChunk(g, row.map((value) => `"${value}"`).join(","));
+      return {
+        row,
+        chunks,
+      };
     }),
-    g: fc.gen(),
-  })("should parse quoted strings", async ({ row, g }) => {
-    const chunks = autoChunk(g, row.map((value) => `"${value}"`).join(","));
+  ])("should parse quoted strings", async ({ row, chunks }) => {
     const expected = [
       ...row.flatMap((value, index) => [
         { type: Field, value },
@@ -345,7 +417,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     const chunks = autoChunk(
       g,
       data.map((row) => row.map((value) => `"${value}"`).join(",")).join(EOL) +
-        EOL,
+        EOL
     );
 
     const expected = [
@@ -377,7 +449,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
   })("should parse quoted strings with escaped quotes", async ({ row, g }) => {
     const chunks = autoChunk(
       g,
-      row.map((value) => `"${value.replace(/"/g, '""')}"`).join(","),
+      row.map((value) => `"${value.replace(/"/g, '""')}"`).join(",")
     );
     const expected = [
       ...row.flatMap((value, index) => [
@@ -410,7 +482,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     "should parse quoted strings with newlines",
     async ({ field1, field2Prefix, field2Sufix, field3, EOL, g }) => {
       const chunks = chunker(
-        g,
+        g
       )`${field1},"${field2Prefix}${EOL}${field2Sufix}",${field3}`;
       const expected = [
         { type: Field, value: field1 },
@@ -421,7 +493,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
       ];
       const actual = await transform(new LexerTransformer(), ...chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 
   it.prop({
@@ -443,7 +515,7 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
     async ({ field1, field2Prefix, field2Sufix, field3, g }) => {
       // NOTE: filed2 is "field2Prefix""field2Sufix", not "field2Prefix"field2Sufix"
       const chunks = chunker(
-        g,
+        g
       )`${field1},"${field2Prefix}""${field2Sufix}",${field3}`;
       const expected = [
         { type: Field, value: field1 },
@@ -455,6 +527,6 @@ describe.each(FC.stringKinds)("LexerTransformer(%s)", (kind: FC.StringKind) => {
       ];
       const actual = await transform(new LexerTransformer(), ...chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 });

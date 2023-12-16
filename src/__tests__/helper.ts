@@ -76,8 +76,6 @@ export namespace FC {
   }: DemiliterConstraints = {}): fc.Arbitrary<string> {
     return string({
       minLength: 1,
-      // TODO : remove maxLenght
-      maxLength: 1,
       ...constraints,
     }).filter(_excludeFilter(excludes));
   }

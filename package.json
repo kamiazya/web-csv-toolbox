@@ -20,9 +20,6 @@
     "url": "https://github.com/kamiazya/web-stream-csv-parser/issues"
   },
   "homepage": "https://github.com/kamiazya/web-stream-csv-parser#readme",
-  "dependencies": {
-    "escape-string-regexp": "^5.0.0"
-  },
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
     "@fast-check/vitest": "^0.0.8",
