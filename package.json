@@ -2,12 +2,15 @@
   "name": "web-stream-csv-parser",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "type": "module",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
   "scripts": {
     "test": "vitest",
     "format": "biome format . --write",
     "lint": "biome lint .",
-    "check": "biome check . --apply"
+    "check": "biome check . --apply",
+    "build": "tsc -p tsconfig.json"
   },
   "repository": {
     "type": "git",

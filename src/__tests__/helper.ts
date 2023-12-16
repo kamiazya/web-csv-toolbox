@@ -29,6 +29,10 @@ export namespace FC {
     "string16bits",
   ];
 
+  export function kind(): fc.Arbitrary<StringKind> {
+    return fc.constantFrom(...stringKinds);
+  }
+
   export interface CustomStringConstraints extends fc.StringSharedConstraints {
     kind?: StringKind;
   }

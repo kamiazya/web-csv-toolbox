@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { ParserTransformar } from "./ParserTransformer";
+import { ParserTransformar } from "./ParserTransformer.js";
 import {
   CRLF,
   Field,
   FieldDelimiter,
   LF,
   RecordDelimiter,
-} from "./common/constants";
-import { Token } from "./common/types";
+  Token,
+} from "./common/index.js";
 
 describe("ParserTransformer", () => {
   async function transform(parser: ParserTransformar<any>, tokens: Token[]) {

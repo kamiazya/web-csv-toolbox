@@ -6,9 +6,9 @@ import {
   FieldDelimiter,
   LF,
   RecordDelimiter,
-} from "./common/constants";
-import { Token } from "./common/types";
-import { escapeRegExp } from "./common/utils";
+  Token,
+} from "./common/index.js";
+import { escapeRegExp } from "./internal/utils.js";
 
 export interface LexerOptions {
   /**
@@ -71,7 +71,10 @@ export class LexerTransformer extends TransformStream<string, Token> {
       throw new Error("demiliter must not be empty");
     }
 
-    if (demiliter.includes(quotationMark) || quotationMark.includes(demiliter)) {
+    if (
+      demiliter.includes(quotationMark) ||
+      quotationMark.includes(demiliter)
+    ) {
       throw new Error(
         "demiliter and quotationMark must not include each other as a substring",
       );
@@ -82,15 +85,12 @@ export class LexerTransformer extends TransformStream<string, Token> {
         controller: TransformStreamDefaultController<Token>,
       ) => {
         this.buffer += chunk;
-        for (let token: Token | null; (token = this.nextToken()); ) {
+        for (const token of this.tokens({ flush: false })) {
           controller.enqueue(token);
         }
       },
       flush: (controller: TransformStreamDefaultController<Token>) => {
-        for (
-          let token: Token | null;
-          (token = this.nextToken({ flush: true }));
-        ) {
+        for (const token of this.tokens({ flush: true })) {
           controller.enqueue(token);
         }
       },
@@ -105,7 +105,39 @@ export class LexerTransformer extends TransformStream<string, Token> {
     const q = escapeRegExp(quotationMark);
     this.#matcher = new RegExp(
       `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
-      );
+    );
+  }
+
+  private *tokens({ flush }: { flush: boolean }): Generator<Token> {
+    let currentField: Token | null = null;
+    for (let token: Token | null; (token = this.nextToken({ flush })); ) {
+      switch (token.type) {
+        case Field:
+          if (currentField) {
+            currentField.value += token.value;
+          } else {
+            currentField = token;
+          }
+          break;
+        case FieldDelimiter:
+          if (currentField) {
+            yield currentField;
+            currentField = null;
+          }
+          yield token;
+          break;
+        case RecordDelimiter:
+          if (currentField) {
+            yield currentField;
+            currentField = null;
+          }
+          yield token;
+          break;
+      }
+    }
+    if (currentField) {
+      yield currentField;
+    }
   }
 
   private nextToken({ flush = false } = {}): Token | null {
@@ -176,10 +208,10 @@ export class LexerTransformer extends TransformStream<string, Token> {
         continue;
       }
 
-
       // Closing quote
       if (
-        this.buffer.slice(end, end + this.#quotationMarkLength) === this.quotationMark
+        this.buffer.slice(end, end + this.#quotationMarkLength) ===
+        this.quotationMark
       ) {
         this.buffer = this.buffer.slice(end + this.#quotationMarkLength);
         return { type: Field, value };

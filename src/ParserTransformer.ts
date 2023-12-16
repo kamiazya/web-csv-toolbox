@@ -1,5 +1,9 @@
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
-import { Token } from "./common/types";
+import {
+  Field,
+  FieldDelimiter,
+  RecordDelimiter,
+  Token,
+} from "./common/index.js";
 
 export interface HeaderAbsentParserOptions<
   Header extends ReadonlyArray<string>,
