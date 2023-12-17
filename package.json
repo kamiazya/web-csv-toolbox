@@ -1,23 +1,41 @@
 {
   "name": "web-stream-csv-parser",
   "version": "1.0.0",
-  "description": "",
+  "description": "CSV parser for Web Streams API.",
   "type": "module",
   "main": "lib/index.js",
   "module": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js",
+      "types": "./lib/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "vitest",
     "format": "biome format . --write",
     "lint": "biome lint .",
     "check": "biome check . --apply",
-    "build": "tsc -p tsconfig.json"
+    "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome format lib --write"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kamiazya/web-stream-csv-parser.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "csv",
+    "parser",
+    "web-streams",
+    "web-streams-api"
+  ],
+  "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kamiazya/web-stream-csv-parser/issues"
@@ -26,6 +44,10 @@
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
     "@fast-check/vitest": "^0.0.8",
+    "rollup": "^4.9.0",
+    "rollup-plugin-delete": "^2.0.0",
+    "rollup-plugin-dts": "^6.1.0",
+    "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.3.2",
     "vitest": "^0.34.6"
   }

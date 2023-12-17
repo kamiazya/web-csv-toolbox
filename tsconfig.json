@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
+    "module": "ESNext",
     "outDir": "lib",
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

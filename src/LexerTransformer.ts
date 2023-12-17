@@ -51,14 +51,13 @@ export class LexerTransformer extends TransformStream<string, Token> {
   #quotation: string;
   #quotationLength: number;
   #matcher: RegExp;
+  #buffer = "";
   public get demiliter(): string {
     return this.#demiliter;
   }
   public get quotation(): string {
     return this.#quotation;
   }
-
-  private buffer = "";
 
   constructor({
     demiliter = COMMA,
@@ -82,14 +81,14 @@ export class LexerTransformer extends TransformStream<string, Token> {
         controller: TransformStreamDefaultController<Token>,
       ) => {
         if (chunk.length !== 0) {
-          this.buffer += chunk;
-          for (const token of this.tokens({ flush: false })) {
+          this.#buffer += chunk;
+          for (const token of this.#tokens({ flush: false })) {
             controller.enqueue(token);
           }
         }
       },
       flush: (controller: TransformStreamDefaultController<Token>) => {
-        for (const token of this.tokens({ flush: true })) {
+        for (const token of this.#tokens({ flush: true })) {
           controller.enqueue(token);
         }
       },
@@ -107,9 +106,9 @@ export class LexerTransformer extends TransformStream<string, Token> {
     );
   }
 
-  private *tokens({ flush }: { flush: boolean }): Generator<Token> {
+  *#tokens({ flush }: { flush: boolean }): Generator<Token> {
     let currentField: Token | null = null;
-    for (let token: Token | null; (token = this.nextToken({ flush })); ) {
+    for (let token: Token | null; (token = this.#nextToken({ flush })); ) {
       switch (token.type) {
         case Field:
           if (currentField) {
@@ -139,48 +138,48 @@ export class LexerTransformer extends TransformStream<string, Token> {
     }
   }
 
-  private nextToken({ flush = false } = {}): Token | null {
-    if (this.buffer.length === 0) {
+  #nextToken({ flush = false } = {}): Token | null {
+    if (this.#buffer.length === 0) {
       return null;
     }
 
     // Check for CRLF
-    if (this.buffer.startsWith(CRLF)) {
-      this.buffer = this.buffer.slice(2);
+    if (this.#buffer.startsWith(CRLF)) {
+      this.#buffer = this.#buffer.slice(2);
       return { type: RecordDelimiter, value: CRLF };
     }
 
     // Check for LF
-    if (this.buffer.startsWith(LF)) {
-      this.buffer = this.buffer.slice(1);
+    if (this.#buffer.startsWith(LF)) {
+      this.#buffer = this.#buffer.slice(1);
       return { type: RecordDelimiter, value: LF };
     }
 
     // Check for Delimiter
-    if (this.buffer.startsWith(this.#demiliter)) {
-      this.buffer = this.buffer.slice(this.#demiliterLength);
+    if (this.#buffer.startsWith(this.#demiliter)) {
+      this.#buffer = this.#buffer.slice(this.#demiliterLength);
       return { type: FieldDelimiter, value: this.#demiliter };
     }
 
     // Check for Quoted String
-    if (this.buffer.startsWith(this.#quotation)) {
+    if (this.#buffer.startsWith(this.#quotation)) {
       // If we're flushing and the buffer doesn't end with a quote, then return null
       // because we're not done with the quoted string
-      if (flush === false && this.buffer.endsWith(this.#quotation)) {
+      if (flush === false && this.#buffer.endsWith(this.#quotation)) {
         return null;
       }
       return this.extractQuotedString();
     }
 
     // Check for Unquoted String
-    const match = this.#matcher.exec(this.buffer);
+    const match = this.#matcher.exec(this.#buffer);
     if (match) {
       // If we're flushing and the match doesn't consume the entire buffer,
       // then return null
-      if (flush === false && match[0].length === this.buffer.length) {
+      if (flush === false && match[0].length === this.#buffer.length) {
         return null;
       }
-      this.buffer = this.buffer.slice(match[0].length);
+      this.#buffer = this.#buffer.slice(match[0].length);
       return { type: Field, value: match[0] };
     }
 
@@ -192,12 +191,12 @@ export class LexerTransformer extends TransformStream<string, Token> {
     let end = this.#quotationLength; // Skip the opening quote
     let value = "";
 
-    while (end < this.buffer.length) {
+    while (end < this.#buffer.length) {
       // Escaped quote
       if (
-        this.buffer.slice(end, end + this.#quotationLength) ===
+        this.#buffer.slice(end, end + this.#quotationLength) ===
           this.quotation &&
-        this.buffer.slice(
+        this.#buffer.slice(
           end + this.#quotationLength,
           end + this.#quotationLength * 2,
         ) === this.quotation
@@ -209,13 +208,13 @@ export class LexerTransformer extends TransformStream<string, Token> {
 
       // Closing quote
       if (
-        this.buffer.slice(end, end + this.#quotationLength) === this.quotation
+        this.#buffer.slice(end, end + this.#quotationLength) === this.quotation
       ) {
-        this.buffer = this.buffer.slice(end + this.#quotationLength);
+        this.#buffer = this.#buffer.slice(end + this.#quotationLength);
         return { type: Field, value };
       }
 
-      value += this.buffer[end];
+      value += this.#buffer[end];
       end++;
     }
 

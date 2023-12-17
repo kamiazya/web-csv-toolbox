@@ -63,9 +63,9 @@ export type ParserOptions<Header extends ReadonlyArray<string>> =
 export class ParserTransformar<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token, Record<Header[number], string | undefined>> {
-  private fieldIndex = 0;
-  private row: string[] = [];
-  private header: Header | undefined;
+  #fieldIndex = 0;
+  #row: string[] = [];
+  #header: Header | undefined;
 
   constructor(options: ParserOptions<Header> = {}) {
     super({
@@ -77,28 +77,28 @@ export class ParserTransformar<
       ) => {
         switch (token.type) {
           case Field:
-            this.row[this.fieldIndex] = token.value;
+            this.#row[this.#fieldIndex] = token.value;
             break;
           case FieldDelimiter:
-            this.fieldIndex++;
+            this.#fieldIndex++;
             break;
           case RecordDelimiter:
-            if (this.header === undefined) {
-              this.header = this.row as unknown as Header;
+            if (this.#header === undefined) {
+              this.#header = this.#row as unknown as Header;
             } else {
               controller.enqueue(
                 // @ts-ignore
                 Object.fromEntries(
-                  this.header.map((header, index) => [
+                  this.#header.map((header, index) => [
                     header,
-                    this.row.at(index),
+                    this.#row.at(index),
                   ]),
                 ),
               );
             }
             // Reset the row fields buffer.
-            this.fieldIndex = 0;
-            this.row = new Array(this.header?.length);
+            this.#fieldIndex = 0;
+            this.#row = new Array(this.#header?.length);
             break;
         }
       },
@@ -107,11 +107,14 @@ export class ParserTransformar<
           Record<Header[number], string>
         >,
       ) => {
-        if (this.fieldIndex !== 0 && this.header !== undefined) {
+        if (this.#fieldIndex !== 0 && this.#header !== undefined) {
           controller.enqueue(
             // @ts-ignore
             Object.fromEntries(
-              this.header.map((header, index) => [header, this.row.at(index)]),
+              this.#header.map((header, index) => [
+                header,
+                this.#row.at(index),
+              ]),
             ),
           );
         }
@@ -123,7 +126,7 @@ export class ParserTransformar<
       Array.isArray(options.header) &&
       options.header.length > 0
     ) {
-      this.header = options.header;
+      this.#header = options.header;
     }
   }
 }

@@ -30,27 +30,32 @@ describe("LexerTransformer", () => {
     },
   );
 
-  it.prop([fc.gen()])(
-    "should be throw error if quotation and demiliter is same character",
-    (g) => {
+  it.prop([
+    fc.gen().map((g) => {
       const kind = g(FC.kind);
-      const a = g(FC.string, { kind });
-      const b = "".concat(
+      const A = g(FC.string, { kind });
+      // B is a string that includes A as a substring.
+      const B = "".concat(
         g(FC.string, {
           minLength: 0, // Allow empty string
           kind,
         }),
-        a,
+        A,
         g(FC.string, {
           minLength: 0, // Allow empty string
           kind,
         }),
       );
+      return { A, B };
+    }),
+  ])(
+    "should be throw error if demiliter and quotation include each other as a substring",
+    ({ A, B }) => {
       expect(
-        () => new LexerTransformer({ quotation: a, demiliter: b }),
+        () => new LexerTransformer({ quotation: A, demiliter: B }),
       ).toThrow(Error);
       expect(
-        () => new LexerTransformer({ quotation: b, demiliter: a }),
+        () => new LexerTransformer({ quotation: B, demiliter: A }),
       ).toThrow(Error);
     },
   );
