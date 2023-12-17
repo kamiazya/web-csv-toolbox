@@ -1,126 +1,192 @@
-import { describe, expect, it } from "vitest";
+import { fc, it } from "@fast-check/vitest";
+import { describe, expect } from "vitest";
 import { ParserTransformar } from "./ParserTransformer.js";
+import { FC, transform } from "./__tests__/helper.js";
 import {
+  COMMA,
   CRLF,
+  DOUBLE_QUATE,
   Field,
   FieldDelimiter,
-  LF,
   RecordDelimiter,
-  Token,
 } from "./common/index.js";
 
 describe("ParserTransformer", () => {
-  async function transform(parser: ParserTransformar<any>, tokens: Token[]) {
-    const rows: any[] = [];
-    await new ReadableStream({
-      start(controller) {
-        if (tokens.length === 0) {
-          controller.close();
-          return;
-        }
-        controller.enqueue(tokens.shift());
-      },
-      pull(controller) {
-        if (tokens.length === 0) {
-          controller.close();
-          return;
-        }
-        controller.enqueue(tokens.shift());
-      },
-    })
-      .pipeThrough(parser)
-      .pipeTo(
-        new WritableStream({
-          write(chunk) {
-            rows.push(chunk);
+  it.prop(
+    [
+      fc.gen().map((g) => {
+        const kind = g(FC.kind);
+        const EOL = g(FC.eol);
+        const header = g(FC.row, {
+          fieldConstraints: {
+            kind,
+            minLength: 1,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           },
-        }),
+          columnsConstraints: {
+            minLength: 1,
+          },
+        });
+        const rows = g(FC.csvData, {
+          fieldConstraints: {
+            kind,
+            minLength: 1,
+            excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+          },
+          columnsConstraints: {
+            minLength: header.length,
+            maxLength: header.length,
+          },
+        });
+        const tokens = [
+          ...header.flatMap((field, i) => [
+            { type: Field, value: field },
+            i === header.length - 1
+              ? { type: RecordDelimiter, value: EOL }
+              : { type: FieldDelimiter, value: COMMA },
+          ]),
+
+          ...rows.flatMap((row) =>
+            row.flatMap((field, j) => [
+              { type: Field, value: field },
+              { type: FieldDelimiter, value: COMMA },
+              ...(j === row.length - 1
+                ? [{ type: RecordDelimiter, value: EOL }]
+                : []),
+            ]),
+          ),
+        ];
+        const expected = rows.map((row) =>
+          Object.fromEntries(row.map((field, i) => [header[i], field])),
+        );
+        return {
+          tokens,
+          expected,
+        };
+      }),
+    ],
+    {
+      endOnFailure: true,
+    },
+  )(
+    "should parse a CSV with headers by data",
+    async ({ tokens, expected }) => {
+      const actual = await transform(new ParserTransformar(), tokens);
+      expect(actual).toEqual(expected);
+    },
+  );
+
+  it.prop([
+    fc.gen().map((g) => {
+      const kind = g(FC.kind);
+      const EOL = g(FC.eol);
+      const header = g(FC.row, {
+        fieldConstraints: {
+          kind,
+          minLength: 1,
+          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+        },
+        columnsConstraints: {
+          minLength: 1,
+        },
+      });
+      const rows = g(FC.csvData, {
+        fieldConstraints: {
+          kind,
+          minLength: 1,
+          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+        },
+        columnsConstraints: {
+          minLength: header.length,
+          maxLength: header.length,
+        },
+      });
+      const tokens = [
+        ...rows.flatMap((row) =>
+          row.flatMap((field, j) => [
+            { type: Field, value: field },
+            { type: FieldDelimiter, value: COMMA },
+            ...(j === row.length - 1
+              ? [{ type: RecordDelimiter, value: EOL }]
+              : []),
+          ]),
+        ),
+      ];
+      const expected = rows.map((row) =>
+        Object.fromEntries(row.map((field, i) => [header[i], field])),
       );
-    return rows;
-  }
+      return {
+        header,
+        EOL,
+        tokens,
+        expected,
+      };
+    }),
+  ])(
+    "should parse a CSV with headers by option",
+    async ({ header, tokens, expected }) => {
+      const actual = await transform(
+        new ParserTransformar({
+          header,
+        }),
+        tokens,
+      );
+      expect(actual).toEqual(expected);
+    },
+  );
 
-  describe.each([
-    { title: "EOL=LF, EOF=true", EOL: LF, EOF: true },
-    { title: "EOL=LF, EOF=false", EOL: LF, EOF: false },
-    { title: "EOL=CRLF, EOF=true", EOL: CRLF, EOF: true },
-    { title: "EOL=CRLF, EOF=false", EOL: CRLF, EOF: false },
-  ])("Context: $title", ({ EOL, EOF }) => {
-    it("should parse a CSV with headers by data", async () => {
-      const parser = new ParserTransformar();
-      const rows = await transform(parser, [
-        { type: Field, value: "name" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "age" },
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Alice" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "20" },
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Bob" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "25" },
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Charlie" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "30" },
-        // @ts-ignore
-        ...(EOF ? [{ type: RecordDelimiter, value: EOL }] : []),
-      ]);
-
-      expect(rows).toEqual([
-        { name: "Alice", age: "20" },
-        { name: "Bob", age: "25" },
-        { name: "Charlie", age: "30" },
-      ]);
-    });
-
-    it("should parse a CSV with headers by option", async () => {
-      const parser = new ParserTransformar({
-        header: ["name", "age"],
+  it.prop([
+    fc.gen().map((g) => {
+      const kind = g(FC.kind);
+      const EOL = g(FC.eol);
+      const header = g(FC.row, {
+        fieldConstraints: {
+          kind,
+          minLength: 1,
+          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+        },
+        columnsConstraints: {
+          minLength: 1,
+        },
       });
-      const rows = await transform(parser, [
-        { type: Field, value: "Alice" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "20" },
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Bob" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "25" },
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Charlie" },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "30" },
-        // @ts-ignore
-        ...(EOF ? [{ type: RecordDelimiter, value: EOL }] : []),
-      ]);
-
-      expect(rows).toEqual([
-        { name: "Alice", age: "20" },
-        { name: "Bob", age: "25" },
-        { name: "Charlie", age: "30" },
-      ]);
-    });
-
-    it("should parse empty field", async () => {
-      const parser = new ParserTransformar({
-        header: ["name", "age"],
+      const rows = g(FC.csvData, {
+        sparse: true, // To allow empty fields
+        fieldConstraints: {
+          kind,
+          minLength: 1,
+          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+        },
+        columnsConstraints: {
+          minLength: header.length,
+          maxLength: header.length,
+        },
       });
-      const rows = await transform(parser, [
-        { type: RecordDelimiter, value: EOL },
-        { type: Field, value: "Bob" },
-        { type: FieldDelimiter, value: "," },
-        { type: RecordDelimiter, value: EOL },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: "30" },
-        // @ts-ignore
-        ...(EOF ? [{ type: RecordDelimiter, value: EOL }] : []),
-      ]);
-
-      expect(rows).toEqual([
-        { name: undefined, age: undefined },
-        { name: "Bob", age: undefined },
-        { name: undefined, age: "30" },
-      ]);
+      const tokens = [
+        ...rows.flatMap((row) =>
+          row.flatMap((field, j) => [
+            ...(field.length === 0 ? [] : [{ type: Field, value: field }]),
+            { type: FieldDelimiter, value: COMMA },
+            ...(j === row.length - 1
+              ? [{ type: RecordDelimiter, value: EOL }]
+              : []),
+          ]),
+        ),
+      ];
+      const expected = rows.map((row) =>
+        Object.fromEntries(row.map((field, i) => [header[i], field])),
+      );
+      return {
+        header,
+        EOL,
+        tokens,
+        expected,
+      };
+    }),
+  ])("should parse empty field", async ({ header, tokens, expected }) => {
+    const parser = new ParserTransformar({
+      header,
     });
+    const actual = await transform(parser, tokens);
+    expect(actual).toEqual(expected);
   });
 });

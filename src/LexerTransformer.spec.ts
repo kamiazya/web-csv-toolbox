@@ -1,7 +1,7 @@
 import { fc, it } from "@fast-check/vitest";
 import { describe, expect } from "vitest";
 import { LexerTransformer } from "./LexerTransformer.js";
-import { FC, autoChunk, chunker } from "./__tests__/helper.js";
+import { FC, autoChunk, chunker, transform } from "./__tests__/helper.js";
 import {
   COMMA,
   CRLF,
@@ -9,53 +9,17 @@ import {
   Field,
   FieldDelimiter,
   RecordDelimiter,
-  Token,
 } from "./common/index.js";
 
-fc.configureGlobal({
-  endOnFailure: true,
-});
-
 describe("LexerTransformer", () => {
-  async function transform(transformer: LexerTransformer, ...chunks: string[]) {
-    const tokens: Token[] = [];
-    await new ReadableStream({
-      start(controller) {
-        if (chunks.length === 0) {
-          controller.close();
-          return;
-        }
-        controller.enqueue(chunks.shift());
-      },
-      pull(controller) {
-        if (chunks.length === 0) {
-          controller.close();
-          return;
-        }
-        controller.enqueue(chunks.shift());
-      },
-    })
-      .pipeThrough(transformer)
-      .pipeTo(
-        new WritableStream({
-          write(token) {
-            tokens.push(token);
-          },
-        }),
-      );
-    return tokens;
-  }
-
   it("should be a TransformStream", () => {
     expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
   });
 
   it.prop([FC.string({ maxLength: 0 })])(
-    "should be throw error if quotationMark is not a single character",
-    (quotationMark) => {
-      expect(
-        () => new LexerTransformer({ quotationMark: quotationMark }),
-      ).toThrow(Error);
+    "should be throw error if quotation is not a single character",
+    (quotation) => {
+      expect(() => new LexerTransformer({ quotation })).toThrow(Error);
     },
   );
 
@@ -67,7 +31,7 @@ describe("LexerTransformer", () => {
   );
 
   it.prop([fc.gen()])(
-    "should be throw error if quotationMark and demiliter is same character",
+    "should be throw error if quotation and demiliter is same character",
     (g) => {
       const kind = g(FC.kind);
       const a = g(FC.string, { kind });
@@ -83,10 +47,10 @@ describe("LexerTransformer", () => {
         }),
       );
       expect(
-        () => new LexerTransformer({ quotationMark: a, demiliter: b }),
+        () => new LexerTransformer({ quotation: a, demiliter: b }),
       ).toThrow(Error);
       expect(
-        () => new LexerTransformer({ quotationMark: b, demiliter: a }),
+        () => new LexerTransformer({ quotation: b, demiliter: a }),
       ).toThrow(Error);
     },
   );
@@ -117,7 +81,7 @@ describe("LexerTransformer", () => {
     async ({ field1, field2, chunks }) => {
       const lexer = new LexerTransformer();
       expect(lexer.demiliter).toBe(",");
-      const actual = await transform(lexer, ...chunks);
+      const actual = await transform(lexer, chunks);
       expect(actual).toStrictEqual([
         {
           type: Field,
@@ -135,9 +99,8 @@ describe("LexerTransformer", () => {
     },
   );
 
-  it.prop([fc.gen()], { endOnFailure: true })(
-    "should be use given string for CSV field demiliter",
-    async (g) => {
+  it.prop([
+    fc.gen().map((g) => {
       const kind = g(FC.kind);
       const demiliter = g(FC.demiliter, {
         kind,
@@ -153,12 +116,20 @@ describe("LexerTransformer", () => {
         minLength: 1,
         kind,
       });
-
+      return {
+        field1,
+        field2,
+        demiliter,
+      };
+    }),
+  ])(
+    "should be use given string for CSV field demiliter",
+    async ({ field1, field2, demiliter }) => {
       const lexer = new LexerTransformer({
         demiliter,
       });
       expect(lexer.demiliter).toBe(demiliter);
-      const actual = await transform(lexer, `${field1}${demiliter}${field2}`);
+      const actual = await transform(lexer, [`${field1}${demiliter}${field2}`]);
       expect(actual).toStrictEqual([
         {
           type: Field,
@@ -192,8 +163,8 @@ describe("LexerTransformer", () => {
     "should be use double quate for CSV field quatation by default",
     async ({ field }) => {
       const lexer = new LexerTransformer();
-      expect(lexer.quotationMark).toBe('"');
-      expect(await transform(lexer, `"${field}"`)).toStrictEqual([
+      expect(lexer.quotation).toBe('"');
+      expect(await transform(lexer, [`"${field}"`])).toStrictEqual([
         {
           type: Field,
           value: field,
@@ -206,20 +177,20 @@ describe("LexerTransformer", () => {
     [
       fc.gen().map((g) => {
         const kind = g(FC.kind);
-        const quotationMark = g(FC.quotationMark, {
+        const quotation = g(FC.quotation, {
           kind,
           excludes: [COMMA, ...CRLF],
         });
         const field = g(FC.field, {
           kind,
-          excludes: [quotationMark, COMMA, ...CRLF],
+          excludes: [quotation, COMMA, ...CRLF],
           minLength: 1,
         });
 
-        const chunks = chunker(g)`${quotationMark}${field}${quotationMark}`;
+        const chunks = chunker(g)`${quotation}${field}${quotation}`;
 
         return {
-          quotationMark,
+          quotation,
           field,
           chunks,
         };
@@ -231,7 +202,7 @@ describe("LexerTransformer", () => {
           // field endings and delimiters overlap
           {
             field: "e9d4dac9e8b2",
-            quotationMark: "22",
+            quotation: "22",
             chunks: ["22e9d4dac9e8b2", "22"],
           },
         ],
@@ -239,12 +210,12 @@ describe("LexerTransformer", () => {
     },
   )(
     "should be use given string for CSV field quatation",
-    async ({ quotationMark, field, chunks }) => {
+    async ({ quotation, field, chunks }) => {
       const lexer = new LexerTransformer({
-        quotationMark: quotationMark,
+        quotation: quotation,
       });
-      expect(lexer.quotationMark).toBe(quotationMark);
-      const actual = await transform(lexer, ...chunks);
+      expect(lexer.quotation).toBe(quotation);
+      const actual = await transform(lexer, chunks);
       expect(actual).toStrictEqual([
         {
           type: Field,
@@ -283,7 +254,7 @@ describe("LexerTransformer", () => {
       ]),
     ];
 
-    const actual = await transform(new LexerTransformer(), ...chunks);
+    const actual = await transform(new LexerTransformer(), chunks);
     expect(actual).toStrictEqual(expected);
   });
 
@@ -319,7 +290,7 @@ describe("LexerTransformer", () => {
       ]),
       { type: RecordDelimiter, value: EOL },
     ];
-    const actual = await transform(new LexerTransformer(), ...chunks);
+    const actual = await transform(new LexerTransformer(), chunks);
     expect(actual).toStrictEqual(expected);
   });
 
@@ -349,7 +320,7 @@ describe("LexerTransformer", () => {
       };
     }),
   ])("should parse multiple lines", async ({ data, EOL, chunks }) => {
-    const actual = await transform(new LexerTransformer(), ...chunks);
+    const actual = await transform(new LexerTransformer(), chunks);
     const expected = [
       ...data.flatMap((row) => [
         ...(row.length === 0
@@ -395,7 +366,7 @@ describe("LexerTransformer", () => {
           : [{ type: FieldDelimiter, value: "," }]), // Not last field
       ]),
     ];
-    const actual = await transform(new LexerTransformer(), ...chunks);
+    const actual = await transform(new LexerTransformer(), chunks);
     expect(actual).toStrictEqual(expected);
   });
 
@@ -424,7 +395,7 @@ describe("LexerTransformer", () => {
           : [{ type: FieldDelimiter, value: "," }]), // Not last field
       ]),
     ];
-    const actual = await transform(new LexerTransformer(), ...chunks);
+    const actual = await transform(new LexerTransformer(), chunks);
     expect(actual).toStrictEqual(expected);
   });
 
@@ -468,7 +439,7 @@ describe("LexerTransformer", () => {
         ]),
         ...(data.length === 0 ? [{ type: RecordDelimiter, value: EOL }] : []), // If data is empty, add a record delimiter.
       ];
-      const actual = await transform(new LexerTransformer(), ...chunks);
+      const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
     },
   );
@@ -502,7 +473,7 @@ describe("LexerTransformer", () => {
             : [{ type: FieldDelimiter, value: "," }]), // Not last field
         ]),
       ];
-      const actual = await transform(new LexerTransformer(), ...chunks);
+      const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
     },
   );
@@ -551,7 +522,7 @@ describe("LexerTransformer", () => {
         { type: FieldDelimiter, value: "," },
         { type: Field, value: field3 },
       ];
-      const actual = await transform(new LexerTransformer(), ...chunks);
+      const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
     },
   );
@@ -602,7 +573,7 @@ describe("LexerTransformer", () => {
         { type: FieldDelimiter, value: "," },
         { type: Field, value: field3 },
       ];
-      const actual = await transform(new LexerTransformer(), ...chunks);
+      const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
     },
   );

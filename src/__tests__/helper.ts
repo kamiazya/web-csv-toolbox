@@ -1,6 +1,37 @@
 import fc from "fast-check";
 import { CRLF, LF } from "../common/constants";
 
+export async function transform<I, O, T extends TransformStream<I, O>>(
+  transformer: T,
+  inputs: I[],
+) {
+  const rows: any[] = [];
+  await new ReadableStream({
+    start(controller) {
+      if (inputs.length === 0) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(inputs.shift());
+    },
+    pull(controller) {
+      if (inputs.length === 0) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(inputs.shift());
+    },
+  })
+    .pipeThrough(transformer)
+    .pipeTo(
+      new WritableStream({
+        write(chunk) {
+          rows.push(chunk);
+        },
+      }),
+    );
+  return rows;
+}
 export namespace FC {
   function _excludeFilter(excludes: string[]) {
     return (v: string) => {
@@ -88,7 +119,7 @@ export namespace FC {
     excludes?: string[];
   }
 
-  export function quotationMark({
+  export function quotation({
     excludes = [],
     ...constraints
   }: QuoteCharConstraints = {}) {
