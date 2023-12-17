@@ -11,26 +11,20 @@ import { LexerTransformer } from "@/transformers/LexerTransformer.js";
 import { fc, it } from "@fast-check/vitest";
 import { describe, expect } from "vitest";
 
-describe("LexerTransformer", () => {
-  it("should be a TransformStream", () => {
+describe.concurrent("LexerTransformer", () => {
+  it.concurrent("should be a TransformStream", () => {
     expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
   });
 
-  it.prop([FC.string({ maxLength: 0 })])(
-    "should be throw error if quotation is not a single character",
-    (quotation) => {
-      expect(() => new LexerTransformer({ quotation })).toThrow(Error);
-    },
-  );
+  it.concurrent("should be throw error if quotation is a empty character", () => {
+    expect(() => new LexerTransformer({ quotation: "" })).toThrowErrorMatchingInlineSnapshot('"quotation must not be empty"');
+  });
 
-  it.prop([FC.string({ maxLength: 0 }).filter((v) => v.length !== 1)])(
-    "should be throw error if demiliter is not a single character",
-    (demiliter) => {
-      expect(() => new LexerTransformer({ demiliter })).toThrow(Error);
-    },
-  );
+  it.concurrent("should be throw error if demiliter is a empty character", () => {
+    expect(() => new LexerTransformer({ demiliter: "" })).toThrowErrorMatchingInlineSnapshot('"demiliter must not be empty"');
+  });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const A = g(FC.string, { kind });
@@ -44,7 +38,7 @@ describe("LexerTransformer", () => {
         g(FC.string, {
           minLength: 0, // Allow empty string
           kind,
-        }),
+        })
       );
       return { A, B };
     }),
@@ -52,15 +46,15 @@ describe("LexerTransformer", () => {
     "should be throw error if demiliter and quotation include each other as a substring",
     ({ A, B }) => {
       expect(
-        () => new LexerTransformer({ quotation: A, demiliter: B }),
+        () => new LexerTransformer({ quotation: A, demiliter: B })
       ).toThrow(Error);
       expect(
-        () => new LexerTransformer({ quotation: B, demiliter: A }),
+        () => new LexerTransformer({ quotation: B, demiliter: A })
       ).toThrow(Error);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field1 = g(FC.field, {
@@ -73,7 +67,7 @@ describe("LexerTransformer", () => {
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
-      const chunks = autoChunk(g, `${field1},${field2}`);
+      const chunks = chunker(g)`${field1},${field2}`;
 
       return {
         field1,
@@ -101,10 +95,10 @@ describe("LexerTransformer", () => {
           value: field2,
         },
       ]);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const demiliter = g(FC.demiliter, {
@@ -149,10 +143,10 @@ describe("LexerTransformer", () => {
           value: field2,
         },
       ]);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field = g(FC.field, {
@@ -175,10 +169,10 @@ describe("LexerTransformer", () => {
           value: field,
         },
       ]);
-    },
+    }
   );
 
-  it.prop(
+  it.concurrent.prop(
     [
       fc.gen().map((g) => {
         const kind = g(FC.kind);
@@ -212,7 +206,7 @@ describe("LexerTransformer", () => {
           },
         ],
       ],
-    },
+    }
   )(
     "should be use given string for CSV field quatation",
     async ({ quotation, field, chunks }) => {
@@ -227,10 +221,10 @@ describe("LexerTransformer", () => {
           value: field,
         },
       ]);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
@@ -263,7 +257,7 @@ describe("LexerTransformer", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
@@ -299,7 +293,7 @@ describe("LexerTransformer", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
@@ -316,7 +310,7 @@ describe("LexerTransformer", () => {
       // generate chunks from data.
       const chunks = autoChunk(
         g,
-        data.map((row) => row.join(",")).join(EOL) + EOL,
+        data.map((row) => row.join(",")).join(EOL) + EOL
       );
       return {
         data,
@@ -343,7 +337,7 @@ describe("LexerTransformer", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
@@ -375,7 +369,7 @@ describe("LexerTransformer", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const row = g(FC.row, {
@@ -404,7 +398,7 @@ describe("LexerTransformer", () => {
     expect(actual).toStrictEqual(expected);
   });
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const data = g(FC.csvData, {
@@ -419,7 +413,7 @@ describe("LexerTransformer", () => {
         g,
         data
           .map((row) => row.map((value) => `"${value}"`).join(","))
-          .join(EOL) + EOL,
+          .join(EOL) + EOL
       );
       return {
         data,
@@ -446,10 +440,10 @@ describe("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const row = g(FC.row, {
@@ -460,7 +454,7 @@ describe("LexerTransformer", () => {
       });
       const chunks = autoChunk(
         g,
-        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(","),
+        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(",")
       );
       return {
         row,
@@ -480,10 +474,10 @@ describe("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field1 = g(FC.field, {
@@ -506,7 +500,7 @@ describe("LexerTransformer", () => {
       });
       const EOL = g(FC.eol);
       const chunks = chunker(
-        g,
+        g
       )`${field1},"${field2Prefix}${EOL}${field2Sufix}",${field3}`;
       return {
         field1,
@@ -529,10 +523,10 @@ describe("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field1 = g(FC.field, {
@@ -556,7 +550,7 @@ describe("LexerTransformer", () => {
       });
       // NOTE: filed2 is "field2Prefix""field2Sufix", not "field2Prefix"field2Sufix"
       const chunks = chunker(
-        g,
+        g
       )`${field1},"${field2Prefix}""${field2Sufix}",${field3}`;
 
       return {
@@ -580,6 +574,6 @@ describe("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    },
+    }
   );
 });

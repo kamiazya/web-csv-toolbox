@@ -11,8 +11,8 @@ import { ParserTransformar } from "@/transformers/ParserTransformer.js";
 import { fc, it } from "@fast-check/vitest";
 import { describe, expect } from "vitest";
 
-describe("ParserTransformer", () => {
-  it.prop(
+describe.concurrent("ParserTransformer", () => {
+  it.concurrent.prop(
     [
       fc.gen().map((g) => {
         const kind = g(FC.kind);
@@ -76,7 +76,7 @@ describe("ParserTransformer", () => {
     },
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const EOL = g(FC.eol);
@@ -135,7 +135,7 @@ describe("ParserTransformer", () => {
     },
   );
 
-  it.prop([
+  it.concurrent.prop([
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const EOL = g(FC.eol);

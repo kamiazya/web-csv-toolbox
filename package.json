@@ -1,7 +1,7 @@
 {
-  "name": "web-stream-csv-parser",
+  "name": "web-stream-csv-toolkit",
   "version": "1.0.0",
-  "description": "CSV parser for Web Streams API.",
+  "description": "CSV Toolkit for WHATWG Streams API.",
   "type": "module",
   "main": "lib/index.js",
   "module": "lib/index.js",
@@ -49,6 +49,7 @@
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.3.2",
+    "vite-tsconfig-paths": "^4.2.2",
     "vitest": "^0.34.6"
   }
 }
