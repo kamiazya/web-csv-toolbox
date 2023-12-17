@@ -16,13 +16,23 @@ describe.concurrent("LexerTransformer", () => {
     expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
   });
 
-  it.concurrent("should be throw error if quotation is a empty character", () => {
-    expect(() => new LexerTransformer({ quotation: "" })).toThrowErrorMatchingInlineSnapshot('"quotation must not be empty"');
-  });
+  it.concurrent(
+    "should be throw error if quotation is a empty character",
+    () => {
+      expect(
+        () => new LexerTransformer({ quotation: "" }),
+      ).toThrowErrorMatchingInlineSnapshot('"quotation must not be empty"');
+    },
+  );
 
-  it.concurrent("should be throw error if demiliter is a empty character", () => {
-    expect(() => new LexerTransformer({ demiliter: "" })).toThrowErrorMatchingInlineSnapshot('"demiliter must not be empty"');
-  });
+  it.concurrent(
+    "should be throw error if demiliter is a empty character",
+    () => {
+      expect(
+        () => new LexerTransformer({ demiliter: "" }),
+      ).toThrowErrorMatchingInlineSnapshot('"demiliter must not be empty"');
+    },
+  );
 
   it.concurrent.prop([
     fc.gen().map((g) => {
@@ -38,7 +48,7 @@ describe.concurrent("LexerTransformer", () => {
         g(FC.string, {
           minLength: 0, // Allow empty string
           kind,
-        })
+        }),
       );
       return { A, B };
     }),
@@ -46,12 +56,12 @@ describe.concurrent("LexerTransformer", () => {
     "should be throw error if demiliter and quotation include each other as a substring",
     ({ A, B }) => {
       expect(
-        () => new LexerTransformer({ quotation: A, demiliter: B })
+        () => new LexerTransformer({ quotation: A, demiliter: B }),
       ).toThrow(Error);
       expect(
-        () => new LexerTransformer({ quotation: B, demiliter: A })
+        () => new LexerTransformer({ quotation: B, demiliter: A }),
       ).toThrow(Error);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -95,7 +105,7 @@ describe.concurrent("LexerTransformer", () => {
           value: field2,
         },
       ]);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -143,7 +153,7 @@ describe.concurrent("LexerTransformer", () => {
           value: field2,
         },
       ]);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -169,7 +179,7 @@ describe.concurrent("LexerTransformer", () => {
           value: field,
         },
       ]);
-    }
+    },
   );
 
   it.concurrent.prop(
@@ -206,7 +216,7 @@ describe.concurrent("LexerTransformer", () => {
           },
         ],
       ],
-    }
+    },
   )(
     "should be use given string for CSV field quatation",
     async ({ quotation, field, chunks }) => {
@@ -221,7 +231,7 @@ describe.concurrent("LexerTransformer", () => {
           value: field,
         },
       ]);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -310,7 +320,7 @@ describe.concurrent("LexerTransformer", () => {
       // generate chunks from data.
       const chunks = autoChunk(
         g,
-        data.map((row) => row.join(",")).join(EOL) + EOL
+        data.map((row) => row.join(",")).join(EOL) + EOL,
       );
       return {
         data,
@@ -413,7 +423,7 @@ describe.concurrent("LexerTransformer", () => {
         g,
         data
           .map((row) => row.map((value) => `"${value}"`).join(","))
-          .join(EOL) + EOL
+          .join(EOL) + EOL,
       );
       return {
         data,
@@ -440,7 +450,7 @@ describe.concurrent("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -454,7 +464,7 @@ describe.concurrent("LexerTransformer", () => {
       });
       const chunks = autoChunk(
         g,
-        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(",")
+        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(","),
       );
       return {
         row,
@@ -474,7 +484,7 @@ describe.concurrent("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -500,7 +510,7 @@ describe.concurrent("LexerTransformer", () => {
       });
       const EOL = g(FC.eol);
       const chunks = chunker(
-        g
+        g,
       )`${field1},"${field2Prefix}${EOL}${field2Sufix}",${field3}`;
       return {
         field1,
@@ -523,7 +533,7 @@ describe.concurrent("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    }
+    },
   );
 
   it.concurrent.prop([
@@ -550,7 +560,7 @@ describe.concurrent("LexerTransformer", () => {
       });
       // NOTE: filed2 is "field2Prefix""field2Sufix", not "field2Prefix"field2Sufix"
       const chunks = chunker(
-        g
+        g,
       )`${field1},"${field2Prefix}""${field2Sufix}",${field3}`;
 
       return {
@@ -574,6 +584,6 @@ describe.concurrent("LexerTransformer", () => {
       ];
       const actual = await transform(new LexerTransformer(), chunks);
       expect(actual).toStrictEqual(expected);
-    }
+    },
   );
 });
