@@ -1,7 +1,4 @@
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.js";
-import { FC, autoChunk, chunker, transform } from "./__tests__/helper.js";
+import { FC, autoChunk, chunker, transform } from "@/__tests__/helper.js";
 import {
   COMMA,
   CRLF,
@@ -9,7 +6,10 @@ import {
   Field,
   FieldDelimiter,
   RecordDelimiter,
-} from "./common/index.js";
+} from "@/common/constants.js";
+import { LexerTransformer } from "@/transformers/LexerTransformer.js";
+import { fc, it } from "@fast-check/vitest";
+import { describe, expect } from "vitest";
 
 describe("LexerTransformer", () => {
   it("should be a TransformStream", () => {

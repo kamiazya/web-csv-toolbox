@@ -3,7 +3,7 @@ import {
   FieldDelimiter,
   RecordDelimiter,
   Token,
-} from "./common/index.js";
+} from "@/common/index.js";
 
 export interface HeaderAbsentParserOptions<
   Header extends ReadonlyArray<string>,

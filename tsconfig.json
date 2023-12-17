@@ -7,8 +7,11 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts",  "**/*.test.ts", "**/__tests__/**/*"]
+  "exclude": ["node_modules"]
 }
