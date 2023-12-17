@@ -1,4 +1,6 @@
-import { FC, transform } from "@/__tests__/helper.js";
+import { fc, it } from "@fast-check/vitest";
+import { describe, expect } from "vitest";
+import { FC, transform } from "../../__tests__/helper.js";
 import {
   COMMA,
   CRLF,
@@ -6,10 +8,8 @@ import {
   Field,
   FieldDelimiter,
   RecordDelimiter,
-} from "@/common/constants.js";
-import { ParserTransformar } from "@/transformers/ParserTransformer.js";
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect } from "vitest";
+} from "../../common/index.js";
+import { ParserTransformar } from "../ParserTransformer.js";
 
 describe.concurrent("ParserTransformer", () => {
   it.concurrent.prop(

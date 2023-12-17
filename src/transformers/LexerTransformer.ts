@@ -7,8 +7,8 @@ import {
   LF,
   RecordDelimiter,
   Token,
-} from "@/common/index.js";
-import { escapeRegExp } from "@/internal/utils.js";
+} from "../common/index.js";
+import { escapeRegExp } from "../internal/utils.js";
 
 export interface LexerOptions {
   /**
