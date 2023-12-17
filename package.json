@@ -23,7 +23,8 @@
     "format": "biome format . --write",
     "lint": "biome lint .",
     "check": "biome check . --apply",
-    "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome format lib --write"
+    "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome format lib --write",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -44,6 +45,8 @@
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
     "@fast-check/vitest": "^0.0.8",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.0",
     "rollup": "^4.9.0",
     "rollup-plugin-delete": "^2.0.0",
     "rollup-plugin-dts": "^6.1.0",
