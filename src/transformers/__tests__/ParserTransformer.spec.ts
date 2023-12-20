@@ -15,11 +15,9 @@ describe.concurrent("ParserTransformer", () => {
   it.concurrent.prop(
     [
       fc.gen().map((g) => {
-        const kind = g(FC.kind);
         const EOL = g(FC.eol);
         const header = g(FC.row, {
           fieldConstraints: {
-            kind,
             minLength: 1,
             excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           },
@@ -29,7 +27,6 @@ describe.concurrent("ParserTransformer", () => {
         });
         const rows = g(FC.csvData, {
           fieldConstraints: {
-            kind,
             minLength: 1,
             excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           },
@@ -82,7 +79,6 @@ describe.concurrent("ParserTransformer", () => {
       const EOL = g(FC.eol);
       const header = g(FC.row, {
         fieldConstraints: {
-          kind,
           minLength: 1,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },
@@ -92,7 +88,6 @@ describe.concurrent("ParserTransformer", () => {
       });
       const rows = g(FC.csvData, {
         fieldConstraints: {
-          kind,
           minLength: 1,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },
@@ -137,11 +132,9 @@ describe.concurrent("ParserTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const EOL = g(FC.eol);
       const header = g(FC.row, {
         fieldConstraints: {
-          kind,
           minLength: 1,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },
@@ -152,7 +145,6 @@ describe.concurrent("ParserTransformer", () => {
       const rows = g(FC.csvData, {
         sparse: true, // To allow empty fields
         fieldConstraints: {
-          kind,
           minLength: 1,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },

@@ -36,18 +36,15 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
-      const A = g(FC.string, { kind });
+      const A = g(FC.text);
       // B is a string that includes A as a substring.
       const B = "".concat(
-        g(FC.string, {
+        g(FC.text, {
           minLength: 0, // Allow empty string
-          kind,
         }),
         A,
-        g(FC.string, {
+        g(FC.text, {
           minLength: 0, // Allow empty string
-          kind,
         }),
       );
       return { A, B };
@@ -66,14 +63,11 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const field1 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
       const field2 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
@@ -110,20 +104,16 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const demiliter = g(FC.demiliter, {
-        kind,
         excludes: [DOUBLE_QUATE, ...CRLF],
       });
       const field1 = g(FC.field, {
         excludes: [demiliter, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
-        kind,
       });
       const field2 = g(FC.field, {
         excludes: [demiliter, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
-        kind,
       });
       return {
         field1,
@@ -162,7 +152,6 @@ describe.concurrent("LexerTransformer", () => {
       const field = g(FC.field, {
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
-        kind,
       });
       return {
         field,
@@ -187,11 +176,9 @@ describe.concurrent("LexerTransformer", () => {
       fc.gen().map((g) => {
         const kind = g(FC.kind);
         const quotation = g(FC.quotation, {
-          kind,
           excludes: [COMMA, ...CRLF],
         });
         const field = g(FC.field, {
-          kind,
           excludes: [quotation, COMMA, ...CRLF],
           minLength: 1,
         });
@@ -241,7 +228,6 @@ describe.concurrent("LexerTransformer", () => {
       // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
       const row = g(FC.row, {
         fieldConstraints: {
-          kind,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           minLength: 1,
         },
@@ -274,7 +260,6 @@ describe.concurrent("LexerTransformer", () => {
       // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
       const row = g(FC.row, {
         fieldConstraints: {
-          kind,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           minLength: 1,
         },
@@ -305,12 +290,10 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
       // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
       const data = g(FC.csvData, {
         fieldConstraints: {
-          kind,
           minLength: 1,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },
@@ -349,14 +332,12 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
       // quotation(double quate), and EOL(LF, CRLF) and has at filed length 0 or more.
       const row = g(FC.row, {
         sparse: true,
         fieldConstraints: {
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-          kind,
         },
       });
       // generate chunks from row.
@@ -381,10 +362,8 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const row = g(FC.row, {
         fieldConstraints: {
-          kind,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           minLength: 1,
         },
@@ -413,7 +392,6 @@ describe.concurrent("LexerTransformer", () => {
       const kind = g(FC.kind);
       const data = g(FC.csvData, {
         fieldConstraints: {
-          kind,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
           minLength: 1,
         },
@@ -458,7 +436,6 @@ describe.concurrent("LexerTransformer", () => {
       const kind = g(FC.kind);
       const row = g(FC.row, {
         fieldConstraints: {
-          kind,
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         },
       });
@@ -491,20 +468,16 @@ describe.concurrent("LexerTransformer", () => {
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field1 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
       const field2Prefix = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
       });
       const field2Sufix = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
       });
       const field3 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
@@ -540,21 +513,17 @@ describe.concurrent("LexerTransformer", () => {
     fc.gen().map((g) => {
       const kind = g(FC.kind);
       const field1 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });
 
       const field2Prefix = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
       });
       const field2Sufix = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
       });
       const field3 = g(FC.field, {
-        kind,
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
       });

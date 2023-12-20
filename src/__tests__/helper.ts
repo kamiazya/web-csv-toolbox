@@ -64,31 +64,28 @@ export namespace FC {
     return fc.constantFrom(...stringKinds);
   }
 
-  export interface CustomStringConstraints extends fc.StringSharedConstraints {
-    kind?: StringKind;
+  export function text(
+    constraints: fc.StringSharedConstraints = {},
+  ): fc.Arbitrary<string> {
+    return kind().chain((kind) => {
+      switch (kind) {
+        case "hexa":
+          return fc.hexaString(constraints);
+        case "string":
+          return fc.string(constraints);
+        case "ascii":
+          return fc.asciiString(constraints);
+        case "unicode":
+          return fc.unicodeString(constraints);
+        case "fullUnicode":
+          return fc.fullUnicodeString(constraints);
+        case "string16bits":
+          return fc.string16bits(constraints);
+      }
+    });
   }
 
-  export function string({
-    kind = "string",
-    ...constraints
-  }: CustomStringConstraints = {}): fc.Arbitrary<string> {
-    switch (kind) {
-      case "hexa":
-        return fc.hexaString(constraints);
-      case "string":
-        return fc.string(constraints);
-      case "ascii":
-        return fc.asciiString(constraints);
-      case "unicode":
-        return fc.unicodeString(constraints);
-      case "fullUnicode":
-        return fc.fullUnicodeString(constraints);
-      case "string16bits":
-        return fc.string16bits(constraints);
-    }
-  }
-
-  export interface FieldConstraints extends CustomStringConstraints {
+  export interface FieldConstraints extends fc.StringSharedConstraints {
     excludes?: string[];
   }
 
@@ -97,25 +94,23 @@ export namespace FC {
     minLength = 0,
     ...constraints
   }: FieldConstraints = {}): fc.Arbitrary<string> {
-    return string({ minLength, ...constraints }).filter(
-      _excludeFilter(excludes),
-    );
+    return text({ minLength, ...constraints }).filter(_excludeFilter(excludes));
   }
 
-  export interface DemiliterConstraints extends CustomStringConstraints {
+  export interface DemiliterConstraints extends fc.StringSharedConstraints {
     excludes?: string[];
   }
   export function demiliter({
     excludes = [],
     ...constraints
   }: DemiliterConstraints = {}): fc.Arbitrary<string> {
-    return string({
+    return text({
       minLength: 1,
       ...constraints,
     }).filter(_excludeFilter(excludes));
   }
 
-  export interface QuoteCharConstraints extends CustomStringConstraints {
+  export interface QuoteCharConstraints extends fc.StringSharedConstraints {
     excludes?: string[];
   }
 
@@ -123,7 +118,7 @@ export namespace FC {
     excludes = [],
     ...constraints
   }: QuoteCharConstraints = {}) {
-    return string({
+    return text({
       ...constraints,
       minLength: 1,
     }).filter(_excludeFilter(excludes));
