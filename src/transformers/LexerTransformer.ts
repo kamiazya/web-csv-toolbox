@@ -1,6 +1,7 @@
 import {
   COMMA,
   CRLF,
+  CommonOptions,
   DOUBLE_QUATE,
   Field,
   FieldDelimiter,
@@ -9,17 +10,6 @@ import {
   Token,
 } from "../common/index.js";
 import { escapeRegExp } from "../internal/utils.js";
-
-export interface LexerOptions {
-  /**
-   * @default ','
-   */
-  demiliter?: string;
-  /**
-   * @default '"'
-   */
-  quotation?: string;
-}
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -62,7 +52,7 @@ export class LexerTransformer extends TransformStream<string, Token> {
   constructor({
     demiliter = COMMA,
     quotation = DOUBLE_QUATE,
-  }: LexerOptions = {}) {
+  }: CommonOptions = {}) {
     if (typeof quotation === "string" && quotation.length === 0) {
       throw new Error("quotation must not be empty");
     }

@@ -44,45 +44,36 @@ export namespace FC {
     };
   }
 
-  export type StringKind =
-    | "hexa"
-    | "string"
-    | "ascii"
-    | "unicode"
-    | "fullUnicode"
-    | "string16bits";
-  export const stringKinds: StringKind[] = [
-    "hexa",
-    "string",
-    "ascii",
-    "unicode",
-    "fullUnicode",
-    "string16bits",
-  ];
-
-  export function kind(): fc.Arbitrary<StringKind> {
-    return fc.constantFrom(...stringKinds);
-  }
-
   export function text(
     constraints: fc.StringSharedConstraints = {},
   ): fc.Arbitrary<string> {
-    return kind().chain((kind) => {
-      switch (kind) {
-        case "hexa":
-          return fc.hexaString(constraints);
-        case "string":
-          return fc.string(constraints);
-        case "ascii":
-          return fc.asciiString(constraints);
-        case "unicode":
-          return fc.unicodeString(constraints);
-        case "fullUnicode":
-          return fc.fullUnicodeString(constraints);
-        case "string16bits":
-          return fc.string16bits(constraints);
-      }
-    });
+    return fc
+      .constantFrom(
+        ...([
+          "hexa",
+          "string",
+          "ascii",
+          "unicode",
+          "fullUnicode",
+          "string16bits",
+        ] as const),
+      )
+      .chain((kind) => {
+        switch (kind) {
+          case "hexa":
+            return fc.hexaString(constraints);
+          case "string":
+            return fc.string(constraints);
+          case "ascii":
+            return fc.asciiString(constraints);
+          case "unicode":
+            return fc.unicodeString(constraints);
+          case "fullUnicode":
+            return fc.fullUnicodeString(constraints);
+          case "string16bits":
+            return fc.string16bits(constraints);
+        }
+      });
   }
 
   export interface FieldConstraints extends fc.StringSharedConstraints {

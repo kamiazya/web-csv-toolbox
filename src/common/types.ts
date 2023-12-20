@@ -23,3 +23,17 @@ export type TokenType =
   | typeof FieldDelimiter
   | typeof RecordDelimiter
   | typeof Field;
+
+/**
+ * CSV Common Options.
+ */
+export interface CommonOptions {
+  /**
+   * @default ','
+   */
+  demiliter?: string;
+  /**
+   * @default '"'
+   */
+  quotation?: string;
+}

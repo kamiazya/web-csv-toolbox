@@ -148,7 +148,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const field = g(FC.field, {
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
@@ -174,7 +173,6 @@ describe.concurrent("LexerTransformer", () => {
   it.concurrent.prop(
     [
       fc.gen().map((g) => {
-        const kind = g(FC.kind);
         const quotation = g(FC.quotation, {
           excludes: [COMMA, ...CRLF],
         });
@@ -223,7 +221,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
       // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
       const row = g(FC.row, {
@@ -255,7 +252,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       // generate row what has fileds that not contains deafult demiliter(comma),
       // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
       const row = g(FC.row, {
@@ -389,7 +385,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const data = g(FC.csvData, {
         fieldConstraints: {
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
@@ -433,7 +428,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const row = g(FC.row, {
         fieldConstraints: {
           excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
@@ -466,7 +460,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const field1 = g(FC.field, {
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,
@@ -511,7 +504,6 @@ describe.concurrent("LexerTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const field1 = g(FC.field, {
         excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
         minLength: 1,

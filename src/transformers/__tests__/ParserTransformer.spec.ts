@@ -75,7 +75,6 @@ describe.concurrent("ParserTransformer", () => {
 
   it.concurrent.prop([
     fc.gen().map((g) => {
-      const kind = g(FC.kind);
       const EOL = g(FC.eol);
       const header = g(FC.row, {
         fieldConstraints: {
