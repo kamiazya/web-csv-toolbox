@@ -1,550 +1,274 @@
-import { fc, it } from "@fast-check/vitest";
-import { describe, expect } from "vitest";
-import { FC, autoChunk, chunker, transform } from "../../__tests__/helper.js";
+import { fc } from "@fast-check/vitest";
+import { describe as describe_, expect, it as it_ } from "vitest";
+import { FC, autoChunk, transform } from "../../__tests__/helper.js";
 import {
   COMMA,
-  CRLF,
   DOUBLE_QUATE,
   Field,
   FieldDelimiter,
   RecordDelimiter,
 } from "../../common/index.js";
+import { escapeField } from "../../common/utils/escape-field.js";
 import { LexerTransformer } from "../LexerTransformer.js";
 
-describe.concurrent("LexerTransformer", () => {
-  it.concurrent("should be a TransformStream", () => {
+const describe = describe_.concurrent;
+const it = it_.concurrent;
+
+describe("LexerTransformer", () => {
+  it("should be a TransformStream", () => {
     expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
   });
 
-  it.concurrent(
-    "should be throw error if quotation is a empty character",
-    () => {
-      expect(
-        () => new LexerTransformer({ quotation: "" }),
-      ).toThrowErrorMatchingInlineSnapshot('"quotation must not be empty"');
-    },
-  );
+  it("should be throw error if quotation is a empty character", () => {
+    expect(() => new LexerTransformer({ quotation: "" })).toThrowError(
+      "quotation must not be empty",
+    );
+  });
 
-  it.concurrent(
-    "should be throw error if demiliter is a empty character",
-    () => {
-      expect(
-        () => new LexerTransformer({ demiliter: "" }),
-      ).toThrowErrorMatchingInlineSnapshot('"demiliter must not be empty"');
-    },
-  );
+  it("should be throw error if demiliter is a empty character", () => {
+    expect(() => new LexerTransformer({ demiliter: "" })).toThrowError(
+      "demiliter must not be empty",
+    );
+  });
 
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const A = g(FC.text);
-      // B is a string that includes A as a substring.
-      const B = "".concat(
-        g(FC.text, {
-          minLength: 0, // Allow empty string
+  it("should be throw error if quotation includes CR or LF", () =>
+    fc.assert(
+      fc.property(
+        fc.gen().map((g) => {
+          const EOL = g(() => fc.constantFrom("\n", "\r"));
+          const prefix = g(FC.text);
+          const sufix = g(FC.text);
+          return `${prefix}${EOL}${sufix}`;
         }),
-        A,
-        g(FC.text, {
-          minLength: 0, // Allow empty string
-        }),
-      );
-      return { A, B };
-    }),
-  ])(
-    "should be throw error if demiliter and quotation include each other as a substring",
-    ({ A, B }) => {
-      expect(
-        () => new LexerTransformer({ quotation: A, demiliter: B }),
-      ).toThrow(Error);
-      expect(
-        () => new LexerTransformer({ quotation: B, demiliter: A }),
-      ).toThrow(Error);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const field1 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      const field2 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      const chunks = chunker(g)`${field1},${field2}`;
-
-      return {
-        field1,
-        field2,
-        chunks,
-      };
-    }),
-  ])(
-    "should use comma for CSV field demiliter by default",
-    async ({ field1, field2, chunks }) => {
-      const lexer = new LexerTransformer();
-      expect(lexer.demiliter).toBe(",");
-      const actual = await transform(lexer, chunks);
-      expect(actual).toStrictEqual([
-        {
-          type: Field,
-          value: field1,
+        (invalidQuotationWhatsIncludesEOL) => {
+          expect(
+            () =>
+              new LexerTransformer({
+                quotation: invalidQuotationWhatsIncludesEOL,
+              }),
+          ).toThrowError("quotation must not include CR or LF");
         },
-        {
-          type: FieldDelimiter,
-          value: ",",
-        },
-        {
-          type: Field,
-          value: field2,
-        },
-      ]);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const demiliter = g(FC.demiliter, {
-        excludes: [DOUBLE_QUATE, ...CRLF],
-      });
-      const field1 = g(FC.field, {
-        excludes: [demiliter, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      const field2 = g(FC.field, {
-        excludes: [demiliter, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      return {
-        field1,
-        field2,
-        demiliter,
-      };
-    }),
-  ])(
-    "should be use given string for CSV field demiliter",
-    async ({ field1, field2, demiliter }) => {
-      const lexer = new LexerTransformer({
-        demiliter,
-      });
-      expect(lexer.demiliter).toBe(demiliter);
-      const actual = await transform(lexer, [`${field1}${demiliter}${field2}`]);
-      expect(actual).toStrictEqual([
-        {
-          type: Field,
-          value: field1,
-        },
-        {
-          type: FieldDelimiter,
-          value: demiliter,
-        },
-        {
-          type: Field,
-          value: field2,
-        },
-      ]);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const field = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      return {
-        field,
-      };
-    }),
-  ])(
-    "should be use double quate for CSV field quatation by default",
-    async ({ field }) => {
-      const lexer = new LexerTransformer();
-      expect(lexer.quotation).toBe('"');
-      expect(await transform(lexer, [`"${field}"`])).toStrictEqual([
-        {
-          type: Field,
-          value: field,
-        },
-      ]);
-    },
-  );
-
-  it.concurrent.prop(
-    [
-      fc.gen().map((g) => {
-        const quotation = g(FC.quotation, {
-          excludes: [COMMA, ...CRLF],
-        });
-        const field = g(FC.field, {
-          excludes: [quotation, COMMA, ...CRLF],
-          minLength: 1,
-        });
-
-        const chunks = chunker(g)`${quotation}${field}${quotation}`;
-
-        return {
-          quotation,
-          field,
-          chunks,
-        };
-      }),
-    ],
-    {
-      examples: [
-        [
-          // field endings and delimiters overlap
-          {
-            field: "e9d4dac9e8b2",
-            quotation: "22",
-            chunks: ["22e9d4dac9e8b2", "22"],
-          },
+      ),
+      {
+        examples: [
+          // "\n" is included
+          ["\n"],
+          // "\r" is included
+          ["\r"],
+          // "\n" and "\r" are included
+          ["\n\r"],
         ],
-      ],
-    },
-  )(
-    "should be use given string for CSV field quatation",
-    async ({ quotation, field, chunks }) => {
-      const lexer = new LexerTransformer({
-        quotation: quotation,
-      });
-      expect(lexer.quotation).toBe(quotation);
-      const actual = await transform(lexer, chunks);
-      expect(actual).toStrictEqual([
-        {
-          type: Field,
-          value: field,
-        },
-      ]);
-    },
-  );
+      },
+    ));
 
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      // generate row what has fileds that not contains deafult demiliter(comma),
-      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
-      const row = g(FC.row, {
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-          minLength: 1,
+  it("should be throw error if demiliter and quotation include each other as a substring", () =>
+    fc.assert(
+      fc.property(
+        fc.gen().map((g) => {
+          const A = g(FC.text);
+          // B is a string that includes A as a substring.
+          const B = `${g(FC.text)}${A}${g(FC.text)}`;
+          return { A, B };
+        }),
+        ({ A, B }) => {
+          expect(
+            () => new LexerTransformer({ quotation: A, demiliter: B }),
+          ).toThrow(Error);
+          expect(
+            () => new LexerTransformer({ quotation: B, demiliter: A }),
+          ).toThrow(Error);
         },
-      });
-      // generate chunks from row.
-      const chunks = autoChunk(g, row.join(","));
-      return {
-        row,
-        chunks,
-      };
-    }),
-  ])("should parse a single line", async ({ row, chunks }) => {
-    const expected = [
-      ...row.flatMap((value, index) => [
-        { type: Field, value },
-        ...(index === row.length - 1
-          ? [] // Last field
-          : [{ type: FieldDelimiter, value: "," }]), // Not last field
-      ]),
-    ];
+      ),
+    ));
 
-    const actual = await transform(new LexerTransformer(), chunks);
-    expect(actual).toStrictEqual(expected);
-  });
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      // generate row what has fileds that not contains deafult demiliter(comma),
-      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
-      const row = g(FC.row, {
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-          minLength: 1,
+  it("should separate fields by commas by default", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const row = g(FC.row);
+          const chunks = autoChunk(g, row.map((v) => escapeField(v)).join(","));
+          return { row, chunks };
+        }),
+        async ({ row, chunks }) => {
+          const lexer = new LexerTransformer();
+          expect(lexer.demiliter).toBe(",");
+          const actual = await transform(lexer, [...chunks]);
+          expect(actual).toStrictEqual([
+            ...row.flatMap((value, index) => [
+              ...(value ? [{ type: Field, value }] : []),
+              ...(index === row.length - 1
+                ? []
+                : [{ type: FieldDelimiter, value: "," }]),
+            ]),
+          ]);
         },
-      });
-      // generate EOL(LF, CRLF).
-      const EOL = g(FC.eol);
-      // generate chunks from row.
-      const chunks = chunker(g)`${row.join(",")}${EOL}`;
-      return {
-        row,
-        EOL,
-        chunks,
-      };
-    }),
-  ])("should parse a single line with EOL", async ({ row, EOL, chunks }) => {
-    const expected = [
-      ...row.flatMap((value, index) => [
-        { type: Field, value },
-        ...(index === row.length - 1
-          ? [] // Last field
-          : [{ type: FieldDelimiter, value: "," }]), // Not last field
-      ]),
-      { type: RecordDelimiter, value: EOL },
-    ];
-    const actual = await transform(new LexerTransformer(), chunks);
-    expect(actual).toStrictEqual(expected);
-  });
+      ),
+      {
+        examples: [
+          [
+            // Simple case
+            { row: ["a", "b", "c"], chunks: ["a,b,c"] },
+          ],
+          [
+            // Has empty field
+            { row: ["a", "", "c"], chunks: ["a,,c"] },
+          ],
+          [
+            // Has escaped field
+            { row: ['"', "\n"], chunks: ['"""","\n"'] },
+          ],
+        ],
+      },
+    ));
 
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      // generate row what has fileds that not contains deafult demiliter(comma),
-      // quotation(double quate), and EOL(LF, CRLF) and has at least one character.
-      const data = g(FC.csvData, {
-        fieldConstraints: {
-          minLength: 1,
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+  it("should separate fields by if there is a user-specified demiliter", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const demiliter = g(FC.demiliter, { excludes: [DOUBLE_QUATE] });
+          const row = g(FC.row);
+          const chunks = autoChunk(
+            g,
+            row.map((v) => escapeField(v, { demiliter })).join(demiliter),
+          );
+          return { demiliter, row, chunks };
+        }),
+        async ({ demiliter, row, chunks }) => {
+          const lexer = new LexerTransformer({ demiliter });
+          expect(lexer.demiliter).toBe(demiliter);
+          const actual = await transform(lexer, chunks);
+          expect(actual).toStrictEqual([
+            ...row.flatMap((value, index) => [
+              ...(value ? [{ type: Field, value }] : []),
+              ...(index === row.length - 1
+                ? []
+                : [{ type: FieldDelimiter, value: demiliter }]),
+            ]),
+          ]);
         },
-      });
-      // generate EOL(LF, CRLF).
-      const EOL = g(FC.eol);
-      // generate chunks from data.
-      const chunks = autoChunk(
-        g,
-        data.map((row) => row.join(",")).join(EOL) + EOL,
-      );
-      return {
-        data,
-        EOL,
-        chunks,
-      };
-    }),
-  ])("should parse multiple lines", async ({ data, EOL, chunks }) => {
-    const actual = await transform(new LexerTransformer(), chunks);
-    const expected = [
-      ...data.flatMap((row) => [
-        ...(row.length === 0
-          ? [{ type: RecordDelimiter, value: EOL }] // If row is empty, add a record delimiter.
-          : row.flatMap((value, index) => [
-              // If row is not empty, add fields.
+      ),
+    ));
+
+  it("should treat the field enclosures as double quotes by default", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const row = g(FC.row);
+          const chunks = autoChunk(
+            g,
+            row.map((v) => escapeField(v, { quate: true })).join(","),
+          );
+          return {
+            row,
+            chunks,
+          };
+        }),
+        async ({ row, chunks }) => {
+          const lexer = new LexerTransformer();
+          expect(lexer.quotation).toBe('"');
+
+          const actual = await transform(lexer, chunks);
+          expect(actual).toStrictEqual([
+            ...row.flatMap((value, index) => [
               { type: Field, value },
-              index === row.length - 1
-                ? { type: RecordDelimiter, value: EOL } // Last field
-                : { type: FieldDelimiter, value: "," }, // Not last field
-            ])),
-      ]),
-      ...(data.length === 0 ? [{ type: RecordDelimiter, value: EOL }] : []), // If data is empty, add a record delimiter.
-    ];
-    expect(actual).toStrictEqual(expected);
-  });
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      // generate row what has fileds that not contains deafult demiliter(comma),
-      // quotation(double quate), and EOL(LF, CRLF) and has at filed length 0 or more.
-      const row = g(FC.row, {
-        sparse: true,
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
+              ...(index === row.length - 1
+                ? []
+                : [{ type: FieldDelimiter, value: "," }]),
+            ]),
+          ]);
         },
-      });
-      // generate chunks from row.
-      const chunks = autoChunk(g, row.join(","));
-      return {
-        row,
-        chunks,
-      };
-    }),
-  ])("should parse empty fields", async ({ row, chunks }) => {
-    const expected = [
-      ...[...row].flatMap((value, index) => [
-        ...(value ? [{ type: Field, value }] : []),
-        ...(index === row.length - 1
-          ? [] // Last field
-          : [{ type: FieldDelimiter, value: "," }]), // Not last field
-      ]),
-    ];
-    const actual = await transform(new LexerTransformer(), chunks);
-    expect(actual).toStrictEqual(expected);
-  });
+      ),
+    ));
 
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const row = g(FC.row, {
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-          minLength: 1,
+  it("should be treated as a field enclosure if there is a user-specified field enclosure", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          // quotation is a string that does not include COMMA.
+          const quotation = g(FC.quotation, { excludes: [COMMA] });
+          const row = g(FC.row);
+
+          const chunks = autoChunk(
+            g,
+            row
+              .map((v) => escapeField(v, { quotation, quate: true }))
+              .join(","),
+          );
+
+          return { quotation, row, chunks };
+        }),
+        async ({ quotation, row, chunks }) => {
+          const lexer = new LexerTransformer({ quotation });
+          expect(lexer.quotation).toBe(quotation);
+          const actual = await transform(lexer, [...chunks]);
+          expect(actual).toStrictEqual([
+            ...row.flatMap((value, index) => [
+              { type: Field, value },
+              ...(index === row.length - 1
+                ? []
+                : [{ type: FieldDelimiter, value: "," }]),
+            ]),
+          ]);
         },
-      });
-      const chunks = autoChunk(g, row.map((value) => `"${value}"`).join(","));
-      return {
-        row,
-        chunks,
-      };
-    }),
-  ])("should parse quoted strings", async ({ row, chunks }) => {
-    const expected = [
-      ...row.flatMap((value, index) => [
-        { type: Field, value },
-        ...(index === row.length - 1
-          ? [] // Last field
-          : [{ type: FieldDelimiter, value: "," }]), // Not last field
-      ]),
-    ];
-    const actual = await transform(new LexerTransformer(), chunks);
-    expect(actual).toStrictEqual(expected);
-  });
+      ),
+      {
+        examples: [
+          [
+            // field endings and delimiters overlap
+            {
+              row: ["2"],
+              quotation: "22",
+              chunks: ["22222"],
+            },
+          ],
+          [
+            {
+              row: ["c21"],
+              quotation: "c",
+              chunks: ["ccc2", "1", "c"],
+            },
+          ],
+        ],
+      },
+    ));
 
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const data = g(FC.csvData, {
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-          minLength: 1,
+  it("should be treated as a record delimiter if EOL", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const data = g(FC.csvData);
+          const EOL = g(FC.eol);
+          const chunks = autoChunk(
+            g,
+            data
+              .map((row) => row.map((value) => escapeField(value)).join(","))
+              .join(EOL) + EOL,
+          );
+          return {
+            data,
+            EOL,
+            chunks,
+          };
+        }),
+        async ({ data, EOL, chunks }) => {
+          const expected = [
+            ...data.flatMap((row) => [
+              ...(row.length === 0
+                ? [{ type: RecordDelimiter, value: EOL }] // If row is empty, add a record delimiter.
+                : row.flatMap((value, index) => [
+                    ...(value ? [{ type: Field, value }] : []),
+                    index === row.length - 1
+                      ? { type: RecordDelimiter, value: EOL } // Last field
+                      : { type: FieldDelimiter, value: "," }, // Not last field
+                  ])),
+            ]),
+            ...(data.length === 0
+              ? [{ type: RecordDelimiter, value: EOL }]
+              : []), // If data is empty, add a record delimiter.
+          ];
+          const actual = await transform(new LexerTransformer(), chunks);
+          expect(actual).toStrictEqual(expected);
         },
-      });
-      const EOL = g(FC.eol);
-      const chunks = autoChunk(
-        g,
-        data
-          .map((row) => row.map((value) => `"${value}"`).join(","))
-          .join(EOL) + EOL,
-      );
-      return {
-        data,
-        EOL,
-        chunks,
-      };
-    }),
-  ])(
-    "should parse quoted strings with newlines",
-    async ({ data, EOL, chunks }) => {
-      const expected = [
-        ...data.flatMap((row) => [
-          ...(row.length === 0
-            ? [{ type: RecordDelimiter, value: EOL }] // If row is empty, add a record delimiter.
-            : row.flatMap((value, index) => [
-                // If row is not empty, add fields.
-                { type: Field, value },
-                index === row.length - 1
-                  ? { type: RecordDelimiter, value: EOL } // Last field
-                  : { type: FieldDelimiter, value: "," }, // Not last field
-              ])),
-        ]),
-        ...(data.length === 0 ? [{ type: RecordDelimiter, value: EOL }] : []), // If data is empty, add a record delimiter.
-      ];
-      const actual = await transform(new LexerTransformer(), chunks);
-      expect(actual).toStrictEqual(expected);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const row = g(FC.row, {
-        fieldConstraints: {
-          excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        },
-      });
-      const chunks = autoChunk(
-        g,
-        row.map((value) => `"${value.replace(/"/g, '""')}"`).join(","),
-      );
-      return {
-        row,
-        chunks,
-      };
-    }),
-  ])(
-    "should parse quoted strings with escaped quotes",
-    async ({ row, chunks }) => {
-      const expected = [
-        ...row.flatMap((value, index) => [
-          { type: Field, value },
-          ...(index === row.length - 1
-            ? [] // Last field
-            : [{ type: FieldDelimiter, value: "," }]), // Not last field
-        ]),
-      ];
-      const actual = await transform(new LexerTransformer(), chunks);
-      expect(actual).toStrictEqual(expected);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const field1 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      const field2Prefix = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-      });
-      const field2Sufix = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-      });
-      const field3 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      const EOL = g(FC.eol);
-      const chunks = chunker(
-        g,
-      )`${field1},"${field2Prefix}${EOL}${field2Sufix}",${field3}`;
-      return {
-        field1,
-        field2Prefix,
-        field2Sufix,
-        field3,
-        EOL,
-        chunks,
-      };
-    }),
-  ])(
-    "should parse quoted strings with newlines",
-    async ({ field1, field2Prefix, field2Sufix, field3, EOL, chunks }) => {
-      const expected = [
-        { type: Field, value: field1 },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: `${field2Prefix}${EOL}${field2Sufix}` },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: field3 },
-      ];
-      const actual = await transform(new LexerTransformer(), chunks);
-      expect(actual).toStrictEqual(expected);
-    },
-  );
-
-  it.concurrent.prop([
-    fc.gen().map((g) => {
-      const field1 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-
-      const field2Prefix = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-      });
-      const field2Sufix = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-      });
-      const field3 = g(FC.field, {
-        excludes: [COMMA, DOUBLE_QUATE, ...CRLF],
-        minLength: 1,
-      });
-      // NOTE: filed2 is "field2Prefix""field2Sufix", not "field2Prefix"field2Sufix"
-      const chunks = chunker(
-        g,
-      )`${field1},"${field2Prefix}""${field2Sufix}",${field3}`;
-
-      return {
-        field1,
-        field2Prefix,
-        field2Sufix,
-        field3,
-        chunks,
-      };
-    }),
-  ])(
-    "should parse quoted strings with escaped quotes",
-    async ({ field1, field2Prefix, field2Sufix, field3, chunks }) => {
-      const expected = [
-        { type: Field, value: field1 },
-        { type: FieldDelimiter, value: "," },
-        // Note that the escaped quote is not escaped in the result.
-        { type: Field, value: `${field2Prefix}"${field2Sufix}` },
-        { type: FieldDelimiter, value: "," },
-        { type: Field, value: field3 },
-      ];
-      const actual = await transform(new LexerTransformer(), chunks);
-      expect(actual).toStrictEqual(expected);
-    },
-  );
+      ),
+    ));
 });

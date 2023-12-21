@@ -5,21 +5,22 @@ export async function transform<I, O, T extends TransformStream<I, O>>(
   transformer: T,
   inputs: I[],
 ) {
+  const copy = [...inputs];
   const rows: any[] = [];
   await new ReadableStream({
     start(controller) {
-      if (inputs.length === 0) {
+      if (copy.length === 0) {
         controller.close();
         return;
       }
-      controller.enqueue(inputs.shift());
+      controller.enqueue(copy.shift());
     },
     pull(controller) {
-      if (inputs.length === 0) {
+      if (copy.length === 0) {
         controller.close();
         return;
       }
-      controller.enqueue(inputs.shift());
+      controller.enqueue(copy.shift());
     },
   })
     .pipeThrough(transformer)
@@ -98,7 +99,9 @@ export namespace FC {
     return text({
       minLength: 1,
       ...constraints,
-    }).filter(_excludeFilter(excludes));
+    })
+      .filter(_excludeFilter([...CRLF]))
+      .filter(_excludeFilter(excludes));
   }
 
   export interface QuoteCharConstraints extends fc.StringSharedConstraints {
@@ -112,7 +115,9 @@ export namespace FC {
     return text({
       ...constraints,
       minLength: 1,
-    }).filter(_excludeFilter(excludes));
+    })
+      .filter(_excludeFilter([...CRLF]))
+      .filter(_excludeFilter(excludes));
   }
 
   export function eol() {
@@ -143,7 +148,7 @@ export namespace FC {
     rowsConstraints,
     columnsConstraints,
     fieldConstraints,
-  }: CSVDataConstraints) {
+  }: CSVDataConstraints = {}) {
     return fc.array(
       row({ columnsConstraints, fieldConstraints }),
       rowsConstraints,

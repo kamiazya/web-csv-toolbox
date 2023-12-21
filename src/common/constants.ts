@@ -15,13 +15,8 @@ export const RecordDelimiter = Symbol.for(
  */
 export const Field = Symbol.for("web-stream-csv-toolkit.Field");
 
-/**
- * CRLF is a symbol for CRLF(\r\n).
- */
+export const CR = "\r";
 export const CRLF = "\r\n";
-/**
- * LF is a symbol for LF(\n).
- */
 export const LF = "\n";
 
 /**

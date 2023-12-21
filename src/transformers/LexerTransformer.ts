@@ -1,5 +1,6 @@
 import {
   COMMA,
+  CR,
   CRLF,
   CommonOptions,
   DOUBLE_QUATE,
@@ -58,6 +59,12 @@ export class LexerTransformer extends TransformStream<string, Token> {
     }
     if (typeof demiliter === "string" && demiliter.length === 0) {
       throw new Error("demiliter must not be empty");
+    }
+    if (quotation.includes(LF) || quotation.includes(CR)) {
+      throw new Error("quotation must not include CR or LF");
+    }
+    if (demiliter.includes(LF) || demiliter.includes(CR)) {
+      throw new Error("demiliter must not include CR or LF");
     }
 
     if (demiliter.includes(quotation) || quotation.includes(demiliter)) {
