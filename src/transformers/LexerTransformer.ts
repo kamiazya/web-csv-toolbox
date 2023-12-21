@@ -10,7 +10,8 @@ import {
   RecordDelimiter,
   Token,
 } from "../common/index.js";
-import { escapeRegExp } from "../internal/utils.js";
+import { assertCommonOptions } from "../internal/assert-common-options.js";
+import { escapeRegExp } from "../internal/escape-reg-exp.js";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -54,24 +55,7 @@ export class LexerTransformer extends TransformStream<string, Token> {
     demiliter = COMMA,
     quotation = DOUBLE_QUATE,
   }: CommonOptions = {}) {
-    if (typeof quotation === "string" && quotation.length === 0) {
-      throw new Error("quotation must not be empty");
-    }
-    if (typeof demiliter === "string" && demiliter.length === 0) {
-      throw new Error("demiliter must not be empty");
-    }
-    if (quotation.includes(LF) || quotation.includes(CR)) {
-      throw new Error("quotation must not include CR or LF");
-    }
-    if (demiliter.includes(LF) || demiliter.includes(CR)) {
-      throw new Error("demiliter must not include CR or LF");
-    }
-
-    if (demiliter.includes(quotation) || quotation.includes(demiliter)) {
-      throw new Error(
-        "demiliter and quotation must not include each other as a substring",
-      );
-    }
+    assertCommonOptions({ demiliter, quotation });
     super({
       transform: (
         chunk: string,

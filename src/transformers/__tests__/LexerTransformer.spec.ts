@@ -8,7 +8,7 @@ import {
   FieldDelimiter,
   RecordDelimiter,
 } from "../../common/index.js";
-import { escapeField } from "../../common/utils/escape-field.js";
+import { escapeField } from "../../internal/escape-field.js";
 import { LexerTransformer } from "../LexerTransformer.js";
 
 const describe = describe_.concurrent;
@@ -200,7 +200,7 @@ describe("LexerTransformer", () => {
         async ({ quotation, row, chunks }) => {
           const lexer = new LexerTransformer({ quotation });
           expect(lexer.quotation).toBe(quotation);
-          const actual = await transform(lexer, [...chunks]);
+          const actual = await transform(lexer, chunks);
           expect(actual).toStrictEqual([
             ...row.flatMap((value, index) => [
               { type: Field, value },
