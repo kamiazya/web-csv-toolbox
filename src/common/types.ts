@@ -37,3 +37,7 @@ export interface CommonOptions {
    */
   quotation?: string;
 }
+
+export interface BinaryOptions extends TextDecoderOptions {
+  encoding?: string;
+}

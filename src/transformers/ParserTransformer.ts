@@ -66,6 +66,7 @@ export class ParserTransformar<
   #fieldIndex = 0;
   #row: string[] = [];
   #header: Header | undefined;
+  #darty = false;
 
   constructor(options: ParserOptions<Header> = {}) {
     super({
@@ -77,6 +78,7 @@ export class ParserTransformar<
       ) => {
         switch (token.type) {
           case Field:
+            this.#darty = true;
             this.#row[this.#fieldIndex] = token.value;
             break;
           case FieldDelimiter:
@@ -84,21 +86,21 @@ export class ParserTransformar<
             break;
           case RecordDelimiter:
             if (this.#header === undefined) {
-              this.#header = this.#row as unknown as Header;
+              this.#setHeader(this.#row as unknown as Header);
             } else {
-              controller.enqueue(
-                // @ts-ignore
-                Object.fromEntries(
-                  this.#header.map((header, index) => [
-                    header,
-                    this.#row.at(index),
-                  ]),
-                ),
-              );
+              if (this.#darty) {
+                const record = Object.fromEntries(
+                  this.#header
+                    .filter((v) => v)
+                    .map((header, index) => [header, this.#row.at(index)]),
+                ) as unknown as Record<Header[number], string>;
+                controller.enqueue(record);
+              }
             }
             // Reset the row fields buffer.
             this.#fieldIndex = 0;
             this.#row = new Array(this.#header?.length);
+            this.#darty = false;
             break;
         }
       },
@@ -108,25 +110,31 @@ export class ParserTransformar<
         >,
       ) => {
         if (this.#fieldIndex !== 0 && this.#header !== undefined) {
-          controller.enqueue(
-            // @ts-ignore
-            Object.fromEntries(
-              this.#header.map((header, index) => [
-                header,
-                this.#row.at(index),
-              ]),
-            ),
-          );
+          // console.log('B', this.#row)
+          if (this.#darty) {
+            const record = Object.fromEntries(
+              this.#header
+                .filter((v) => v)
+                .map((header, index) => [header, this.#row.at(index)]),
+            ) as unknown as Record<Header[number], string>;
+            controller.enqueue(record);
+          }
         }
       },
     });
 
-    if (
-      options.header !== undefined &&
-      Array.isArray(options.header) &&
-      options.header.length > 0
-    ) {
-      this.#header = options.header;
+    if (options.header !== undefined && Array.isArray(options.header)) {
+      this.#setHeader(options.header);
+    }
+  }
+
+  #setHeader(header: Header) {
+    this.#header = header;
+    if (this.#header.length === 0) {
+      throw new Error("The header must not be empty.");
+    }
+    if (new Set(this.#header).size !== this.#header.length) {
+      throw new Error("The header must not contain duplicate fields.");
     }
   }
 }

@@ -140,6 +140,22 @@ export namespace FC {
     );
   }
 
+  export function header({
+    fieldConstraints,
+    columnsConstraints,
+  }: RowConstraints = {}) {
+    return fc.uniqueArray(
+      field({
+        minLength: 1,
+        ...fieldConstraints,
+      }),
+      {
+        minLength: 1,
+        ...columnsConstraints,
+      },
+    );
+  }
+
   export interface CSVDataConstraints extends RowConstraints {
     rowsConstraints?: fc.ArrayConstraints;
   }
@@ -153,54 +169,6 @@ export namespace FC {
       row({ columnsConstraints, fieldConstraints }),
       rowsConstraints,
     );
-  }
-
-  export type CSVConstraints =
-    | HeaderPresentedCSVConstraints
-    | HeaderAnsentedCSVConstraints;
-
-  export interface HeaderPresentedCSVConstraints extends CSVDataConstraints {
-    header: string[];
-  }
-
-  export interface HeaderAnsentedCSVConstraints extends CSVDataConstraints {
-    columns: number;
-  }
-
-  export function csv({
-    fieldConstraints,
-    rowsConstraints,
-    columnsConstraints,
-    ...restConstraints
-  }: CSVConstraints) {
-    const columns =
-      "columns" in restConstraints
-        ? restConstraints.columns
-        : restConstraints.header.length;
-    const header = "header" in restConstraints ? restConstraints.header : [];
-    return fc.gen().chain((g) => {
-      const d = g(demiliter);
-      const EOL = g(eol);
-      const data = g(() =>
-        csvData({
-          columnsConstraints: {
-            ...columnsConstraints,
-            minLength: columns,
-            maxLength: columns,
-          },
-          fieldConstraints,
-          rowsConstraints,
-        }),
-      );
-      return fc.constant(
-        [
-          ...(header.length ? [header] : []), // header
-          ...data, // data
-        ]
-          .map((row) => row.join(d))
-          .join(EOL),
-      );
-    });
   }
 }
 

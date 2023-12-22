@@ -13,16 +13,24 @@ const describe = describe_.concurrent;
 const it = it_.concurrent;
 
 describe("ParserTransformer", () => {
+  it("should throw error if header is empty", () => {
+    expect(() => new ParserTransformar({ header: [] })).toThrowError(
+      "The header must not be empty.",
+    );
+  });
+
+  it("should throw error if header has duplicated fields", () => {
+    expect(() => new ParserTransformar({ header: ["a", "a"] })).toThrowError(
+      "The header must not contain duplicate fields.",
+    );
+  });
+
   it("should parse a CSV with headers by data", () =>
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
           const EOL = g(FC.eol);
-          const header = g(FC.row, {
-            columnsConstraints: {
-              minLength: 1,
-            },
-          });
+          const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
               minLength: header.length,
@@ -67,11 +75,7 @@ describe("ParserTransformer", () => {
       fc.asyncProperty(
         fc.gen().map((g) => {
           const EOL = g(FC.eol);
-          const header = g(FC.row, {
-            columnsConstraints: {
-              minLength: 1,
-            },
-          });
+          const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
               minLength: header.length,
