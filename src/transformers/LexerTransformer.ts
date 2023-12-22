@@ -10,8 +10,8 @@ import {
   RecordDelimiter,
   Token,
 } from "../common/index.js";
-import { assertCommonOptions } from "../internal/assert-common-options.js";
-import { escapeRegExp } from "../internal/escape-reg-exp.js";
+import { assertCommonOptions } from "../internal/assertCommonOptions.js";
+import { escapeRegExp } from "../internal/escapeRegExp.js";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.

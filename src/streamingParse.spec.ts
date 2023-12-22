@@ -1,7 +1,7 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.js";
-import { escapeField } from "./internal/escape-field.js";
+import { escapeField } from "./internal/escapeField.js";
 import { streamingParse } from "./streamingParse.js";
 
 describe("streamingParse function", () => {

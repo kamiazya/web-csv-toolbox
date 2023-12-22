@@ -8,7 +8,7 @@ import {
   FieldDelimiter,
   RecordDelimiter,
 } from "../../common/index.js";
-import { escapeField } from "../../internal/escape-field.js";
+import { escapeField } from "../../internal/escapeField.js";
 import { LexerTransformer } from "../LexerTransformer.js";
 
 const describe = describe_.concurrent;

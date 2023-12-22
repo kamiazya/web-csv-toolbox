@@ -1,6 +1,6 @@
 import { COMMA, DOUBLE_QUATE } from "../common/constants.js";
 import { CommonOptions } from "../common/types.js";
-import { type assertCommonOptions } from "./assert-common-options.js";
+import { type assertCommonOptions } from "./assertCommonOptions.js";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quate?: true;

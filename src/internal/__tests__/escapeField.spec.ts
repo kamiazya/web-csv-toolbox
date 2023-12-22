@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { escapeField } from "../escape-field";
+import { escapeField } from "../escapeField";
 
 describe("escapeField function", () => {
   test("should escape quotation", () => {
