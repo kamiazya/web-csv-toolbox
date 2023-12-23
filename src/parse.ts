@@ -1,4 +1,5 @@
 import { CommonOptions } from "./common/types.js";
+import { toArray } from "./internal/toArray.js";
 import { parseResponse } from "./parseResponse.js";
 import { parseStream } from "./parseStream.js";
 import { streamingParse } from "./streamingParse.js";
@@ -20,14 +21,15 @@ export async function* parse<Header extends ReadonlyArray<string>>(
       break;
   }
 }
+export namespace parse {
+  export declare function toArray<Header extends ReadonlyArray<string>>(
+    csv:
+      | string
+      | ReadableStream<Uint8Array>
+      | ReadableStream<string>
+      | Response,
+    options?: CommonOptions & ParserOptions<Header>,
+  ): Promise<Record<Header[number], string>[]>;
+}
 
-parse.toArray = async function toArray<Header extends ReadonlyArray<string>>(
-  csv: string,
-  options?: CommonOptions & ParserOptions<Header>,
-) {
-  const rows = [];
-  for await (const row of this(csv, options)) {
-    rows.push(row);
-  }
-  return rows;
-};
+parse.toArray = toArray;

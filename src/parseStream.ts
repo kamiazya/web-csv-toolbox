@@ -1,4 +1,5 @@
 import { BinaryOptions, CommonOptions } from "./common/index.js";
+import { toArray } from "./internal/toArray.js";
 import { parseBinaryStream } from "./parseBinaryStream.js";
 import { parseStringStream } from "./parseStringStream.js";
 import { ParserOptions } from "./transformers/ParserTransformer.js";
@@ -21,3 +22,12 @@ export async function* parseStream<Header extends ReadonlyArray<string>>(
       break;
   }
 }
+
+export namespace parseStream {
+  export declare function toArray<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<Uint8Array>,
+    options?: CommonOptions & ParserOptions<Header> & BinaryOptions,
+  ): Promise<Record<Header[number], string>[]>;
+}
+
+parseStream.toArray = toArray;

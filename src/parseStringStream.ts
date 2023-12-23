@@ -1,4 +1,5 @@
 import { CommonOptions } from "./common/types.js";
+import { toArray } from "./internal/toArray.js";
 import {
   LexerTransformer,
   ParserOptions,
@@ -33,3 +34,12 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
     reader.releaseLock();
   }
 }
+
+export namespace parseStringStream {
+  export declare function toArray<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<Uint8Array>,
+    options?: CommonOptions & ParserOptions<Header>,
+  ): Promise<Record<Header[number], string>[]>;
+}
+
+parseStringStream.toArray = toArray;

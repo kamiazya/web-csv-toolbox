@@ -1,5 +1,6 @@
 import { CommonOptions } from "./common/index.js";
 import { parseMime } from "./internal/parseMime.js";
+import { toArray } from "./internal/toArray.js";
 import { parseBinaryStream } from "./parseBinaryStream.js";
 import { ParserOptions } from "./transformers/ParserTransformer.js";
 
@@ -27,3 +28,12 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
     ...options,
   });
 }
+
+export namespace parseResponse {
+  export declare function toArray<Header extends ReadonlyArray<string>>(
+    response: Response,
+    options?: CommonOptions & ParserOptions<Header>,
+  ): Promise<Record<Header[number], string>[]>;
+}
+
+parseResponse.toArray = toArray;
