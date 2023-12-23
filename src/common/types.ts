@@ -39,5 +39,6 @@ export interface CommonOptions {
 }
 
 export interface BinaryOptions extends TextDecoderOptions {
-  encoding?: string;
+  decompression?: CompressionFormat;
+  charset?: string;
 }

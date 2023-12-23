@@ -1,6 +1,5 @@
 import {
   COMMA,
-  CR,
   CRLF,
   CommonOptions,
   DOUBLE_QUATE,

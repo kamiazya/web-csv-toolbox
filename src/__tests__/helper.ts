@@ -45,9 +45,22 @@ export namespace FC {
     };
   }
 
-  export function text(
-    constraints: fc.StringSharedConstraints = {},
-  ): fc.Arbitrary<string> {
+  export type StringKind =
+    | "hexa"
+    | "string"
+    | "ascii"
+    | "unicode"
+    | "fullUnicode"
+    | "string16bits";
+
+  export interface TextConstraints extends fc.StringSharedConstraints {
+    kindExcludes?: readonly StringKind[];
+  }
+
+  export function text({
+    kindExcludes = [],
+    ...constraints
+  }: TextConstraints = {}): fc.Arbitrary<string> {
     return fc
       .constantFrom(
         ...([
@@ -59,6 +72,7 @@ export namespace FC {
           "string16bits",
         ] as const),
       )
+      .filter((v) => !kindExcludes.includes(v))
       .chain((kind) => {
         switch (kind) {
           case "hexa":
@@ -77,7 +91,7 @@ export namespace FC {
       });
   }
 
-  export interface FieldConstraints extends fc.StringSharedConstraints {
+  export interface FieldConstraints extends TextConstraints {
     excludes?: string[];
   }
 
@@ -89,7 +103,7 @@ export namespace FC {
     return text({ minLength, ...constraints }).filter(_excludeFilter(excludes));
   }
 
-  export interface DemiliterConstraints extends fc.StringSharedConstraints {
+  export interface DemiliterConstraints extends TextConstraints {
     excludes?: string[];
   }
   export function demiliter({
@@ -104,7 +118,7 @@ export namespace FC {
       .filter(_excludeFilter(excludes));
   }
 
-  export interface QuoteCharConstraints extends fc.StringSharedConstraints {
+  export interface QuoteCharConstraints extends TextConstraints {
     excludes?: string[];
   }
 

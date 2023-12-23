@@ -1,30 +1,29 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { FC } from "./__tests__/helper.js";
-import { escapeField } from "./internal/escapeField.js";
-import { parse } from "./parse.js";
+import { escapeField } from "../internal/escapeField.js";
+import { streamingParse } from "../streamingParse.js";
+import { FC } from "./helper.js";
 
-describe("parse function", () => {
+describe("streamingParse function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
           const header = g(FC.header);
           const EOL = g(FC.eol);
-          const EOF = g(fc.boolean);
           const csvData = g(FC.csvData, {
             columnsConstraints: {
               minLength: header.length,
               maxLength: header.length,
             },
           });
+          const EOF = g(fc.boolean);
           const csv = [
             header.map((v) => escapeField(v, { quate: true })).join(","),
             ...csvData.map((row) =>
               row.map((v) => escapeField(v, { quate: true })).join(","),
             ),
             ...(EOF ? [""] : []),
-            "",
           ].join(EOL);
           const data =
             csvData.length >= 1
@@ -32,19 +31,14 @@ describe("parse function", () => {
                   Object.fromEntries(row.map((v, i) => [header[i], v])),
                 )
               : [];
-          return { data, csv };
+          return { data, csv, header };
         }),
         async ({ data, csv }) => {
-          const actual = await parse(csv);
-          expect(actual).toEqual(data);
+          let i = 0;
+          for await (const row of streamingParse(csv)) {
+            expect(data[i++]).toEqual(row);
+          }
         },
       ),
-      {
-        examples: [
-          [{ csv: "a,b,c\n1,2,3", data: [{ a: "1", b: "2", c: "3" }] }],
-          [{ csv: "a,b,c\n1,,3", data: [{ a: "1", c: "3" }] }],
-          [{ csv: "a,b,c\n1,2,3\r", data: [{ a: "1", b: "2", c: "3" }] }],
-        ],
-      },
     ));
 });
