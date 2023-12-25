@@ -47,6 +47,7 @@
   "homepage": "https://github.com/kamiazya/web-csv-toolbox#readme",
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
+    "@changesets/cli": "^2.27.1",
     "@fast-check/vitest": "^0.0.8",
     "husky": "^8.0.0",
     "jsdom": "^23.0.1",
