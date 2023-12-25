@@ -1,5 +1,5 @@
 ---
-"web-csv-toolbox": miner
+"web-csv-toolbox": minor
 ---
 
-doc: Publish TypeDoc to GitHub Pages 
+doc: Publish TypeDoc to GitHub Pages
