@@ -138,7 +138,7 @@ export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
  * CSV Record.
  * @template Header Header of the CSV.
  *
- * @example Header is `["foo", "bar"]`
+ * @example Header is ["foo", "bar"]
  * ```ts
  * const record: CSVRecord<["foo", "bar"]> = {
  *   foo: "1",
