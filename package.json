@@ -26,7 +26,7 @@
     "format": "biome format . --write",
     "lint": "biome lint .",
     "check": "biome check . --apply",
-    "check:no-apply": "biome check .",
+    "check:no-apply": "biome check src",
     "build": "tsc -p tsconfig.build.json && biome format lib --write",
     "prepare": "husky install"
   },
