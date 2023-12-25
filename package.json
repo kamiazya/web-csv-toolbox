@@ -1,7 +1,7 @@
 {
-  "name": "web-streams-csv",
+  "name": "csv-toolbox",
   "version": "0.0.0",
-  "description": "CSV Toolkit for WHATWG Streams API.",
+  "description": "CSV Toolbox using Web Standard APIs.",
   "type": "module",
   "main": "lib/index.js",
   "module": "lib/index.js",
@@ -18,8 +18,7 @@
   },
   "files": [
     "lib",
-    "README.md",
-    "LICENSE"
+    "README.md"
   ],
   "scripts": {
     "test": "vitest",
@@ -32,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kamiazya/web-stream-csv-parser.git"
+    "url": "git+https://github.com/kamiazya/csv-toolbox.git"
   },
   "keywords": [
     "csv",
@@ -43,9 +42,9 @@
   "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kamiazya/web-stream-csv-parser/issues"
+    "url": "https://github.com/kamiazya/csv-toolbox/issues"
   },
-  "homepage": "https://github.com/kamiazya/web-stream-csv-parser#readme",
+  "homepage": "https://github.com/kamiazya/csv-toolbox#readme",
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
     "@fast-check/vitest": "^0.0.8",
