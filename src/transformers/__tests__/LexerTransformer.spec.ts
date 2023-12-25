@@ -137,14 +137,15 @@ describe("LexerTransformer", () => {
           const lexer = new LexerTransformer({ demiliter });
           expect(lexer.demiliter).toBe(demiliter);
           const actual = await transform(lexer, chunks);
-          expect(actual).toStrictEqual([
+          const expected = [
             ...row.flatMap((value, index) => [
               ...(value ? [{ type: Field, value }] : []),
               ...(index === row.length - 1
                 ? []
                 : [{ type: FieldDelimiter, value: demiliter }]),
             ]),
-          ]);
+          ];
+          expect(actual).toStrictEqual(expected);
         },
       ),
     ));
@@ -168,14 +169,15 @@ describe("LexerTransformer", () => {
           expect(lexer.quotation).toBe('"');
 
           const actual = await transform(lexer, chunks);
-          expect(actual).toStrictEqual([
+          const expected = [
             ...row.flatMap((value, index) => [
               { type: Field, value },
               ...(index === row.length - 1
                 ? []
                 : [{ type: FieldDelimiter, value: "," }]),
             ]),
-          ]);
+          ];
+          expect(actual).toStrictEqual(expected);
         },
       ),
     ));
@@ -201,14 +203,15 @@ describe("LexerTransformer", () => {
           const lexer = new LexerTransformer({ quotation });
           expect(lexer.quotation).toBe(quotation);
           const actual = await transform(lexer, chunks);
-          expect(actual).toStrictEqual([
+          const expected = [
             ...row.flatMap((value, index) => [
               { type: Field, value },
               ...(index === row.length - 1
                 ? []
                 : [{ type: FieldDelimiter, value: "," }]),
             ]),
-          ]);
+          ];
+          expect(actual).toStrictEqual(expected);
         },
       ),
       {

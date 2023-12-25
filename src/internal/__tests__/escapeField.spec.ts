@@ -9,5 +9,6 @@ describe("escapeField function", () => {
     expect(escapeField("a\na")).toBe('"a\na"');
     expect(escapeField("c21", { quotation: "c" })).toBe("ccc21c");
     expect(escapeField("$", { quotation: "$" })).toBe("$$$$");
+    expect(escapeField("|", { demiliter: "||" })).toBe('"|"');
   });
 });
