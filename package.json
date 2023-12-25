@@ -1,5 +1,5 @@
 {
-  "name": "web-stream-csv-toolkit",
+  "name": "web-streams-csv",
   "version": "0.0.0",
   "description": "CSV Toolkit for WHATWG Streams API.",
   "type": "module",
@@ -27,7 +27,7 @@
     "lint": "biome lint .",
     "check": "biome check . --apply",
     "check:no-apply": "biome check src",
-    "build": "tsc -p tsconfig.build.json && biome format lib --write",
+    "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome format lib --write",
     "prepare": "husky install"
   },
   "repository": {
@@ -52,6 +52,10 @@
     "husky": "^8.0.0",
     "jsdom": "^23.0.1",
     "lint-staged": "^15.2.0",
+    "rollup": "^4.9.1",
+    "rollup-plugin-delete": "^2.0.0",
+    "rollup-plugin-dts": "^6.1.0",
+    "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.3.2",
     "vitest": "^0.34.6"
   }
