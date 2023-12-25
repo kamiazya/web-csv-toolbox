@@ -1,20 +1,20 @@
 # web-csv-toolbox
 
-CSV Toolbox using Web Standard APIs.
+A CSV Toolbox utilizing Web Standard APIs.
 
 ## Key concepts
 
-- Web Starndards first.
+- Web Standards first.
   - Using the [Web Streams API](https://streams.spec.whatwg.org/).
 - TypeScript friendly & User friendly.
   - Fully typed and documented.
 - Zero dependencies.
   - Using only Web Standards APIs.
-- Propaty based tested.
+- Property-based testing.
   - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
-- **TBT** Cross platform.
+- **To Be Tested** Cross platform.
   - Works on browsers and Node.js, Deno
-    - Only web standard APIs are used, so it should work with these Runtimes as well.
+    - Only web standard APIs are used, so it should work with these Runtimes.
 
 ## Key features
 
@@ -23,7 +23,7 @@ CSV Toolbox using Web Standard APIs.
 - Supports parsing CSV files with different delimiters and quotation characters.
   - Defaults to `,` and `"` respectively.
   - Supports parsing TSV files by setting `delimiter` to `\t`.
-  - Supports parsing with mulit-character/multi-bytes delimiters and quotation characters.
+  - Supports parsing with multi-character/multi-byte delimiters and quotation characters.
 - Supports parsing binary CSV files.
 
 ## Installation
@@ -129,11 +129,11 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 
 #### `parse(input[, options]): AsyncIterableIterator<Record>` function
 
-Returns an async iterable of records parsed from the given input.
+Returns an asynchronous iterable of records.
 
 ##### `input` parameter
 
-The input to parse. This can be a `string`, a `ReadableStream` of `string`s or `Uint8Array`s, or an `Resoponse` object.
+The input to parse. This can be a `string`, a `ReadableStream` of `string`s or `Uint8Array`s, or a `Response` object.
 
 ##### `options` parameter
 
@@ -153,13 +153,24 @@ An optional array of strings to use as the headers for the parsed records.
 
 If not provided, the first record will be used as the headers.
 
-###### `options.decompossion`
+###### `options.decompression`
 
-The decompossion to use when parsing the binary CSV input.
+The decompression format to use when parsing the binary CSV input.
+
+If not provided, the input will be treated as text.
+
+Possible values are:
+
+- `gzip`
+- `deflate`
+- `deflate-raw`
+  - Note: This format is supported in Node.js v21.2.0 and above.
 
 ###### `options.charset`
 
 The character set to use when parsing the binary CSV input.
+
+Defaults to `utf-8`.
 
 ###### `options.ignoreBOM`
 
@@ -173,9 +184,7 @@ Defaults to `false`.
 
 ### Low-level APIs
 
-TODO: See [the Source code](https://github.com/kamiazya/web-csv-toolbox) for now.
-
-Code documentation is detailed and completed.
+For low-level API details, please refer to [source code](https://github.com/kamiazya/web-csv-toolbox).
 
 ## License
 

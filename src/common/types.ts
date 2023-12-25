@@ -61,7 +61,7 @@ export interface BinaryOptions {
    * Make sure the runtime you are running supports stream decompression.
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility | DecompressionStream Compatibility}.
    */
-  decompression?: CompressionFormat;
+  decomposition?: CompressionFormat;
   /**
    * You can specify the character encoding of the binary.
    *

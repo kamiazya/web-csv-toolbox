@@ -132,7 +132,9 @@ describe("parseBinaryStream function", () => {
         }),
         async ({ data, csv, decompression }) => {
           let i = 0;
-          for await (const row of parseBinaryStream(csv, { decompression })) {
+          for await (const row of parseBinaryStream(csv, {
+            decomposition: decompression,
+          })) {
             expect(data[i++]).toStrictEqual(row);
           }
         },

@@ -13,7 +13,7 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   if (mime.type !== "text/csv") {
     throw new Error(`Invalid mime type: ${contentType}`);
   }
-  const decompression =
+  const decomposition =
     (headers.get("content-encoding") as CompressionFormat) ?? undefined;
   const charset = mime.parameters.charset ?? "utf-8";
   // TODO: Support header=present and header=absent
@@ -22,8 +22,8 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
     throw new Error("Response body is null");
   }
   return parseBinaryStream(response.body, {
-    decompression,
-    charset: charset,
+    decomposition,
+    charset,
     ...options,
   });
 }
