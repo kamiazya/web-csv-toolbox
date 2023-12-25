@@ -1,23 +1,10 @@
 import {
   Field,
   FieldDelimiter,
+  RecordAssemblerOptions,
   RecordDelimiter,
   Token,
 } from "../common/index.js";
-
-export interface HeaderAbsentParserOptions<
-  Header extends ReadonlyArray<string>,
-> {
-  header: Header;
-}
-
-export interface HeaderPresentParserOptions {
-  header?: never;
-}
-
-export type ParserOptions<Header extends ReadonlyArray<string>> =
-  | HeaderAbsentParserOptions<Header>
-  | HeaderPresentParserOptions;
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -35,7 +22,7 @@ export type ParserOptions<Header extends ReadonlyArray<string>> =
  *     controller.close();
  *   })
  *   .pipeThrough(new LexerTransformer())
- *   .pipeThrough(new ParserTransformar())
+ *   .pipeThrough(new RecordAssemblerTransformar())
  *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
@@ -53,14 +40,14 @@ export type ParserOptions<Header extends ReadonlyArray<string>> =
  *   }
  * })
  * .pipeThrough(new LexerTransformer())
- * .pipeThrough(new ParserTransformar({ header: ["name", "age"] }))
+ * .pipeThrough(new RecordAssemblerTransformar({ header: ["name", "age"] }))
  * .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
  * // { name: "Charlie", age: "30" }
  * ```
  */
-export class ParserTransformar<
+export class RecordAssemblerTransformar<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token, Record<Header[number], string | undefined>> {
   #fieldIndex = 0;
@@ -68,7 +55,7 @@ export class ParserTransformar<
   #header: Header | undefined;
   #darty = false;
 
-  constructor(options: ParserOptions<Header> = {}) {
+  constructor(options: RecordAssemblerOptions<Header> = {}) {
     super({
       transform: (
         token: Token,

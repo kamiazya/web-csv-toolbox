@@ -1,12 +1,20 @@
-import { BinaryOptions, CommonOptions } from "./common/types.js";
+import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
 import { toArray } from "./internal/toArray.js";
 import { parseStringStream } from "./parseStringStream.js";
-import { ParserOptions } from "./transformers/index.js";
 
+/**
+ * Parse CSV to records.
+ * This function is for parsing a binary stream.
+ *
+ * @remarks
+ * If you want to parse a string, use {@link streamingParse}.
+ * @param stream CSV string to parse
+ * @param options Parsing options. See {@link ParseBinaryOptions}.
+ */
 export async function* parseBinaryStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<Uint8Array>,
-  options?: CommonOptions & ParserOptions<Header> & BinaryOptions,
-) {
+  options?: ParseBinaryOptions<Header>,
+): AsyncIterableIterator<CSVRecord<Header>> {
   const { charset, fatal, ignoreBOM, decompression } = options ?? {};
   yield* parseStringStream(
     [
@@ -25,8 +33,8 @@ export async function* parseBinaryStream<Header extends ReadonlyArray<string>>(
 export namespace parseBinaryStream {
   export declare function toArray<Header extends ReadonlyArray<string>>(
     stream: ReadableStream<Uint8Array>,
-    options?: CommonOptions & ParserOptions<Header> & BinaryOptions,
-  ): Promise<Record<Header[number], string>[]>;
+    options?: ParseBinaryOptions<Header>,
+  ): Promise<CSVRecord<Header>[]>;
 }
 
 parseBinaryStream.toArray = toArray;

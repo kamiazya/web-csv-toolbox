@@ -25,7 +25,7 @@
     "test": "vitest",
     "format": "biome format . --write",
     "lint": "biome lint .",
-    "check": "biome check . --apply",
+    "check": "biome check src --apply",
     "check:no-apply": "biome check src",
     "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome format lib --write",
     "prepare": "husky install"

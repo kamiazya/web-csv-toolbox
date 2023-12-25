@@ -1,28 +1,23 @@
 import { fc, it as it_ } from "@fast-check/vitest";
 import { describe as describe_, expect } from "vitest";
 import { FC, transform } from "../../__tests__/helper.js";
-import {
-  COMMA,
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-} from "../../common/index.js";
-import { ParserTransformar } from "../ParserTransformer.js";
+import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
+import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.js";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
 describe("ParserTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new ParserTransformar({ header: [] })).toThrowError(
+    expect(() => new RecordAssemblerTransformar({ header: [] })).toThrowError(
       "The header must not be empty.",
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
-    expect(() => new ParserTransformar({ header: ["a", "a"] })).toThrowError(
-      "The header must not contain duplicate fields.",
-    );
+    expect(
+      () => new RecordAssemblerTransformar({ header: ["a", "a"] }),
+    ).toThrowError("The header must not contain duplicate fields.");
   });
 
   it("should parse a CSV with headers by data", () =>
@@ -43,14 +38,14 @@ describe("ParserTransformer", () => {
               { type: Field, value: field },
               i === header.length - 1
                 ? { type: RecordDelimiter, value: EOL }
-                : { type: FieldDelimiter, value: COMMA },
+                : { type: FieldDelimiter, value: "," },
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: COMMA },
+                { type: FieldDelimiter, value: "," },
                 // generate record delimiter token
                 ...(j === row.length - 1
                   ? [{ type: RecordDelimiter, value: EOL }]
@@ -64,7 +59,10 @@ describe("ParserTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new ParserTransformar(), tokens);
+          const actual = await transform(
+            new RecordAssemblerTransformar(),
+            tokens,
+          );
           expect(actual).toEqual(expected);
         },
       ),
@@ -86,7 +84,7 @@ describe("ParserTransformer", () => {
             ...rows.flatMap((row) =>
               row.flatMap((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: COMMA },
+                { type: FieldDelimiter, value: "," },
                 ...(j === row.length - 1
                   ? [{ type: RecordDelimiter, value: EOL }]
                   : []),
@@ -104,7 +102,7 @@ describe("ParserTransformer", () => {
           };
         }),
         async ({ header, tokens, expected }) => {
-          const parser = new ParserTransformar({
+          const parser = new RecordAssemblerTransformar({
             header,
           });
           const actual = await transform(parser, tokens);

@@ -1,13 +1,12 @@
-import { CommonOptions } from "./common/index.js";
+import { CSVRecord, ParseOptions } from "./common/index.js";
 import { parseMime } from "./internal/parseMime.js";
 import { toArray } from "./internal/toArray.js";
 import { parseBinaryStream } from "./parseBinaryStream.js";
-import { ParserOptions } from "./transformers/ParserTransformer.js";
 
 export function parseResponse<Header extends ReadonlyArray<string>>(
   response: Response,
-  options?: CommonOptions & ParserOptions<Header>,
-): AsyncIterableIterator<Record<Header[number], string>> {
+  options?: ParseOptions<Header>,
+): AsyncIterableIterator<CSVRecord<Header>> {
   const { headers } = response;
   const contentType = headers.get("content-type") ?? "text/csv";
   const mime = parseMime(contentType);
@@ -32,8 +31,8 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
 export namespace parseResponse {
   export declare function toArray<Header extends ReadonlyArray<string>>(
     response: Response,
-    options?: CommonOptions & ParserOptions<Header>,
-  ): Promise<Record<Header[number], string>[]>;
+    options?: ParseOptions<Header>,
+  ): Promise<CSVRecord<Header>[]>;
 }
 
 parseResponse.toArray = toArray;

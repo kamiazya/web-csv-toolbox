@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { CRLF, LF } from "../common/constants.js";
+import { CRLF, LF } from "../internal/constants.js";
 
 export async function transform<I, O, T extends TransformStream<I, O>>(
   transformer: T,

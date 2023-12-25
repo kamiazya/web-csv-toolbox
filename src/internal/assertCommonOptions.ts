@@ -1,4 +1,5 @@
 import { CommonOptions } from "../common/types.js";
+import { CR, LF } from "./constants.js";
 
 /**
  * Assert that the options are valid.
@@ -12,10 +13,10 @@ export function assertCommonOptions(options: Required<CommonOptions>): void {
   if (typeof options.demiliter === "string" && options.demiliter.length === 0) {
     throw new Error("demiliter must not be empty");
   }
-  if (options.quotation.includes("\n") || options.quotation.includes("\r")) {
+  if (options.quotation.includes(LF) || options.quotation.includes(CR)) {
     throw new Error("quotation must not include CR or LF");
   }
-  if (options.demiliter.includes("\n") || options.demiliter.includes("\r")) {
+  if (options.demiliter.includes(LF) || options.demiliter.includes(CR)) {
     throw new Error("demiliter must not include CR or LF");
   }
   if (

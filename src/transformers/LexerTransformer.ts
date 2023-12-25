@@ -1,15 +1,12 @@
 import {
-  COMMA,
-  CRLF,
   CommonOptions,
-  DOUBLE_QUATE,
   Field,
   FieldDelimiter,
-  LF,
   RecordDelimiter,
   Token,
 } from "../common/index.js";
 import { assertCommonOptions } from "../internal/assertCommonOptions.js";
+import { COMMA, CRLF, DOUBLE_QUATE, LF } from "../internal/constants.js";
 import { escapeRegExp } from "../internal/escapeRegExp.js";
 
 /**
