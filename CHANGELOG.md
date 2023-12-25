@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.0.2
+
+### Patch Changes
+
+- 4be404f: ci: add build step before release
+
 ## 0.0.1
 
 ### Patch Changes
