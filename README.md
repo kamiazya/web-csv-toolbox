@@ -2,7 +2,7 @@
 
 A CSV Toolbox utilizing Web Standard APIs.
 
-## Key concepts
+## Key Concepts
 
 - Web Standards first.
   - Using the [Web Streams API](https://streams.spec.whatwg.org/).
@@ -16,7 +16,7 @@ A CSV Toolbox utilizing Web Standard APIs.
   - Works on browsers and Node.js, Deno
     - Only web standard APIs are used, so it should work with these Runtimes.
 
-## Key features
+## Key Features
 
 - Parses CSV files using the [WHATWG Streams API](https://streams.spec.whatwg.org/).
 - Supports parsing CSV files from strings, `ReadableStream`s, and `Response` objects.
@@ -51,7 +51,7 @@ for await (const record of parse(csv)) {
 // { name: 'Bob', age: '69' }
 ```
 
-## Parsing CSV files from `ReadableStream`s
+### Parsing CSV files from `ReadableStream`s
 
 ```js
 import { parse } from 'web-csv-toolbox';
@@ -123,7 +123,7 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 // { name: 'Bob', age: '69' }
 ```
 
-## API
+## APIs
 
 ### High-level APIs
 
