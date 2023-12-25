@@ -1,5 +1,5 @@
 {
-  "name": "csv-toolbox",
+  "name": "web-csv-toolbox",
   "version": "0.0.0",
   "description": "CSV Toolbox using Web Standard APIs.",
   "type": "module",
@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kamiazya/csv-toolbox.git"
+    "url": "git+https://github.com/kamiazya/web-csv-toolbox.git"
   },
   "keywords": [
     "csv",
@@ -42,9 +42,9 @@
   "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/kamiazya/csv-toolbox/issues"
+    "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
   },
-  "homepage": "https://github.com/kamiazya/csv-toolbox#readme",
+  "homepage": "https://github.com/kamiazya/web-csv-toolbox#readme",
   "devDependencies": {
     "@biomejs/biome": "1.4.1",
     "@fast-check/vitest": "^0.0.8",

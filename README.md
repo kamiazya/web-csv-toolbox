@@ -1,4 +1,4 @@
-# csv-toolbox
+# web-csv-toolbox
 
 CSV Toolbox using Web Standard APIs.
 
@@ -14,7 +14,7 @@ CSV Toolbox using Web Standard APIs.
   - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
 - **TBT** Cross platform.
   - Works on browsers and Node.js, Deno
-    - Because it uses only Web Standards APIs, it should work on Deno.
+    - Only web standard APIs are used, so it should work with these Runtimes as well.
 
 ## Key features
 
@@ -29,7 +29,7 @@ CSV Toolbox using Web Standard APIs.
 ## Installation
 
 ```sh
-npm install csv-toolbox
+npm install web-csv-toolbox
 ```
 
 ## Usage
@@ -37,7 +37,7 @@ npm install csv-toolbox
 ### Parsing CSV files from strings
 
 ```js
-import { parse } from 'csv-toolbox';
+import { parse } from 'web-csv-toolbox';
 
 const csv = `name,age
 Alice,42
@@ -54,7 +54,7 @@ for await (const record of parse(csv)) {
 ## Parsing CSV files from `ReadableStream`s
 
 ```js
-import { parse } from 'csv-toolbox';
+import { parse } from 'web-csv-toolbox';
 
 const csv = `name,age
 Alice,42
@@ -78,7 +78,7 @@ for await (const record of parse(stream)) {
 ### Parsing CSV files from `Response` objects
 
 ```js
-import { parse } from 'csv-toolbox';
+import { parse } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
 
@@ -93,7 +93,7 @@ for await (const record of parse(response)) {
 ### Parsing CSV files with different delimiters and quotation characters
 
 ```js
-import { parse } from 'csv-toolbox';
+import { parse } from 'web-csv-toolbox';
 
 const csv = `name\tage
 Alice\t42
@@ -110,7 +110,7 @@ for await (const record of parse(csv, { delimiter: '\t' })) {
 ### Parsing CSV files with different headers
 
 ```js
-import { parse } from 'csv-toolbox';
+import { parse } from 'web-csv-toolbox';
 
 const csv = `Alice,42
 Bob,69`;
@@ -173,7 +173,7 @@ Defaults to `false`.
 
 ### Low-level APIs
 
-TODO: See [the Source code](https://github.com/kamiazya/csv-toolbox) for now.
+TODO: See [the Source code](https://github.com/kamiazya/web-csv-toolbox) for now.
 
 Code documentation is detailed and completed.
 
