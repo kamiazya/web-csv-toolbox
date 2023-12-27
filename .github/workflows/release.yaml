@@ -30,26 +30,10 @@ jobs:
         uses: changesets/action@v1
         with:
           publish: npm publish
+          createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Push version tag
-        id: tag
-        if: ${{ steps.changesets.outputs.published == 'true' }}
-        run: |
-          VERSION=v$(cat package.json | jq -c ".version" -r)
-          git tag $(VERSION)
-          git push origin $(VERSION)
-          ::set-output name=version::${VERSION}
-      - name: Create Release
-        if: ${{ steps.changesets.outputs.published == 'true' }}
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: refs/tags/${{ steps.tag.outputs.version }}
-          release_name: Release ${{ steps.tag.outputs.version }}
-          draft: false
     outputs:
       published: ${{ steps.changesets.outputs.published }}
   prerelease:
