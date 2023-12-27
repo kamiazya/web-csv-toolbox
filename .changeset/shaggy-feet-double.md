@@ -1,7 +1,7 @@
 ---
-"web-csv-toolbox": patch
+"web-csv-toolbox": minor
 ---
 
-- Add more detail documents.
+- Add more detailed documents.
   - Fixed a naming conventions problem in the documentation.
     - Changed `streamingParse` to `parseString`.
