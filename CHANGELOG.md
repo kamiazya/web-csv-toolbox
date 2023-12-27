@@ -1,5 +1,13 @@
 # web-csv-toolbox
 
+## 0.2.0
+
+### Minor Changes
+
+- [#14](https://github.com/kamiazya/web-csv-toolbox/pull/14) [`8f2590e`](https://github.com/kamiazya/web-csv-toolbox/commit/8f2590e188f085808df05d5651f4999f86c4b22c) Thanks [@kamiazya](https://github.com/kamiazya)! - - Add more detailed documents.
+  - Fixed a naming conventions problem in the documentation.
+    - Changed `streamingParse` to `parseString`.
+
 ## 0.1.0
 
 ### Minor Changes
