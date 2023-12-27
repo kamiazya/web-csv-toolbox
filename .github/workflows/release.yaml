@@ -44,6 +44,8 @@ jobs:
     needs: release
     if: needs.release.outputs.published == 'false'
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
