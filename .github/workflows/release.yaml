@@ -16,7 +16,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
@@ -35,6 +35,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Checkout Repo
+        if: steps.changesets.outputs.published == 'false'
+        uses: actions/checkout@v4
+        with:
+          ref: main
       - name: Release@next
         if: steps.changesets.outputs.published == 'false'
         run: |
