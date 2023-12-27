@@ -1,5 +1,15 @@
 # web-csv-toolbox
 
+## 0.3.0
+
+### Minor Changes
+
+- [#18](https://github.com/kamiazya/web-csv-toolbox/pull/18) [`cd5b9b9`](https://github.com/kamiazya/web-csv-toolbox/commit/cd5b9b9959039ac3e89e5e00a1a46614266ee882) Thanks [@kamiazya](https://github.com/kamiazya)! - feat: add support cdn
+
+### Patch Changes
+
+- [#16](https://github.com/kamiazya/web-csv-toolbox/pull/16) [`d8cbb1f`](https://github.com/kamiazya/web-csv-toolbox/commit/d8cbb1fc8e03fe5ee5986721a8b52378894f37bc) Thanks [@kamiazya](https://github.com/kamiazya)! - ci: fix snapshot release flow
+
 ## 0.2.0
 
 ### Minor Changes
