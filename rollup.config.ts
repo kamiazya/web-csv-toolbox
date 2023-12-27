@@ -1,3 +1,4 @@
+import terser from "@rollup/plugin-terser";
 import { defineConfig } from "rollup";
 import del from "rollup-plugin-delete";
 import dts from "rollup-plugin-dts";
@@ -42,8 +43,17 @@ export default defineConfig([
         },
       }),
     ],
-    output: {
-      file: "lib/index.js",
-    },
+    output: [
+      {
+        file: "lib/index.js",
+        compact: true,
+      },
+      {
+        file: "lib/index.umd.js",
+        format: "umd",
+        name: "CSV",
+        plugins: [terser()],
+      },
+    ],
   },
 ]);
