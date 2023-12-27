@@ -29,4 +29,21 @@ export default defineConfig([
       format: "esm",
     },
   },
+  {
+    input: "src/index.ts",
+    plugins: [
+      ts({
+        tsconfig: "tsconfig.build.json",
+        tsconfigOverride: {
+          compilerOptions: {
+            removeComments: true,
+            declaration: false,
+          },
+        },
+      }),
+    ],
+    output: {
+      file: "lib/index.js",
+    },
+  },
 ]);

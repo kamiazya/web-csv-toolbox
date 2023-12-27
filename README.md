@@ -1,38 +1,73 @@
-# web-csv-toolbox
+<div align="center">
+
+[![Node.js CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml)
+[![npm version](https://badge.fury.io/js/web-csv-toolbox.svg)](https://badge.fury.io/js/web-csv-toolbox)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+![node version](https://img.shields.io/node/v/web-csv-toolbox)
+![npm](https://img.shields.io/npm/dm/web-csv-toolbox)
+
+# `🌐 web-csv-toolbox 💽`
 
 A CSV Toolbox utilizing Web Standard APIs.
 
-## Key Concepts
+🔗
 
-- Web Standards first.
-  - Using the [Web Streams API](https://streams.spec.whatwg.org/).
-- TypeScript friendly & User friendly.
+[![GitHub](https://img.shields.io/badge/-GitHub-181717?logo=GitHub&style=flat)](https://github.com/kamiazya/web-csv-toolbox)
+[![npm](https://img.shields.io/badge/-npm-CB3837?logo=npm&style=flat)](https://www.npmjs.com/package/web-csv-toolbox)
+[![yarn](https://img.shields.io/badge/-yarn-ffffff?logo=Yarn&style=flat)](https://yarnpkg.com/package/web-csv-toolbox)
+[![API Reference](https://img.shields.io/badge/-API%20Refarence-3178C6?logo=TypeScript&style=flat&logoColor=fff)](https://kamiazya.github.io/web-csv-toolbox/)
+[![Sponsor](https://img.shields.io/badge/-GitHub%20Sponsor-fff?logo=GitHub%20Sponsors&style=flat)](https://github.com/sponsors/kamiazya)
+
+
+[![format: Biome](https://img.shields.io/badge/format%20with-Biome-F7B911?logo=biome&style=flat)](https://biomejs.dev/)
+[![test: Vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&style=flat)](https://vitest.dev/)
+[![build: Rollup](https://img.shields.io/badge/build%20with-Rollup-EC4A3F?logo=rollup.js&style=flat)](https://rollupjs.org/)
+
+</div>
+
+---
+
+## Key Concepts ✨
+
+- 🌐 **Web Standards first.**
+  - Utilizing the Web Standards APIs, such as the [Web Streams API](https://developer.mozilla.org/en/docs/Web/API/Streams_API).
+- ❤️ **TypeScript friendly & User friendly.**
   - Fully typed and documented.
-- Zero dependencies.
+- 0️⃣ **Zero dependencies.**
   - Using only Web Standards APIs.
-- Property-based testing.
+- 💪 **Property-based testing.**
   - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
-- **To Be Tested** Cross platform.
-  - Works on browsers and Node.js, Deno
-    - Only web standard APIs are used, so it should work with these Runtimes.
+- ✅ **_To Be Tested_** **Cross-platform.**
+  - Works on browsers, Node.js, and Deno.
+    - Only web standard APIs are used, so it should work with these runtimes.
 
-## Key Features
+## Key Features 📗
 
-- Parses CSV files using the [WHATWG Streams API](https://streams.spec.whatwg.org/).
-- Supports parsing CSV files from strings, `ReadableStream`s, and `Response` objects.
-- Supports parsing CSV files with different delimiters and quotation characters.
-  - Defaults to `,` and `"` respectively.
-  - Supports parsing TSV files by setting `delimiter` to `\t`.
-  - Supports parsing with multi-character/multi-byte delimiters and quotation characters.
-- Supports parsing binary CSV files.
+- 🌊 **Efficient CSV Parsing with Streams**
+  - 💻 Leveraging the [WHATWG Streams API](https://streams.spec.whatwg.org/) and other Web APIs for seamless and efficient data processing.
+- 🎨 **Flexible Source Support**
+  - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
+- ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
+  - 🔄 Defaults to `,` and `"` respectively.
+  - 🛠️ Use multi-character/multi-byte delimiters and quotations.
+- 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
+  - 🔄 Flexible BOM handling.
+  - 🗜️ Supports various compression formats.
+  - 🔤 Charset specification for diverse encoding.
 
-## Installation
+## Installation 📥
 
 ```sh
-npm install web-csv-toolbox
+# Install with npm
+$ npm install web-csv-toolbox
+# Or Yarn
+$ yarn add web-csv-toolbox
+# Or pnpm
+$ pnpm add web-csv-toolbox
 ```
 
-## Usage
+## Usage 📘
 
 ### Parsing CSV files from strings
 
@@ -107,7 +142,7 @@ for await (const record of parse(csv, { delimiter: '\t' })) {
 // { name: 'Bob', age: '69' }
 ```
 
-### Parsing CSV files with different headers
+### Parsing CSV files with headers
 
 ```js
 import { parse } from 'web-csv-toolbox';
@@ -123,69 +158,87 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 // { name: 'Bob', age: '69' }
 ```
 
-## APIs
+## APIs 🧑‍💻
 
-### High-level APIs
+### High-level APIs 🚀
 
-#### `parse(input[, options]): AsyncIterableIterator<Record>` function
+These APIs are designed for **Simplicity and Ease of Use**,
+providing an intuitive and straightforward experience for users.
 
-Returns an asynchronous iterable of records.
+- **`function parse(input[, options]): AsyncIterableIterator<CSVRecord>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse-1.html)
+  - Parses various CSV input formats into an asynchronous iterable of records.
+- **`function parse.toArray(input[, options]): Promise<CSVRecord[]>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse.toArray.html)
+  - Parses CSV input into an array of records, ideal for smaller data sets.
 
-##### `input` parameter
+The `input` paramater can be a `string`, a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
+of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s,
+or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
 
-The input to parse. This can be a `string`, a `ReadableStream` of `string`s or `Uint8Array`s, or a `Response` object.
+### Middle-level APIs 🧱
 
-##### `options` parameter
+These APIs are optimized for **Enhanced Performance and Control**,
+catering to users who need more detailed and fine-tuned functionality.
 
-An optional object with the following properties:
+- **`function parseBinaryStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinaryStream-1.html)
+  - Parses binary streams with precise control over data types.
+- **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
+  - Customized parsing directly from `Response` objects.
+- **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
+  - Stream-based parsing for larger or continuous data.
+- **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
+  - Efficient parsing of CSV strings.
+- **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
+  - Combines string-based parsing with stream processing.
 
-###### `options.delimiter`
+### Low-level APIs ⚙️
 
-The character used to separate fields in the CSV input. Defaults to `,`.
+These APIs are built for **Advanced Customization and Pipeline Design**,
+ideal for developers looking for in-depth control and flexibility.
 
-###### `options.quotation`
+- **`class LexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/LexerTransformer.html)
+  - A TransformStream class for lexical analysis of CSV data.
+- **`class RecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/RecordAssemblerTransformar.html)
+  - Handles the assembly of parsed data into records.
 
-The character used to quote fields in the CSV input. Defaults to `"`.
+## Options Configuration 🛠️
 
-###### `options.headers`
+### Common Options ⚙️
 
-An optional array of strings to use as the headers for the parsed records.
+| Option         | Description                           | Default     | Notes |
+| -------------- | ------------------------------------- | ----------- | ----- |
+| `delimiter`    | Character to separate fields          | `,`         |       |
+| `quotation`    | Character used for quoting fields     | `"`         |       |
+| `headers`      | Custom headers for the parsed records | First row   | If not provided, the first row is used as headers |
 
-If not provided, the first record will be used as the headers.
+### Advanced Options (Binary-Specific) 🧬
 
-###### `options.decompression`
+| Option          | Description                                       | Default   | Notes |
+| --------------- | ------------------------------------------------- | --------- | ---------------------- |
+| `charset`       | Character encoding for binary CSV inputs          | `utf-8`   | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `decompression` | Decompression algorithm for compressed CSV inputs |           | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). |
+| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false`   | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM. |
+| `fatal`         | Throw an error on invalid characters              | `false`   | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information. |
 
-The decompression format to use when parsing the binary CSV input.
+## How to Contribute 💪
 
-If not provided, the input will be treated as text.
+## Star ⭐
 
-Possible values are:
+The easiest way to contribute is to use the library and star [repository](https://github.com/kamiazya/web-csv-toolbox/).
 
-- `gzip`
-- `deflate`
-- `deflate-raw`
-  - Note: This format is supported in Node.js v21.2.0 and above.
+### Questions 💭
 
-###### `options.charset`
+Feel free to ask questions on [GitHub Discussions](https://github.com/kamiazya/web-csv-toolbox/discussions).
 
-The character set to use when parsing the binary CSV input.
+### Report bugs / request additional features 💡
 
-Defaults to `utf-8`.
+Please register at [GitHub Issues](https://github.com/kamiazya/web-csv-toolbox/issues/new/choose).
 
-###### `options.ignoreBOM`
+### Financial Support 💸
 
-Whether to ignore a leading BOM in the CSV input.
-Defaults to `false`.
+Please support [kamiazya](https://github.com/sponsors/kamiazya).
 
-###### `options.fatal`
+> Even just a dollar is enough motivation to develop 😊
 
-Whether to throw an error if the CSV input is invalid.
-Defaults to `false`.
+## License ⚖️
 
-### Low-level APIs
-
-For low-level API details, please refer to [source code](https://github.com/kamiazya/web-csv-toolbox).
-
-## License
-
-[MIT](./LICENSE)
+This software is released under the MIT License, see [LICENSE](https://github.com/kamiazya/web-csv-toolbox?tab=MIT-1-ov-file).

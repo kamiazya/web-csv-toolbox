@@ -12,6 +12,8 @@ import { escapeRegExp } from "../internal/escapeRegExp.js";
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
  *
+ * @category Low-level API
+ *
  * @example Parse a CSV with headers by data
  * ```ts
  * new ReadableStream({

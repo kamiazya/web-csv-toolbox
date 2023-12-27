@@ -3,6 +3,7 @@ import { Field, FieldDelimiter, RecordDelimiter } from "./constants.js";
 /**
  * Token is a atomic unit of a CSV file.
  * It can be a field, field delimiter, or record delimiter.
+ * @category Types
  *
  * @example
  * ```ts
@@ -18,6 +19,7 @@ export interface Token<T extends TokenType = TokenType> {
 
 /**
  * Type of a token for CSV.
+ * @category Types
  */
 export type TokenType =
   | typeof FieldDelimiter
@@ -26,6 +28,7 @@ export type TokenType =
 
 /**
  * CSV Common Options.
+ * @category Types
  */
 export interface CommonOptions {
   /**
@@ -51,6 +54,7 @@ export interface CommonOptions {
 
 /**
  * CSV Parsing Options for binary.
+ * @category Types
  */
 export interface BinaryOptions {
   /**
@@ -59,6 +63,7 @@ export interface BinaryOptions {
    *
    * @remarks
    * Make sure the runtime you are running supports stream decompression.
+   *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility | DecompressionStream Compatibility}.
    */
   decomposition?: CompressionFormat;
@@ -66,7 +71,8 @@ export interface BinaryOptions {
    * You can specify the character encoding of the binary.
    *
    * @remarks
-   * {@link TextDecoderStream} is used internally.
+   * {@link !TextDecoderStream} is used internally.
+   *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings | Encoding API Compatibility}
    * for the encoding formats that can be specified.
    *
@@ -87,15 +93,22 @@ export interface BinaryOptions {
    * If the binary has a invalid character, you can specify whether to throw an error.
    *
    * @remarks
-   * If you specify true, an error will be thrown.
-   * If you specify false or not specify it, the invalid character will be replaced with `U+FFFD`.
-   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal | TextDecoderOptions.fatal} for more information about the invalid character.
+   * If the property is `true` then a decoder will throw a {@link !TypeError}
+   * if it encounters malformed data while decoding.
+   *
+   * If `false` the decoder will substitute the invalid data
+   * with the replacement character `U+FFFD` (�).
+   *
+   * See {@link https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal | TextDecoderOptions.fatal} for more information.
+   *
+   * @default false
    */
   fatal?: boolean;
 }
 
 /**
  * Record Assembler Options for CSV.
+ * @category Types
  *
  * @remarks
  * If you specify `header: ['foo', 'bar']`,
@@ -122,6 +135,7 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>> {
 
 /**
  * Parse options for CSV string.
+ * @category Types
  */
 export interface ParseOptions<Header extends ReadonlyArray<string>>
   extends CommonOptions,
@@ -129,6 +143,7 @@ export interface ParseOptions<Header extends ReadonlyArray<string>>
 
 /**
  * Parse options for CSV binary.
+ * @category Types
  */
 export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
   extends ParseOptions<Header>,
@@ -136,6 +151,7 @@ export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
 
 /**
  * CSV Record.
+ * @category Types
  * @template Header Header of the CSV.
  *
  * @example Header is ["foo", "bar"]

@@ -11,6 +11,8 @@ import {
  * @template Header The type of the header row.
  * @param options The options for the parser.
  *
+ * @category Low-level API
+ *
  * @example Parse a CSV with headers by data
  *  ```ts
  * new ReadableStream({

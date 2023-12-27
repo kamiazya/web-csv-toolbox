@@ -1,4 +1,12 @@
 {
   "entryPoints": ["src/index.ts"],
-  "out": "doc"
+  "out": "doc",
+  "plugin": ["typedoc-plugin-mdn-links"],
+  "categoryOrder": [
+    "Types",
+    "Constants",
+    "High-level API",
+    "Middle-level API",
+    "Low-level API",
+  ]
 }
