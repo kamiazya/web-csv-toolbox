@@ -1,10 +1,10 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { escapeField } from "../internal/escapeField.js";
-import { streamingParse } from "../streamingParse.js";
+import { parseString } from "../parseString.js";
 import { FC } from "./helper.js";
 
-describe("streamingParse function", () => {
+describe("parseString function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
@@ -35,7 +35,7 @@ describe("streamingParse function", () => {
         }),
         async ({ data, csv }) => {
           let i = 0;
-          for await (const row of streamingParse(csv)) {
+          for await (const row of parseString(csv)) {
             expect(data[i++]).toEqual(row);
           }
         },

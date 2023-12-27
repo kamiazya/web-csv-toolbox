@@ -18,7 +18,8 @@
       "recommended": true,
       "suspicious": {
         "noExplicitAny": "off",
-        "noAssignInExpressions": "off"
+        "noAssignInExpressions": "off",
+        "noFunctionAssign": "off"
       }
     }
   }

@@ -1,8 +1,40 @@
 import { CSVRecord, ParseOptions } from "./common/index.js";
 import { parseMime } from "./internal/parseMime.js";
-import { toArray } from "./internal/toArray.js";
+import * as internal from "./internal/toArray.js";
 import { parseBinaryStream } from "./parseBinaryStream.js";
 
+/**
+ * Parse HTTP Response what contains CSV to records,
+ * ideal for smaller data sets.
+ *
+ * @remarks
+ * This function automatically treats response headers.
+ *
+ * - If `Content-Type` header is not set, it assumes `text/csv`.
+ * - If `Content-Type` header is not `text/csv`, it throws an error.
+ * - If `Content-Type` header has charset parameter, it uses it for decoding.
+ * - If `Content-Encoding` header is set, it decompresses the response.
+ * - Should there be any conflicting information between the header and the options, the option's value will take precedence.
+ *
+ * @category Middle-level API
+ * @param response
+ * @param options
+ * @returns Async iterable iterator of records.
+ *
+ * If you want array of records, use {@link parseResponse.toArray} function.
+ *
+ * @example Parsing CSV Response
+ *
+ * ```ts
+ * import { parseResponse } from 'web-csv-toolbox';
+ *
+ * const response = await fetch('https://example.com/data.csv');
+ *
+ * for await (const record of parseResponse(response)) {
+ *   console.log(record);
+ * }
+ * ```
+ */
 export function parseResponse<Header extends ReadonlyArray<string>>(
   response: Response,
   options?: ParseOptions<Header>,
@@ -29,10 +61,25 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
 }
 
 export namespace parseResponse {
+  /**
+   * Parse CSV Response to array of records.
+   *
+   * @returns Array of records
+   *
+   * @example Parsing CSV Response
+   *
+   * ```ts
+   * import { parseResponse } from 'web-csv-toolbox';
+   *
+   * const response = await fetch('https://example.com/data.csv');
+   *
+   * const records = await parseResponse.toArray(response);
+   * console.log(records);
+   * ```
+   */
   export declare function toArray<Header extends ReadonlyArray<string>>(
     response: Response,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
+  parseResponse.toArray = internal.toArray;
 }
-
-parseResponse.toArray = toArray;

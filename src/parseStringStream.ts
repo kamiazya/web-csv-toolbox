@@ -1,15 +1,43 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
-import { toArray } from "./internal/toArray.js";
+import * as internal from "./internal/toArray.js";
 import {
   LexerTransformer,
   RecordAssemblerTransformar,
 } from "./transformers/index.js";
 
 /**
- * Parse CSV string to records.
+ * Parse CSV string stream to records.
  *
+ * @category Middle-level API
  * @param stream CSV string stream to parse
- * @param options Parsing options. See {@link ParseOptions}.
+ * @param options Parsing options.
+ * @returns Async iterable iterator of records.
+ *
+ * If you want array of records, use {@link parseStringStream.toArray} function.
+ *
+ * @example Parsing CSV files from strings
+ *
+ * ```ts
+ * import { parseStringStream } from 'web-csv-toolbox';
+ *
+ * const csv = `name,age
+ * Alice,42
+ * Bob,69`;
+ *
+ * const stream = new ReadableStream({
+ *  start(controller) {
+ *     controller.enqueue(csv);
+ *     controller.close();
+ *   },
+ * });
+ *
+ * for await (const record of parseStringStream(csv)) {
+ *  console.log(record);
+ * }
+ * // Prints:
+ * // { name: 'Alice', age: '42' }
+ * // { name: 'Bob', age: '69' }
+ * ```
  */
 export async function* parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
@@ -41,10 +69,36 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
 }
 
 export namespace parseStringStream {
+  /**
+   * Parse CSV string stream to records.
+   *
+   * @returns Array of records
+   *
+   * @example
+   *
+   * ```ts
+   * import { parseStringStream } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const stream = new ReadableStream({
+   *   start(controller) {
+   *     controller.enqueue(csv);
+   *     controller.close();
+   *   },
+   * });
+   *
+   * const records = await parseStringStream.toArray(stream);
+   * console.log(records);
+   * // Prints:
+   * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
+   * ```
+   */
   export declare function toArray<Header extends ReadonlyArray<string>>(
-    stream: ReadableStream<Uint8Array>,
+    stream: ReadableStream<string>,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
+  parseStringStream.toArray = internal.toArray;
 }
-
-parseStringStream.toArray = toArray;
