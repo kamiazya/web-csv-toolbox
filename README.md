@@ -1,6 +1,5 @@
 <div align="center">
 
-[![Node.js CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml)
 [![npm version](https://badge.fury.io/js/web-csv-toolbox.svg)](https://badge.fury.io/js/web-csv-toolbox)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
@@ -38,9 +37,8 @@ A CSV Toolbox utilizing Web Standard APIs.
   - Using only Web Standards APIs.
 - 💪 **Property-based testing.**
   - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
-- ✅ **_To Be Tested_** **Cross-platform.**
+- ✅ **Cross-platform.**
   - Works on browsers, Node.js, and Deno.
-    - Only web standard APIs are used, so it should work with these runtimes.
 
 ## Key Features 📗
 
@@ -158,6 +156,30 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 // { name: 'Bob', age: '69' }
 ```
 
+## Supported Runtimes 💻
+
+### Works on Node.js [![Node.js CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml)
+
+| Versions | Status |
+| -------- | ------ |
+| 20.x     | ✅     |
+| 18.x     | ✅     |
+
+
+### Works on Browser [![Browsers CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/browsers.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/browsers.yaml)
+
+| OS      | Chrome | FireFox | Default       |
+| ------- | ------ | ------- | ------------- |
+| Windows | ✅     | ✅      | ✅ (Edge)     |
+| macos   | ✅     | ✅      | ⬜ (Safari *) |
+| Linux   | ✅     | ✅      | -             |
+
+> **\* To Be Tested**:  [I couldn't launch Safari in headless mode](https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41) on GitHub Actions, so I couldn't verify it, but it probably works.
+
+### Others
+
+- Verify that JavaScript is executable on the Deno. [![Deno CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml)
+
 ## APIs 🧑‍💻
 
 ### High-level APIs 🚀
@@ -204,20 +226,20 @@ ideal for developers looking for in-depth control and flexibility.
 
 ### Common Options ⚙️
 
-| Option         | Description                           | Default     | Notes |
-| -------------- | ------------------------------------- | ----------- | ----- |
-| `delimiter`    | Character to separate fields          | `,`         |       |
-| `quotation`    | Character used for quoting fields     | `"`         |       |
-| `headers`      | Custom headers for the parsed records | First row   | If not provided, the first row is used as headers |
+| Option      | Description                           | Default   | Notes                                             |
+| ----------- | ------------------------------------- | --------- | ------------------------------------------------- |
+| `delimiter` | Character to separate fields          | `,`       |                                                   |
+| `quotation` | Character used for quoting fields     | `"`       |                                                   |
+| `headers`   | Custom headers for the parsed records | First row | If not provided, the first row is used as headers |
 
 ### Advanced Options (Binary-Specific) 🧬
 
-| Option          | Description                                       | Default   | Notes |
-| --------------- | ------------------------------------------------- | --------- | ---------------------- |
-| `charset`       | Character encoding for binary CSV inputs          | `utf-8`   | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `decompression` | Decompression algorithm for compressed CSV inputs |           | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). |
-| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false`   | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM. |
-| `fatal`         | Throw an error on invalid characters              | `false`   | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information. |
+| Option          | Description                                       | Default | Notes                                                                                                                                                     |
+| --------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `charset`       | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `decompression` | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit).                       |
+| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
+| `fatal`         | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
 
 ## How to Contribute 💪
 
