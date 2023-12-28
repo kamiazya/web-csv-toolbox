@@ -56,6 +56,10 @@ A CSV Toolbox utilizing Web Standard APIs.
 
 ## Installation 📥
 
+### With Package manager 📦
+
+This package can then be installed using a package manager.
+
 ```sh
 # Install with npm
 $ npm install web-csv-toolbox
@@ -63,6 +67,50 @@ $ npm install web-csv-toolbox
 $ yarn add web-csv-toolbox
 # Or pnpm
 $ pnpm add web-csv-toolbox
+```
+
+### From CDN (unpkg.com) 🌐
+
+#### UMD Style 🔄
+
+```html
+<script src="https://unpkg.com/web-csv-toolbox"></script>
+<script>
+const csv = `name,age
+Alice,42
+Bob,69`;
+
+(async function () {
+  for await (const record of CSV.parse(csv)) {
+    console.log(record);
+  }
+})();
+</script>
+```
+
+
+#### ESModule Style 📦
+
+```html
+<script type="module">
+import { parse } from 'https://unpkg.com/web-csv-toolbox/lib/index.js';
+
+const csv = `name,age
+Alice,42
+Bob,69`;
+
+for await (const record of parse(csv)) {
+  console.log(record);
+}
+</script>
+```
+
+#### Deno 🦕
+
+You can install and use the package by specifying the following:
+
+```js
+import { parse } from "npm:web-csv-toolbox";
 ```
 
 ## Usage 📘
