@@ -1,0 +1,65 @@
+name: Browsers CI
+
+on:
+  push:
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          # Headless Safari is currentry not supported
+          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
+          # - safari
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      # - if: matrix.browsers == 'safari'
+      #   run: sudo safaridriver --enable
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          - edge
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
