@@ -24,6 +24,7 @@
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
+    "test:browser": "vitest --browser",
     "format": "biome format . --write",
     "lint": "biome lint .",
     "check": "biome check src --apply",
