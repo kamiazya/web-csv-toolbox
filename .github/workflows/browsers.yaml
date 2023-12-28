@@ -30,7 +30,9 @@ jobs:
         browsers:
           - chrome
           - firefox
-          - safari
+          # Headless Safari is currentry not supported
+          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
+          # - safari
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js
@@ -39,6 +41,7 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
-      - if: matrix.browsers == 'safari'
-        run: sudo safaridriver --enable
+      # - if: matrix.browsers == 'safari'
+      #   run: sudo safaridriver --enable
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
