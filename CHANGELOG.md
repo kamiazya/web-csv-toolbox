@@ -1,5 +1,13 @@
 # web-csv-toolbox
 
+## 0.3.1
+
+### Patch Changes
+
+- [#21](https://github.com/kamiazya/web-csv-toolbox/pull/21) [`e5480ba`](https://github.com/kamiazya/web-csv-toolbox/commit/e5480bacddf29b6cce7c1f0b8d426c99f5c9e0ba) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: add instalation docs for CSN and Deno
+
+- [#19](https://github.com/kamiazya/web-csv-toolbox/pull/19) [`5f0b861`](https://github.com/kamiazya/web-csv-toolbox/commit/5f0b86110b92f6e2c8b747341e424f6a7944d57b) Thanks [@kamiazya](https://github.com/kamiazya)! - Cross platform tests
+
 ## 0.3.0
 
 ### Minor Changes
