@@ -40,5 +40,5 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - if: matrix.browsers == 'safari'
-        run: safaridriver --enable
+        run: sudo safaridriver --enable
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
