@@ -7,6 +7,7 @@ jobs:
   ubuntu:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         browsers:
           - chrome
@@ -24,6 +25,7 @@ jobs:
   macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         browsers:
           - chrome
@@ -37,4 +39,6 @@ jobs:
           node-version: 20
           cache: 'npm'
       - run: npm ci
+      - if: matrix.browsers == 'safari'
+        run: safaridriver --enable
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
