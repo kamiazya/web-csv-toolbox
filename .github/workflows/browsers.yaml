@@ -45,3 +45,21 @@ jobs:
       #   run: sudo safaridriver --enable
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          - edge
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
