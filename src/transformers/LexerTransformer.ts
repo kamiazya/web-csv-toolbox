@@ -36,168 +36,150 @@ import { escapeRegExp } from "../internal/escapeRegExp.ts";
  * ```
  */
 export class LexerTransformer extends TransformStream<string, Token> {
-  private _demiliter: string;
-  private _demiliterLength: number;
-  private _quotation: string;
-  private _quotationLength: number;
-  private _matcher: RegExp;
-  private _buffer = "";
-  public get demiliter(): string {
-    return this._demiliter;
-  }
-  public get quotation(): string {
-    return this._quotation;
-  }
-
+  constructor(options?: CommonOptions);
   constructor({
     demiliter = COMMA,
     quotation = DOUBLE_QUATE,
   }: CommonOptions = {}) {
     assertCommonOptions({ demiliter, quotation });
+
+    const demiliterLength = demiliter.length;
+    const quotationLength = quotation.length;
+
+    const d = escapeRegExp(demiliter);
+    const q = escapeRegExp(quotation);
+    const matcher = new RegExp(
+      `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
+    );
+    let buffer = "";
     super({
       transform: (
         chunk: string,
         controller: TransformStreamDefaultController<Token>,
       ) => {
         if (chunk.length !== 0) {
-          this._buffer += chunk;
-          for (const token of this._tokens({ flush: false })) {
+          buffer += chunk;
+          for (const token of tokens({ flush: false })) {
             controller.enqueue(token);
           }
         }
       },
       flush: (controller: TransformStreamDefaultController<Token>) => {
-        for (const token of this._tokens({ flush: true })) {
+        for (const token of tokens({ flush: true })) {
           controller.enqueue(token);
         }
       },
     });
 
-    this._demiliter = demiliter;
-    this._demiliterLength = demiliter.length;
-    this._quotation = quotation;
-    this._quotationLength = quotation.length;
-
-    const d = escapeRegExp(demiliter);
-    const q = escapeRegExp(quotation);
-    this._matcher = new RegExp(
-      `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
-    );
-  }
-
-  private *_tokens({ flush }: { flush: boolean }): Generator<Token> {
-    let currentField: Token | null = null;
-    for (let token: Token | null; (token = this._nextToken({ flush })); ) {
-      switch (token.type) {
-        case Field:
-          if (currentField) {
-            currentField.value += token.value;
-          } else {
-            currentField = token;
-          }
-          break;
-        case FieldDelimiter:
-          if (currentField) {
-            yield currentField;
-            currentField = null;
-          }
-          yield token;
-          break;
-        case RecordDelimiter:
-          if (currentField) {
-            yield currentField;
-            currentField = null;
-          }
-          yield token;
-          break;
+    function* tokens({ flush }: { flush: boolean }): Generator<Token> {
+      let currentField: Token | null = null;
+      for (let token: Token | null; (token = nextToken({ flush })); ) {
+        switch (token.type) {
+          case Field:
+            if (currentField) {
+              currentField.value += token.value;
+            } else {
+              currentField = token;
+            }
+            break;
+          case FieldDelimiter:
+            if (currentField) {
+              yield currentField;
+              currentField = null;
+            }
+            yield token;
+            break;
+          case RecordDelimiter:
+            if (currentField) {
+              yield currentField;
+              currentField = null;
+            }
+            yield token;
+            break;
+        }
+      }
+      if (currentField) {
+        yield currentField;
       }
     }
-    if (currentField) {
-      yield currentField;
-    }
-  }
 
-  private _nextToken({ flush = false } = {}): Token | null {
-    if (this._buffer.length === 0) {
+    function nextToken({ flush = false } = {}): Token | null {
+      if (buffer.length === 0) {
+        return null;
+      }
+
+      // Check for CRLF
+      if (buffer.startsWith(CRLF)) {
+        buffer = buffer.slice(2);
+        return { type: RecordDelimiter, value: CRLF };
+      }
+
+      // Check for LF
+      if (buffer.startsWith(LF)) {
+        buffer = buffer.slice(1);
+        return { type: RecordDelimiter, value: LF };
+      }
+
+      // Check for Delimiter
+      if (buffer.startsWith(demiliter)) {
+        buffer = buffer.slice(demiliterLength);
+        return { type: FieldDelimiter, value: demiliter };
+      }
+
+      // Check for Quoted String
+      if (buffer.startsWith(quotation)) {
+        // If we're flushing and the buffer doesn't end with a quote, then return null
+        // because we're not done with the quoted string
+        if (flush === false && buffer.endsWith(quotation)) {
+          return null;
+        }
+        return extractQuotedString();
+      }
+
+      // Check for Unquoted String
+      const match = matcher.exec(buffer);
+      if (match) {
+        // If we're flushing and the match doesn't consume the entire buffer,
+        // then return null
+        if (flush === false && match[0].length === buffer.length) {
+          return null;
+        }
+        buffer = buffer.slice(match[0].length);
+        return { type: Field, value: match[0] };
+      }
+
+      // Otherwise, return null
       return null;
     }
 
-    // Check for CRLF
-    if (this._buffer.startsWith(CRLF)) {
-      this._buffer = this._buffer.slice(2);
-      return { type: RecordDelimiter, value: CRLF };
-    }
+    function extractQuotedString(): Token | null {
+      let end = quotationLength; // Skip the opening quote
+      let value = "";
 
-    // Check for LF
-    if (this._buffer.startsWith(LF)) {
-      this._buffer = this._buffer.slice(1);
-      return { type: RecordDelimiter, value: LF };
-    }
+      while (end < buffer.length) {
+        // Escaped quote
+        if (
+          buffer.slice(end, end + quotationLength) === quotation &&
+          buffer.slice(end + quotationLength, end + quotationLength * 2) ===
+            quotation
+        ) {
+          value += quotation;
+          end += quotationLength * 2;
+          continue;
+        }
 
-    // Check for Delimiter
-    if (this._buffer.startsWith(this._demiliter)) {
-      this._buffer = this._buffer.slice(this._demiliterLength);
-      return { type: FieldDelimiter, value: this._demiliter };
-    }
+        // Closing quote
+        if (buffer.slice(end, end + quotationLength) === quotation) {
+          buffer = buffer.slice(end + quotationLength);
+          return { type: Field, value };
+        }
 
-    // Check for Quoted String
-    if (this._buffer.startsWith(this._quotation)) {
-      // If we're flushing and the buffer doesn't end with a quote, then return null
-      // because we're not done with the quoted string
-      if (flush === false && this._buffer.endsWith(this._quotation)) {
-        return null;
-      }
-      return this.extractQuotedString();
-    }
-
-    // Check for Unquoted String
-    const match = this._matcher.exec(this._buffer);
-    if (match) {
-      // If we're flushing and the match doesn't consume the entire buffer,
-      // then return null
-      if (flush === false && match[0].length === this._buffer.length) {
-        return null;
-      }
-      this._buffer = this._buffer.slice(match[0].length);
-      return { type: Field, value: match[0] };
-    }
-
-    // Otherwise, return null
-    return null;
-  }
-
-  private extractQuotedString(): Token | null {
-    let end = this._quotationLength; // Skip the opening quote
-    let value = "";
-
-    while (end < this._buffer.length) {
-      // Escaped quote
-      if (
-        this._buffer.slice(end, end + this._quotationLength) ===
-          this.quotation &&
-        this._buffer.slice(
-          end + this._quotationLength,
-          end + this._quotationLength * 2,
-        ) === this.quotation
-      ) {
-        value += this.quotation;
-        end += this._quotationLength * 2;
-        continue;
+        value += buffer[end];
+        end++;
       }
 
-      // Closing quote
-      if (
-        this._buffer.slice(end, end + this._quotationLength) === this.quotation
-      ) {
-        this._buffer = this._buffer.slice(end + this._quotationLength);
-        return { type: Field, value };
-      }
-
-      value += this._buffer[end];
-      end++;
+      // If we get here, we've reached the end of the buffer
+      return null;
     }
-
-    // If we get here, we've reached the end of the buffer
-    return null;
   }
 }

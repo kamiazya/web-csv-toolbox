@@ -86,7 +86,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ row, chunks }) => {
           const lexer = new LexerTransformer();
-          expect(lexer.demiliter).toBe(",");
           const actual = await transform(lexer, [...chunks]);
           expect(actual).toStrictEqual([
             ...row.flatMap((value, index) => [
@@ -130,7 +129,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ demiliter, row, chunks }) => {
           const lexer = new LexerTransformer({ demiliter });
-          expect(lexer.demiliter).toBe(demiliter);
           const actual = await transform(lexer, chunks);
           const expected = [
             ...row.flatMap((value, index) => [
@@ -161,7 +159,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ row, chunks }) => {
           const lexer = new LexerTransformer();
-          expect(lexer.quotation).toBe('"');
 
           const actual = await transform(lexer, chunks);
           const expected = [
@@ -196,7 +193,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ quotation, row, chunks }) => {
           const lexer = new LexerTransformer({ quotation });
-          expect(lexer.quotation).toBe(quotation);
           const actual = await transform(lexer, chunks);
           const expected = [
             ...row.flatMap((value, index) => [

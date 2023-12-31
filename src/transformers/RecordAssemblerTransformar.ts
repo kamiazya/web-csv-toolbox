@@ -52,12 +52,11 @@ import {
 export class RecordAssemblerTransformar<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token, Record<Header[number], string | undefined>> {
-  private _fieldIndex = 0;
-  private _row: string[] = [];
-  private _header: Header | undefined;
-  private _darty = false;
-
   constructor(options: RecordAssemblerOptions<Header> = {}) {
+    let fieldIndex = 0;
+    let row: string[] = [];
+    let header: Header | undefined;
+    let darty = false;
     super({
       transform: (
         token: Token,
@@ -67,29 +66,29 @@ export class RecordAssemblerTransformar<
       ) => {
         switch (token.type) {
           case Field:
-            this._darty = true;
-            this._row[this._fieldIndex] = token.value;
+            darty = true;
+            row[fieldIndex] = token.value;
             break;
           case FieldDelimiter:
-            this._fieldIndex++;
+            fieldIndex++;
             break;
           case RecordDelimiter:
-            if (this._header === undefined) {
-              this._setHeader(this._row as unknown as Header);
+            if (header === undefined) {
+              setHeader(row as unknown as Header);
             } else {
-              if (this._darty) {
+              if (darty) {
                 const record = Object.fromEntries(
-                  this._header
+                  header
                     .filter((v) => v)
-                    .map((header, index) => [header, this._row.at(index)]),
+                    .map((header, index) => [header, row.at(index)]),
                 ) as unknown as Record<Header[number], string>;
                 controller.enqueue(record);
               }
             }
             // Reset the row fields buffer.
-            this._fieldIndex = 0;
-            this._row = new Array(this._header?.length);
-            this._darty = false;
+            fieldIndex = 0;
+            row = new Array(header?.length);
+            darty = false;
             break;
         }
       },
@@ -98,13 +97,13 @@ export class RecordAssemblerTransformar<
           Record<Header[number], string>
         >,
       ) => {
-        if (this._fieldIndex !== 0 && this._header !== undefined) {
+        if (fieldIndex !== 0 && header !== undefined) {
           // console.log('B', this.#row)
-          if (this._darty) {
+          if (darty) {
             const record = Object.fromEntries(
-              this._header
+              header
                 .filter((v) => v)
-                .map((header, index) => [header, this._row.at(index)]),
+                .map((header, index) => [header, row.at(index)]),
             ) as unknown as Record<Header[number], string>;
             controller.enqueue(record);
           }
@@ -113,17 +112,17 @@ export class RecordAssemblerTransformar<
     });
 
     if (options.header !== undefined && Array.isArray(options.header)) {
-      this._setHeader(options.header);
+      setHeader(options.header);
     }
-  }
 
-  private _setHeader(header: Header) {
-    this._header = header;
-    if (this._header.length === 0) {
-      throw new Error("The header must not be empty.");
-    }
-    if (new Set(this._header).size !== this._header.length) {
-      throw new Error("The header must not contain duplicate fields.");
+    function setHeader(header_: Header) {
+      header = header_;
+      if (header.length === 0) {
+        throw new Error("The header must not be empty.");
+      }
+      if (new Set(header).size !== header.length) {
+        throw new Error("The header must not contain duplicate fields.");
+      }
     }
   }
 }

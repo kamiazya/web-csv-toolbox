@@ -30,7 +30,8 @@
     "lint": "biome lint .",
     "check": "biome check src --apply",
     "check:no-apply": "biome check src",
-    "build": "vite build && biome check lib --apply-unsafe",
+    "build": "vite build &&",
+    "postbuild": "biome check lib/index.js lib/index.d.ts --apply-unsafe --config-path=config/build && biome check lib/index.umd.cjs --apply-unsafe --formatter-enabled=false --config-path=config/build",
     "prepare": "husky install"
   },
   "repository": {

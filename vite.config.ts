@@ -10,7 +10,6 @@ export default defineConfig({
       formats: ["es", "umd"],
     },
     outDir: "lib",
-    minify: false,
   },
   esbuild: {
     minifyIdentifiers: false,
