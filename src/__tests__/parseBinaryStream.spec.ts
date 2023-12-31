@@ -1,9 +1,9 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { SingleValueReadableStream } from "../internal/SingleValueReadableStream";
-import { escapeField } from "../internal/escapeField";
-import { parseBinaryStream } from "../parseBinaryStream.js";
-import { FC } from "./helper";
+import { SingleValueReadableStream } from "../internal/SingleValueReadableStream.ts";
+import { escapeField } from "../internal/escapeField.ts";
+import { parseBinaryStream } from "../parseBinaryStream.ts";
+import { FC } from "./helper.ts";
 
 describe("parseBinaryStream function", () => {
   it("should parse CSV", () =>

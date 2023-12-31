@@ -1,7 +1,7 @@
-import { CSVRecord, ParseOptions } from "./common/types.js";
-import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.js";
-import * as internal from "./internal/toArray.js";
-import { parseStringStream } from "./parseStringStream.js";
+import { CSVRecord, ParseOptions } from "./common/types.ts";
+import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.ts";
+import * as internal from "./internal/toArray.ts";
+import { parseStringStream } from "./parseStringStream.ts";
 
 /**
  * Parse CSV string to records.

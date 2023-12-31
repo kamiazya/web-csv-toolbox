@@ -1,8 +1,8 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/index.js";
-import { type ParseOptions } from "./common/types.js";
-import * as internal from "./internal/toArray.js";
-import { parseBinaryStream } from "./parseBinaryStream.js";
-import { parseStringStream } from "./parseStringStream.js";
+import { CSVRecord, ParseBinaryOptions } from "./common/index.ts";
+import { type ParseOptions } from "./common/types.ts";
+import * as internal from "./internal/toArray.ts";
+import { parseBinaryStream } from "./parseBinaryStream.ts";
+import { parseStringStream } from "./parseStringStream.ts";
 
 /**
  * Parse CSV Stream to records,

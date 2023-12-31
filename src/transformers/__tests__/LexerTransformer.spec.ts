@@ -1,10 +1,10 @@
 import { fc } from "@fast-check/vitest";
 import { describe as describe_, expect, it as it_ } from "vitest";
-import { FC, autoChunk, transform } from "../../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
-import { COMMA, DOUBLE_QUATE } from "../../internal/constants.js";
-import { escapeField } from "../../internal/escapeField.js";
-import { LexerTransformer } from "../LexerTransformer.js";
+import { FC, autoChunk, transform } from "../../__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.ts";
+import { COMMA, DOUBLE_QUATE } from "../../internal/constants.ts";
+import { escapeField } from "../../internal/escapeField.ts";
+import { LexerTransformer } from "../LexerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;

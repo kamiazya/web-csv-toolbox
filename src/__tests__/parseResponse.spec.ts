@@ -1,9 +1,9 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { SingleValueReadableStream } from "../internal/SingleValueReadableStream";
-import { escapeField } from "../internal/escapeField";
-import { parseResponse } from "../parseResponse";
-import { FC } from "./helper";
+import { SingleValueReadableStream } from "../internal/SingleValueReadableStream.ts";
+import { escapeField } from "../internal/escapeField.ts";
+import { parseResponse } from "../parseResponse.ts";
+import { FC } from "./helper.ts";
 
 describe("parseRequest function", () => {
   it("should throw error if content-type header is not text/csv", async () => {

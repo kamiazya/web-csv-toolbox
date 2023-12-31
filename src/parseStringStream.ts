@@ -1,9 +1,9 @@
-import { CSVRecord, ParseOptions } from "./common/types.js";
-import * as internal from "./internal/toArray.js";
+import { CSVRecord, ParseOptions } from "./common/types.ts";
+import * as internal from "./internal/toArray.ts";
 import {
   LexerTransformer,
   RecordAssemblerTransformar,
-} from "./transformers/index.js";
+} from "./transformers/index.ts";
 
 /**
  * Parse CSV string stream to records.

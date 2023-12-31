@@ -1,5 +1,5 @@
-import { CommonOptions } from "../common/types.js";
-import { CR, LF } from "./constants.js";
+import { CommonOptions } from "../common/types.ts";
+import { CR, LF } from "./constants.ts";
 
 /**
  * Assert that the options are valid.

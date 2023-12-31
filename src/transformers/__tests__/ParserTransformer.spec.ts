@@ -1,8 +1,8 @@
 import { fc, it as it_ } from "@fast-check/vitest";
 import { describe as describe_, expect } from "vitest";
-import { FC, transform } from "../../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
-import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.js";
+import { FC, transform } from "../../__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.ts";
+import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;

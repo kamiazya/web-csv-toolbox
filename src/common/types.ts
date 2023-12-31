@@ -1,4 +1,4 @@
-import { Field, FieldDelimiter, RecordDelimiter } from "./constants.js";
+import { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
  * Token is a atomic unit of a CSV file.

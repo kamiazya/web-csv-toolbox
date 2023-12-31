@@ -1,9 +1,9 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { SingleValueReadableStream } from "../internal/SingleValueReadableStream.js";
-import { escapeField } from "../internal/escapeField.js";
-import { parseStream } from "../parseStream.js";
-import { FC } from "./helper.js";
+import { SingleValueReadableStream } from "../internal/SingleValueReadableStream.ts";
+import { escapeField } from "../internal/escapeField.ts";
+import { parseStream } from "../parseStream.ts";
+import { FC } from "./helper.ts";
 
 describe("parseStream function", () => {
   it("should parse string readable stream", () =>

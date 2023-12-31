@@ -1,7 +1,7 @@
-import { CSVRecord, ParseOptions } from "./common/index.js";
-import { parseMime } from "./internal/parseMime.js";
-import * as internal from "./internal/toArray.js";
-import { parseBinaryStream } from "./parseBinaryStream.js";
+import { CSVRecord, ParseOptions } from "./common/index.ts";
+import { parseMime } from "./internal/parseMime.ts";
+import * as internal from "./internal/toArray.ts";
+import { parseBinaryStream } from "./parseBinaryStream.ts";
 
 /**
  * Parse HTTP Response what contains CSV to records,
