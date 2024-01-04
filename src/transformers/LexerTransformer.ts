@@ -142,8 +142,7 @@ export class LexerTransformer extends TransformStream<string, Token> {
 
     // Check for Quoted String
     if (this.#buffer.startsWith(this.#quotation)) {
-      // If we're flushing and the buffer doesn't end with a quote, then return null
-      // because we're not done with the quoted string
+      // If not flushing and the buffer doesn't end with a quote, then return null.
       if (flush === false && this.#buffer.endsWith(this.#quotation)) {
         return null;
       }
