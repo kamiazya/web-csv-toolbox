@@ -226,6 +226,14 @@ describe("LexerTransformer", () => {
               chunks: ["ccc2", "1", "c"],
             },
           ],
+          [
+            // field and quotation are the same, and chunks are separated by field enclosures.
+            {
+              quotation: "key",
+              row: ["key"],
+              chunks: ["keykeyk", "eykey"],
+            },
+          ],
         ],
       },
     ));
