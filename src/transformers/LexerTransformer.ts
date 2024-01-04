@@ -147,7 +147,7 @@ export class LexerTransformer extends TransformStream<string, Token> {
       if (flush === false && this.#buffer.endsWith(this.#quotation)) {
         return null;
       }
-      return this.extractQuotedString();
+      return this.extractQuotedString(flush);
     }
 
     // Check for Unquoted String
@@ -166,7 +166,7 @@ export class LexerTransformer extends TransformStream<string, Token> {
     return null;
   }
 
-  private extractQuotedString(): Token | null {
+  private extractQuotedString(flush: boolean): Token | null {
     let end = this.#quotationLength; // Skip the opening quote
     let value = "";
 
@@ -189,6 +189,27 @@ export class LexerTransformer extends TransformStream<string, Token> {
       if (
         this.#buffer.slice(end, end + this.#quotationLength) === this.quotation
       ) {
+        // If flushing and the buffer doesn't end with a quote, then return null
+        if (
+          flush === false &&
+          end + this.#quotationLength < this.#buffer.length &&
+          this.#buffer.slice(
+            end + this.#quotationLength,
+            this.#demiliterLength,
+          ) !== this.demiliter &&
+          this.#buffer.slice(
+            end + this.#quotationLength,
+            end + this.#quotationLength + 2 /** CRLF.length */,
+          ) !== CRLF &&
+          this.#buffer.slice(
+            end + this.#quotationLength,
+            end + this.#quotationLength + 1 /** LF.length */,
+          ) !== LF
+        ) {
+          return null;
+        }
+
+        // Otherwise, return the quoted string
         this.#buffer = this.#buffer.slice(end + this.#quotationLength);
         return { type: Field, value };
       }
