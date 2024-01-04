@@ -1,5 +1,13 @@
 # web-csv-toolbox
 
+## 0.3.2
+
+### Patch Changes
+
+- [`9ef79d2`](https://github.com/kamiazya/web-csv-toolbox/commit/9ef79d2a1286821580c974e1393ad464ffdb1343) Thanks [@kamiazya](https://github.com/kamiazya)! - Enhanced the extractQuotedString method in text processing to handle specific conditions more accurately.
+
+- [#27](https://github.com/kamiazya/web-csv-toolbox/pull/27) [`196d562`](https://github.com/kamiazya/web-csv-toolbox/commit/196d56226afcedf054476955f9b3fbc9745a4efc) Thanks [@dependabot](https://github.com/apps/dependabot)! - Some devDependencies updates.
+
 ## 0.3.1
 
 ### Patch Changes
