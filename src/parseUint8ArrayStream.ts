@@ -10,15 +10,15 @@ import { parseStringStream } from "./parseStringStream.js";
  * @remarks
  * If you want to parse a string, use {@link parseStringStream}.
  * @param stream CSV string to parse
- * @param options Parsing options. See {@link ParseBinaryOptions}.
+ * @param options Parsing options.
  * @returns Async iterable iterator of records.
  *
- * If you want array of records, use {@link parseBinaryStream.toArray} function.
+ * If you want array of records, use {@link parseUint8ArrayStream.toArray} function.
  *
  * @example Parsing CSV binary
  *
  * ```ts
- * import { parseBinaryStream } from 'web-csv-toolbox';
+ * import { parseUint8ArrayStream } from 'web-csv-toolbox';
  *
  * const csv = Uint8Array.from([
  *  // ...
@@ -31,12 +31,14 @@ import { parseStringStream } from "./parseStringStream.js";
  *   },
  * });
  *
- * for await (const record of parseBinaryStream(csv)) {
- * console.log(record);
+ * for await (const record of parseUint8ArrayStream(csv)) {
+ *   console.log(record);
  * }
  * ```
  */
-export async function* parseBinaryStream<Header extends ReadonlyArray<string>>(
+export async function* parseUint8ArrayStream<
+  Header extends ReadonlyArray<string>,
+>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
@@ -55,7 +57,7 @@ export async function* parseBinaryStream<Header extends ReadonlyArray<string>>(
   );
 }
 
-export namespace parseBinaryStream {
+export namespace parseUint8ArrayStream {
   /**
    * Parse CSV binary to array of records,
    * ideal for smaller data sets.
@@ -64,7 +66,7 @@ export namespace parseBinaryStream {
    *
    * @example Parsing CSV binary
    * ```ts
-   * import { parseBinaryStream } from 'web-csv-toolbox';
+   * import { parseUint8ArrayStream } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *   // ...
@@ -77,7 +79,7 @@ export namespace parseBinaryStream {
    *   },
    * });
    *
-   * const records = await parseBinaryStream.toArray(stream);
+   * const records = await parseUint8ArrayStream.toArray(stream);
    * console.log(records);
    * ```
    */
@@ -85,5 +87,9 @@ export namespace parseBinaryStream {
     stream: ReadableStream<Uint8Array>,
     options?: ParseBinaryOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parseBinaryStream.toArray = internal.toArray;
+  Object.defineProperty(parseUint8ArrayStream, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

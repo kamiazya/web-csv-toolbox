@@ -2,10 +2,10 @@ import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { SingleValueReadableStream } from "../internal/SingleValueReadableStream";
 import { escapeField } from "../internal/escapeField";
-import { parseBinaryStream } from "../parseBinaryStream.js";
+import { parseUint8ArrayStream } from "../parseUint8ArrayStream.js";
 import { FC } from "./helper";
 
-describe("parseBinaryStream function", () => {
+describe("parseUint8ArrayStream function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
@@ -50,7 +50,7 @@ describe("parseBinaryStream function", () => {
         }),
         async ({ data, csv }) => {
           let i = 0;
-          for await (const row of parseBinaryStream(csv)) {
+          for await (const row of parseUint8ArrayStream(csv)) {
             expect(data[i++]).toStrictEqual(row);
           }
         },
@@ -63,7 +63,7 @@ describe("parseBinaryStream function", () => {
     );
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
-    for await (const row of parseBinaryStream(csv)) {
+    for await (const row of parseUint8ArrayStream(csv)) {
       expect(row).toStrictEqual(expected[i++]);
     }
   });
@@ -74,7 +74,7 @@ describe("parseBinaryStream function", () => {
     ).pipeThrough(new TextEncoderStream());
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
-    for await (const row of parseBinaryStream(csv)) {
+    for await (const row of parseUint8ArrayStream(csv)) {
       expect(row).toStrictEqual(expected[i++]);
     }
   });
@@ -132,7 +132,7 @@ describe("parseBinaryStream function", () => {
         }),
         async ({ data, csv, decompression }) => {
           let i = 0;
-          for await (const row of parseBinaryStream(csv, {
+          for await (const row of parseUint8ArrayStream(csv, {
             decomposition: decompression,
           })) {
             expect(data[i++]).toStrictEqual(row);
