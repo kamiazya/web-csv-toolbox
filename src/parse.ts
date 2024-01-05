@@ -1,10 +1,19 @@
-import { CSVRecord, ParseBinaryOptions, ParseOptions } from "./common/types.js";
+import {
+  CSV,
+  CSVBinary,
+  CSVRecord,
+  CSVString,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "./common/types.js";
 import * as internal from "./internal/toArray.js";
-import { type parseBinaryStream } from "./parseBinaryStream.js";
+import { parseArrayBuffer } from "./parseArrayBuffer.js";
 import { parseResponse } from "./parseResponse.js";
 import { parseStream } from "./parseStream.js";
 import { parseString } from "./parseString.js";
 import { type parseStringStream } from "./parseStringStream.js";
+import { parseUint8Array } from "./parseUint8Array.js";
+import { type parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 /**
  * Parse CSV to records.
@@ -22,17 +31,20 @@ import { type parseStringStream } from "./parseStringStream.js";
  * @category High-level API
  *
  * @remarks
- * {@link parseString}, {@link parseBinaryStream},
+ * {@link parseString}, {@link parseUint8ArrayStream},
+ * {@link parseArrayBuffer}, {@link parseUint8Array},
  * {@link parseStringStream} and {@link parseResponse} are used internally.
  *
  * If you known the type of the CSV, it performs better to use them directly.
  *
- * | If you want to parse a...           | Use...                    | Data are treated as... |
- * | ----------------------------------- | ------------------------- | ---------------------- |
- * | {@link !String}                     | {@link parseString}    | String                 |
- * | {@link !ReadableStream}<string>     | {@link parseStringStream} | String                 |
- * | {@link !ReadableStream}<Uint8Array> | {@link parseBinaryStream} | Binary                 |
- * | {@link !Response}                   | {@link parseResponse}     | Binary                 |
+ * | If you want to parse a...           | Use...                        | Data are treated as... |
+ * | ----------------------------------- | ----------------------------- | ---------------------- |
+ * | {@link !String}                     | {@link parseString}           | String                 |
+ * | {@link !ReadableStream}<string>     | {@link parseStringStream}     | String                 |
+ * | {@link !ReadableStream}<Uint8Array> | {@link parseUint8ArrayStream} | Binary                 |
+ * | {@link !Response}                   | {@link parseResponse}         | Binary                 |
+ * | {@link !ArrayBuffer}                | {@link parseArrayBuffer}      | Binary                 |
+ * | {@link !Uint8Array}                 | {@link parseUint8Array}       | Binary                 |
  *
  * @example Parsing CSV files from strings
  *
@@ -111,7 +123,7 @@ import { type parseStringStream } from "./parseStringStream.js";
  * ```
  */
 export function parse<Header extends ReadonlyArray<string>>(
-  csv: string | ReadableStream<string>,
+  csv: CSVString,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
 /**
@@ -151,15 +163,19 @@ export function parse<Header extends ReadonlyArray<string>>(
  * ```
  */
 export function parse<Header extends ReadonlyArray<string>>(
-  csv: ReadableStream<Uint8Array> | Response,
+  csv: CSVBinary,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parse<Header extends ReadonlyArray<string>>(
-  csv: string | ReadableStream<Uint8Array | string> | Response,
+  csv: CSV,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {
     yield* parseString(csv, options);
+  } else if (csv instanceof Uint8Array) {
+    yield* parseUint8Array(csv, options);
+  } else if (csv instanceof ArrayBuffer) {
+    yield* parseArrayBuffer(csv, options);
   } else if (csv instanceof ReadableStream) {
     yield* parseStream(csv, options);
   } else if (csv instanceof Response) {
@@ -187,7 +203,7 @@ export namespace parse {
    * ```
    */
   export declare function toArray<Header extends ReadonlyArray<string>>(
-    csv: string | ReadableStream<string>,
+    csv: CSVString,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
   /**
@@ -206,8 +222,12 @@ export namespace parse {
    * ```
    */
   export declare function toArray<Header extends ReadonlyArray<string>>(
-    csv: ReadableStream<Uint8Array> | Response,
-    options?: ParseOptions<Header>,
+    csv: CSVBinary,
+    options?: ParseBinaryOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parse.toArray = internal.toArray;
+  Object.defineProperty(parse, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

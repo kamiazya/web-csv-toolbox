@@ -100,5 +100,9 @@ export namespace parseStringStream {
     stream: ReadableStream<string>,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parseStringStream.toArray = internal.toArray;
+  Object.defineProperty(parseStringStream, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

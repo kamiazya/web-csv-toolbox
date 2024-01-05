@@ -242,6 +242,8 @@ providing an intuitive and straightforward experience for users.
 
 The `input` paramater can be a `string`, a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
 of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s,
+or a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object,
+or a [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object,
 or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
 
 ### Middle-level APIs 🧱
@@ -249,16 +251,20 @@ or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
 These APIs are optimized for **Enhanced Performance and Control**,
 catering to users who need more detailed and fine-tuned functionality.
 
-- **`function parseBinaryStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinaryStream-1.html)
-  - Parses binary streams with precise control over data types.
+- **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
+  - Efficient parsing of CSV strings.
+- **`function parseArrayBuffer(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseArrayBuffer-1.html)
+  - Parse CSV Binary of ArrayBuffer.
+- **`function parseUint8Array(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8Array-1.html)
+  - Parse CSV Binary of Uint8Array.
 - **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
   - Customized parsing directly from `Response` objects.
 - **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
   - Stream-based parsing for larger or continuous data.
-- **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
-  - Efficient parsing of CSV strings.
 - **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
   - Combines string-based parsing with stream processing.
+- **`function parseUint8ArrayStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8ArrayStream-1.html)
+  - Parses binary streams with precise control over data types.
 
 ### Low-level APIs ⚙️
 

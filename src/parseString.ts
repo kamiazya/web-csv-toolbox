@@ -59,5 +59,9 @@ export namespace parseString {
     csv: string,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parseString.toArray = internal.toArray;
+  Object.defineProperty(parseString, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

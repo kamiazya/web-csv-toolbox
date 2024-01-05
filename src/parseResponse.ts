@@ -1,7 +1,7 @@
 import { CSVRecord, ParseOptions } from "./common/index.js";
 import { parseMime } from "./internal/parseMime.js";
 import * as internal from "./internal/toArray.js";
-import { parseBinaryStream } from "./parseBinaryStream.js";
+import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 /**
  * Parse HTTP Response what contains CSV to records,
@@ -53,7 +53,7 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   if (response.body === null) {
     throw new Error("Response body is null");
   }
-  return parseBinaryStream(response.body, {
+  return parseUint8ArrayStream(response.body, {
     decomposition,
     charset,
     ...options,
@@ -81,5 +81,9 @@ export namespace parseResponse {
     response: Response,
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parseResponse.toArray = internal.toArray;
+  Object.defineProperty(parseResponse, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

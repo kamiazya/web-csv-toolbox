@@ -1,8 +1,8 @@
 import { CSVRecord, ParseBinaryOptions } from "./common/index.js";
 import { type ParseOptions } from "./common/types.js";
 import * as internal from "./internal/toArray.js";
-import { parseBinaryStream } from "./parseBinaryStream.js";
 import { parseStringStream } from "./parseStringStream.js";
+import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 /**
  * Parse CSV Stream to records,
@@ -11,11 +11,11 @@ import { parseStringStream } from "./parseStringStream.js";
  * {@link !ReadableStream} of {@link !String} and {@link !Uint8Array} are supported.
  *
  * @remarks
- * {@link parseStringStream} and {@link parseBinaryStream} are used internally.
+ * {@link parseStringStream} and {@link parseUint8ArrayStream} are used internally.
  * If you known the type of the stream, it performs better to use them directly.
  *
  * If you want to parse a string, use {@link parseStringStream}.
- * If you want to parse a Uint8Array, use {@link parseBinaryStream}.
+ * If you want to parse a Uint8Array, use {@link parseUint8ArrayStream}.
  *
  * @category Middle-level API
  * @param csv CSV string to parse
@@ -81,7 +81,10 @@ export async function* parseStream<Header extends ReadonlyArray<string>>(
   if (typeof firstChunk === "string") {
     yield* parseStringStream(branch2 as ReadableStream<string>, options);
   } else if (firstChunk instanceof Uint8Array) {
-    yield* parseBinaryStream(branch2 as ReadableStream<Uint8Array>, options);
+    yield* parseUint8ArrayStream(
+      branch2 as ReadableStream<Uint8Array>,
+      options,
+    );
   }
 }
 
@@ -95,5 +98,9 @@ export namespace parseStream {
     stream: ReadableStream<Uint8Array>,
     options?: ParseBinaryOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  parseStream.toArray = internal.toArray;
+  Object.defineProperty(parseStream, "toArray", {
+    enumerable: true,
+    writable: false,
+    value: internal.toArray,
+  });
 }

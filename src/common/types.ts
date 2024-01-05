@@ -166,3 +166,28 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
   Header[number],
   string
 >;
+
+/**
+ * CSV String.
+ *
+ * @category Types
+ */
+export type CSVString = string | ReadableStream<string>;
+
+/**
+ * CSV Binary.
+ *
+ * @category Types
+ */
+export type CSVBinary =
+  | ReadableStream<Uint8Array>
+  | Response
+  | ArrayBuffer
+  | Uint8Array;
+
+/**
+ * CSV.
+ *
+ * @category Types
+ */
+export type CSV = CSVString | CSVBinary;
