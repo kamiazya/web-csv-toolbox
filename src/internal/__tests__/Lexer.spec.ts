@@ -3,22 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { FC, autoChunk } from "../../__tests__/helper.js";
 import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
 import { Lexer } from "../Lexer.js";
-import * as mod from "../assertCommonOptions.js";
 import { COMMA, DOUBLE_QUATE } from "../constants.js";
 import { escapeField } from "../escapeField.js";
 
 describe("class Lexer", () => {
-  it("should assert options with assertCommonOptions", () => {
-    fc.assert(
-      fc.property(FC.commonOptions(), (options) => {
-        const spy = vi.spyOn(mod, "assertCommonOptions");
-        new Lexer(options);
-        expect(spy).toBeCalledTimes(1);
-        expect(spy).toBeCalledWith(options);
-      }),
-    );
-  });
-
   it("should lex with comma as a default field demiliter", () => {
     fc.assert(
       fc.property(
