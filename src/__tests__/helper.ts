@@ -55,9 +55,11 @@ export namespace FC {
 
   export interface TextConstraints extends fc.StringSharedConstraints {
     kindExcludes?: readonly StringKind[];
+    excludes?: string[];
   }
 
   export function text({
+    excludes = [],
     kindExcludes = [],
     ...constraints
   }: TextConstraints = {}): fc.Arbitrary<string> {
@@ -88,28 +90,27 @@ export namespace FC {
           case "string16bits":
             return fc.string16bits(constraints);
         }
-      });
-  }
-
-  export interface FieldConstraints extends TextConstraints {
-    excludes?: string[];
+      })
+      .filter(_excludeFilter(excludes));
   }
 
   export function field({
-    excludes = [],
     minLength = 0,
     ...constraints
-  }: FieldConstraints = {}): fc.Arbitrary<string> {
-    return text({ minLength, ...constraints }).filter(_excludeFilter(excludes));
+  }: TextConstraints = {}): fc.Arbitrary<string> {
+    return text({ minLength, ...constraints });
   }
 
   export interface DemiliterConstraints extends TextConstraints {
     excludes?: string[];
   }
-  export function demiliter({
-    excludes = [],
-    ...constraints
-  }: DemiliterConstraints = {}): fc.Arbitrary<string> {
+  export function demiliter(
+    options: DemiliterConstraints | string = {},
+  ): fc.Arbitrary<string> {
+    if (typeof options === "string") {
+      return fc.constant(options);
+    }
+    const { excludes = [], ...constraints }: DemiliterConstraints = options;
     return text({
       minLength: 1,
       ...constraints,
@@ -118,20 +119,46 @@ export namespace FC {
       .filter(_excludeFilter(excludes));
   }
 
-  export interface QuoteCharConstraints extends TextConstraints {
+  export interface QuotationConstraints extends TextConstraints {
     excludes?: string[];
   }
 
-  export function quotation({
-    excludes = [],
-    ...constraints
-  }: QuoteCharConstraints = {}) {
+  export function quotation(options: QuotationConstraints | string = {}) {
+    if (typeof options === "string") {
+      return fc.constant(options);
+    }
+    const { excludes = [], ...constraints } = options;
     return text({
       ...constraints,
       minLength: 1,
     })
       .filter(_excludeFilter([...CRLF]))
       .filter(_excludeFilter(excludes));
+  }
+
+  export interface CommonOptionsConstraints {
+    demiliter?: string | DemiliterConstraints;
+    quotation?: string | QuotationConstraints;
+  }
+
+  export function commonOptions({
+    demiliter,
+    quotation,
+  }: CommonOptionsConstraints = {}) {
+    return fc
+      .record({
+        demiliter: FC.demiliter(demiliter),
+        quotation: FC.quotation(quotation),
+      })
+      .filter(
+        ({ demiliter, quotation }) =>
+          demiliter.includes(quotation) === false &&
+          quotation.includes(demiliter) === false,
+      );
+  }
+
+  export function quate() {
+    return fc.constantFrom<true | undefined>(true, undefined);
   }
 
   export function eol() {
@@ -141,7 +168,7 @@ export namespace FC {
   export interface RowConstraints {
     sparse?: boolean;
     columnsConstraints?: fc.ArrayConstraints;
-    fieldConstraints?: FieldConstraints;
+    fieldConstraints?: TextConstraints;
   }
   export function row({
     sparse = false,
@@ -184,6 +211,32 @@ export namespace FC {
       rowsConstraints,
     );
   }
+
+  // export function csv() {
+  //   return fc.gen().map((g) => {
+  //     const options = g(FC.commonOptions);
+  //     const header = g(FC.header, {
+  //       columnsConstraints: {
+  //         minLength: 1,
+  //       },
+  //     });
+  //     const rows = g(FC.csvData, {
+  //       columnsConstraints: {
+  //         minLength: header.length,
+  //         maxLength: header.length,
+  //       },
+  //     });
+  //     const quate = g(FC.quate);
+
+  //     return {
+  //       options,
+  //       header,
+  //       rows,
+  //       quate,
+  //     };
+  //   });
+
+  // }
 }
 
 export function autoChunk(
