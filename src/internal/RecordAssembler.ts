@@ -5,7 +5,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #fieldIndex = 0;
   #row: string[] = [];
   #header: Header | undefined;
-  #darty = false;
+  #dirty = false;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     if (options.header !== undefined && Array.isArray(options.header)) {
@@ -20,7 +20,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     for (const token of tokens) {
       switch (token.type) {
         case Field:
-          this.#darty = true;
+          this.#dirty = true;
           this.#row[this.#fieldIndex] = token.value;
           break;
         case FieldDelimiter:
@@ -30,7 +30,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
           if (this.#header === undefined) {
             this.#setHeader(this.#row as unknown as Header);
           } else {
-            if (this.#darty) {
+            if (this.#dirty) {
               const record = Object.fromEntries(
                 this.#header
                   .filter((v) => v)
@@ -42,7 +42,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
           // Reset the row fields buffer.
           this.#fieldIndex = 0;
           this.#row = new Array(this.#header?.length);
-          this.#darty = false;
+          this.#dirty = false;
           break;
       }
     }
@@ -54,7 +54,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
 
   public *flush(): Generator<CSVRecord<Header>> {
     if (this.#fieldIndex !== 0 && this.#header !== undefined) {
-      if (this.#darty) {
+      if (this.#dirty) {
         const record = Object.fromEntries(
           this.#header
             .filter((v) => v)
