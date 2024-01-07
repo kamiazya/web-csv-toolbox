@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { CRLF, LF } from "../internal/constants.js";
 
-export async function transform<I, O, T extends TransformStream<I, O>>(
-  transformer: T,
+export async function transform<I, O>(
+  transformer: TransformStream<I, O>,
   inputs: I[],
-) {
+): Promise<O[]> {
   const copy = [...inputs];
   const rows: any[] = [];
   await new ReadableStream({
@@ -228,15 +228,4 @@ export function autoChunk(
     cur = next;
   }
   return chunks;
-}
-
-export function chunker(
-  gen: fc.GeneratorValue,
-  minLenght?: number,
-): (
-  template: { raw: readonly string[] | ArrayLike<string> },
-  ...substitutions: any[]
-) => string[] {
-  return (template, ...substitutions) =>
-    autoChunk(gen, String.raw(template, ...substitutions), minLenght);
 }

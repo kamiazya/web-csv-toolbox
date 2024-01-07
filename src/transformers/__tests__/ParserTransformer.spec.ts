@@ -59,10 +59,9 @@ describe("ParserTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(
-            new RecordAssemblerTransformar(),
+          const actual = await transform(new RecordAssemblerTransformar(), [
             tokens,
-          );
+          ]);
           expect(actual).toEqual(expected);
         },
       ),
@@ -105,7 +104,7 @@ describe("ParserTransformer", () => {
           const parser = new RecordAssemblerTransformar({
             header,
           });
-          const actual = await transform(parser, tokens);
+          const actual = await transform(parser, [tokens]);
           expect(actual).toEqual(expected);
         },
       ),

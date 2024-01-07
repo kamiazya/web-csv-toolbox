@@ -1,10 +1,4 @@
-import {
-  CommonOptions,
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-  Token,
-} from "../common/index.js";
+import { CommonOptions, Token } from "../common/index.js";
 import { Lexer } from "../internal/Lexer.js";
 
 /**
@@ -15,14 +9,18 @@ import { Lexer } from "../internal/Lexer.js";
  * @example Parse a CSV with headers by data
  * ```ts
  * new ReadableStream({
- *  start(controller) {
- *   controller.enqueue("name,age\r\n");
- *  controller.enqueue("Alice,20\r\n");
- * controller.close();
- * }
+ *   start(controller) {
+ *     controller.enqueue("name,age\r\n");
+ *     controller.enqueue("Alice,20\r\n");
+ *     controller.close();
+ *   }
  * })
- * .pipeThrough(new LexerTransformer())
- * .pipeTo(new WritableStream({ write(token) { console.log(token); }}));
+ *   .pipeThrough(new LexerTransformer())
+ *   .pipeTo(new WritableStream({ write(tokens) {
+ *     for (const token of tokens) {
+ *       console.log(token);
+ *     }
+ *   }}));
  * // { type: Field, value: "name" }
  * // { type: FieldDelimiter, value: "," }
  * // { type: Field, value: "age" }
@@ -33,24 +31,17 @@ import { Lexer } from "../internal/Lexer.js";
  * // { type: RecordDelimiter, value: "\r\n" }
  * ```
  */
-export class LexerTransformer extends TransformStream<string, Token> {
+export class LexerTransformer extends TransformStream<string, Token[]> {
   constructor(options: CommonOptions = {}) {
     const lexer = new Lexer(options);
     super({
-      transform: (
-        chunk: string,
-        controller: TransformStreamDefaultController<Token>,
-      ) => {
+      transform: (chunk, controller) => {
         if (chunk.length !== 0) {
-          for (const token of lexer.lex(chunk, true)) {
-            controller.enqueue(token);
-          }
+          controller.enqueue(lexer.lex(chunk, true));
         }
       },
-      flush: (controller: TransformStreamDefaultController<Token>) => {
-        for (const token of lexer.flush()) {
-          controller.enqueue(token);
-        }
+      flush: (controller) => {
+        controller.enqueue(lexer.flush());
       },
     });
   }

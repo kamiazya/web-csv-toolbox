@@ -51,7 +51,7 @@ import {
  */
 export class RecordAssemblerTransformar<
   Header extends ReadonlyArray<string>,
-> extends TransformStream<Token, Record<Header[number], string | undefined>> {
+> extends TransformStream<Token[], Record<Header[number], string | undefined>> {
   #fieldIndex = 0;
   #row: string[] = [];
   #header: Header | undefined;
@@ -59,47 +59,38 @@ export class RecordAssemblerTransformar<
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     super({
-      transform: (
-        token: Token,
-        controller: TransformStreamDefaultController<
-          Record<Header[number], string>
-        >,
-      ) => {
-        switch (token.type) {
-          case Field:
-            this.#darty = true;
-            this.#row[this.#fieldIndex] = token.value;
-            break;
-          case FieldDelimiter:
-            this.#fieldIndex++;
-            break;
-          case RecordDelimiter:
-            if (this.#header === undefined) {
-              this.#setHeader(this.#row as unknown as Header);
-            } else {
-              if (this.#darty) {
-                const record = Object.fromEntries(
-                  this.#header
-                    .filter((v) => v)
-                    .map((header, index) => [header, this.#row.at(index)]),
-                ) as unknown as Record<Header[number], string>;
-                controller.enqueue(record);
+      transform: (tokens, controller) => {
+        for (const token of tokens)
+          switch (token.type) {
+            case Field:
+              this.#darty = true;
+              this.#row[this.#fieldIndex] = token.value;
+              break;
+            case FieldDelimiter:
+              this.#fieldIndex++;
+              break;
+            case RecordDelimiter:
+              if (this.#header === undefined) {
+                this.#setHeader(this.#row as unknown as Header);
+              } else {
+                if (this.#darty) {
+                  const record = Object.fromEntries(
+                    this.#header
+                      .filter((v) => v)
+                      .map((header, index) => [header, this.#row.at(index)]),
+                  ) as unknown as Record<Header[number], string>;
+                  controller.enqueue(record);
+                }
               }
-            }
-            // Reset the row fields buffer.
-            this.#fieldIndex = 0;
-            this.#row = new Array(this.#header?.length);
-            this.#darty = false;
-            break;
-        }
+              // Reset the row fields buffer.
+              this.#fieldIndex = 0;
+              this.#row = new Array(this.#header?.length);
+              this.#darty = false;
+              break;
+          }
       },
-      flush: (
-        controller: TransformStreamDefaultController<
-          Record<Header[number], string>
-        >,
-      ) => {
+      flush: (controller) => {
         if (this.#fieldIndex !== 0 && this.#header !== undefined) {
-          // console.log('B', this.#row)
           if (this.#darty) {
             const record = Object.fromEntries(
               this.#header
