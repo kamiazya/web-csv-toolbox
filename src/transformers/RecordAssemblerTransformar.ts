@@ -5,6 +5,7 @@ import {
   RecordDelimiter,
   Token,
 } from "../common/index.js";
+import { RecordAssembler } from "../internal/RecordAssembler.js";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -52,69 +53,20 @@ import {
 export class RecordAssemblerTransformar<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token[], Record<Header[number], string | undefined>> {
-  #fieldIndex = 0;
-  #row: string[] = [];
-  #header: Header | undefined;
-  #darty = false;
-
   constructor(options: RecordAssemblerOptions<Header> = {}) {
+    const assembler = new RecordAssembler(options);
+
     super({
       transform: (tokens, controller) => {
-        for (const token of tokens)
-          switch (token.type) {
-            case Field:
-              this.#darty = true;
-              this.#row[this.#fieldIndex] = token.value;
-              break;
-            case FieldDelimiter:
-              this.#fieldIndex++;
-              break;
-            case RecordDelimiter:
-              if (this.#header === undefined) {
-                this.#setHeader(this.#row as unknown as Header);
-              } else {
-                if (this.#darty) {
-                  const record = Object.fromEntries(
-                    this.#header
-                      .filter((v) => v)
-                      .map((header, index) => [header, this.#row.at(index)]),
-                  ) as unknown as Record<Header[number], string>;
-                  controller.enqueue(record);
-                }
-              }
-              // Reset the row fields buffer.
-              this.#fieldIndex = 0;
-              this.#row = new Array(this.#header?.length);
-              this.#darty = false;
-              break;
-          }
+        for (const token of assembler.assemble(tokens, false)) {
+          controller.enqueue(token);
+        }
       },
       flush: (controller) => {
-        if (this.#fieldIndex !== 0 && this.#header !== undefined) {
-          if (this.#darty) {
-            const record = Object.fromEntries(
-              this.#header
-                .filter((v) => v)
-                .map((header, index) => [header, this.#row.at(index)]),
-            ) as unknown as Record<Header[number], string>;
-            controller.enqueue(record);
-          }
+        for (const token of assembler.flush()) {
+          controller.enqueue(token);
         }
       },
     });
-
-    if (options.header !== undefined && Array.isArray(options.header)) {
-      this.#setHeader(options.header);
-    }
-  }
-
-  #setHeader(header: Header) {
-    this.#header = header;
-    if (this.#header.length === 0) {
-      throw new Error("The header must not be empty.");
-    }
-    if (new Set(this.#header).size !== this.#header.length) {
-      throw new Error("The header must not contain duplicate fields.");
-    }
   }
 }

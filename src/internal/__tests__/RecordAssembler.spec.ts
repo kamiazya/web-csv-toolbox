@@ -1,26 +1,24 @@
-import { fc, it as it_ } from "@fast-check/vitest";
-import { describe as describe_, expect } from "vitest";
-import { FC, transform } from "../../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
-import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.js";
+import { fc } from "@fast-check/vitest";
+import { describe, expect, it } from "vitest";
+import { FC } from "../../__tests__/helper";
+import { Token } from "../../common";
+import { Field, FieldDelimiter, RecordDelimiter } from "../../common/constants";
+import { RecordAssembler } from "../RecordAssembler.js";
 
-const describe = describe_.concurrent;
-const it = it_.concurrent;
-
-describe("ParserTransformer", () => {
-  it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformar({ header: [] })).toThrowError(
+describe("class RecordAssembler", () => {
+  it("should assemble records", () => {
+    expect(() => new RecordAssembler({ header: [] })).toThrowError(
       "The header must not be empty.",
     );
   });
 
-  it("should throw error if header has duplicated fields", () => {
-    expect(
-      () => new RecordAssemblerTransformar({ header: ["a", "a"] }),
-    ).toThrowError("The header must not contain duplicate fields.");
+  it("should assemble records", () => {
+    expect(() => new RecordAssembler({ header: ["a", "a"] })).toThrowError(
+      "The header must not contain duplicate fields.",
+    );
   });
 
-  it("should parse a CSV with headers by data", () =>
+  it("should parse a CSV with headers by data", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
@@ -34,22 +32,22 @@ describe("ParserTransformer", () => {
           });
           const tokens = [
             // generate header tokens
-            ...header.flatMap((field, i) => [
+            ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
               i === header.length - 1
                 ? { type: RecordDelimiter, value: EOL }
                 : { type: FieldDelimiter, value: "," },
             ]),
             // generate rows tokens
-            ...rows.flatMap((row) =>
+            ...rows.flatMap<Token>((row) =>
               // generate row tokens
-              row.flatMap((field, j) => [
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
                 { type: FieldDelimiter, value: "," },
                 // generate record delimiter token
-                ...(j === row.length - 1
+                ...((j === row.length - 1
                   ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -59,15 +57,15 @@ describe("ParserTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new RecordAssemblerTransformar(), [
-            tokens,
-          ]);
+          const assembler = new RecordAssembler();
+          const actual = [...assembler.assemble(tokens, true)];
           expect(actual).toEqual(expected);
         },
       ),
-    ));
+    );
+  });
 
-  it("should parse a CSV with headers by option", () =>
+  it("should parse a CSV with headers by option", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
@@ -79,14 +77,14 @@ describe("ParserTransformer", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
-            ...rows.flatMap((row) =>
-              row.flatMap((field, j) => [
+          const tokens: Token[] = [
+            ...rows.flatMap<Token>((row) =>
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
                 { type: FieldDelimiter, value: "," },
-                ...(j === row.length - 1
+                ...((j === row.length - 1
                   ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -101,12 +99,11 @@ describe("ParserTransformer", () => {
           };
         }),
         async ({ header, tokens, expected }) => {
-          const parser = new RecordAssemblerTransformar({
-            header,
-          });
-          const actual = await transform(parser, [tokens]);
+          const assembler = new RecordAssembler({ header });
+          const actual = [...assembler.assemble(tokens, true)];
           expect(actual).toEqual(expected);
         },
       ),
-    ));
+    );
+  });
 });
