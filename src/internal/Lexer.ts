@@ -30,7 +30,7 @@ export class Lexer {
     );
   }
 
-  public lex(chunk: string | null, buffering = false): Token[] {
+  public lex(chunk: string | null, buffering = false): IterableIterator<Token> {
     if (!buffering) {
       this.#flush = true;
     }
@@ -38,7 +38,7 @@ export class Lexer {
       this.#buffer += chunk;
     }
 
-    return [...this.#tokens()];
+    return this.#tokens();
   }
 
   public flush(): Token[] {

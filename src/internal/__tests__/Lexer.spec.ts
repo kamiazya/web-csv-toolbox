@@ -39,7 +39,7 @@ describe("class Lexer", () => {
         }),
         ({ csv, expected }) => {
           const lexer = new Lexer();
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -78,7 +78,7 @@ describe("class Lexer", () => {
         }),
         ({ csv, expected }) => {
           const lexer = new Lexer();
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -123,7 +123,7 @@ describe("class Lexer", () => {
         }),
         ({ delimiter, csv, expected }) => {
           const lexer = new Lexer({ delimiter });
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -165,7 +165,7 @@ describe("class Lexer", () => {
         }),
         ({ quotation, csv, expected }) => {
           const lexer = new Lexer({ quotation });
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -207,7 +207,7 @@ describe("class Lexer", () => {
         }),
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -271,7 +271,7 @@ describe("class Lexer", () => {
         }),
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
-          const actual = lexer.lex(csv);
+          const actual = [...lexer.lex(csv)];
           expect(actual).toStrictEqual(expected);
         },
       ),
@@ -341,13 +341,13 @@ describe("class Lexer", () => {
         ({ options, csv, chunks }) => {
           // lexer1 is used to compare with lexer2
           const lexer1 = new Lexer(options);
-          const expected = lexer1.lex(csv);
+          const expected = [...lexer1.lex(csv)];
 
           // lexer2 is used to lex chunked data
           const lexer2 = new Lexer(options);
           const actual = [
             // lex chunked data
-            ...chunks.flatMap((chunk) => lexer2.lex(chunk, true)),
+            ...chunks.flatMap((chunk) => [...lexer2.lex(chunk, true)]),
             // flush lexer2
             ...lexer2.flush(),
           ];

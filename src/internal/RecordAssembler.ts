@@ -14,9 +14,9 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   }
 
   public *assemble(
-    tokens: Token[],
+    tokens: Iterable<Token>,
     flush = true,
-  ): Generator<CSVRecord<Header>> {
+  ): IterableIterator<CSVRecord<Header>> {
     for (const token of tokens) {
       switch (token.type) {
         case Field:

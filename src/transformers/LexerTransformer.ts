@@ -37,7 +37,7 @@ export class LexerTransformer extends TransformStream<string, Token[]> {
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {
-          controller.enqueue(lexer.lex(chunk, true));
+          controller.enqueue([...lexer.lex(chunk, true)]);
         }
       },
       flush: (controller) => {
