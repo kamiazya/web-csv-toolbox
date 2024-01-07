@@ -5,8 +5,8 @@ import { COMMA, CRLF, DOUBLE_QUATE, LF } from "./constants.js";
 import { escapeRegExp } from "./escapeRegExp.js";
 
 export class Lexer {
-  #demiliter: string;
-  #demiliterLength: number;
+  #delimiter: string;
+  #delimiterLength: number;
   #quotation: string;
   #quotationLength: number;
   #matcher: RegExp;
@@ -14,16 +14,16 @@ export class Lexer {
   #flush = false;
 
   constructor({
-    demiliter = COMMA,
+    delimiter = COMMA,
     quotation = DOUBLE_QUATE,
   }: CommonOptions = {}) {
-    assertCommonOptions({ demiliter, quotation });
-    this.#demiliter = demiliter;
-    this.#demiliterLength = demiliter.length;
+    assertCommonOptions({ delimiter, quotation });
+    this.#delimiter = delimiter;
+    this.#delimiterLength = delimiter.length;
     this.#quotation = quotation;
     this.#quotationLength = quotation.length;
 
-    const d = escapeRegExp(demiliter);
+    const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
       `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
@@ -96,9 +96,9 @@ export class Lexer {
     }
 
     // Check for Delimiter
-    if (this.#buffer.startsWith(this.#demiliter)) {
-      this.#buffer = this.#buffer.slice(this.#demiliterLength);
-      return { type: FieldDelimiter, value: this.#demiliter };
+    if (this.#buffer.startsWith(this.#delimiter)) {
+      this.#buffer = this.#buffer.slice(this.#delimiterLength);
+      return { type: FieldDelimiter, value: this.#delimiter };
     }
 
     // Check for Quoted String
@@ -155,8 +155,8 @@ export class Lexer {
           end + this.#quotationLength < this.#buffer.length &&
           this.#buffer.slice(
             end + this.#quotationLength,
-            this.#demiliterLength,
-          ) !== this.#demiliter &&
+            this.#delimiterLength,
+          ) !== this.#delimiter &&
           this.#buffer.slice(
             end + this.#quotationLength,
             end + this.#quotationLength + 2 /** CRLF.length */,

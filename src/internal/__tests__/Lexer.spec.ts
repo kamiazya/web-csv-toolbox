@@ -7,7 +7,7 @@ import { COMMA, DOUBLE_QUATE } from "../constants.js";
 import { escapeField } from "../escapeField.js";
 
 describe("class Lexer", () => {
-  it("should lex with comma as a default field demiliter", () => {
+  it("should lex with comma as a default field delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -85,18 +85,18 @@ describe("class Lexer", () => {
     );
   });
 
-  it("should lex with with user given demiliter", () => {
+  it("should lex with with user given delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
-          const { demiliter } = g(FC.commonOptions, {
+          const { delimiter } = g(FC.commonOptions, {
             quotation: DOUBLE_QUATE,
           });
 
           const row = g(FC.row);
           const csv = row
-            .map((field) => escapeField(field, { demiliter }))
-            .join(demiliter);
+            .map((field) => escapeField(field, { delimiter }))
+            .join(delimiter);
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
@@ -113,16 +113,16 @@ describe("class Lexer", () => {
                 ? [
                     {
                       type: FieldDelimiter,
-                      value: demiliter,
+                      value: delimiter,
                     },
                   ]
                 : []),
             ]),
           ];
-          return { demiliter, csv, expected };
+          return { delimiter, csv, expected };
         }),
-        ({ demiliter, csv, expected }) => {
-          const lexer = new Lexer({ demiliter });
+        ({ delimiter, csv, expected }) => {
+          const lexer = new Lexer({ delimiter });
           const actual = lexer.lex(csv);
           expect(actual).toStrictEqual(expected);
         },
@@ -134,7 +134,7 @@ describe("class Lexer", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
-          const { quotation } = g(FC.commonOptions, { demiliter: COMMA });
+          const { quotation } = g(FC.commonOptions, { delimiter: COMMA });
           const row = g(FC.row);
           const csv = row
             .map((field) => escapeField(field, { quotation }))
@@ -172,7 +172,7 @@ describe("class Lexer", () => {
     );
   });
 
-  it("should lex with with user given quotation and demiliter", () => {
+  it("should lex with with user given quotation and delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -180,7 +180,7 @@ describe("class Lexer", () => {
           const row = g(FC.row);
           const csv = row
             .map((field) => escapeField(field, options))
-            .join(options.demiliter);
+            .join(options.delimiter);
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
@@ -197,7 +197,7 @@ describe("class Lexer", () => {
                 ? [
                     {
                       type: FieldDelimiter,
-                      value: options.demiliter,
+                      value: options.delimiter,
                     },
                   ]
                 : []),
@@ -214,7 +214,7 @@ describe("class Lexer", () => {
     );
   });
 
-  it("should detect reccord demiliter", () => {
+  it("should detect reccord delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -228,7 +228,7 @@ describe("class Lexer", () => {
               .map((row) =>
                 row
                   .map((field) => escapeField(field, { ...options, quate }))
-                  .join(options.demiliter),
+                  .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
           const expected = [
@@ -248,7 +248,7 @@ describe("class Lexer", () => {
                   ? [
                       {
                         type: FieldDelimiter,
-                        value: options.demiliter,
+                        value: options.delimiter,
                       },
                     ]
                   : []),
@@ -263,7 +263,7 @@ describe("class Lexer", () => {
                   ]
                 : []),
             ]),
-            // if EOF line demiliter is present,
+            // if EOF line delimiter is present,
             // it should be followed by a record delimiter.
             ...(EOF ? [{ type: RecordDelimiter, value: eol }] : []),
           ];
@@ -279,14 +279,14 @@ describe("class Lexer", () => {
         examples: [
           [
             {
-              options: { demiliter: COMMA, quotation: DOUBLE_QUATE },
+              options: { delimiter: COMMA, quotation: DOUBLE_QUATE },
               csv: "\n",
               expected: [{ type: RecordDelimiter, value: "\n" }],
             },
           ],
           [
             {
-              options: { demiliter: COMMA, quotation: DOUBLE_QUATE },
+              options: { delimiter: COMMA, quotation: DOUBLE_QUATE },
               csv: "\r\n",
               expected: [{ type: RecordDelimiter, value: "\r\n" }],
             },
@@ -328,7 +328,7 @@ describe("class Lexer", () => {
               .map((row) =>
                 row
                   .map((field) => escapeField(field, { ...options, quate }))
-                  .join(options.demiliter),
+                  .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
           const chunks = autoChunk(g, csv);

@@ -8,18 +8,18 @@ describe("function assertCommonOptions", () => {
     expect(() =>
       assertCommonOptions({
         quotation: "",
-        demiliter: DOUBLE_QUATE,
+        delimiter: DOUBLE_QUATE,
       }),
     ).toThrow("quotation must not be empty");
   });
 
-  it("should be throw error if demiliter is a empty character", () => {
+  it("should be throw error if delimiter is a empty character", () => {
     expect(() =>
       assertCommonOptions({
         quotation: COMMA,
-        demiliter: "",
+        delimiter: "",
       }),
-    ).toThrow("demiliter must not be empty");
+    ).toThrow("delimiter must not be empty");
   });
 
   it("should be throw error if quotation includes CR or LF", () =>
@@ -35,7 +35,7 @@ describe("function assertCommonOptions", () => {
           expect(() =>
             assertCommonOptions({
               quotation: invalidQuotation,
-              demiliter: DOUBLE_QUATE,
+              delimiter: DOUBLE_QUATE,
             }),
           ).toThrow("quotation must not include CR or LF");
         },
@@ -52,7 +52,7 @@ describe("function assertCommonOptions", () => {
       },
     ));
 
-  it("should be throw error if demiliter and quotation include each other as a substring", () =>
+  it("should be throw error if delimiter and quotation include each other as a substring", () =>
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -64,14 +64,14 @@ describe("function assertCommonOptions", () => {
         }),
         ({ A, B }) => {
           expect(() =>
-            assertCommonOptions({ quotation: A, demiliter: B }),
+            assertCommonOptions({ quotation: A, delimiter: B }),
           ).toThrow(
-            "demiliter and quotation must not include each other as a substring",
+            "delimiter and quotation must not include each other as a substring",
           );
           expect(() =>
-            assertCommonOptions({ quotation: B, demiliter: A }),
+            assertCommonOptions({ quotation: B, delimiter: A }),
           ).toThrow(
-            "demiliter and quotation must not include each other as a substring",
+            "delimiter and quotation must not include each other as a substring",
           );
         },
       ),

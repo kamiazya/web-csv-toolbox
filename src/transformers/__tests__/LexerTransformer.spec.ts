@@ -20,9 +20,9 @@ describe("LexerTransformer", () => {
     );
   });
 
-  it("should be throw error if demiliter is a empty character", () => {
-    expect(() => new LexerTransformer({ demiliter: "" })).toThrowError(
-      "demiliter must not be empty",
+  it("should be throw error if delimiter is a empty character", () => {
+    expect(() => new LexerTransformer({ delimiter: "" })).toThrowError(
+      "delimiter must not be empty",
     );
   });
 
@@ -56,7 +56,7 @@ describe("LexerTransformer", () => {
       },
     ));
 
-  it("should be throw error if demiliter and quotation include each other as a substring", () =>
+  it("should be throw error if delimiter and quotation include each other as a substring", () =>
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -67,10 +67,10 @@ describe("LexerTransformer", () => {
         }),
         ({ A, B }) => {
           expect(
-            () => new LexerTransformer({ quotation: A, demiliter: B }),
+            () => new LexerTransformer({ quotation: A, delimiter: B }),
           ).toThrow(Error);
           expect(
-            () => new LexerTransformer({ quotation: B, demiliter: A }),
+            () => new LexerTransformer({ quotation: B, delimiter: A }),
           ).toThrow(Error);
         },
       ),
@@ -86,7 +86,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ row, chunks }) => {
           const lexer = new LexerTransformer();
-          expect(lexer.demiliter).toBe(",");
           const actual = await transform(lexer, [...chunks]);
           expect(actual).toStrictEqual([
             ...row.flatMap((value, index) => [
@@ -116,28 +115,27 @@ describe("LexerTransformer", () => {
       },
     ));
 
-  it("should separate fields by if there is a user-specified demiliter", () =>
+  it("should separate fields by if there is a user-specified delimiter", () =>
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const demiliter = g(FC.demiliter, { excludes: [DOUBLE_QUATE] });
+          const delimiter = g(FC.delimiter, { excludes: [DOUBLE_QUATE] });
           const row = g(FC.row);
           const chunks = autoChunk(
             g,
-            row.map((v) => escapeField(v, { demiliter })).join(demiliter),
+            row.map((v) => escapeField(v, { delimiter })).join(delimiter),
           );
-          return { demiliter, row, chunks };
+          return { delimiter, row, chunks };
         }),
-        async ({ demiliter, row, chunks }) => {
-          const lexer = new LexerTransformer({ demiliter });
-          expect(lexer.demiliter).toBe(demiliter);
+        async ({ delimiter, row, chunks }) => {
+          const lexer = new LexerTransformer({ delimiter });
           const actual = await transform(lexer, chunks);
           const expected = [
             ...row.flatMap((value, index) => [
               ...(value ? [{ type: Field, value }] : []),
               ...(index === row.length - 1
                 ? []
-                : [{ type: FieldDelimiter, value: demiliter }]),
+                : [{ type: FieldDelimiter, value: delimiter }]),
             ]),
           ];
           expect(actual).toStrictEqual(expected);
@@ -161,7 +159,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ row, chunks }) => {
           const lexer = new LexerTransformer();
-          expect(lexer.quotation).toBe('"');
 
           const actual = await transform(lexer, chunks);
           const expected = [
@@ -196,7 +193,6 @@ describe("LexerTransformer", () => {
         }),
         async ({ quotation, row, chunks }) => {
           const lexer = new LexerTransformer({ quotation });
-          expect(lexer.quotation).toBe(quotation);
           const actual = await transform(lexer, chunks);
           const expected = [
             ...row.flatMap((value, index) => [

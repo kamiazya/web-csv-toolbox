@@ -101,16 +101,16 @@ export namespace FC {
     return text({ minLength, ...constraints });
   }
 
-  export interface DemiliterConstraints extends TextConstraints {
+  export interface DelimiterConstraints extends TextConstraints {
     excludes?: string[];
   }
-  export function demiliter(
-    options: DemiliterConstraints | string = {},
+  export function delimiter(
+    options: DelimiterConstraints | string = {},
   ): fc.Arbitrary<string> {
     if (typeof options === "string") {
       return fc.constant(options);
     }
-    const { excludes = [], ...constraints }: DemiliterConstraints = options;
+    const { excludes = [], ...constraints }: DelimiterConstraints = options;
     return text({
       minLength: 1,
       ...constraints,
@@ -137,23 +137,23 @@ export namespace FC {
   }
 
   export interface CommonOptionsConstraints {
-    demiliter?: string | DemiliterConstraints;
+    delimiter?: string | DelimiterConstraints;
     quotation?: string | QuotationConstraints;
   }
 
   export function commonOptions({
-    demiliter,
+    delimiter,
     quotation,
   }: CommonOptionsConstraints = {}) {
     return fc
       .record({
-        demiliter: FC.demiliter(demiliter),
+        delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
       })
       .filter(
-        ({ demiliter, quotation }) =>
-          demiliter.includes(quotation) === false &&
-          quotation.includes(demiliter) === false,
+        ({ delimiter, quotation }) =>
+          delimiter.includes(quotation) === false &&
+          quotation.includes(delimiter) === false,
       );
   }
 
@@ -211,32 +211,6 @@ export namespace FC {
       rowsConstraints,
     );
   }
-
-  // export function csv() {
-  //   return fc.gen().map((g) => {
-  //     const options = g(FC.commonOptions);
-  //     const header = g(FC.header, {
-  //       columnsConstraints: {
-  //         minLength: 1,
-  //       },
-  //     });
-  //     const rows = g(FC.csvData, {
-  //       columnsConstraints: {
-  //         minLength: header.length,
-  //         maxLength: header.length,
-  //       },
-  //     });
-  //     const quate = g(FC.quate);
-
-  //     return {
-  //       options,
-  //       header,
-  //       rows,
-  //       quate,
-  //     };
-  //   });
-
-  // }
 }
 
 export function autoChunk(

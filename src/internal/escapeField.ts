@@ -10,18 +10,18 @@ const REPLACED_PATTERN_CACHE = new Map<string, string>();
 const CHECK_CACHE = new Map<string, (v: string) => boolean>();
 
 /**
- * Check function for special case of demiliter is repetition of one type of character.
+ * Check function for special case of delimiter is repetition of one type of character.
  *
- * Check if the value starts or ends with the demiliter character.
+ * Check if the value starts or ends with the delimiter character.
  *
- * @param demiliterChar demiliter character, which is assumed to be a single character.
+ * @param delimiterChar delimiter character, which is assumed to be a single character.
  * @returns
  */
-function specialCheckForDemiliterIsRepetitionOfOneTypeOfCharacter(
-  demiliterChar: string,
+function specialCheckFordelimiterIsRepetitionOfOneTypeOfCharacter(
+  delimiterChar: string,
 ): (v: string) => boolean {
   return (v: string) =>
-    v.startsWith(demiliterChar) || v.endsWith(demiliterChar);
+    v.startsWith(delimiterChar) || v.endsWith(delimiterChar);
 }
 
 /**
@@ -36,7 +36,7 @@ export function escapeField(
   value: string,
   {
     quotation = DOUBLE_QUATE,
-    demiliter = COMMA,
+    delimiter = COMMA,
     quate,
   }: EscapeFieldOptions = {},
 ): string {
@@ -51,18 +51,18 @@ export function escapeField(
     REPLACED_PATTERN_CACHE.set(replacedPattern, replacedPattern);
   }
   let check: (v: string) => boolean;
-  if (CHECK_CACHE.has(demiliter)) {
+  if (CHECK_CACHE.has(delimiter)) {
     // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    check = CHECK_CACHE.get(demiliter)!;
+    check = CHECK_CACHE.get(delimiter)!;
   } else {
-    const a = new Set([...demiliter]);
-    if (demiliter.length > 1 && a.size === 1) {
+    const a = new Set([...delimiter]);
+    if (delimiter.length > 1 && a.size === 1) {
       const [d] = [...a];
-      check = specialCheckForDemiliterIsRepetitionOfOneTypeOfCharacter(d);
+      check = specialCheckFordelimiterIsRepetitionOfOneTypeOfCharacter(d);
     } else {
       check = () => false;
     }
-    CHECK_CACHE.set(demiliter, check);
+    CHECK_CACHE.set(delimiter, check);
   }
 
   const contents = value.replaceAll(quotation, replacedPattern);
@@ -70,7 +70,7 @@ export function escapeField(
   if (
     quate ||
     contents.includes(quotation) ||
-    contents.includes(demiliter) ||
+    contents.includes(delimiter) ||
     contents.includes("\n") ||
     contents.includes("\r") ||
     check(contents)

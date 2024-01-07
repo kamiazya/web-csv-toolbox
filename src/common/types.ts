@@ -40,7 +40,7 @@ export interface CommonOptions {
    * This library supports multi-character delimiters.
    * @default ','
    */
-  demiliter?: string;
+  delimiter?: string;
   /**
    * CSV field quotation.
    *
