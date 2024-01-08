@@ -12,7 +12,9 @@ describe("class Lexer", () => {
       fc.property(
         fc.gen().map((g) => {
           const row = g(FC.row);
-          const csv = row.map((field) => escapeField(field, { quote: true, quotation: '"' })).join(",");
+          const csv = row
+            .map((field) => escapeField(field, { quote: true, quotation: '"' }))
+            .join(",");
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
@@ -39,7 +41,7 @@ describe("class Lexer", () => {
           const row = g(FC.row);
           const csv = row
             // field should be escaped with double quote
-            .map((field) => escapeField(field, { quate: true, quotation: '"' }))
+            .map((field) => escapeField(field, { quote: true, quotation: '"' }))
             .join(",");
           const expected = [
             ...row.flatMap((field, i) => [
@@ -161,7 +163,9 @@ describe("class Lexer", () => {
             data
               .map((row) =>
                 row
-                  .map((field) => escapeField(field, { ...options, quate }))
+                  .map((field) =>
+                    escapeField(field, { ...options, quote: quate }),
+                  )
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
@@ -206,7 +210,9 @@ describe("class Lexer", () => {
             data
               .map((row) =>
                 row
-                  .map((field) => escapeField(field, { ...options, quate }))
+                  .map((field) =>
+                    escapeField(field, { ...options, quote: quate }),
+                  )
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");

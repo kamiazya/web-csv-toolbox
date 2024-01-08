@@ -3,7 +3,7 @@ import { type assertCommonOptions } from "./assertCommonOptions.js";
 import { COMMA, DOUBLE_QUATE } from "./constants.js";
 
 export interface EscapeFieldOptions extends CommonOptions {
-  quate?: true;
+  quote?: true;
 }
 
 const REPLACED_PATTERN_CACHE = new Map<string, string>();
@@ -35,7 +35,7 @@ export function escapeField(
   {
     quotation = DOUBLE_QUATE,
     delimiter = COMMA,
-    quate,
+    quote,
   }: EscapeFieldOptions = {},
 ): string {
   let replacedPattern: string;
@@ -66,7 +66,7 @@ export function escapeField(
   const contents = value.replaceAll(quotation, replacedPattern);
 
   if (
-    quate ||
+    quote ||
     contents.includes(quotation) ||
     contents.includes(delimiter) ||
     contents.includes("\n") ||

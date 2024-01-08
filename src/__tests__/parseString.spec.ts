@@ -19,9 +19,9 @@ describe("parseString function", () => {
           });
           const EOF = g(fc.boolean);
           const csv = [
-            header.map((v) => escapeField(v, { quate: true })).join(","),
+            header.map((v) => escapeField(v, { quote: true })).join(","),
             ...csvData.map((row) =>
-              row.map((v) => escapeField(v, { quate: true })).join(","),
+              row.map((v) => escapeField(v, { quote: true })).join(","),
             ),
             ...(EOF ? [""] : []),
           ].join(EOL);

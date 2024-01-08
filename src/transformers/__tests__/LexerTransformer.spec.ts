@@ -21,7 +21,7 @@ describe("LexerTransformer", () => {
           const quate = g(FC.quate);
           const chunks = autoChunk(
             g,
-            row.map((v) => escapeField(v, { quate })).join(","),
+            row.map((v) => escapeField(v, { quote: quate })).join(","),
           );
           const expected = [
             ...row.flatMap((value, index) => [
@@ -49,7 +49,7 @@ describe("LexerTransformer", () => {
           const row = g(FC.row);
           const chunks = autoChunk(
             g,
-            row.map((v) => escapeField(v, { quate: true })).join(","),
+            row.map((v) => escapeField(v, { quote: true })).join(","),
           );
           const expected = [
             ...row.flatMap((value, index) => [
@@ -81,7 +81,9 @@ describe("LexerTransformer", () => {
             data
               .map((row) =>
                 row
-                  .map((value) => escapeField(value, { quate, ...options }))
+                  .map((value) =>
+                    escapeField(value, { quote: quate, ...options }),
+                  )
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
