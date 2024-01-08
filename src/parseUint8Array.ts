@@ -65,32 +65,30 @@ export namespace parseUint8Array {
     value: internal.toArray,
   });
 
-  export declare function toArraySync<Header extends ReadonlyArray<string>>(
+  export function toArraySync<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+  ): CSVRecord<Header>[];
   Object.defineProperty(parseUint8Array, "toArraySync", {
     enumerable: true,
     writable: false,
     value: binaryToArraySync,
   });
 
-  export declare function toIterableIterator<
-    Header extends ReadonlyArray<string>,
-  >(
+  export function toIterableIterator<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+  ): IterableIterator<CSVRecord<Header>>;
   Object.defineProperty(parseUint8Array, "toIterableIterator", {
     enumerable: true,
     writable: false,
     value: binaryToIterableIterator,
   });
 
-  export declare function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+  ): ReadableStream<CSVRecord<Header>>;
   Object.defineProperty(parseUint8Array, "toStream", {
     enumerable: true,
     writable: false,
