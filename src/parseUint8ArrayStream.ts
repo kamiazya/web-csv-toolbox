@@ -1,5 +1,6 @@
 import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
 import * as internal from "./internal/toArray.js";
+import { uint8ArrayStreamToStream } from "./internal/uint8ArrayStreamToStream.js";
 import { parseStringStream } from "./parseStringStream.js";
 
 /**
@@ -91,5 +92,15 @@ export namespace parseUint8ArrayStream {
     enumerable: true,
     writable: false,
     value: internal.toArray,
+  });
+
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<Uint8Array>,
+    options?: ParseBinaryOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>[]>;
+  Object.defineProperty(parseUint8ArrayStream, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: uint8ArrayStreamToStream,
   });
 }

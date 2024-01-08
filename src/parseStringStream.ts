@@ -1,4 +1,5 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
+import { stringStreamToStream } from "./internal/stringStreamToStream.js";
 import * as internal from "./internal/toArray.js";
 import {
   LexerTransformer,
@@ -104,5 +105,15 @@ export namespace parseStringStream {
     enumerable: true,
     writable: false,
     value: internal.toArray,
+  });
+
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<string>,
+    options?: ParseOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>>;
+  Object.defineProperty(parseStringStream, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: stringStreamToStream,
   });
 }
