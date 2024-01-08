@@ -148,7 +148,7 @@ describe("class Lexer", () => {
     );
   });
 
-  it("should detect reccord delimiter", () => {
+  it("should detect record delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
