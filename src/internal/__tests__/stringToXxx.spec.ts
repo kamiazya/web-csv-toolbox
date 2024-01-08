@@ -23,7 +23,7 @@ test("stringToArraySync", async () => {
   expect(stringToArraySync(csv)).toEqual(expected);
 });
 
-test("stringToReadableStreamSync", async () => {
+test("stringToStream", async () => {
   let i = 0;
   await stringToStream(csv).pipeTo(
     new WritableStream({
