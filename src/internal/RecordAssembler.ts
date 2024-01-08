@@ -18,11 +18,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     flush = true,
   ): IterableIterator<CSVRecord<Header>> {
     for (const token of tokens) {
-      switch (token.type) {
-        case Field:
-          this.#dirty = true;
-          this.#row[this.#fieldIndex] = token.value;
-          break;
+      switch (token) {
         case FieldDelimiter:
           this.#fieldIndex++;
           break;
@@ -43,6 +39,10 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
           this.#fieldIndex = 0;
           this.#row = new Array(this.#header?.length);
           this.#dirty = false;
+          break;
+        default:
+          this.#dirty = true;
+          this.#row[this.#fieldIndex] = token.value;
           break;
       }
     }

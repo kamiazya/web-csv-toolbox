@@ -40,20 +40,16 @@ describe("RecordAssemblerTransformar", () => {
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
-              i === header.length - 1
-                ? { type: RecordDelimiter }
-                : { type: FieldDelimiter },
+              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter },
+                FieldDelimiter,
                 // generate record delimiter token
-                ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter }]
-                  : []) as Token[]),
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];
@@ -86,10 +82,8 @@ describe("RecordAssemblerTransformar", () => {
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter },
-                ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter }]
-                  : []) as Token[]),
+                FieldDelimiter,
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];

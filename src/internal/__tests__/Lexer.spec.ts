@@ -18,7 +18,7 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
+              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
           return { csv, expected };
@@ -47,7 +47,7 @@ describe("class Lexer", () => {
               // so empty field should be escaped with double quote
               { type: Field, value: field },
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
+              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
           return { csv, expected };
@@ -78,7 +78,7 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
+              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
           return { delimiter, csv, expected };
@@ -106,7 +106,7 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
+              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
           return { quotation, csv, expected };
@@ -134,7 +134,7 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
+              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
           return { options, csv, expected };
@@ -173,14 +173,14 @@ describe("class Lexer", () => {
                   ? [{ type: Field, value: field }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
-                ...(row.length - 1 !== j ? [{ type: FieldDelimiter }] : []),
+                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
               ]),
               // if row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i ? [{ type: RecordDelimiter }] : []),
+              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
             ]),
             // if EOF line delimiter is present,
             // it should be followed by a record delimiter.
-            ...(EOF ? [{ type: RecordDelimiter }] : []),
+            ...(EOF ? [RecordDelimiter] : []),
           ];
           return { csv, options, expected };
         }),

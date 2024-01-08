@@ -14,14 +14,12 @@ const CHECK_CACHE = new Map<string, (v: string) => boolean>();
  *
  * Check if the value starts or ends with the delimiter character.
  *
- * @param delimiterChar delimiter character, which is assumed to be a single character.
- * @returns
+ * @param delimiter which is assumed to be a single character.
  */
 function specialCheckFordelimiterIsRepetitionOfOneTypeOfCharacter(
-  delimiterChar: string,
+  delimiter: string,
 ): (v: string) => boolean {
-  return (v: string) =>
-    v.startsWith(delimiterChar) || v.endsWith(delimiterChar);
+  return (v: string) => v.startsWith(delimiter) || v.endsWith(delimiter);
 }
 
 /**

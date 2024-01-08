@@ -27,24 +27,8 @@ export interface RecordDelimiterToken {
  * Token is a atomic unit of a CSV file.
  * It can be a field, field delimiter, or record delimiter.
  * @category Types
- *
- * @example
- * ```ts
- * const fieldToken: Token = { type: Field, value: "foo" };
- * const fieldDelimiterToken: Token = { type: FieldDelimiter, value: "," };
- * const recordDelimiterToken: Token = { type: RecordDelimiter, value: "\n" };
- * ```
  */
-export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
-
-/**
- * Type of a token for CSV.
- * @category Types
- */
-export type TokenType =
-  | typeof FieldDelimiter
-  | typeof RecordDelimiter
-  | typeof Field;
+export type Token = FieldToken | typeof FieldDelimiter | typeof RecordDelimiter;
 
 /**
  * CSV Common Options.

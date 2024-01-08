@@ -22,13 +22,13 @@ import { Lexer } from "../internal/Lexer.js";
  *     }
  *   }}));
  * // { type: Field, value: "name" }
- * // { type: FieldDelimiter, value: "," }
+ * // FieldDelimiter
  * // { type: Field, value: "age" }
- * // { type: RecordDelimiter, value: "\r\n" }
+ * // RecordDelimiter
  * // { type: Field, value: "Alice" }
- * // { type: FieldDelimiter, value: "," }
+ * // FieldDelimiter
  * // { type: Field, value: "20" }
- * // { type: RecordDelimiter, value: "\r\n" }
+ * // RecordDelimiter
  * ```
  */
 export class LexerTransformer extends TransformStream<string, Token[]> {

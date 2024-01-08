@@ -49,14 +49,7 @@ export class Lexer {
   *#tokens(): Generator<Token> {
     let currentField: Token | null = null;
     for (let token: Token | null; (token = this.#nextToken()); ) {
-      switch (token.type) {
-        case Field:
-          if (currentField) {
-            currentField.value += token.value;
-          } else {
-            currentField = token;
-          }
-          break;
+      switch (token) {
         case FieldDelimiter:
           if (currentField) {
             yield currentField;
@@ -70,6 +63,13 @@ export class Lexer {
             currentField = null;
           }
           yield token;
+          break;
+        default:
+          if (currentField) {
+            currentField.value += token.value;
+          } else {
+            currentField = token;
+          }
           break;
       }
     }
@@ -86,19 +86,19 @@ export class Lexer {
     // Check for CRLF
     if (this.#buffer.startsWith(CRLF)) {
       this.#buffer = this.#buffer.slice(2);
-      return { type: RecordDelimiter };
+      return RecordDelimiter;
     }
 
     // Check for LF
     if (this.#buffer.startsWith(LF)) {
       this.#buffer = this.#buffer.slice(1);
-      return { type: RecordDelimiter };
+      return RecordDelimiter;
     }
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
       this.#buffer = this.#buffer.slice(this.#delimiterLength);
-      return { type: FieldDelimiter };
+      return FieldDelimiter;
     }
 
     // Check for Quoted String

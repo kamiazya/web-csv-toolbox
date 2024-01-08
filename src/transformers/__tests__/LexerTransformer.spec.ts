@@ -28,7 +28,7 @@ describe("LexerTransformer", () => {
               // If the field is empty or quate is true, add a field.
               ...(quate || value ? [{ type: Field, value }] : []),
               // If the field is not the last field, add a field delimiter.
-              ...(index === row.length - 1 ? [] : [{ type: FieldDelimiter }]),
+              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
             ]),
           ];
           return { row, chunks, expected };
@@ -54,7 +54,7 @@ describe("LexerTransformer", () => {
           const expected = [
             ...row.flatMap((value, index) => [
               { type: Field, value },
-              ...(index === row.length - 1 ? [] : [{ type: FieldDelimiter }]),
+              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
             ]),
           ];
           return { expected, chunks };
@@ -93,14 +93,14 @@ describe("LexerTransformer", () => {
                 // If the field is empty or quate is true, add a field.
                 ...(quate || value !== "" ? [{ type: Field, value }] : []),
                 // If the field is not the last field, add a field delimiter.
-                ...(row.length - 1 !== j ? [{ type: FieldDelimiter }] : []),
+                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
               ]),
               // if EOF or row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i ? [{ type: RecordDelimiter }] : []),
+              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
             ]),
             // if EOF line delimiter is present,
             // it should be followed by a record delimiter.
-            ...(EOF ? [{ type: RecordDelimiter }] : []),
+            ...(EOF ? [RecordDelimiter] : []),
           ];
           return { options, chunks, expected };
         }),

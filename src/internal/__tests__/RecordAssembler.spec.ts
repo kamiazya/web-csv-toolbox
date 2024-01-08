@@ -34,20 +34,16 @@ describe("class RecordAssembler", () => {
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
-              i === header.length - 1
-                ? { type: RecordDelimiter, value: EOL }
-                : { type: FieldDelimiter, value: "," },
+              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
             ]),
             // generate rows tokens
             ...rows.flatMap<Token>((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                FieldDelimiter,
                 // generate record delimiter token
-                ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter }]
-                  : []) as Token[]),
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];
@@ -69,7 +65,6 @@ describe("class RecordAssembler", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -81,10 +76,8 @@ describe("class RecordAssembler", () => {
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter },
-                ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter }]
-                  : []) as Token[]),
+                FieldDelimiter,
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];
