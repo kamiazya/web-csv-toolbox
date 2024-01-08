@@ -1,5 +1,6 @@
 import { CSVRecord, ParseOptions } from "./common/index.js";
-import { parseMime } from "./internal/parseMime.js";
+import { getOptionsFromResponse } from "./internal/getOptionsFromResponse.js";
+import { responseToStream } from "./internal/responseToStream.js";
 import * as internal from "./internal/toArray.js";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
@@ -39,25 +40,11 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   response: Response,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const { headers } = response;
-  const contentType = headers.get("content-type") ?? "text/csv";
-  const mime = parseMime(contentType);
-  if (mime.type !== "text/csv") {
-    throw new Error(`Invalid mime type: ${contentType}`);
-  }
-  const decomposition =
-    (headers.get("content-encoding") as CompressionFormat) ?? undefined;
-  const charset = mime.parameters.charset ?? "utf-8";
-  // TODO: Support header=present and header=absent
-  // const header = mime.parameters.header ?? "present";
+  const options_ = getOptionsFromResponse(response, options);
   if (response.body === null) {
     throw new Error("Response body is null");
   }
-  return parseUint8ArrayStream(response.body, {
-    decomposition,
-    charset,
-    ...options,
-  });
+  return parseUint8ArrayStream(response.body, options_);
 }
 
 export namespace parseResponse {
@@ -85,5 +72,15 @@ export namespace parseResponse {
     enumerable: true,
     writable: false,
     value: internal.toArray,
+  });
+
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    response: Response,
+    options?: ParseOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>[]>;
+  Object.defineProperty(parseResponse, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: responseToStream,
   });
 }

@@ -164,7 +164,7 @@ export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
  */
 export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
   Header[number],
-  string
+  string | undefined
 >;
 
 /**

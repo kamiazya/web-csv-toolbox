@@ -71,7 +71,7 @@ export namespace parseArrayBuffer {
     value: internal.toArray,
   });
 
-  export function toArraySync<Header extends ReadonlyArray<string>>(
+  export declare function toArraySync<Header extends ReadonlyArray<string>>(
     buffer: ArrayBuffer,
     options?: ParseBinaryOptions<Header>,
   ): CSVRecord<Header>[];
@@ -81,7 +81,7 @@ export namespace parseArrayBuffer {
     value: binaryToArraySync,
   });
 
-  export function toIterableIterator<
+  export declare function toIterableIterator<
     Header extends ReadonlyArray<string>,
   >(
     buffer: ArrayBuffer,
@@ -93,7 +93,7 @@ export namespace parseArrayBuffer {
     value: binaryToIterableIterator,
   });
 
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export declare function toStream<Header extends ReadonlyArray<string>>(
     buffer: ArrayBuffer,
     options?: ParseBinaryOptions<Header>,
   ): ReadableStream<CSVRecord<Header>>;

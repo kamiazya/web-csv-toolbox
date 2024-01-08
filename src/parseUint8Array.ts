@@ -65,7 +65,7 @@ export namespace parseUint8Array {
     value: internal.toArray,
   });
 
-  export function toArraySync<Header extends ReadonlyArray<string>>(
+  export declare function toArraySync<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
   ): CSVRecord<Header>[];
@@ -75,7 +75,9 @@ export namespace parseUint8Array {
     value: binaryToArraySync,
   });
 
-  export function toIterableIterator<Header extends ReadonlyArray<string>>(
+  export declare function toIterableIterator<
+    Header extends ReadonlyArray<string>,
+  >(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
   ): IterableIterator<CSVRecord<Header>>;
@@ -85,7 +87,7 @@ export namespace parseUint8Array {
     value: binaryToIterableIterator,
   });
 
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export declare function toStream<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
   ): ReadableStream<CSVRecord<Header>>;

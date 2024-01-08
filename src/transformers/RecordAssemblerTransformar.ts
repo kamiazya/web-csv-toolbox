@@ -1,10 +1,4 @@
-import {
-  Field,
-  FieldDelimiter,
-  RecordAssemblerOptions,
-  RecordDelimiter,
-  Token,
-} from "../common/index.js";
+import { RecordAssemblerOptions, Token } from "../common/index.js";
 import { RecordAssembler } from "../internal/RecordAssembler.js";
 
 /**
