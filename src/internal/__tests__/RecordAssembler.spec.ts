@@ -46,7 +46,7 @@ describe("class RecordAssembler", () => {
                 { type: FieldDelimiter, value: "," },
                 // generate record delimiter token
                 ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
+                  ? [{ type: RecordDelimiter }]
                   : []) as Token[]),
               ]),
             ),
@@ -81,9 +81,9 @@ describe("class RecordAssembler", () => {
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                { type: FieldDelimiter },
                 ...((j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
+                  ? [{ type: RecordDelimiter }]
                   : []) as Token[]),
               ]),
             ),
@@ -91,12 +91,7 @@ describe("class RecordAssembler", () => {
           const expected = rows.map((row) =>
             Object.fromEntries(row.map((field, i) => [header[i], field])),
           );
-          return {
-            header,
-            EOL,
-            tokens,
-            expected,
-          };
+          return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
           const assembler = new RecordAssembler({ header });

@@ -1,5 +1,5 @@
 import { fc } from "@fast-check/vitest";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FC, autoChunk } from "../../__tests__/helper.js";
 import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
 import { Lexer } from "../Lexer.js";
@@ -16,23 +16,9 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [
-                    {
-                      type: Field,
-                      value: field,
-                    },
-                  ]
-                : []),
+              ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                    },
-                  ]
-                : []),
+              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
             ]),
           ];
           return { csv, expected };
@@ -59,19 +45,9 @@ describe("class Lexer", () => {
             ...row.flatMap((field, i) => [
               // field should be escaped with double quote,
               // so empty field should be escaped with double quote
-              {
-                type: Field,
-                value: field,
-              },
+              { type: Field, value: field },
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                    },
-                  ]
-                : []),
+              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
             ]),
           ];
           return { csv, expected };
@@ -100,23 +76,9 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [
-                    {
-                      type: Field,
-                      value: field,
-                    },
-                  ]
-                : []),
+              ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: delimiter,
-                    },
-                  ]
-                : []),
+              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
             ]),
           ];
           return { delimiter, csv, expected };
@@ -142,23 +104,9 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [
-                    {
-                      type: Field,
-                      value: field,
-                    },
-                  ]
-                : []),
+              ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                    },
-                  ]
-                : []),
+              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
             ]),
           ];
           return { quotation, csv, expected };
@@ -184,23 +132,9 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [
-                    {
-                      type: Field,
-                      value: field,
-                    },
-                  ]
-                : []),
+              ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: options.delimiter,
-                    },
-                  ]
-                : []),
+              ...(row.length - 1 !== i ? [{ type: FieldDelimiter }] : []),
             ]),
           ];
           return { options, csv, expected };
@@ -236,36 +170,17 @@ describe("class Lexer", () => {
               ...row.flatMap((field, j) => [
                 // if quate is false and field is empty, it should be ignored
                 ...(quate || field !== ""
-                  ? [
-                      {
-                        type: Field,
-                        value: field,
-                      },
-                    ]
+                  ? [{ type: Field, value: field }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
-                ...(row.length - 1 !== j
-                  ? [
-                      {
-                        type: FieldDelimiter,
-                        value: options.delimiter,
-                      },
-                    ]
-                  : []),
+                ...(row.length - 1 !== j ? [{ type: FieldDelimiter }] : []),
               ]),
               // if row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i
-                ? [
-                    {
-                      type: RecordDelimiter,
-                      value: eol,
-                    },
-                  ]
-                : []),
+              ...(data.length - 1 !== i ? [{ type: RecordDelimiter }] : []),
             ]),
             // if EOF line delimiter is present,
             // it should be followed by a record delimiter.
-            ...(EOF ? [{ type: RecordDelimiter, value: eol }] : []),
+            ...(EOF ? [{ type: RecordDelimiter }] : []),
           ];
           return { csv, options, expected };
         }),
@@ -275,42 +190,6 @@ describe("class Lexer", () => {
           expect(actual).toStrictEqual(expected);
         },
       ),
-      {
-        examples: [
-          [
-            {
-              options: { delimiter: COMMA, quotation: DOUBLE_QUATE },
-              csv: "\n",
-              expected: [{ type: RecordDelimiter, value: "\n" }],
-            },
-          ],
-          [
-            {
-              options: { delimiter: COMMA, quotation: DOUBLE_QUATE },
-              csv: "\r\n",
-              expected: [{ type: RecordDelimiter, value: "\r\n" }],
-            },
-          ],
-          [
-            {
-              csv: "a,b,c\n1,2,3",
-              expected: [
-                { type: Field, value: "a" },
-                { type: FieldDelimiter, value: "," },
-                { type: Field, value: "b" },
-                { type: FieldDelimiter, value: "," },
-                { type: Field, value: "c" },
-                { type: RecordDelimiter, value: "\n" },
-                { type: Field, value: "1" },
-                { type: FieldDelimiter, value: "," },
-                { type: Field, value: "2" },
-                { type: FieldDelimiter, value: "," },
-                { type: Field, value: "3" },
-              ],
-            },
-          ],
-        ],
-      },
     );
   });
 

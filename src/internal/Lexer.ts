@@ -86,19 +86,19 @@ export class Lexer {
     // Check for CRLF
     if (this.#buffer.startsWith(CRLF)) {
       this.#buffer = this.#buffer.slice(2);
-      return { type: RecordDelimiter, value: CRLF };
+      return { type: RecordDelimiter };
     }
 
     // Check for LF
     if (this.#buffer.startsWith(LF)) {
       this.#buffer = this.#buffer.slice(1);
-      return { type: RecordDelimiter, value: LF };
+      return { type: RecordDelimiter };
     }
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
       this.#buffer = this.#buffer.slice(this.#delimiterLength);
-      return { type: FieldDelimiter, value: this.#delimiter };
+      return { type: FieldDelimiter };
     }
 
     // Check for Quoted String

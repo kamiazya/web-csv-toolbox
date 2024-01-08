@@ -1,7 +1,12 @@
 import { fc } from "@fast-check/vitest";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { FC, transform } from "../../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
+import {
+  Field,
+  FieldDelimiter,
+  RecordDelimiter,
+  Token,
+} from "../../common/index.js";
 import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.js";
 
 const describe = describe_.concurrent;
@@ -24,7 +29,6 @@ describe("RecordAssemblerTransformar", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -32,24 +36,24 @@ describe("RecordAssemblerTransformar", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
+          const tokens: Token[] = [
             // generate header tokens
-            ...header.flatMap((field, i) => [
+            ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
               i === header.length - 1
-                ? { type: RecordDelimiter, value: EOL }
-                : { type: FieldDelimiter, value: "," },
+                ? { type: RecordDelimiter }
+                : { type: FieldDelimiter },
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
-              row.flatMap((field, j) => [
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                { type: FieldDelimiter },
                 // generate record delimiter token
-                ...(j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                ...((j === row.length - 1
+                  ? [{ type: RecordDelimiter }]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -71,7 +75,6 @@ describe("RecordAssemblerTransformar", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -80,13 +83,13 @@ describe("RecordAssemblerTransformar", () => {
             },
           });
           const tokens = [
-            ...rows.flatMap((row) =>
-              row.flatMap((field, j) => [
+            ...rows.flatMap<Token>((row) =>
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
-                ...(j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                { type: FieldDelimiter },
+                ...((j === row.length - 1
+                  ? [{ type: RecordDelimiter }]
+                  : []) as Token[]),
               ]),
             ),
           ];

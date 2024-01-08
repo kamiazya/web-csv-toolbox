@@ -1,6 +1,29 @@
 import { Field, FieldDelimiter, RecordDelimiter } from "./constants.js";
 
 /**
+ * Field token type.
+ * @category Types
+ */
+export interface FieldToken {
+  type: typeof Field;
+  value: string;
+}
+
+/**
+ * Field delimiter token type.
+ * @category Types
+ */
+export interface FieldDelimiterToken {
+  type: typeof FieldDelimiter;
+}
+/**
+ * Record delimiter token type.
+ */
+export interface RecordDelimiterToken {
+  type: typeof RecordDelimiter;
+}
+
+/**
  * Token is a atomic unit of a CSV file.
  * It can be a field, field delimiter, or record delimiter.
  * @category Types
@@ -12,10 +35,7 @@ import { Field, FieldDelimiter, RecordDelimiter } from "./constants.js";
  * const recordDelimiterToken: Token = { type: RecordDelimiter, value: "\n" };
  * ```
  */
-export interface Token<T extends TokenType = TokenType> {
-  type: T;
-  value: string;
-}
+export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
 
 /**
  * Type of a token for CSV.
