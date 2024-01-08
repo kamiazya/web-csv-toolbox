@@ -12,9 +12,7 @@ describe("class Lexer", () => {
       fc.property(
         fc.gen().map((g) => {
           const row = g(FC.row);
-          const csv = row
-            .map((field) => escapeField(field, { quote: true, quotation: '"' }))
-            .join(",");
+          const csv = row.map((field) => escapeField(field)).join(",");
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
