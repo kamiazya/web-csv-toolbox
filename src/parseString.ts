@@ -1,8 +1,8 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
 import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.js";
-import { stringToArraySync } from "./internal/stringToArraySync.js";
-import { stringToIterableIterator } from "./internal/stringToIterableIterator.js";
-import { stringToStream } from "./internal/stringToStream.js";
+import { parseStringToArraySync } from "./internal/parseStringToArraySync.js";
+import { parseStringToIterableIterator } from "./internal/parseStringToIterableIterator.js";
+import { parseStringToStream } from "./internal/parseStringToStream.js";
 import * as internal from "./internal/toArray.js";
 import { parseStringStream } from "./parseStringStream.js";
 
@@ -95,7 +95,7 @@ export namespace parseString {
   Object.defineProperty(parseString, "toArraySync", {
     enumerable: true,
     writable: false,
-    value: stringToArraySync,
+    value: parseStringToArraySync,
   });
 
   /**
@@ -128,7 +128,7 @@ export namespace parseString {
   Object.defineProperty(parseString, "toIterableIterator", {
     enumerable: true,
     writable: false,
-    value: stringToIterableIterator,
+    value: parseStringToIterableIterator,
   });
 
   /**
@@ -164,6 +164,6 @@ export namespace parseString {
   Object.defineProperty(parseString, "toStream", {
     enumerable: true,
     writable: false,
-    value: stringToStream,
+    value: parseStringToStream,
   });
 }

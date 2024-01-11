@@ -1,7 +1,7 @@
 import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
-import { binaryToArraySync } from "./internal/binaryToArraySync.js";
-import { binaryToIterableIterator } from "./internal/binaryToIterableIterator.js";
-import { binaryToStream } from "./internal/binaryToStream.js";
+import { parseBinaryToArraySync } from "./internal/parseBinaryToArraySync.js";
+import { parseBinaryToIterableIterator } from "./internal/parseBinaryToIterableIterator.js";
+import { parseBinaryToStream } from "./internal/parseBinaryToStream.js";
 import * as internal from "./internal/toArray.js";
 import { parseUint8Array } from "./parseUint8Array.js";
 
@@ -99,7 +99,7 @@ export namespace parseArrayBuffer {
   Object.defineProperty(parseArrayBuffer, "toArraySync", {
     enumerable: true,
     writable: false,
-    value: binaryToArraySync,
+    value: parseBinaryToArraySync,
   });
 
   /**
@@ -136,7 +136,7 @@ export namespace parseArrayBuffer {
   Object.defineProperty(parseArrayBuffer, "toIterableIterator", {
     enumerable: true,
     writable: false,
-    value: binaryToIterableIterator,
+    value: parseBinaryToIterableIterator,
   });
 
   /**
@@ -176,6 +176,6 @@ export namespace parseArrayBuffer {
   Object.defineProperty(parseArrayBuffer, "toStream", {
     enumerable: true,
     writable: false,
-    value: binaryToStream,
+    value: parseBinaryToStream,
   });
 }

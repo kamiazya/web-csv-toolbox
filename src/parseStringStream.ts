@@ -1,5 +1,5 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
-import { stringStreamToStream } from "./internal/stringStreamToStream.js";
+import { parseStringStreamToStream } from "./internal/parseStringStreamToStream.js";
 import * as internal from "./internal/toArray.js";
 import {
   LexerTransformer,
@@ -145,6 +145,6 @@ export namespace parseStringStream {
   Object.defineProperty(parseStringStream, "toStream", {
     enumerable: true,
     writable: false,
-    value: stringStreamToStream,
+    value: parseStringStreamToStream,
   });
 }

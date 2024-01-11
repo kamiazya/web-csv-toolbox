@@ -1,6 +1,6 @@
 import { CSVRecord, ParseOptions } from "./common/index.js";
 import { getOptionsFromResponse } from "./internal/getOptionsFromResponse.js";
-import { responseToStream } from "./internal/responseToStream.js";
+import { parseResponseToStream } from "./internal/parseResponseToStream.js";
 import * as internal from "./internal/toArray.js";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
@@ -107,6 +107,6 @@ export namespace parseResponse {
   Object.defineProperty(parseResponse, "toStream", {
     enumerable: true,
     writable: false,
-    value: responseToStream,
+    value: parseResponseToStream,
   });
 }

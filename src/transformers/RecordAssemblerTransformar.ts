@@ -49,7 +49,6 @@ export class RecordAssemblerTransformar<
 > extends TransformStream<Token[], CSVRecord<Header>> {
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     const assembler = new RecordAssembler(options);
-
     super({
       transform: (tokens, controller) => {
         for (const token of assembler.assemble(tokens, false)) {

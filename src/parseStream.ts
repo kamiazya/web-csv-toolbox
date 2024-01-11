@@ -103,4 +103,36 @@ export namespace parseStream {
     writable: false,
     value: internal.toArray,
   });
+
+  /**
+   * Parse CSV Stream to array of records.
+   *
+   * @returns Array of records
+   */
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<Uint8Array>,
+    options?: ParseBinaryOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>[]>;
+  Object.defineProperty(parseStream, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: async <Header extends readonly string[]>(
+      stream: ReadableStream<string | Uint8Array>,
+      options?: ParseBinaryOptions<Header>,
+    ) => {
+      const [branch1, branch2] = stream.tee();
+      const reader1 = branch1.getReader();
+      const { value: firstChunk } = await reader1.read();
+      reader1.releaseLock();
+      if (typeof firstChunk === "string") {
+        return parseStringStream(branch2 as ReadableStream<string>, options);
+      }
+      if (firstChunk instanceof Uint8Array) {
+        return parseUint8ArrayStream(
+          branch2 as ReadableStream<Uint8Array>,
+          options,
+        );
+      }
+    },
+  });
 }
