@@ -1,4 +1,4 @@
-import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
+import { FieldDelimiter, RecordDelimiter } from "../common/constants.js";
 import { CSVRecord, RecordAssemblerOptions, Token } from "../common/types.js";
 
 export class RecordAssembler<Header extends ReadonlyArray<string>> {
@@ -21,23 +21,28 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
       switch (token) {
         case FieldDelimiter:
           this.#fieldIndex++;
+          this.#dirty = true;
           break;
         case RecordDelimiter:
           if (this.#header === undefined) {
             this.#setHeader(this.#row as unknown as Header);
           } else {
             if (this.#dirty) {
-              const record = Object.fromEntries(
-                this.#header
-                  .filter((v) => v)
-                  .map((header, index) => [header, this.#row.at(index)]),
-              ) as unknown as Record<Header[number], string>;
-              yield record;
+              yield Object.fromEntries(
+                this.#header.map((header, index) => [
+                  header,
+                  this.#row.at(index),
+                ]),
+              ) as unknown as CSVRecord<Header>;
+            } else {
+              yield Object.fromEntries(
+                this.#header.map((header) => [header, ""]),
+              ) as CSVRecord<Header>;
             }
           }
           // Reset the row fields buffer.
           this.#fieldIndex = 0;
-          this.#row = new Array(this.#header?.length);
+          this.#row = new Array(this.#header?.length).fill("");
           this.#dirty = false;
           break;
         default:
@@ -53,14 +58,13 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   }
 
   public *flush(): Generator<CSVRecord<Header>> {
-    if (this.#fieldIndex !== 0 && this.#header !== undefined) {
+    if (this.#header !== undefined) {
       if (this.#dirty) {
-        const record = Object.fromEntries(
+        yield Object.fromEntries(
           this.#header
             .filter((v) => v)
             .map((header, index) => [header, this.#row.at(index)]),
         ) as unknown as CSVRecord<Header>;
-        yield record;
       }
     }
   }

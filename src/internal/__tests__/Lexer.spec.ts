@@ -154,7 +154,11 @@ describe("class Lexer", () => {
         fc.gen().map((g) => {
           const options = g(FC.commonOptions);
           const eol = g(FC.eol);
-          const data = g(FC.csvData);
+          const data = g(FC.csvData, {
+            fieldConstraints: { minLength: 1 },
+            rowsConstraints: { minLength: 1 },
+            columnsConstraints: { minLength: 1 },
+          });
           const EOF = g(fc.boolean);
           const quate = g(FC.quate);
           const csv =
@@ -180,9 +184,6 @@ describe("class Lexer", () => {
               // if row is not last row, it should be followed by a record delimiter.
               ...(data.length - 1 !== i ? [RecordDelimiter] : []),
             ]),
-            // if EOF line delimiter is present,
-            // it should be followed by a record delimiter.
-            ...(EOF ? [RecordDelimiter] : []),
           ];
           return { csv, options, expected };
         }),

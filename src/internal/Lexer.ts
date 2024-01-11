@@ -47,6 +47,14 @@ export class Lexer {
   }
 
   *#tokens(): Generator<Token> {
+    if (this.#flush) {
+      // Trim the last CRLF or LF
+      if (this.#buffer.endsWith(CRLF)) {
+        this.#buffer = this.#buffer.slice(0, -CRLF.length);
+      } else if (this.#buffer.endsWith(LF)) {
+        this.#buffer = this.#buffer.slice(0, -LF.length);
+      }
+    }
     let currentField: Token | null = null;
     for (let token: Token | null; (token = this.#nextToken()); ) {
       switch (token) {
@@ -80,6 +88,13 @@ export class Lexer {
 
   #nextToken(): Token | null {
     if (this.#buffer.length === 0) {
+      return null;
+    }
+    // Buffer is Record Delimiter, defer to the next iteration.
+    if (
+      this.#flush === false &&
+      (this.#buffer === CRLF || this.#buffer === LF)
+    ) {
       return null;
     }
 

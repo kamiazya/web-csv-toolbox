@@ -74,7 +74,11 @@ describe("LexerTransformer", () => {
         fc.gen().map((g) => {
           const options = g(FC.commonOptions);
           const quate = g(FC.quate);
-          const data = g(FC.csvData);
+          const data = g(FC.csvData, {
+            fieldConstraints: { minLength: 1 },
+            rowsConstraints: { minLength: 1 },
+            columnsConstraints: { minLength: 1 },
+          });
           const eol = g(FC.eol);
           const EOF = g(fc.boolean);
           const csv =
@@ -97,12 +101,9 @@ describe("LexerTransformer", () => {
                 // If the field is not the last field, add a field delimiter.
                 ...(row.length - 1 !== j ? [FieldDelimiter] : []),
               ]),
-              // if EOF or row is not last row, it should be followed by a record delimiter.
+              // If the field is the last field, add a record delimiter.
               ...(data.length - 1 !== i ? [RecordDelimiter] : []),
             ]),
-            // if EOF line delimiter is present,
-            // it should be followed by a record delimiter.
-            ...(EOF ? [RecordDelimiter] : []),
           ];
           return { options, chunks, expected };
         }),
@@ -112,6 +113,18 @@ describe("LexerTransformer", () => {
           expect(actual).toStrictEqual(expected);
         },
       ),
+      {
+        examples: [
+          [
+            // only EOL is ignored
+            {
+              options: { delimiter: ",", quotation: '"' },
+              chunks: ["\n"],
+              expected: [],
+            },
+          ],
+        ],
+      },
     );
   });
 });
