@@ -94,6 +94,35 @@ export namespace parseUint8ArrayStream {
     value: internal.toArray,
   });
 
+  /**
+   * Parse CSV binary to array of records.
+   *
+   * @returns Stream of records
+   *
+   * @example Parsing CSV binary
+   * ```ts
+   * import { parseUint8ArrayStream } from 'web-csv-toolbox';
+   *
+   * const csv = Uint8Array.from([
+   *  // ...
+   * ]);
+   *
+   * const stream = new ReadableStream({
+   *  start(controller) {
+   *   controller.enqueue(csv);
+   *  controller.close();
+   * },
+   * });
+   *
+   * await parseUint8ArrayStream.toStream(stream)
+   *   .pipeTo(new WritableStream({
+   *     write(record) {
+   *       console.log(record);
+   *     },
+   *   }),
+   * );
+   * ```
+   */
   export declare function toStream<Header extends ReadonlyArray<string>>(
     stream: ReadableStream<Uint8Array>,
     options?: ParseBinaryOptions<Header>,

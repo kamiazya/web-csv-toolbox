@@ -71,6 +71,27 @@ export namespace parseArrayBuffer {
     value: internal.toArray,
   });
 
+  /**
+   * Parse a binary from an {@link !ArrayBuffer} to an array of records.
+   * @param buffer CSV ArrayBuffer to parse.
+   * @param options Parsing options
+   * @returns Array of records
+   * @example
+   * ```ts
+   * import { parseArrayBuffer } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const buffer = new TextEncoder().encode(csv).buffer;
+   *
+   * const records = parseArrayBuffer.toArraySync(buffer);
+   * console.log(records);
+   * // Prints:
+   * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
+   * ```
+   */
   export declare function toArraySync<Header extends ReadonlyArray<string>>(
     buffer: ArrayBuffer,
     options?: ParseBinaryOptions<Header>,
@@ -81,6 +102,31 @@ export namespace parseArrayBuffer {
     value: binaryToArraySync,
   });
 
+  /**
+   * Parse a binary from an {@link !ArrayBuffer} to an async iterable iterator of records.
+   *
+   * @param buffer CSV ArrayBuffer to parse.
+   * @param options Parsing options
+   * @returns Async iterable iterator of records.
+   *
+   * @example
+   * ```ts
+   * import { parseArrayBuffer } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const buffer = new TextEncoder().encode(csv).buffer;
+   *
+   * for (const record of parseArrayBuffer.toIterableIterator(buffer)) {
+   *  console.log(record);
+   * }
+   * // Prints:
+   * // { name: 'Alice', age: '42' }
+   * // { name: 'Bob', age: '69' }
+   * ```
+   */
   export declare function toIterableIterator<
     Header extends ReadonlyArray<string>,
   >(
@@ -93,6 +139,36 @@ export namespace parseArrayBuffer {
     value: binaryToIterableIterator,
   });
 
+  /**
+   * Parse a binary from an {@link !ArrayBuffer} to a {@link ReadableStream} of records.
+   *
+   * @param buffer CSV ArrayBuffer to parse.
+   * @param options Parsing options
+   * @returns ReadableStream of records.
+   *
+   * @example
+   * ```ts
+   * import { parseArrayBuffer } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const buffer = new TextEncoder().encode(csv).buffer;
+   *
+   * await parseArrayBuffer.toStream(buffer)
+   *   .pipeTo(
+   *     new WritableStream({
+   *       write(record) {
+   *         console.log(record);
+   *       },
+   *    }),
+   * );
+   * // Prints:
+   * // { name: 'Alice', age: '42' }
+   * // { name: 'Bob', age: '69' }
+   * ```
+   */
   export declare function toStream<Header extends ReadonlyArray<string>>(
     buffer: ArrayBuffer,
     options?: ParseBinaryOptions<Header>,

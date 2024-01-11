@@ -68,6 +68,26 @@ export namespace parseString {
     value: internal.toArray,
   });
 
+  /**
+   * Parse CSV string to records.
+   *
+   * @returns Array of records
+   *
+   * @example
+   *
+   * ```ts
+   * import { parseString } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const records = parseString.toArraySync(csv);
+   * console.log(records);
+   * // Prints:
+   * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
+   * ```
+   */
   export declare function toArraySync<Header extends ReadonlyArray<string>>(
     csv: string,
     options?: ParseOptions<Header>,
@@ -111,6 +131,32 @@ export namespace parseString {
     value: stringToIterableIterator,
   });
 
+  /**
+   * Parse CSV string to records.
+   *
+   * @returns Readable stream of records
+   *
+   * @example
+   * ```ts
+   * import { parseString } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * await parseString.toStream(csv)
+   *   .pipeTo(
+   *      new WritableStream({
+   *        write(record) {
+   *          console.log(record);
+   *        },
+   *      }),
+   *   );
+   * // Prints:
+   * // { name: 'Alice', age: '42' }
+   * // { name: 'Bob', age: '69' }
+   * ```
+   */
   export declare function toStream<Header extends ReadonlyArray<string>>(
     csv: string,
     options?: ParseOptions<Header>,

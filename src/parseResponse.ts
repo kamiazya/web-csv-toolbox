@@ -74,6 +74,32 @@ export namespace parseResponse {
     value: internal.toArray,
   });
 
+  /**
+   * Parse CSV Response to stream of records.
+   *
+   * @param response Response to parse
+   * @returns Stream of records
+   *
+   * @example Parsing CSV Response
+   *
+   * ```ts
+   * import { parseResponse } from 'web-csv-toolbox';
+   *
+   * const response = await fetch('https://example.com/data.csv');
+   *
+   * await parseResponse.toStream(response)
+   *   .pipeTo(
+   *     new WritableStream({
+   *       write(record) {
+   *         console.log(record);
+   *       },
+   *    }),
+   * );
+   * // Prints:
+   * // { name: 'Alice', age: '42' }
+   * // { name: 'Bob', age: '69' }
+   * ```
+   */
   export declare function toStream<Header extends ReadonlyArray<string>>(
     response: Response,
     options?: ParseOptions<Header>,

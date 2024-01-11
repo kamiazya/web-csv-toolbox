@@ -65,6 +65,24 @@ export namespace parseUint8Array {
     value: internal.toArray,
   });
 
+  /**
+   * Parse a binary from an {@link !Uint8Array} to an array of records.
+   *
+   * @param bytes CSV bytes to parse.
+   * @param options Parsing options
+   * @returns Array of records
+   * @example
+   *
+   * ```ts
+   * import { parseUint8Array } from 'web-csv-toolbox';
+   *
+   * const csv = Uint8Array.from([
+   *  // ...
+   * ]);
+   *
+   * const records = parseUint8Array.toArraySync(csv);
+   * ```
+   */
   export declare function toArraySync<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
@@ -75,6 +93,25 @@ export namespace parseUint8Array {
     value: binaryToArraySync,
   });
 
+  /**
+   * Parse a binary from an {@link !Uint8Array} to an iterable iterator of records.
+   *
+   * @param bytes CSV bytes to parse.
+   * @param options Parsing options
+   * @returns Async iterable iterator of records.
+   * @example
+   * ```ts
+   * import { parseUint8Array } from 'web-csv-toolbox';
+   *
+   * const csv = Uint8Array.from([
+   *  // ...
+   * ]);
+   *
+   * for (const record of parseUint8Array.toIterableIterator(csv)) {
+   *   console.log(record);
+   * }
+   * ```
+   */
   export declare function toIterableIterator<
     Header extends ReadonlyArray<string>,
   >(
@@ -87,6 +124,33 @@ export namespace parseUint8Array {
     value: binaryToIterableIterator,
   });
 
+  /**
+   * Parse a binary from an {@link !Uint8Array} to a stream of records.
+   *
+   * @param bytes CSV bytes to parse.
+   * @param options Parsing options
+   * @returns Stream of records.
+   *
+   * @example
+   *
+   * ```ts
+   * import { parseUint8Array } from 'web-csv-toolbox';
+   *
+   * const csv = Uint8Array.from([
+   *  // ...
+   * ]);
+   *
+   * const stream = parseUint8Array.toStream(csv);
+   *
+   * await stream.pipeTo(
+   *   new WritableStream({
+   *     write(record) {
+   *       console.log(record);
+   *     },
+   *   }),
+   * );
+   * ```
+   */
   export declare function toStream<Header extends ReadonlyArray<string>>(
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
