@@ -1,4 +1,4 @@
-import { RecordAssemblerOptions, Token } from "../common/index.js";
+import { CSVRecord, RecordAssemblerOptions, Token } from "../common/types.js";
 import { RecordAssembler } from "../internal/RecordAssembler.js";
 
 /**
@@ -46,7 +46,7 @@ import { RecordAssembler } from "../internal/RecordAssembler.js";
  */
 export class RecordAssemblerTransformar<
   Header extends ReadonlyArray<string>,
-> extends TransformStream<Token[], Record<Header[number], string | undefined>> {
+> extends TransformStream<Token[], CSVRecord<Header>> {
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     const assembler = new RecordAssembler(options);
 
