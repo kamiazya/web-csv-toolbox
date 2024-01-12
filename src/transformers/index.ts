@@ -1,2 +1,2 @@
 export * from "./LexerTransformer.js";
-export * from "./RecordAssemblerTransformar.js";
+export * from "./RecordAssemblerTransformer.js";

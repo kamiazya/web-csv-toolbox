@@ -19,7 +19,7 @@ import { RecordAssembler } from "../internal/RecordAssembler.js";
  *     controller.close();
  *   })
  *   .pipeThrough(new LexerTransformer())
- *   .pipeThrough(new RecordAssemblerTransformar())
+ *   .pipeThrough(new RecordAssemblerTransformer())
  *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
@@ -37,14 +37,14 @@ import { RecordAssembler } from "../internal/RecordAssembler.js";
  *   }
  * })
  * .pipeThrough(new LexerTransformer())
- * .pipeThrough(new RecordAssemblerTransformar({ header: ["name", "age"] }))
+ * .pipeThrough(new RecordAssemblerTransformer({ header: ["name", "age"] }))
  * .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
  * // { name: "Charlie", age: "30" }
  * ```
  */
-export class RecordAssemblerTransformar<
+export class RecordAssemblerTransformer<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token[], CSVRecord<Header>> {
   constructor(options: RecordAssemblerOptions<Header> = {}) {

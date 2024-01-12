@@ -1,6 +1,6 @@
 import { CSVRecord, ParseBinaryOptions } from "../common/types.js";
 import { LexerTransformer } from "../transformers/LexerTransformer.js";
-import { RecordAssemblerTransformar } from "../transformers/RecordAssemblerTransformar.js";
+import { RecordAssemblerTransformer } from "../transformers/RecordAssemblerTransformer.js";
 import { pipeline } from "./pipeline.js";
 
 export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
@@ -14,12 +14,12 @@ export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
         new DecompressionStream(decomposition),
         new TextDecoderStream(charset, { fatal, ignoreBOM }),
         new LexerTransformer(options),
-        new RecordAssemblerTransformar(options),
+        new RecordAssemblerTransformer(options),
       )
     : pipeline(
         stream,
         new TextDecoderStream(charset, { fatal, ignoreBOM }),
         new LexerTransformer(options),
-        new RecordAssemblerTransformar(options),
+        new RecordAssemblerTransformer(options),
       );
 }

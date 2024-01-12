@@ -7,21 +7,21 @@ import {
   RecordDelimiter,
   Token,
 } from "../common/index.js";
-import { RecordAssemblerTransformar } from "./RecordAssemblerTransformar.js";
+import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.js";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
-describe("RecordAssemblerTransformar", () => {
+describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformar({ header: [] })).toThrowError(
+    expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
       "The header must not be empty.",
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
     expect(
-      () => new RecordAssemblerTransformar({ header: ["a", "a"] }),
+      () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
     ).toThrowError("The header must not contain duplicate fields.");
   });
 
@@ -59,7 +59,7 @@ describe("RecordAssemblerTransformar", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new RecordAssemblerTransformar(), [
+          const actual = await transform(new RecordAssemblerTransformer(), [
             tokens,
           ]);
           expect(actual).toEqual(expected);
@@ -93,7 +93,7 @@ describe("RecordAssemblerTransformar", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const parser = new RecordAssemblerTransformar({
+          const parser = new RecordAssemblerTransformer({
             header,
           });
           const actual = await transform(parser, [tokens]);

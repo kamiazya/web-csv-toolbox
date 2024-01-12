@@ -3,7 +3,7 @@ import { parseStringStreamToStream } from "./internal/parseStringStreamToStream.
 import * as internal from "./internal/toArray.js";
 import {
   LexerTransformer,
-  RecordAssemblerTransformar,
+  RecordAssemblerTransformer,
 } from "./transformers/index.js";
 
 /**
@@ -50,7 +50,7 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
   });
   await stream
     .pipeThrough(new LexerTransformer(options))
-    .pipeThrough(new RecordAssemblerTransformar(options))
+    .pipeThrough(new RecordAssemblerTransformer(options))
     .pipeTo(
       new WritableStream({
         write: (row) => controller.enqueue(row),
