@@ -18,15 +18,15 @@ describe("LexerTransformer", () => {
       fc.asyncProperty(
         fc.gen().map((g) => {
           const row = g(FC.row);
-          const quate = g(FC.quate);
+          const quote = g(FC.quote);
           const chunks = autoChunk(
             g,
-            row.map((v) => escapeField(v, { quote: quate })).join(","),
+            row.map((v) => escapeField(v, { quote })).join(","),
           );
           const expected = [
             ...row.flatMap((value, index) => [
-              // If the field is empty or quate is true, add a field.
-              ...(quate || value ? [{ type: Field, value }] : []),
+              // If the field is empty or quote is true, add a field.
+              ...(quote || value ? [{ type: Field, value }] : []),
               // If the field is not the last field, add a field delimiter.
               ...(index === row.length - 1 ? [] : [FieldDelimiter]),
             ]),
@@ -73,7 +73,7 @@ describe("LexerTransformer", () => {
       fc.asyncProperty(
         fc.gen().map((g) => {
           const options = g(FC.commonOptions);
-          const quate = g(FC.quate);
+          const quote = g(FC.quote);
           const data = g(FC.csvData, {
             fieldConstraints: { minLength: 1 },
             rowsConstraints: { minLength: 1 },
@@ -85,9 +85,7 @@ describe("LexerTransformer", () => {
             data
               .map((row) =>
                 row
-                  .map((value) =>
-                    escapeField(value, { quote: quate, ...options }),
-                  )
+                  .map((value) => escapeField(value, { quote, ...options }))
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
@@ -96,8 +94,8 @@ describe("LexerTransformer", () => {
             ...data.flatMap((row, i) => [
               // If row is empty, add a record delimiter.
               ...row.flatMap((value, j) => [
-                // If the field is empty or quate is true, add a field.
-                ...(quate || value !== "" ? [{ type: Field, value }] : []),
+                // If the field is empty or quote is true, add a field.
+                ...(quote || value !== "" ? [{ type: Field, value }] : []),
                 // If the field is not the last field, add a field delimiter.
                 ...(row.length - 1 !== j ? [FieldDelimiter] : []),
               ]),

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { FC, autoChunk } from "../__tests__/helper.js";
 import { Field, FieldDelimiter, RecordDelimiter } from "../common/index.js";
 import { Lexer } from "./Lexer.js";
-import { COMMA, DOUBLE_QUATE } from "./constants.js";
+import { COMMA, DOUBLE_QUOTE } from "./constants.js";
 import { escapeField } from "./escapeField.js";
 
 describe("class Lexer", () => {
@@ -66,7 +66,7 @@ describe("class Lexer", () => {
       fc.property(
         fc.gen().map((g) => {
           const { delimiter } = g(FC.commonOptions, {
-            quotation: DOUBLE_QUATE,
+            quotation: DOUBLE_QUOTE,
           });
 
           const row = g(FC.row);
@@ -160,22 +160,20 @@ describe("class Lexer", () => {
             columnsConstraints: { minLength: 1 },
           });
           const EOF = g(fc.boolean);
-          const quate = g(FC.quate);
+          const quote = g(FC.quote);
           const csv =
             data
               .map((row) =>
                 row
-                  .map((field) =>
-                    escapeField(field, { ...options, quote: quate }),
-                  )
+                  .map((field) => escapeField(field, { ...options, quote }))
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
           const expected = [
             ...data.flatMap((row, i) => [
               ...row.flatMap((field, j) => [
-                // if quate is false and field is empty, it should be ignored
-                ...(quate || field !== ""
+                // if quote is false and field is empty, it should be ignored
+                ...(quote || field !== ""
                   ? [{ type: Field, value: field }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
@@ -204,14 +202,12 @@ describe("class Lexer", () => {
           const eol = g(FC.eol);
           const data = g(FC.csvData);
           const EOF = g(fc.boolean);
-          const quate = g(FC.quate);
+          const quote = g(FC.quote);
           const csv =
             data
               .map((row) =>
                 row
-                  .map((field) =>
-                    escapeField(field, { ...options, quote: quate }),
-                  )
+                  .map((field) => escapeField(field, { ...options, quote }))
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");

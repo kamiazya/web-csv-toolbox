@@ -8,6 +8,6 @@ export const LF = "\n";
 export const COMMA = ",";
 
 /**
- * DOUBLE_QUATE is a symbol for double quate(").
+ * DOUBLE_QUOTE is a symbol for double quote(").
  */
-export const DOUBLE_QUATE = '"';
+export const DOUBLE_QUOTE = '"';

@@ -1,6 +1,6 @@
 import { CommonOptions } from "../common/types.js";
 import { type assertCommonOptions } from "./assertCommonOptions.js";
-import { COMMA, DOUBLE_QUATE } from "./constants.js";
+import { COMMA, DOUBLE_QUOTE } from "./constants.js";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quote?: true;
@@ -33,7 +33,7 @@ function specialCheckFordelimiterIsRepetitionOfOneTypeOfCharacter(
 export function escapeField(
   value: string,
   {
-    quotation = DOUBLE_QUATE,
+    quotation = DOUBLE_QUOTE,
     delimiter = COMMA,
     quote,
   }: EscapeFieldOptions = {},

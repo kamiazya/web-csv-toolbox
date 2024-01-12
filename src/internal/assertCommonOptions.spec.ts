@@ -2,14 +2,14 @@ import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { FC } from "../__tests__/helper.js";
 import { assertCommonOptions } from "./assertCommonOptions.js";
-import { COMMA, CRLF, DOUBLE_QUATE } from "./constants.js";
+import { COMMA, CRLF, DOUBLE_QUOTE } from "./constants.js";
 
 describe("function assertCommonOptions", () => {
   it("should be throw error if quotation is a empty character", () => {
     expect(() =>
       assertCommonOptions({
         quotation: "",
-        delimiter: DOUBLE_QUATE,
+        delimiter: DOUBLE_QUOTE,
       }),
     ).toThrow("quotation must not be empty");
   });
@@ -36,7 +36,7 @@ describe("function assertCommonOptions", () => {
           expect(() =>
             assertCommonOptions({
               quotation: invalidQuotation,
-              delimiter: DOUBLE_QUATE,
+              delimiter: DOUBLE_QUOTE,
             }),
           ).toThrow("quotation must not include CR or LF");
         },

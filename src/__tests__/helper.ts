@@ -157,7 +157,7 @@ export namespace FC {
       );
   }
 
-  export function quate() {
+  export function quote() {
     return fc.constantFrom<true | undefined>(true, undefined);
   }
 
