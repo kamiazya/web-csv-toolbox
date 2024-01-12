@@ -10,5 +10,8 @@ describe("escapeField function", () => {
     expect(escapeField("c21", { quotation: "c" })).toBe("ccc21c");
     expect(escapeField("$", { quotation: "$" })).toBe("$$$$");
     expect(escapeField("|", { delimiter: "||" })).toBe('"|"');
+    expect(escapeField("b7ccced", { quotation: "cc", quote: true })).toBe(
+      "ccb7cccccedcc",
+    );
   });
 });

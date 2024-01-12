@@ -46,7 +46,7 @@ export function escapeField(
     replacedPattern = quotation
       .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
       .repeat(2);
-    REPLACED_PATTERN_CACHE.set(replacedPattern, replacedPattern);
+    REPLACED_PATTERN_CACHE.set(quotation, replacedPattern);
   }
   let check: (v: string) => boolean;
   if (CHECK_CACHE.has(delimiter)) {
