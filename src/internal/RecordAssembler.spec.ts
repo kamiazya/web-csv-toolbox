@@ -6,13 +6,13 @@ import { Token } from "../common/index.js";
 import { RecordAssembler } from "./RecordAssembler.js";
 
 describe("class RecordAssembler", () => {
-  it("should assemble records", () => {
+  it("should throw an error for empty headers", () => {
     expect(() => new RecordAssembler({ header: [] })).toThrowError(
       "The header must not be empty.",
     );
   });
 
-  it("should assemble records", () => {
+  it("should throw an error for duplicate headers", () => {
     expect(() => new RecordAssembler({ header: ["a", "a"] })).toThrowError(
       "The header must not contain duplicate fields.",
     );
