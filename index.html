@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-csv-toolbox</title>
+</head>
+<body>
+
+</body>
+<script type="module">
+import { parse } from './src/web-csv-toolbox.ts';
+
+const csv = `name,age
+Alice,42
+Bob,69`;
+
+for await (const record of parse(csv)) {
+  console.log(record);
+}
+</script>
+</html>
