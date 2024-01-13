@@ -1,9 +1,7 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
-import * as internal from "./internal/toArray.js";
-import {
-  LexerTransformer,
-  RecordAssemblerTransformar,
-} from "./transformers/index.js";
+import { parseStringStreamToStream } from "./internal/parseStringStreamToStream.js";
+import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.js";
+import * as internal from "./internal/utils/toArray.js";
 
 /**
  * Parse CSV string stream to records.
@@ -32,40 +30,19 @@ import {
  * });
  *
  * for await (const record of parseStringStream(csv)) {
- *  console.log(record);
+ *   console.log(record);
  * }
  * // Prints:
  * // { name: 'Alice', age: '42' }
  * // { name: 'Bob', age: '69' }
  * ```
  */
-export async function* parseStringStream<Header extends ReadonlyArray<string>>(
+export function parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  let controller: ReadableStreamDefaultController;
-  const readable = new ReadableStream({
-    start: (controller_) => (controller = controller_),
-  });
-  await stream
-    .pipeThrough(new LexerTransformer(options))
-    .pipeThrough(new RecordAssemblerTransformar(options))
-    .pipeTo(
-      new WritableStream({
-        write: (row) => controller.enqueue(row),
-        close: () => controller.close(),
-      }),
-    );
-  const reader = readable.getReader();
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      yield value;
-    }
-  } finally {
-    reader.releaseLock();
-  }
+  const recordStream = parseStringStreamToStream(stream, options);
+  return streamToAsyncIterableIterator(recordStream);
 }
 
 export namespace parseStringStream {
@@ -104,5 +81,46 @@ export namespace parseStringStream {
     enumerable: true,
     writable: false,
     value: internal.toArray,
+  });
+
+  /**
+   * Parse CSV string stream to records.
+   *
+   * @returns Array of records
+   *
+   * @example
+   *
+   * ```ts
+   * import { parseStringStream } from 'web-csv-toolbox';
+   *
+   * const csv = `name,age
+   * Alice,42
+   * Bob,69`;
+   *
+   * const stream = new ReadableStream({
+   *   start(controller) {
+   *     controller.enqueue(csv);
+   *     controller.close();
+   *   },
+   * });
+   *
+   * await parseStringStream.toStream(stream)
+   *   .pipeTo(
+   *     new WritableStream({
+   *       write(record) {
+   *       console.log(record);
+   *     },
+   *   }),
+   * );
+   * ```
+   */
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<string>,
+    options?: ParseOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>>;
+  Object.defineProperty(parseStringStream, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: parseStringStreamToStream,
   });
 }

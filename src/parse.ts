@@ -6,14 +6,12 @@ import {
   ParseBinaryOptions,
   ParseOptions,
 } from "./common/types.js";
-import * as internal from "./internal/toArray.js";
-import { parseArrayBuffer } from "./parseArrayBuffer.js";
+import * as internal from "./internal/utils/toArray.js";
+import { parseBinary } from "./parseBinary.js";
 import { parseResponse } from "./parseResponse.js";
-import { parseStream } from "./parseStream.js";
 import { parseString } from "./parseString.js";
-import { type parseStringStream } from "./parseStringStream.js";
-import { parseUint8Array } from "./parseUint8Array.js";
-import { type parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
+import { parseStringStream } from "./parseStringStream.js";
+import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 /**
  * Parse CSV to records.
@@ -31,20 +29,18 @@ import { type parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
  * @category High-level API
  *
  * @remarks
- * {@link parseString}, {@link parseUint8ArrayStream},
- * {@link parseArrayBuffer}, {@link parseUint8Array},
+ * {@link parseString}, {@link parseBinary}, {@link parseUint8ArrayStream},
  * {@link parseStringStream} and {@link parseResponse} are used internally.
  *
  * If you known the type of the CSV, it performs better to use them directly.
  *
- * | If you want to parse a...           | Use...                        | Data are treated as... |
- * | ----------------------------------- | ----------------------------- | ---------------------- |
- * | {@link !String}                     | {@link parseString}           | String                 |
- * | {@link !ReadableStream}<string>     | {@link parseStringStream}     | String                 |
- * | {@link !ReadableStream}<Uint8Array> | {@link parseUint8ArrayStream} | Binary                 |
- * | {@link !Response}                   | {@link parseResponse}         | Binary                 |
- * | {@link !ArrayBuffer}                | {@link parseArrayBuffer}      | Binary                 |
- * | {@link !Uint8Array}                 | {@link parseUint8Array}       | Binary                 |
+ * | If you want to parse a...                    | Use...                        | Options...                 |
+ * | -------------------------------------------- | ----------------------------- | -------------------------- |
+ * | {@link !String}                              | {@link parseString}           | {@link ParseOptions}       |
+ * | {@link !ReadableStream}<{@link !String}>     | {@link parseStringStream}     | {@link ParseOptions}       |
+ * | {@link !Uint8Array} \| {@link !ArrayBuffer}  | {@link parseBinary}           | {@link ParseBinaryOptions} |
+ * | {@link !ReadableStream}<{@link !Uint8Array}> | {@link parseUint8ArrayStream} | {@link ParseBinaryOptions} |
+ * | {@link !Response}                            | {@link parseResponse}         | {@link ParseBinaryOptions} |
  *
  * @example Parsing CSV files from strings
  *
@@ -172,16 +168,26 @@ export async function* parse<Header extends ReadonlyArray<string>>(
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {
     yield* parseString(csv, options);
-  } else if (csv instanceof Uint8Array) {
-    yield* parseUint8Array(csv, options);
-  } else if (csv instanceof ArrayBuffer) {
-    yield* parseArrayBuffer(csv, options);
+  } else if (csv instanceof Uint8Array || csv instanceof ArrayBuffer) {
+    yield* parseBinary(csv, options);
   } else if (csv instanceof ReadableStream) {
-    yield* parseStream(csv, options);
+    const [branch1, branch2] = csv.tee();
+    const reader1 = branch1.getReader();
+    const { value: firstChunk } = await reader1.read();
+    reader1.releaseLock();
+    if (typeof firstChunk === "string") {
+      yield* parseStringStream(branch2 as ReadableStream<string>, options);
+    } else if (firstChunk instanceof Uint8Array) {
+      yield* parseUint8ArrayStream(
+        branch2 as ReadableStream<Uint8Array>,
+        options,
+      );
+    }
   } else if (csv instanceof Response) {
     yield* parseResponse(csv, options);
   }
 }
+
 export namespace parse {
   /**
    * Parse CSV string to array of records,

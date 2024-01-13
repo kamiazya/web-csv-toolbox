@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { escapeField } from "../escapeField";
+import { escapeField } from "./escapeField";
 
 describe("escapeField function", () => {
   test("should escape quotation", () => {
@@ -9,6 +9,9 @@ describe("escapeField function", () => {
     expect(escapeField("a\na")).toBe('"a\na"');
     expect(escapeField("c21", { quotation: "c" })).toBe("ccc21c");
     expect(escapeField("$", { quotation: "$" })).toBe("$$$$");
-    expect(escapeField("|", { demiliter: "||" })).toBe('"|"');
+    expect(escapeField("|", { delimiter: "||" })).toBe('"|"');
+    expect(escapeField("b7ccced", { quotation: "cc", quote: true })).toBe(
+      "ccb7cccccedcc",
+    );
   });
 });

@@ -1,22 +1,23 @@
-import { fc, it as it_ } from "@fast-check/vitest";
-import { describe as describe_, expect } from "vitest";
-import { FC, transform } from "../../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../../common/index.js";
-import { RecordAssemblerTransformar } from "../RecordAssemblerTransformar.js";
+import { fc } from "@fast-check/vitest";
+import { describe as describe_, expect, it as it_ } from "vitest";
+import { FC, transform } from "../__tests__/helper.js";
+import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
+import { Token } from "../common/types.js";
+import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.js";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
-describe("ParserTransformer", () => {
+describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformar({ header: [] })).toThrowError(
+    expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
       "The header must not be empty.",
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
     expect(
-      () => new RecordAssemblerTransformar({ header: ["a", "a"] }),
+      () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
     ).toThrowError("The header must not contain duplicate fields.");
   });
 
@@ -24,7 +25,6 @@ describe("ParserTransformer", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -32,24 +32,20 @@ describe("ParserTransformer", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
+          const tokens: Token[] = [
             // generate header tokens
-            ...header.flatMap((field, i) => [
+            ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
-              i === header.length - 1
-                ? { type: RecordDelimiter, value: EOL }
-                : { type: FieldDelimiter, value: "," },
+              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
-              row.flatMap((field, j) => [
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                FieldDelimiter,
                 // generate record delimiter token
-                ...(j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];
@@ -59,10 +55,9 @@ describe("ParserTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(
-            new RecordAssemblerTransformar(),
+          const actual = await transform(new RecordAssemblerTransformer(), [
             tokens,
-          );
+          ]);
           expect(actual).toEqual(expected);
         },
       ),
@@ -72,7 +67,6 @@ describe("ParserTransformer", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -81,31 +75,24 @@ describe("ParserTransformer", () => {
             },
           });
           const tokens = [
-            ...rows.flatMap((row) =>
-              row.flatMap((field, j) => [
+            ...rows.flatMap<Token>((row) =>
+              row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
-                ...(j === row.length - 1
-                  ? [{ type: RecordDelimiter, value: EOL }]
-                  : []),
+                FieldDelimiter,
+                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
               ]),
             ),
           ];
           const expected = rows.map((row) =>
             Object.fromEntries(row.map((field, i) => [header[i], field])),
           );
-          return {
-            header,
-            EOL,
-            tokens,
-            expected,
-          };
+          return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const parser = new RecordAssemblerTransformar({
+          const parser = new RecordAssemblerTransformer({
             header,
           });
-          const actual = await transform(parser, tokens);
+          const actual = await transform(parser, [tokens]);
           expect(actual).toEqual(expected);
         },
       ),

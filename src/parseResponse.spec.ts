@@ -1,9 +1,9 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { SingleValueReadableStream } from "../internal/SingleValueReadableStream";
-import { escapeField } from "../internal/escapeField";
-import { parseResponse } from "../parseResponse";
-import { FC } from "./helper";
+import { FC } from "./__tests__/helper.js";
+import { escapeField } from "./internal/escapeField.js";
+import { SingleValueReadableStream } from "./internal/utils/SingleValueReadableStream.js";
+import { parseResponse } from "./parseResponse.js";
 
 describe("parseRequest function", () => {
   it("should throw error if content-type header is not text/csv", async () => {
@@ -48,9 +48,9 @@ describe("parseRequest function", () => {
           });
           const EOF = g(fc.boolean);
           const csv = [
-            header.map((v) => escapeField(v, { quate: true })).join(","),
+            header.map((v) => escapeField(v, { quote: true })).join(","),
             ...csvData.map((row) =>
-              row.map((v) => escapeField(v, { quate: true })).join(","),
+              row.map((v) => escapeField(v, { quote: true })).join(","),
             ),
             ...(EOF ? [""] : []),
           ].join(EOL);

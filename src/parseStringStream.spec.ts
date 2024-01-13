@@ -1,10 +1,11 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { escapeField } from "../internal/escapeField.js";
-import { parseString } from "../parseString.js";
-import { FC } from "./helper.js";
+import { FC } from "./__tests__/helper.js";
+import { escapeField } from "./internal/escapeField.js";
+import { SingleValueReadableStream } from "./internal/utils/SingleValueReadableStream.js";
+import { parseStringStream } from "./parseStringStream.js";
 
-describe("parseString function", () => {
+describe("parseStringStream function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
@@ -19,9 +20,9 @@ describe("parseString function", () => {
           });
           const EOF = g(fc.boolean);
           const csv = [
-            header.map((v) => escapeField(v, { quate: true })).join(","),
+            header.map((v) => escapeField(v, { quote: true })).join(","),
             ...csvData.map((row) =>
-              row.map((v) => escapeField(v, { quate: true })).join(","),
+              row.map((v) => escapeField(v, { quote: true })).join(","),
             ),
             ...(EOF ? [""] : []),
           ].join(EOL);
@@ -31,11 +32,11 @@ describe("parseString function", () => {
                   Object.fromEntries(row.map((v, i) => [header[i], v])),
                 )
               : [];
-          return { data, csv, header };
+          return { data, csv: new SingleValueReadableStream(csv), header };
         }),
         async ({ data, csv }) => {
           let i = 0;
-          for await (const row of parseString(csv)) {
+          for await (const row of parseStringStream(csv)) {
             expect(data[i++]).toEqual(row);
           }
         },

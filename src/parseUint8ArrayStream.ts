@@ -1,5 +1,7 @@
 import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
-import * as internal from "./internal/toArray.js";
+import { parseUint8ArrayStreamToStream } from "./internal/parseUint8ArrayStreamToStream.js";
+import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.js";
+import * as internal from "./internal/utils/toArray.js";
 import { parseStringStream } from "./parseStringStream.js";
 
 /**
@@ -36,25 +38,12 @@ import { parseStringStream } from "./parseStringStream.js";
  * }
  * ```
  */
-export async function* parseUint8ArrayStream<
-  Header extends ReadonlyArray<string>,
->(
+export function parseUint8ArrayStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const { charset, fatal, ignoreBOM, decomposition } = options ?? {};
-  yield* parseStringStream(
-    [
-      // NOTE: if decompression is undefined, it will be ignored.
-      ...(decomposition ? [new DecompressionStream(decomposition)] : []),
-      // NOTE: if charset is undefined, it will be decoded as utf-8.
-      new TextDecoderStream(charset, { fatal, ignoreBOM }),
-    ].reduce<ReadableStream>(
-      (stream, transformer) => stream.pipeThrough(transformer),
-      stream,
-    ),
-    options,
-  );
+  const recordStream = parseUint8ArrayStreamToStream(stream, options);
+  return streamToAsyncIterableIterator(recordStream);
 }
 
 export namespace parseUint8ArrayStream {
@@ -91,5 +80,44 @@ export namespace parseUint8ArrayStream {
     enumerable: true,
     writable: false,
     value: internal.toArray,
+  });
+
+  /**
+   * Parse CSV binary to array of records.
+   *
+   * @returns Stream of records
+   *
+   * @example Parsing CSV binary
+   * ```ts
+   * import { parseUint8ArrayStream } from 'web-csv-toolbox';
+   *
+   * const csv = Uint8Array.from([
+   *  // ...
+   * ]);
+   *
+   * const stream = new ReadableStream({
+   *  start(controller) {
+   *   controller.enqueue(csv);
+   *  controller.close();
+   * },
+   * });
+   *
+   * await parseUint8ArrayStream.toStream(stream)
+   *   .pipeTo(new WritableStream({
+   *     write(record) {
+   *       console.log(record);
+   *     },
+   *   }),
+   * );
+   * ```
+   */
+  export declare function toStream<Header extends ReadonlyArray<string>>(
+    stream: ReadableStream<Uint8Array>,
+    options?: ParseBinaryOptions<Header>,
+  ): ReadableStream<CSVRecord<Header>[]>;
+  Object.defineProperty(parseUint8ArrayStream, "toStream", {
+    enumerable: true,
+    writable: false,
+    value: parseUint8ArrayStreamToStream,
   });
 }

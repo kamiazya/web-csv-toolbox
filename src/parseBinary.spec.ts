@@ -1,10 +1,10 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { escapeField } from "../internal/escapeField.js";
-import { parseArrayBuffer } from "../parseArrayBuffer.js";
-import { FC } from "./helper";
+import { FC } from "./__tests__/helper.js";
+import { escapeField } from "./internal/escapeField.js";
+import { parseBinary } from "./parseBinary.js";
 
-describe("parseArrayBuffer function", () => {
+describe("parseBinary function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
@@ -28,9 +28,9 @@ describe("parseArrayBuffer function", () => {
           });
           const EOF = g(fc.boolean);
           const csv = [
-            header.map((v) => escapeField(v, { quate: true })).join(","),
+            header.map((v) => escapeField(v, { quote: true })).join(","),
             ...csvData.map((row) =>
-              row.map((v) => escapeField(v, { quate: true })).join(","),
+              row.map((v) => escapeField(v, { quote: true })).join(","),
             ),
             ...(EOF ? [""] : []),
           ].join(EOL);
@@ -42,12 +42,12 @@ describe("parseArrayBuffer function", () => {
               : [];
           return {
             data,
-            csv: new TextEncoder().encode(csv).buffer,
+            csv: new TextEncoder().encode(csv),
           };
         }),
         async ({ data, csv }) => {
           let i = 0;
-          for await (const row of parseArrayBuffer(csv)) {
+          for await (const row of parseBinary(csv)) {
             expect(data[i++]).toStrictEqual(row);
           }
         },

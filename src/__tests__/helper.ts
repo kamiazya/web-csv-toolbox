@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { CRLF, LF } from "../internal/constants.js";
 
-export async function transform<I, O, T extends TransformStream<I, O>>(
-  transformer: T,
+export async function transform<I, O>(
+  transformer: TransformStream<I, O>,
   inputs: I[],
-) {
+): Promise<O[]> {
   const copy = [...inputs];
   const rows: any[] = [];
   await new ReadableStream({
@@ -55,9 +55,11 @@ export namespace FC {
 
   export interface TextConstraints extends fc.StringSharedConstraints {
     kindExcludes?: readonly StringKind[];
+    excludes?: string[];
   }
 
   export function text({
+    excludes = [],
     kindExcludes = [],
     ...constraints
   }: TextConstraints = {}): fc.Arbitrary<string> {
@@ -88,28 +90,27 @@ export namespace FC {
           case "string16bits":
             return fc.string16bits(constraints);
         }
-      });
-  }
-
-  export interface FieldConstraints extends TextConstraints {
-    excludes?: string[];
+      })
+      .filter(_excludeFilter(excludes));
   }
 
   export function field({
-    excludes = [],
     minLength = 0,
     ...constraints
-  }: FieldConstraints = {}): fc.Arbitrary<string> {
-    return text({ minLength, ...constraints }).filter(_excludeFilter(excludes));
+  }: TextConstraints = {}): fc.Arbitrary<string> {
+    return text({ minLength, ...constraints });
   }
 
-  export interface DemiliterConstraints extends TextConstraints {
+  export interface DelimiterConstraints extends TextConstraints {
     excludes?: string[];
   }
-  export function demiliter({
-    excludes = [],
-    ...constraints
-  }: DemiliterConstraints = {}): fc.Arbitrary<string> {
+  export function delimiter(
+    options: DelimiterConstraints | string = {},
+  ): fc.Arbitrary<string> {
+    if (typeof options === "string") {
+      return fc.constant(options);
+    }
+    const { excludes = [], ...constraints }: DelimiterConstraints = options;
     return text({
       minLength: 1,
       ...constraints,
@@ -118,20 +119,46 @@ export namespace FC {
       .filter(_excludeFilter(excludes));
   }
 
-  export interface QuoteCharConstraints extends TextConstraints {
+  export interface QuotationConstraints extends TextConstraints {
     excludes?: string[];
   }
 
-  export function quotation({
-    excludes = [],
-    ...constraints
-  }: QuoteCharConstraints = {}) {
+  export function quotation(options: QuotationConstraints | string = {}) {
+    if (typeof options === "string") {
+      return fc.constant(options);
+    }
+    const { excludes = [], ...constraints } = options;
     return text({
       ...constraints,
       minLength: 1,
     })
       .filter(_excludeFilter([...CRLF]))
       .filter(_excludeFilter(excludes));
+  }
+
+  export interface CommonOptionsConstraints {
+    delimiter?: string | DelimiterConstraints;
+    quotation?: string | QuotationConstraints;
+  }
+
+  export function commonOptions({
+    delimiter,
+    quotation,
+  }: CommonOptionsConstraints = {}) {
+    return fc
+      .record({
+        delimiter: FC.delimiter(delimiter),
+        quotation: FC.quotation(quotation),
+      })
+      .filter(
+        ({ delimiter, quotation }) =>
+          delimiter.includes(quotation) === false &&
+          quotation.includes(delimiter) === false,
+      );
+  }
+
+  export function quote() {
+    return fc.constantFrom<true | undefined>(true, undefined);
   }
 
   export function eol() {
@@ -141,7 +168,7 @@ export namespace FC {
   export interface RowConstraints {
     sparse?: boolean;
     columnsConstraints?: fc.ArrayConstraints;
-    fieldConstraints?: FieldConstraints;
+    fieldConstraints?: TextConstraints;
   }
   export function row({
     sparse = false,
@@ -201,15 +228,4 @@ export function autoChunk(
     cur = next;
   }
   return chunks;
-}
-
-export function chunker(
-  gen: fc.GeneratorValue,
-  minLenght?: number,
-): (
-  template: { raw: readonly string[] | ArrayLike<string> },
-  ...substitutions: any[]
-) => string[] {
-  return (template, ...substitutions) =>
-    autoChunk(gen, String.raw(template, ...substitutions), minLenght);
 }
