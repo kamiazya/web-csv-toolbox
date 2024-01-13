@@ -1,8 +1,8 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper";
-import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.js";
 import { escapeField } from "./internal/escapeField.js";
+import { SingleValueReadableStream } from "./internal/utils/SingleValueReadableStream.js";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 describe("parseUint8ArrayStream function", () => {

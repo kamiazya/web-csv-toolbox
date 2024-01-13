@@ -1,7 +1,7 @@
-import { CSVRecord, ParseOptions } from "./common/index.js";
+import { CSVRecord, ParseOptions } from "./common/types.js";
 import { getOptionsFromResponse } from "./internal/getOptionsFromResponse.js";
 import { parseResponseToStream } from "./internal/parseResponseToStream.js";
-import * as internal from "./internal/toArray.js";
+import * as internal from "./internal/utils/toArray.js";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
 
 /**

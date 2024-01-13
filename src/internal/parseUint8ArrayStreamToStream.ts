@@ -1,7 +1,7 @@
 import { CSVRecord, ParseBinaryOptions } from "../common/types.js";
 import { LexerTransformer } from "../transformers/LexerTransformer.js";
 import { RecordAssemblerTransformer } from "../transformers/RecordAssemblerTransformer.js";
-import { pipeline } from "./pipeline.js";
+import { pipeline } from "./utils/pipeline.js";
 
 export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
   stream: ReadableStream<Uint8Array>,

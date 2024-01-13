@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { SingleValueReadableStream } from "./SingleValueReadableStream.js";
 import { parseStringStreamToStream } from "./parseStringStreamToStream.js";
+import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.js";
 
 const csv = new SingleValueReadableStream(`name,age
 Alice,42

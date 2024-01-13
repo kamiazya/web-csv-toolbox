@@ -1,10 +1,8 @@
 import { CSVRecord, ParseOptions } from "./common/types.js";
-import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.js";
 import { parseStringToArraySync } from "./internal/parseStringToArraySync.js";
 import { parseStringToIterableIterator } from "./internal/parseStringToIterableIterator.js";
 import { parseStringToStream } from "./internal/parseStringToStream.js";
-import * as internal from "./internal/toArray.js";
-import { parseStringStream } from "./parseStringStream.js";
+import * as internal from "./internal/utils/toArray.js";
 
 /**
  * Parse CSV string to records.
@@ -36,7 +34,7 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  yield* parseStringStream(new SingleValueReadableStream(csv), options);
+  yield* parseStringToIterableIterator(csv, options);
 }
 export namespace parseString {
   /**

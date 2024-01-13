@@ -1,7 +1,7 @@
 import { CSVRecord, ParseOptions } from "../common/types.js";
 import { LexerTransformer } from "../transformers/LexerTransformer.js";
 import { RecordAssemblerTransformer } from "../transformers/RecordAssemblerTransformer.js";
-import { pipeline } from "./pipeline.js";
+import { pipeline } from "./utils/pipeline.js";
 
 export function parseStringStreamToStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,

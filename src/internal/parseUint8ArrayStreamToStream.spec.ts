@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
-import { SingleValueReadableStream } from "./SingleValueReadableStream";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream";
+import { SingleValueReadableStream } from "./utils/SingleValueReadableStream";
 
 const csv = new SingleValueReadableStream(
   new TextEncoder().encode(

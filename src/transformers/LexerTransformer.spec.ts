@@ -1,7 +1,7 @@
 import { fc } from "@fast-check/vitest";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { FC, autoChunk, transform } from "../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../common/index.js";
+import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
 import { escapeField } from "../internal/escapeField.js";
 import { LexerTransformer } from "./LexerTransformer.js";
 

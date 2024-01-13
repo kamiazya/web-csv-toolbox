@@ -2,7 +2,7 @@ import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
 import { CommonOptions, Token } from "../common/types.js";
 import { assertCommonOptions } from "./assertCommonOptions.js";
 import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.js";
-import { escapeRegExp } from "./escapeRegExp.js";
+import { escapeRegExp } from "./utils/escapeRegExp.js";
 
 export class Lexer {
   #delimiter: string;

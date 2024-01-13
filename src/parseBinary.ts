@@ -1,10 +1,9 @@
 import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
-import { SingleValueReadableStream } from "./internal/SingleValueReadableStream.js";
 import { parseBinaryToArraySync } from "./internal/parseBinaryToArraySync.js";
 import { parseBinaryToIterableIterator } from "./internal/parseBinaryToIterableIterator.js";
 import { parseBinaryToStream } from "./internal/parseBinaryToStream.js";
-import * as internal from "./internal/toArray.js";
-import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
+import { iterableIteratorToAsync } from "./internal/utils/iterableIteratorToAsync.js";
+import * as internal from "./internal/utils/toArray.js";
 
 /**
  * Parse a binary from an {@link !Uint8Array}.
@@ -29,14 +28,15 @@ import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
  * }
  * ```
  */
-export function parseUint8Array<Header extends ReadonlyArray<string>>(
-  bytes: Uint8Array,
+export function parseBinary<Header extends ReadonlyArray<string>>(
+  bytes: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-) {
-  return parseUint8ArrayStream(new SingleValueReadableStream(bytes), options);
+): AsyncIterableIterator<CSVRecord<Header>> {
+  const iterator = parseBinaryToIterableIterator(bytes, options);
+  return iterableIteratorToAsync(iterator);
 }
 
-export namespace parseUint8Array {
+export namespace parseBinary {
   /**
    * Parse a binary from an {@link !Uint8Array} to an array of records.
    *
@@ -56,10 +56,10 @@ export namespace parseUint8Array {
    * ```
    */
   export declare function toArray<Header extends ReadonlyArray<string>>(
-    bytes: Uint8Array,
+    bytes: Uint8Array | ArrayBuffer,
     options?: ParseBinaryOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
-  Object.defineProperty(parseUint8Array, "toArray", {
+  Object.defineProperty(parseBinary, "toArray", {
     enumerable: true,
     writable: false,
     value: internal.toArray,
@@ -84,10 +84,10 @@ export namespace parseUint8Array {
    * ```
    */
   export declare function toArraySync<Header extends ReadonlyArray<string>>(
-    bytes: Uint8Array,
+    bytes: Uint8Array | ArrayBuffer,
     options?: ParseBinaryOptions<Header>,
   ): CSVRecord<Header>[];
-  Object.defineProperty(parseUint8Array, "toArraySync", {
+  Object.defineProperty(parseBinary, "toArraySync", {
     enumerable: true,
     writable: false,
     value: parseBinaryToArraySync,
@@ -118,7 +118,7 @@ export namespace parseUint8Array {
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
   ): IterableIterator<CSVRecord<Header>>;
-  Object.defineProperty(parseUint8Array, "toIterableIterator", {
+  Object.defineProperty(parseBinary, "toIterableIterator", {
     enumerable: true,
     writable: false,
     value: parseBinaryToIterableIterator,
@@ -155,7 +155,7 @@ export namespace parseUint8Array {
     bytes: Uint8Array,
     options?: ParseBinaryOptions<Header>,
   ): ReadableStream<CSVRecord<Header>>;
-  Object.defineProperty(parseUint8Array, "toStream", {
+  Object.defineProperty(parseBinary, "toStream", {
     enumerable: true,
     writable: false,
     value: parseBinaryToStream,

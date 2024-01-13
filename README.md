@@ -253,10 +253,8 @@ catering to users who need more detailed and fine-tuned functionality.
 
 - **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
   - Efficient parsing of CSV strings.
-- **`function parseArrayBuffer(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseArrayBuffer-1.html)
-  - Parse CSV Binary of ArrayBuffer.
-- **`function parseUint8Array(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8Array-1.html)
-  - Parse CSV Binary of Uint8Array.
+- **`function parseBinary(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinary-1.html)
+  - Parse CSV Binary of ArrayBuffer or Uint8Array.
 - **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
   - Customized parsing directly from `Response` objects.
 - **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)

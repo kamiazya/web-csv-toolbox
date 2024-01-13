@@ -1,4 +1,4 @@
-import { CommonOptions, Token } from "../common/index.js";
+import { CommonOptions, Token } from "../common/types.js";
 import { Lexer } from "../internal/Lexer.js";
 
 /**
