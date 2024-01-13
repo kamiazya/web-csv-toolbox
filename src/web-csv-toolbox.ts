@@ -1,4 +1,3 @@
-/*#__PURE__*/
 export * from "./lib/common/constants.ts";
 export * from "./lib/common/types.ts";
 export * from "./lib/transformers/LexerTransformer.ts";
