@@ -5,13 +5,13 @@ import {
   CSVString,
   ParseBinaryOptions,
   ParseOptions,
-} from "./common/types.js";
-import * as internal from "./internal/utils/toArray.js";
-import { parseBinary } from "./parseBinary.js";
-import { parseResponse } from "./parseResponse.js";
-import { parseString } from "./parseString.js";
-import { parseStringStream } from "./parseStringStream.js";
-import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
+} from "./common/types.ts";
+import * as internal from "./internal/utils/toArray.ts";
+import { parseBinary } from "./parseBinary.ts";
+import { parseResponse } from "./parseResponse.ts";
+import { parseString } from "./parseString.ts";
+import { parseStringStream } from "./parseStringStream.ts";
+import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
 
 /**
  * Parse CSV to records.

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseStringToArraySync } from "./parseStringToArraySync.js";
+import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 
 const csv = `name,age
 Alice,42

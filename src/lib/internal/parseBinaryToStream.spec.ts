@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseBinaryToStream } from "./parseBinaryToStream.js";
+import { parseBinaryToStream } from "./parseBinaryToStream.ts";
 
 const csv = new TextEncoder().encode(`name,age
 Alice,42

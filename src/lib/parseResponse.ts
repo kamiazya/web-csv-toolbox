@@ -1,8 +1,8 @@
-import { CSVRecord, ParseOptions } from "./common/types.js";
-import { getOptionsFromResponse } from "./internal/getOptionsFromResponse.js";
-import { parseResponseToStream } from "./internal/parseResponseToStream.js";
-import * as internal from "./internal/utils/toArray.js";
-import { parseUint8ArrayStream } from "./parseUint8ArrayStream.js";
+import { CSVRecord, ParseOptions } from "./common/types.ts";
+import { getOptionsFromResponse } from "./internal/getOptionsFromResponse.ts";
+import { parseResponseToStream } from "./internal/parseResponseToStream.ts";
+import * as internal from "./internal/utils/toArray.ts";
+import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
 
 /**
  * Parse HTTP Response what contains CSV to records,

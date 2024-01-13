@@ -1,6 +1,6 @@
-import { CSVRecord, ParseBinaryOptions } from "../common/types.js";
-import { convertBinaryToString } from "./convertBinaryToString.js";
-import { parseStringToStream } from "./parseStringToStream.js";
+import { CSVRecord, ParseBinaryOptions } from "../common/types.ts";
+import { convertBinaryToString } from "./convertBinaryToString.ts";
+import { parseStringToStream } from "./parseStringToStream.ts";
 
 export function parseBinaryToStream<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,

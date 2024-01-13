@@ -1,6 +1,6 @@
-import { CSVRecord, ParseBinaryOptions } from "../common/types.js";
-import { convertBinaryToString } from "./convertBinaryToString.js";
-import { parseStringToIterableIterator } from "./parseStringToIterableIterator.js";
+import { CSVRecord, ParseBinaryOptions } from "../common/types.ts";
+import { convertBinaryToString } from "./convertBinaryToString.ts";
+import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 
 export function parseBinaryToIterableIterator<
   Header extends ReadonlyArray<string>,

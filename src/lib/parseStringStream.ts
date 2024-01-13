@@ -1,7 +1,7 @@
-import { CSVRecord, ParseOptions } from "./common/types.js";
-import { parseStringStreamToStream } from "./internal/parseStringStreamToStream.js";
-import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.js";
-import * as internal from "./internal/utils/toArray.js";
+import { CSVRecord, ParseOptions } from "./common/types.ts";
+import { parseStringStreamToStream } from "./internal/parseStringStreamToStream.ts";
+import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.ts";
+import * as internal from "./internal/utils/toArray.ts";
 
 /**
  * Parse CSV string stream to records.

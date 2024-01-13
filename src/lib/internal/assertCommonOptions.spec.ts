@@ -1,8 +1,8 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { FC } from "../__tests__/helper.js";
-import { assertCommonOptions } from "./assertCommonOptions.js";
-import { COMMA, CRLF, DOUBLE_QUOTE } from "./constants.js";
+import { FC } from "../__tests__/helper.ts";
+import { assertCommonOptions } from "./assertCommonOptions.ts";
+import { COMMA, CRLF, DOUBLE_QUOTE } from "./constants.ts";
 
 describe("function assertCommonOptions", () => {
   it("should be throw error if quotation is a empty character", () => {

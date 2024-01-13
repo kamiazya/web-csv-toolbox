@@ -1,4 +1,4 @@
-import { ParseBinaryOptions } from "../common/types.js";
+import { ParseBinaryOptions } from "../common/types.ts";
 
 export function convertBinaryToString<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,

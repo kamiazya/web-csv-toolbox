@@ -1,8 +1,8 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
-import { parseUint8ArrayStreamToStream } from "./internal/parseUint8ArrayStreamToStream.js";
-import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.js";
-import * as internal from "./internal/utils/toArray.js";
-import { parseStringStream } from "./parseStringStream.js";
+import { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import { parseUint8ArrayStreamToStream } from "./internal/parseUint8ArrayStreamToStream.ts";
+import { streamToAsyncIterableIterator } from "./internal/utils/streamToAsyncIterableIterator.ts";
+import * as internal from "./internal/utils/toArray.ts";
+import { parseStringStream } from "./parseStringStream.ts";
 
 /**
  * Parse CSV to records.

@@ -1,9 +1,9 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { FC } from "../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
-import { Token } from "../common/types.js";
-import { RecordAssembler } from "./RecordAssembler.js";
+import { FC } from "../__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.ts";
+import { Token } from "../common/types.ts";
+import { RecordAssembler } from "./RecordAssembler.ts";
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {

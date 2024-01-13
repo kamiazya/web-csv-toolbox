@@ -1,6 +1,6 @@
-import { CommonOptions } from "../common/types.js";
-import { type assertCommonOptions } from "./assertCommonOptions.js";
-import { COMMA, DOUBLE_QUOTE } from "./constants.js";
+import { CommonOptions } from "../common/types.ts";
+import { type assertCommonOptions } from "./assertCommonOptions.ts";
+import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quote?: true;

@@ -1,7 +1,7 @@
-import { CSVRecord, ParseOptions } from "../common/types.js";
-import { LexerTransformer } from "../transformers/LexerTransformer.js";
-import { RecordAssemblerTransformer } from "../transformers/RecordAssemblerTransformer.js";
-import { pipeline } from "./utils/pipeline.js";
+import { CSVRecord, ParseOptions } from "../common/types.ts";
+import { LexerTransformer } from "../transformers/LexerTransformer.ts";
+import { RecordAssemblerTransformer } from "../transformers/RecordAssemblerTransformer.ts";
+import { pipeline } from "./utils/pipeline.ts";
 
 export function parseStringStreamToStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,

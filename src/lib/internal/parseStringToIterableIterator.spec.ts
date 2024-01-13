@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseStringToIterableIterator } from "./parseStringToIterableIterator.js";
+import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 
 const csv = `name,age
 Alice,42

@@ -1,5 +1,5 @@
-import { ParseBinaryOptions } from "../common/types.js";
-import { parseMime } from "./parseMime.js";
+import { ParseBinaryOptions } from "../common/types.ts";
+import { parseMime } from "./parseMime.ts";
 
 export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   response: Response,

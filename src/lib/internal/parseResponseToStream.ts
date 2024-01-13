@@ -1,6 +1,6 @@
-import { CSVRecord, ParseBinaryOptions } from "../common/types.js";
-import { getOptionsFromResponse } from "./getOptionsFromResponse.js";
-import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.js";
+import { CSVRecord, ParseBinaryOptions } from "../common/types.ts";
+import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
+import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 
 export function parseResponseToStream<Header extends ReadonlyArray<string>>(
   response: Response,

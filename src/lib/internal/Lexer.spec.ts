@@ -1,10 +1,10 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { FC, autoChunk } from "../__tests__/helper.js";
-import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
-import { Lexer } from "./Lexer.js";
-import { COMMA, DOUBLE_QUOTE } from "./constants.js";
-import { escapeField } from "./escapeField.js";
+import { FC, autoChunk } from "../__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.ts";
+import { Lexer } from "./Lexer.ts";
+import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { escapeField } from "./escapeField.ts";
 
 describe("class Lexer", () => {
   it("should lex with comma as a default field delimiter", () => {

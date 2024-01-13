@@ -1,9 +1,9 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/types.js";
-import { parseBinaryToArraySync } from "./internal/parseBinaryToArraySync.js";
-import { parseBinaryToIterableIterator } from "./internal/parseBinaryToIterableIterator.js";
-import { parseBinaryToStream } from "./internal/parseBinaryToStream.js";
-import { iterableIteratorToAsync } from "./internal/utils/iterableIteratorToAsync.js";
-import * as internal from "./internal/utils/toArray.js";
+import { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import { parseBinaryToArraySync } from "./internal/parseBinaryToArraySync.ts";
+import { parseBinaryToIterableIterator } from "./internal/parseBinaryToIterableIterator.ts";
+import { parseBinaryToStream } from "./internal/parseBinaryToStream.ts";
+import { iterableIteratorToAsync } from "./internal/utils/iterableIteratorToAsync.ts";
+import * as internal from "./internal/utils/toArray.ts";
 
 /**
  * Parse a binary from an {@link !Uint8Array}.

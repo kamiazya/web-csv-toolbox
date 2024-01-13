@@ -1,8 +1,8 @@
-import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.js";
-import { CommonOptions, Token } from "../common/types.js";
-import { assertCommonOptions } from "./assertCommonOptions.js";
-import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.js";
-import { escapeRegExp } from "./utils/escapeRegExp.js";
+import { Field, FieldDelimiter, RecordDelimiter } from "../common/constants.ts";
+import { CommonOptions, Token } from "../common/types.ts";
+import { assertCommonOptions } from "./assertCommonOptions.ts";
+import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 export class Lexer {
   #delimiter: string;

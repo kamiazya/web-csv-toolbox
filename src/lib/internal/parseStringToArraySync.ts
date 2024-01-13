@@ -1,6 +1,6 @@
-import { CSVRecord, ParseOptions } from "../common/types.js";
-import { Lexer } from "./Lexer.js";
-import { RecordAssembler } from "./RecordAssembler.js";
+import { CSVRecord, ParseOptions } from "../common/types.ts";
+import { Lexer } from "./Lexer.ts";
+import { RecordAssembler } from "./RecordAssembler.ts";
 
 export function parseStringToArraySync<Header extends ReadonlyArray<string>>(
   csv: string,
