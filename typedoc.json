@@ -1,5 +1,5 @@
 {
-  "entryPoints": ["src/index.ts"],
+  "entryPoints": ["src/web-csv-toolbox.ts"],
   "out": "doc",
   "plugin": ["typedoc-plugin-mdn-links"],
   "categoryOrder": [
