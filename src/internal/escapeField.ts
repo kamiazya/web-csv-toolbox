@@ -71,6 +71,8 @@ export function escapeField(
     contents.includes(delimiter) ||
     contents.includes("\n") ||
     contents.includes("\r") ||
+    quotation.at(0) === delimiter.at(-1) ||
+    quotation.at(-1) === delimiter.at(0) ||
     check(contents)
   ) {
     return quotation + contents + quotation;

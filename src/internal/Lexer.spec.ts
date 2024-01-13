@@ -131,13 +131,15 @@ describe("class Lexer", () => {
             .join(options.delimiter);
           const expected = [
             ...row.flatMap((field, i) => [
-              // if field is empty, it should be ignored
-              ...(field !== "" ? [{ type: Field, value: field }] : []),
+              // if field is empty or field is escaped, it should be escaped.
+              ...(field !== "" || escapeField(field, options) !== field
+                ? [{ type: Field, value: field }]
+                : []),
               // if field is not last field, it should be followed by a field delimiter
               ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),
           ];
-          return { options, csv, expected };
+          return { options, row, csv, expected };
         }),
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
@@ -183,7 +185,7 @@ describe("class Lexer", () => {
               ...(data.length - 1 !== i ? [RecordDelimiter] : []),
             ]),
           ];
-          return { csv, options, expected };
+          return { csv, data, options, expected };
         }),
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
@@ -191,6 +193,22 @@ describe("class Lexer", () => {
           expect(actual).toStrictEqual(expected);
         },
       ),
+      {
+        examples: [
+          [
+            {
+              csv: "QfQQff0Qf0Qf",
+              data: [["Q", "0"]],
+              options: { delimiter: "f0", quotation: "Qf" },
+              expected: [
+                { type: Field, value: "Q" },
+                FieldDelimiter,
+                { type: Field, value: "0" },
+              ],
+            },
+          ],
+        ],
+      },
     );
   });
 
