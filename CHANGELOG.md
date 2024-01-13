@@ -1,5 +1,46 @@
 # web-csv-toolbox
 
+## 0.5.0
+
+### Minor Changes
+
+- [`c9c5d8b`](https://github.com/kamiazya/web-csv-toolbox/commit/c9c5d8bbcb895878b051d118d0fb18269f5d51f6) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactoring
+
+  - **New Features**
+
+    - Introduced `Lexer`, `RecordAssembler`, and `LexerTransformer` classes to enhance CSV parsing capabilities.
+    - Added new methods (`toArraySync`, `toIterableIterator`, `toStream`) across various modules for flexible data processing.
+    - Expanded `parseArrayBuffer`, `parseResponse`, `parseString`, and `parseUint8Array` with additional output formats.
+
+  - **Bug Fixes**
+
+    - Corrected typos in several modules, changing `quate` to `quote` and `demiliter` to `delimiter`.
+    - Allowed `undefined` values in `CSVRecord` type to improve data handling.
+
+  - **Refactor**
+
+    - Simplified constructors and updated logic in `LexerTransformer` and `RecordAssemblerTransformer`.
+    - Enhanced type safety with refactored token types in common types module.
+
+  - **Tests**
+
+    - Added and refactored test cases for `Lexer`, `RecordAssembler`, `LexerTransformer`, and `escapeField` to ensure reliability.
+
+  - **Documentation**
+    - Updated descriptions and examples for new methods in various modules to assist users in understanding their usage.
+
+### Patch Changes
+
+- [#34](https://github.com/kamiazya/web-csv-toolbox/pull/34) [`7b13862`](https://github.com/kamiazya/web-csv-toolbox/commit/7b1386211e7ee76d33d8f047079d068419461822) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vitest from 1.1.1 to 1.1.3
+
+- [#33](https://github.com/kamiazya/web-csv-toolbox/pull/33) [`3d8f97a`](https://github.com/kamiazya/web-csv-toolbox/commit/3d8f97a7c40b630e1424fbebe827b2c9fe336ec4) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump rollup from 4.9.1 to 4.9.4
+
+- [#36](https://github.com/kamiazya/web-csv-toolbox/pull/36) [`1a72392`](https://github.com/kamiazya/web-csv-toolbox/commit/1a7239260985b29763da8c79c979fdbdd0aeef4c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc from 0.25.6 to 0.25.7
+
+- [#35](https://github.com/kamiazya/web-csv-toolbox/pull/35) [`3b93b38`](https://github.com/kamiazya/web-csv-toolbox/commit/3b93b3829b79a2fc81718ee7d7f9bc430a609868) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.10 to 3.1.11
+
+- [#37](https://github.com/kamiazya/web-csv-toolbox/pull/37) [`476fa06`](https://github.com/kamiazya/web-csv-toolbox/commit/476fa0659e6b3b0c78c9c97832d26f8a73aa25f1) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @vitest/browser from 1.1.1 to 1.1.3
+
 ## 0.4.0
 
 ### Minor Changes
