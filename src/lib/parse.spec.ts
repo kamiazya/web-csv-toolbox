@@ -1,8 +1,8 @@
 import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
-import { FC } from "./__tests__/helper.js";
-import { escapeField } from "./internal/escapeField.js";
-import { parse } from "./parse.js";
+import { FC } from "./__tests__/helper";
+import { escapeField } from "./internal/escapeField";
+import { parse } from "./parse";
 
 describe("parse.toArray function", () => {
   it("should parse CSV", () =>

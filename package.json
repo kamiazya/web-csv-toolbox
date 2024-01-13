@@ -3,22 +3,24 @@
   "version": "0.5.0",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "main": "lib/index.js",
-  "module": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "unpkg": "lib/index.umd.js",
+  "main": "dist/web-csv-toolbox.cjs",
+  "module": "dist/web-csv-toolbox.js",
+  "types": "dist/web-csv-toolbox.d.ts",
+  "unpkg": "dist/web-csv-toolbox.umd.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "exports": {
     ".": {
-      "types": "./lib/index.d.ts",
-      "default": "./lib/index.js"
+      "import": "./dist/web-csv-toolbox.js",
+      "require": "./dist/web-csv-toolbox.cjs",
+      "types": "./dist/web-csv-toolbox.d.ts",
+      "default": "./dist/web-csv-toolbox.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "lib",
+    "dist",
     "README.md"
   ],
   "scripts": {
@@ -26,10 +28,9 @@
     "test": "vitest",
     "test:browser": "vitest --browser",
     "format": "biome format . --write",
-    "lint": "biome lint .",
-    "check": "biome check src --apply",
-    "check:no-apply": "biome check src",
-    "build": "rollup -c rollup.config.ts --configPlugin rollup-plugin-typescript2 && biome check lib --apply",
+    "check": "biome check . --apply",
+    "check:no-apply": "biome check .",
+    "build": "vite build",
     "prepare": "husky install"
   },
   "repository": {
@@ -58,13 +59,12 @@
     "changesets-github-release": "^0.1.0",
     "husky": "^8.0.0",
     "lint-staged": "^15.2.0",
-    "rollup": "^4.9.1",
-    "rollup-plugin-delete": "^2.0.0",
-    "rollup-plugin-dts": "^6.1.0",
-    "rollup-plugin-typescript2": "^0.36.0",
+    "terser": "^5.26.0",
     "typedoc": "^0.25.4",
     "typedoc-plugin-mdn-links": "^3.1.9",
     "typescript": "^5.3.2",
+    "vite": "^5.0.11",
+    "vite-plugin-dts": "^3.7.0",
     "vitest": "^1.1.0",
     "webdriverio": "^8.27.0"
   }
