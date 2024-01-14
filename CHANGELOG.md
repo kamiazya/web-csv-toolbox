@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.5.2
+
+### Patch Changes
+
+- [`61ce41e`](https://github.com/kamiazya/web-csv-toolbox/commit/61ce41eae006cae6f3260f7d8a42371edb082f40) Thanks [@kamiazya](https://github.com/kamiazya)! - Update Release
+
 ## 0.5.1
 
 ### Patch Changes
