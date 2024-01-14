@@ -1,4 +1,4 @@
-name: Release
+name: CD
 
 on:
   # Run this workflow when a workflow_run event is triggered
@@ -13,6 +13,7 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+  # Build the package and upload it as an artifact
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -34,6 +35,7 @@ jobs:
         with:
           name: dist
           path: dist
+  # Release the package to npm
   release:
     name: Release
     runs-on: ubuntu-latest
@@ -67,6 +69,8 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     outputs:
       published: ${{ steps.changesets.outputs.published }}
+
+  # If the release job not published, run this job to publish a prerelease
   prerelease:
     name: Prerelease
     runs-on: ubuntu-latest
@@ -99,3 +103,40 @@ jobs:
           npx changeset publish --no-git-tag --snapshot --tag next
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # This job is used to deploy the documentation to GitHub Pages
+  doc:
+    runs-on: ubuntu-latest
+    # if the release job was successful, run this job
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    concurrency:
+      group: GitHub Pages
+      cancel-in-progress: true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build documentation
+        run: npm run doc
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v3
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: doc
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
