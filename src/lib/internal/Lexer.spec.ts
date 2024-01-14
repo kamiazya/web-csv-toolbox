@@ -147,6 +147,11 @@ describe("class Lexer", () => {
           expect(actual).toStrictEqual(expected);
         },
       ),
+      {
+        seed: 77906161,
+        path: "62:5:4:6:5:5:7:9:5:5:12:11:11:11",
+        endOnFailure: true,
+      },
     );
   });
 
