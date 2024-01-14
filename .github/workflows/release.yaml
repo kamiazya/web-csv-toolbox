@@ -12,8 +12,9 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # Used to commit to "Version Packages" PR
+      pull-requests: write # Used to create "Version Packages" PR
+      # Other permissions are defaulted to none
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -29,7 +30,8 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: npm publish
+          publish: npx changeset publish
+          version: npx changeset version
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
