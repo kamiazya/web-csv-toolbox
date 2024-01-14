@@ -27,9 +27,6 @@
     "doc": "typedoc",
     "test": "vitest",
     "test:browser": "vitest --browser",
-    "format": "biome format . --write",
-    "check": "biome check . --apply",
-    "check:no-apply": "biome check .",
     "build": "vite build",
     "serve": "vite serve",
     "prepare": "husky install"

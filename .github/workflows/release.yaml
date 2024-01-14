@@ -1,16 +1,43 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  # Run this workflow when a workflow_run event is triggered
+  # from the "Node.js CI", "Deno CI", or "Browser CI" workflows
+  # and the workflow_run's status is "completed"
+  # and the workflow_run's base branch is "main".
+  workflow_run:
+    workflows: [Node.js CI, Deno CI, Browser CI]
+    branches: [main]
+    types: [completed]
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          path: dist
   release:
     name: Release
     runs-on: ubuntu-latest
+    # Only run this job if the workflow_run's conclusion was "success"
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: write # Used to commit to "Version Packages" PR
       pull-requests: write # Used to create "Version Packages" PR
@@ -22,10 +49,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: npm
       - name: Install Dependencies
         run: npm ci
-      - name: Build
-        run: npm run build
+      - uses: actions/download-artifact@v4
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
@@ -52,6 +79,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
+          cache: npm
       - name: Install Dependencies
         run: npm ci
       - name: Build
