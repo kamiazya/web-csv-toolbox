@@ -6,7 +6,7 @@ on:
   # and the workflow_run's status is "completed"
   # and the workflow_run's base branch is "main".
   workflow_run:
-    workflows: [Node.js CI]
+    workflows: [CI]
     branches: [main]
     types: [completed]
 
