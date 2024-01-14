@@ -4,9 +4,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 ![node version](https://img.shields.io/node/v/web-csv-toolbox)
+
+![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/web-csv-toolbox)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kamiazya/web-csv-toolbox)
 ![npm](https://img.shields.io/npm/dm/web-csv-toolbox)
 
-# `🌐 web-csv-toolbox 💽`
+# `🌐 web-csv-toolbox 🧰`
 
 A CSV Toolbox utilizing Web Standard APIs.
 
@@ -14,14 +17,13 @@ A CSV Toolbox utilizing Web Standard APIs.
 
 [![GitHub](https://img.shields.io/badge/-GitHub-181717?logo=GitHub&style=flat)](https://github.com/kamiazya/web-csv-toolbox)
 [![npm](https://img.shields.io/badge/-npm-CB3837?logo=npm&style=flat)](https://www.npmjs.com/package/web-csv-toolbox)
-[![yarn](https://img.shields.io/badge/-yarn-ffffff?logo=Yarn&style=flat)](https://yarnpkg.com/package/web-csv-toolbox)
 [![API Reference](https://img.shields.io/badge/-API%20Refarence-3178C6?logo=TypeScript&style=flat&logoColor=fff)](https://kamiazya.github.io/web-csv-toolbox/)
 [![Sponsor](https://img.shields.io/badge/-GitHub%20Sponsor-fff?logo=GitHub%20Sponsors&style=flat)](https://github.com/sponsors/kamiazya)
 
 
 [![format: Biome](https://img.shields.io/badge/format%20with-Biome-F7B911?logo=biome&style=flat)](https://biomejs.dev/)
 [![test: Vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&style=flat)](https://vitest.dev/)
-[![build: Rollup](https://img.shields.io/badge/build%20with-Rollup-EC4A3F?logo=rollup.js&style=flat)](https://rollupjs.org/)
+[![build: Vite](https://img.shields.io/badge/build%20with-Vite-646CFF?logo=vite&style=flat)](https://rollupjs.org/)
 
 </div>
 
@@ -93,7 +95,7 @@ Bob,69`;
 
 ```html
 <script type="module">
-import { parse } from 'https://unpkg.com/web-csv-toolbox/lib/index.js';
+import { parse } from 'https://unpkg.com/web-csv-toolbox?module';
 
 const csv = `name,age
 Alice,42
