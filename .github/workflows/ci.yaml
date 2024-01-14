@@ -1,0 +1,136 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+  test_nodejs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build
+    - run: npm test run
+
+  test_deno:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
+    - run: |
+        deno eval '
+        import { parse } from "./src/web-csv-toolbox.ts";
+
+        const csv = `name,age
+        Alice,42
+        Bob,69`;
+
+        for await (const record of parse(csv)) {
+          console.log(record);
+        }'
+
+  test_linux_browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  test_macos_browser:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          # Headless Safari is currentry not supported
+          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
+          # - safari
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      # - if: matrix.browsers == 'safari'
+      #   run: sudo safaridriver --enable
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  test_windows_browser:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          - edge
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install Dependencies
+        run: npm ci
+      - name: Check
+        run: npx biome ci .

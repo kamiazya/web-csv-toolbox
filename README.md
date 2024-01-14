@@ -208,7 +208,7 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 
 ## Supported Runtimes 💻
 
-### Works on Node.js [![Node.js CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/node.js.yaml)
+### Works on Node.js
 
 | Versions | Status |
 | -------- | ------ |
@@ -216,7 +216,7 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 | 18.x     | ✅     |
 
 
-### Works on Browser [![Browsers CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/browsers.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/browsers.yaml)
+### Works on Browser
 
 | OS      | Chrome | FireFox | Default       |
 | ------- | ------ | ------- | ------------- |
