@@ -122,7 +122,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: build
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -133,7 +132,5 @@ jobs:
           cache: npm
       - name: Install Dependencies
         run: npm ci
-      - name: Build
-        run: npm run build
       - name: Check
         run: npx biome ci .
