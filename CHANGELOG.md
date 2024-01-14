@@ -1,5 +1,21 @@
 # web-csv-toolbox
 
+## 0.5.1
+
+### Patch Changes
+
+- [#47](https://github.com/kamiazya/web-csv-toolbox/pull/47) [`8c7b4f8`](https://github.com/kamiazya/web-csv-toolbox/commit/8c7b4f8ae6b535489a002fa048b5a8c77b14072a) Thanks [@kamiazya](https://github.com/kamiazya)! - Create SECURITY.md
+
+- [#42](https://github.com/kamiazya/web-csv-toolbox/pull/42) [`9274c24`](https://github.com/kamiazya/web-csv-toolbox/commit/9274c24a9e0670a10837255fdda95866031ac9f8) Thanks [@kamiazya](https://github.com/kamiazya)! - Implemented a new build configuration using Vite for enhanced development experience.
+
+- [#40](https://github.com/kamiazya/web-csv-toolbox/pull/40) [`f0b4fa9`](https://github.com/kamiazya/web-csv-toolbox/commit/f0b4fa9eb57a68ba38223d5d85a829671b379df3) Thanks [@kamiazya](https://github.com/kamiazya)! - Reorder exports in package.json
+
+- [#45](https://github.com/kamiazya/web-csv-toolbox/pull/45) [`0032e9b`](https://github.com/kamiazya/web-csv-toolbox/commit/0032e9bf8766f3f40256ae8427c29abe349a8e85) Thanks [@kamiazya](https://github.com/kamiazya)! - Create CODE_OF_CONDUCT.md
+
+- [#43](https://github.com/kamiazya/web-csv-toolbox/pull/43) [`181f229`](https://github.com/kamiazya/web-csv-toolbox/commit/181f2292cb1e99a09fc40df5ea634cec8a618dc9) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix typedoc config
+
+- [#48](https://github.com/kamiazya/web-csv-toolbox/pull/48) [`81baca5`](https://github.com/kamiazya/web-csv-toolbox/commit/81baca57fda4c0203bc8c23a9ee7b4bf02fea1fb) Thanks [@kamiazya](https://github.com/kamiazya)! - Update web-csv-toolbox badges and import statement
+
 ## 0.5.0
 
 ### Minor Changes
