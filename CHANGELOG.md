@@ -1,5 +1,23 @@
 # web-csv-toolbox
 
+## 0.5.3
+
+### Patch Changes
+
+- [#50](https://github.com/kamiazya/web-csv-toolbox/pull/50) [`1956d13`](https://github.com/kamiazya/web-csv-toolbox/commit/1956d13c10c2dc782f51f5645ebff6acc1f395f1) Thanks [@kamiazya](https://github.com/kamiazya)! - Update GitHub workflows and package.json
+
+- [#53](https://github.com/kamiazya/web-csv-toolbox/pull/53) [`9ceb572`](https://github.com/kamiazya/web-csv-toolbox/commit/9ceb5726aa3bf1d6e584bd68c167a91e46d6ebb6) Thanks [@kamiazya](https://github.com/kamiazya)! - This pull request integrates Deno, Node.js, and Browsers CI workflows as CI and adds Release and Prerelease workflows as CD. It also includes the integration of the doc workflow to the CD workflow. These changes aim to improve the development and deployment processes by automating the testing, building, and releasing of the software.
+
+  - **New Features**
+    - Introduced Continuous Deployment (CD) workflow for automated build and release processes.
+    - Automated package deployment to npm.
+    - Automated pre-release publishing.
+    - Automated deployment of documentation to GitHub Pages.
+  - **Refactor**
+    - Improved Continuous Integration (CI) workflow to include building and testing across different environments and platforms.
+  - **Chores**
+    - Updated workflow names for better clarity.
+
 ## 0.5.2
 
 ### Patch Changes
