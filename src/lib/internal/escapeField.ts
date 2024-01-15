@@ -1,6 +1,7 @@
 import { CommonOptions } from "../common/types.ts";
 import { type assertCommonOptions } from "./assertCommonOptions.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quote?: true;
@@ -68,9 +69,15 @@ export function escapeField(
   if (
     quote ||
     contents.includes(quotation) ||
-    contents.includes(delimiter) ||
     contents.includes("\n") ||
     contents.includes("\r") ||
+    // If wrapped contents has more than 3 delimiters, it should be quoted.
+    Array.from(
+      (delimiter + contents + delimiter).matchAll(
+        new RegExp(`(?=(${escapeRegExp(delimiter)}))`, "g"),
+      ),
+      ([, v]) => v,
+    ).length >= 3 ||
     quotation.at(0) === delimiter.at(-1) ||
     quotation.at(-1) === delimiter.at(0) ||
     check(contents)
