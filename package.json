@@ -13,16 +13,28 @@
   "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./dist/types/web-csv-toolbox.d.ts",
       "import": "./dist/es/web-csv-toolbox.js",
       "require": "./dist/cjs/web-csv-toolbox.cjs",
-      "types": "./dist/types/web-csv-toolbox.d.ts",
       "default": "./dist/es/web-csv-toolbox.js"
     },
-    "./**/*": {
+    "./*": {
+      "types": "./dist/types/*.d.ts",
       "import": "./dist/es/*.js",
       "require": "./dist/cjs/*.cjs",
-      "types": "./dist/types/*.d.ts",
       "default": "./dist/es/*.js"
+    },
+    "./common/*": {
+      "types": "./dist/types/common/*.d.ts",
+      "import": "./dist/es/common/*.js",
+      "require": "./dist/cjs/common/*.cjs",
+      "default": "./dist/es/common/*.js"
+    },
+    "./utils/*": {
+      "types": "./dist/types/utils/*.d.ts",
+      "import": "./dist/es/utils/*.js",
+      "require": "./dist/cjs/utils/*.cjs",
+      "default": "./dist/es/utils/*.js"
     },
     "./package.json": "./package.json"
   },
