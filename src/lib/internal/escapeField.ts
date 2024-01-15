@@ -1,7 +1,7 @@
 import { CommonOptions } from "../common/types.ts";
 import { type assertCommonOptions } from "./assertCommonOptions.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
-import { escapeRegExp } from "./utils/escapeRegExp.ts";
+import { occurrences } from "./utils/occurrences.ts";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quote?: true;
@@ -66,20 +66,20 @@ export function escapeField(
 
   const contents = value.replaceAll(quotation, replacedPattern);
 
+  const wrappedContents = delimiter + contents + delimiter;
+
   if (
+    // If quote is true, it should be quoted.
     quote ||
-    contents.includes(quotation) ||
+    // If contents has line breaks, it should be quoted.
     contents.includes("\n") ||
     contents.includes("\r") ||
-    // If wrapped contents has more than 3 delimiters, it should be quoted.
-    Array.from(
-      (delimiter + contents + delimiter).matchAll(
-        new RegExp(`(?=(${escapeRegExp(delimiter)}))`, "g"),
-      ),
-      ([, v]) => v,
-    ).length >= 3 ||
-    quotation.at(0) === delimiter.at(-1) ||
-    quotation.at(-1) === delimiter.at(0) ||
+    // If wrapped contents has more than 3 delimiters,
+    // it should be quoted.
+    occurrences(wrappedContents, delimiter) >= 3 ||
+    // If wrapped contents has more than 1 quotation,
+    // it should be quoted.
+    occurrences(wrappedContents, quotation) >= 1 ||
     check(contents)
   ) {
     return quotation + contents + quotation;
