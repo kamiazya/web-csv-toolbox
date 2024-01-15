@@ -3,19 +3,25 @@
   "version": "0.5.2",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "main": "dist/web-csv-toolbox.cjs",
-  "module": "dist/web-csv-toolbox.js",
-  "types": "dist/web-csv-toolbox.d.ts",
+  "main": "dist/cjs/web-csv-toolbox.cjs",
+  "module": "dist/es/web-csv-toolbox.js",
+  "types": "dist/types/web-csv-toolbox.d.ts",
   "unpkg": "dist/web-csv-toolbox.umd.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "exports": {
     ".": {
-      "import": "./dist/web-csv-toolbox.js",
-      "require": "./dist/web-csv-toolbox.cjs",
-      "types": "./dist/web-csv-toolbox.d.ts",
-      "default": "./dist/web-csv-toolbox.js"
+      "import": "./dist/es/web-csv-toolbox.js",
+      "require": "./dist/cjs/web-csv-toolbox.cjs",
+      "types": "./dist/types/web-csv-toolbox.d.ts",
+      "default": "./dist/es/web-csv-toolbox.js"
+    },
+    "./**/*": {
+      "import": "./dist/es/*.js",
+      "require": "./dist/cjs/*.cjs",
+      "types": "./dist/types/*.d.ts",
+      "default": "./dist/es/*.js"
     },
     "./package.json": "./package.json"
   },
@@ -27,7 +33,9 @@
     "doc": "typedoc",
     "test": "vitest",
     "test:browser": "vitest --browser",
-    "build": "vite build",
+    "build": "npm run build:js && npm run build:browser",
+    "build:js": "vite build",
+    "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
     "prepare": "husky install"
   },
