@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import { assertCommonOptions } from "../internal/assertCommonOptions.ts";
 import { CRLF, LF } from "../internal/constants.ts";
 
 export async function transform<I, O>(
@@ -150,11 +151,14 @@ export namespace FC {
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
       })
-      .filter(
-        ({ delimiter, quotation }) =>
-          delimiter.includes(quotation) === false &&
-          quotation.includes(delimiter) === false,
-      );
+      .filter(({ delimiter, quotation }) => {
+        try {
+          assertCommonOptions({ delimiter, quotation });
+          return true;
+        } catch {
+          return false;
+        }
+      });
   }
 
   export function quote() {
