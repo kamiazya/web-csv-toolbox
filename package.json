@@ -10,6 +10,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "sideEffects": false,
   "exports": {
     ".": {
       "import": "./dist/es/web-csv-toolbox.js",
