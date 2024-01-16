@@ -6,11 +6,19 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: "src/web-csv-toolbox.ts",
-      name: "CSV ",
-      formats: ["es", "cjs", "umd"],
+      name: "CSV",
+      formats: ["es", "cjs"],
     },
     minify: "terser",
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: false,
+        preserveModules: true,
+        preserveModulesRoot: "src",
+        entryFileNames: "[format]/[name].js",
+      },
+    },
   },
   esbuild: {
     minifyIdentifiers: false,
@@ -20,7 +28,8 @@ export default defineConfig({
   plugins: [
     dts({
       insertTypesEntry: true,
-      rollupTypes: true,
+      outDir: "dist/types",
+      exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
     }),
   ],
   test: {
