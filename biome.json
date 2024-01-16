@@ -21,6 +21,9 @@
         "noExplicitAny": "off",
         "noAssignInExpressions": "off",
         "noFunctionAssign": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
       }
     }
   }

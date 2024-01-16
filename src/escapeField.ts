@@ -39,19 +39,17 @@ export function escapeField(
     quote,
   }: EscapeFieldOptions = {},
 ): string {
-  let replacedPattern: string;
-  if (REPLACED_PATTERN_CACHE.has(quotation)) {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    replacedPattern = REPLACED_PATTERN_CACHE.get(quotation)!;
-  } else {
-    replacedPattern = quotation
-      .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
-      .repeat(2);
-    REPLACED_PATTERN_CACHE.set(quotation, replacedPattern);
+  if (!REPLACED_PATTERN_CACHE.has(quotation)) {
+    REPLACED_PATTERN_CACHE.set(
+      quotation,
+      quotation
+        .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
+        .repeat(2),
+    );
   }
+  const replacedPattern = REPLACED_PATTERN_CACHE.get(quotation)!;
   let check: (v: string) => boolean;
   if (CHECK_CACHE.has(delimiter)) {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     check = CHECK_CACHE.get(delimiter)!;
   } else {
     const a = new Set([...delimiter]);
