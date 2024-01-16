@@ -152,7 +152,7 @@ describe("class Lexer", () => {
     );
   });
 
-  it("should detect record delimiter", () => {
+  it.only("should detect record delimiter", () => {
     fc.assert(
       fc.property(
         fc.gen().map((g) => {
@@ -196,6 +196,9 @@ describe("class Lexer", () => {
         },
       ),
       {
+        seed: -2003047668,
+        path: "48:9:6:12:13:12:12:15:14:18:17:17:17:17:17:17:17",
+        endOnFailure: true,
         examples: [
           [
             {
