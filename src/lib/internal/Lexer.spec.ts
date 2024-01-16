@@ -76,7 +76,9 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== "" ? [{ type: Field, value: field }] : []),
+              ...(field !== "" || escapeField(field, { delimiter }) !== field
+                ? [{ type: Field, value: field }]
+                : []),
               // if field is not last field, it should be followed by a field delimiter
               ...(row.length - 1 !== i ? [FieldDelimiter] : []),
             ]),

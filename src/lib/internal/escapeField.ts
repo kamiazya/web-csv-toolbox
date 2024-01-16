@@ -1,6 +1,7 @@
 import { CommonOptions } from "../common/types.ts";
 import { type assertCommonOptions } from "./assertCommonOptions.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { occurrences } from "./utils/occurrences.ts";
 
 export interface EscapeFieldOptions extends CommonOptions {
   quote?: true;
@@ -38,19 +39,17 @@ export function escapeField(
     quote,
   }: EscapeFieldOptions = {},
 ): string {
-  let replacedPattern: string;
-  if (REPLACED_PATTERN_CACHE.has(quotation)) {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
-    replacedPattern = REPLACED_PATTERN_CACHE.get(quotation)!;
-  } else {
-    replacedPattern = quotation
-      .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
-      .repeat(2);
-    REPLACED_PATTERN_CACHE.set(quotation, replacedPattern);
+  if (!REPLACED_PATTERN_CACHE.has(quotation)) {
+    REPLACED_PATTERN_CACHE.set(
+      quotation,
+      quotation
+        .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
+        .repeat(2),
+    );
   }
+  const replacedPattern = REPLACED_PATTERN_CACHE.get(quotation)!;
   let check: (v: string) => boolean;
   if (CHECK_CACHE.has(delimiter)) {
-    // biome-ignore lint/style/noNonNullAssertion: <explanation>
     check = CHECK_CACHE.get(delimiter)!;
   } else {
     const a = new Set([...delimiter]);
@@ -65,14 +64,20 @@ export function escapeField(
 
   const contents = value.replaceAll(quotation, replacedPattern);
 
+  const wrappedContents = delimiter + contents + delimiter;
+
   if (
+    // If quote is true, it should be quoted.
     quote ||
-    contents.includes(quotation) ||
-    contents.includes(delimiter) ||
+    // If contents has line breaks, it should be quoted.
     contents.includes("\n") ||
     contents.includes("\r") ||
-    quotation.at(0) === delimiter.at(-1) ||
-    quotation.at(-1) === delimiter.at(0) ||
+    // If wrapped contents has more than 3 delimiters,
+    // it should be quoted.
+    occurrences(wrappedContents, delimiter) >= 3 ||
+    // If wrapped contents has more than 1 quotation,
+    // it should be quoted.
+    occurrences(wrappedContents, quotation) >= 1 ||
     check(contents)
   ) {
     return quotation + contents + quotation;
