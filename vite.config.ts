@@ -8,6 +8,10 @@ export default defineConfig({
       entry: "src/web-csv-toolbox.ts",
       name: "CSV",
       formats: ["es", "cjs"],
+      fileName: (format, entryName) => {
+        const ext = format === "cjs" ? "cjs" : "js";
+        return `${format}/${entryName}.${ext}`;
+      },
     },
     minify: "terser",
     sourcemap: true,
@@ -16,7 +20,6 @@ export default defineConfig({
         inlineDynamicImports: false,
         preserveModules: true,
         preserveModulesRoot: "src",
-        entryFileNames: "[format]/[name].js",
       },
     },
   },
