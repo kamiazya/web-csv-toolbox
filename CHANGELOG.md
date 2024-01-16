@@ -1,5 +1,67 @@
 # web-csv-toolbox
 
+## 0.6.0
+
+### Minor Changes
+
+- [#62](https://github.com/kamiazya/web-csv-toolbox/pull/62) [`9bd0ccc`](https://github.com/kamiazya/web-csv-toolbox/commit/9bd0ccc2f100f58156672ca282c1d6562b414425) Thanks [@kamiazya](https://github.com/kamiazya)! - - **New Features**
+
+  - Introduced a new build configuration for generating a UMD format of the web CSV toolbox library.
+  - Updated export paths to enhance module accessibility.
+
+  - **Bug Fixes**
+
+    - Fixed import paths across various modules to ensure proper module resolution.
+
+  - **Refactor**
+
+    - Reorganized internal file structure for improved maintainability.
+    - Renamed functions to better reflect their functionality.
+    - Streamlined namespace declarations for consistency.
+
+  - **Style**
+
+    - Adjusted import statements to use consistent file extensions.
+
+  - **Documentation**
+
+    - None
+
+  - **Tests**
+
+    - Updated test import paths to align with the new directory structure.
+
+  - **Chores**
+    - Modified build settings for the library to optimize output.
+
+### Patch Changes
+
+- [#56](https://github.com/kamiazya/web-csv-toolbox/pull/56) [`781bc39`](https://github.com/kamiazya/web-csv-toolbox/commit/781bc3921bc115ac138926b3aeb36cdd5a39c016) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.11 to 3.1.12
+
+- [#64](https://github.com/kamiazya/web-csv-toolbox/pull/64) [`8b76ac2`](https://github.com/kamiazya/web-csv-toolbox/commit/8b76ac20a13411ec98f112539b733c8655455557) Thanks [@kamiazya](https://github.com/kamiazya)! - Add file inclusion patterns to biome.json
+
+- [#55](https://github.com/kamiazya/web-csv-toolbox/pull/55) [`ca0ae5a`](https://github.com/kamiazya/web-csv-toolbox/commit/ca0ae5ad2736063068b75fa57d59c8d9a7d8d86a) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @vitest/browser from 1.1.3 to 1.2.0
+
+- [#65](https://github.com/kamiazya/web-csv-toolbox/pull/65) [`6329952`](https://github.com/kamiazya/web-csv-toolbox/commit/6329952aaddfef42c761b6752b6cde2b0daf805c) Thanks [@kamiazya](https://github.com/kamiazya)! - Add custom file naming for different formats in vite.config.ts
+
+- [#57](https://github.com/kamiazya/web-csv-toolbox/pull/57) [`144aff0`](https://github.com/kamiazya/web-csv-toolbox/commit/144aff084e8321aa7c77b3c501b85af250e04edd) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vitest from 1.1.3 to 1.2.0
+
+- [#60](https://github.com/kamiazya/web-csv-toolbox/pull/60) [`1b6c9ca`](https://github.com/kamiazya/web-csv-toolbox/commit/1b6c9ca7b9845a987b39bf6482bfc3c30186ee72) Thanks [@kamiazya](https://github.com/kamiazya)! - Fixes a test failure in the Lexer class and improves the escapeField function.
+
+  Additionally, the escapeField function has been refactored to handle common options and improve performance.
+
+  The occurrences utility has also been added to count the number of occurrences of a substring in a string. These changes address the issue #54 and improve the overall reliability and efficiency of the codebase.
+
+  - **New Features**
+
+    - Enhanced filtering capability with validation checks.
+    - Improved field escaping logic for data processing.
+
+  - **Refactor**
+    - Optimized substring occurrence calculations with caching.
+
+- [#58](https://github.com/kamiazya/web-csv-toolbox/pull/58) [`8ae227b`](https://github.com/kamiazya/web-csv-toolbox/commit/8ae227b9878f0ae06723efa3d72b4a04d87edae3) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.27.0 to 8.27.2
+
 ## 0.5.3
 
 ### Patch Changes
