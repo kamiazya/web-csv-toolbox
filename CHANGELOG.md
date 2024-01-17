@@ -1,5 +1,15 @@
 # web-csv-toolbox
 
+## 0.6.1
+
+### Patch Changes
+
+- [#66](https://github.com/kamiazya/web-csv-toolbox/pull/66) [`73acb1b`](https://github.com/kamiazya/web-csv-toolbox/commit/73acb1b8221500bb564852471026b969d84dcdac) Thanks [@kamiazya](https://github.com/kamiazya)! - Migrates the project to use pnpm as the package manager and updates the build and dependency setup accordingly.
+
+  - **Chores**
+    - Switched package management from npm to pnpm to improve installation efficiency and reliability.
+    - Updated continuous integration and deployment workflows to support pnpm.
+
 ## 0.6.0
 
 ### Minor Changes
