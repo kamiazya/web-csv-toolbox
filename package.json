@@ -46,7 +46,7 @@
     "doc": "typedoc",
     "test": "vitest",
     "test:browser": "vitest --browser",
-    "build": "npm run build:js && npm run build:browser",
+    "build": "pnpm build:js && pnpm build:browser",
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
