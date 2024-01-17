@@ -105,10 +105,10 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_windows_browser:
     runs-on: windows-latest
@@ -129,8 +129,8 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   check:
     name: Check
