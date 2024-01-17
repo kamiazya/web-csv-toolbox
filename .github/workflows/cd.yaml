@@ -22,15 +22,18 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build
-        run: npm run build
+        run: pnpm run build
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -49,13 +52,16 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v4
       - name: Create Release Pull Request or Publish to npm
         id: changesets
@@ -81,13 +87,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@v4
       - name: Creating .npmrc
         if: ${{ github.actor != 'dependabot[bot]' }}
@@ -122,15 +131,18 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: npm
+          cache: pnpm
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build documentation
-        run: npm run doc
+        run: pnpm run doc
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v3
       - name: Upload GitHub Pages artifact
