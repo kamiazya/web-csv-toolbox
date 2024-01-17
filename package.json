@@ -76,6 +76,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@vitest/browser": "^1.1.0",
     "changesets-github-release": "^0.1.0",
+    "fast-check": "^3.15.0",
     "husky": "^8.0.0",
     "lint-staged": "^15.2.0",
     "terser": "^5.26.0",
