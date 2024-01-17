@@ -129,7 +129,7 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   check:
