@@ -12,9 +12,8 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
       - name: Install latest
-        uses: ATiltedTree/setup-rust@v1
+        uses: moonrepo/setup-rust@v1
         with:
-          rust-version: stable
           targets: wasm32-unknown-unknown
 
       - uses: Swatinem/rust-cache@v2
@@ -50,9 +49,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: pnpm
     - name: Install latest
-      uses: ATiltedTree/setup-rust@v1
+      uses: moonrepo/setup-rust@v1
       with:
-        rust-version: stable
+
     - uses: Swatinem/rust-cache@v2
       with:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -65,9 +64,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install latest
-      uses: ATiltedTree/setup-rust@v1
+      uses: moonrepo/setup-rust@v1
       with:
-        rust-version: stable
+
     - uses: Swatinem/rust-cache@v2
       with:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -97,9 +96,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install latest
-        uses: ATiltedTree/setup-rust@v1
+        uses: moonrepo/setup-rust@v1
         with:
-          rust-version: stable
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
@@ -129,9 +127,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install latest
-        uses: ATiltedTree/setup-rust@v1
+        uses: moonrepo/setup-rust@v1
         with:
-          rust-version: stable
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
@@ -161,9 +158,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install latest
-        uses: ATiltedTree/setup-rust@v1
+        uses: moonrepo/setup-rust@v1
         with:
-          rust-version: stable
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:

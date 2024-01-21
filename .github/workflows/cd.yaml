@@ -26,9 +26,8 @@ jobs:
         with:
           version: 8
       - name: Install latest
-        uses: ATiltedTree/setup-rust@v1
+        uses: moonrepo/setup-rust@v1
         with:
-          rust-version: stable
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
