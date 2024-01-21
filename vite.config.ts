@@ -1,5 +1,7 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
+import { Plugin } from "vite";
+import rust from "@wasm-tool/rollup-plugin-rust";
 
 export default defineConfig({
   build: {
@@ -20,6 +22,7 @@ export default defineConfig({
         inlineDynamicImports: false,
         preserveModules: true,
         preserveModulesRoot: "src",
+        exports: "named",
       },
     },
   },
@@ -29,10 +32,16 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
+    rust({
+      experimental: {
+        typescriptDeclarationDir: "./src/wasm",
+      },
+    }) as Plugin,
     dts({
       insertTypesEntry: true,
       outDir: "dist/types",
-      exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
+      exclude: ["**/*.spec.ts", "**/__tests__/**/*", "./src/wasm/target"],
+      copyDtsFiles: true,
     }),
   ],
   test: {

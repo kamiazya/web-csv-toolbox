@@ -25,6 +25,14 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 8
+      - name: Install latest
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:

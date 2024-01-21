@@ -75,6 +75,7 @@
     "@fast-check/vitest": "^0.0.9",
     "@rollup/plugin-terser": "^0.4.4",
     "@vitest/browser": "^1.1.0",
+    "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
     "husky": "^8.0.0",

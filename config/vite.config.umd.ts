@@ -1,4 +1,6 @@
+import { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
+import rust from "@wasm-tool/rollup-plugin-rust";
 
 export default defineConfig({
   build: {
@@ -12,6 +14,11 @@ export default defineConfig({
     minify: "terser",
     sourcemap: true,
   },
+  plugins: [
+    rust({
+      inlineWasm: true,
+    }) as Plugin,
+  ],
   esbuild: {
     minifyIdentifiers: false,
     keepNames: true,
