@@ -31,6 +31,10 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build
         run: pnpm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
   test_nodejs:
     runs-on: ubuntu-latest
     strategy:
@@ -65,17 +69,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Install latest
-      uses: moonrepo/setup-rust@v1
-      with:
-        targets: wasm32-unknown-unknown
-        channel: nightly
+    - uses: actions/download-artifact@v4
     - uses: denoland/setup-deno@v1
       with:
         deno-version: v1.x
     - run: |
         deno eval '
-        import { parse } from "./src/web-csv-toolbox.ts";
+        import { parse } from "./dist/es/web-csv-toolbox.js";
 
         const csv = `name,age
         Alice,42
