@@ -15,7 +15,6 @@ jobs:
         uses: moonrepo/setup-rust@v1
         with:
           targets: wasm32-unknown-unknown
-
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -51,6 +50,7 @@ jobs:
     - name: Install latest
       uses: moonrepo/setup-rust@v1
       with:
+        targets: wasm32-unknown-unknown
 
     - uses: Swatinem/rust-cache@v2
       with:
@@ -66,6 +66,7 @@ jobs:
     - name: Install latest
       uses: moonrepo/setup-rust@v1
       with:
+        targets: wasm32-unknown-unknown
 
     - uses: Swatinem/rust-cache@v2
       with:
