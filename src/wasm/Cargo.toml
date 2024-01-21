@@ -16,3 +16,4 @@ wasm-bindgen = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 web-sys = { version = "0.3", features = ['console'] }
+compiler_builtins = "0.1.106"

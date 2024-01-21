@@ -26,10 +26,10 @@ jobs:
         with:
           version: 8
       - name: Install latest
-        uses: actions-rs/toolchain@v1
+        uses: ATiltedTree/setup-rust@v1
         with:
-          toolchain: stable
-          override: true
+          rust-version: stable
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}

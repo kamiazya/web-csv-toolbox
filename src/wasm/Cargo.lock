@@ -15,6 +15,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "compiler_builtins"
+version = "0.1.106"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f4ab134a739bafec76aa91ccb15d519a54e569350644a1fea6528d5a0d407e22"
+
+[[package]]
 name = "csv"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -198,6 +204,7 @@ checksum = "4d91413b1c31d7539ba5ef2451af3f0b833a005eb27a631cec32bc0635a8602b"
 name = "web-csv-toolbox-wasm"
 version = "0.1.0"
 dependencies = [
+ "compiler_builtins",
  "csv",
  "serde",
  "serde_json",
