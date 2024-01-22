@@ -1,7 +1,21 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import { Plugin } from "vite";
-import rust from "@wasm-tool/rollup-plugin-rust";
+import rust_ from "@wasm-tool/rollup-plugin-rust";
+
+function rust(options?: any): Plugin {
+  const plugin = rust_(options) as Plugin;
+  return {
+    ...plugin,
+    // If Rust code changes, restart the server.
+    handleHotUpdate(ctx) {
+      if (ctx.file.endsWith(".rs")) {
+        console.log("Rust code changed");
+        ctx.server.restart();
+      }
+    },
+  };
+}
 
 export default defineConfig({
   build: {
@@ -36,7 +50,7 @@ export default defineConfig({
       experimental: {
         typescriptDeclarationDir: "./src/wasm",
       },
-    }) as Plugin,
+    }),
     dts({
       insertTypesEntry: true,
       outDir: "dist/types",

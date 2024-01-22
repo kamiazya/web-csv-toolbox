@@ -1,19 +1,24 @@
 use csv::ReaderBuilder;
-use serde_json::Value as JsonValue;
+use serde_json::json;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(js_name = parseString)]
-pub fn parse_string(input: &str) -> JsValue {
-    let mut rdr = ReaderBuilder::new().from_reader(input.as_bytes());
+#[wasm_bindgen(js_name = parseStringToArraySync)]
+pub fn parse_string_to_array_sync(input: &str) -> JsValue {
+    let mut rdr = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(input.as_bytes());
+
+    let headers = rdr.headers().unwrap().clone();
+
     let mut records = Vec::new();
 
     for result in rdr.records() {
         let record = result.unwrap();
-        let fields = record
-            .iter()
-            .map(|field| JsonValue::String(field.to_string()))
-            .collect::<Vec<_>>();
-        records.push(JsonValue::Array(fields));
+        let mut json_record = json!({});
+        for (i, field) in record.iter().enumerate() {
+            json_record[&headers[i]] = json!(field);
+        }
+        records.push(json_record);
     }
 
     let json_str = serde_json::to_string(&records).unwrap();
