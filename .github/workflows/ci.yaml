@@ -57,10 +57,6 @@ jobs:
       with:
         targets: wasm32-unknown-unknown
         channel: nightly
-
-    - uses: Swatinem/rust-cache@v2
-      with:
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - run: pnpm install --frozen-lockfile
     - run: pnpm run build
     - run: pnpm test run
