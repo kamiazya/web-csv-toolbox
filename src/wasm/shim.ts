@@ -1,18 +1,6 @@
 import { CSVRecord } from "../common/types.ts";
-import init, { WASM } from "./Cargo.toml";
 
-/**
- * WASM module.
- *
- * If `loadWASM` is not called, this will throw an error.
- *
- * @see loadWASM
- */
-let wasm: WASM = new Proxy({} as WASM, {
-  get() {
-    throw new Error("WASM not initialized.");
-  },
-});
+import init, { parseStringToArraySync } from "web-csv-toolbox-wasm";
 
 /**
  * Load WASM module.
@@ -31,7 +19,7 @@ let wasm: WASM = new Proxy({} as WASM, {
  * ```
  */
 export async function loadWASM() {
-  wasm = await init();
+  await init();
 }
 
 /**
@@ -60,5 +48,5 @@ export async function loadWASM() {
 export function parseStringToArraySyncWASM<Header extends readonly string[]>(
   csv: string,
 ): CSVRecord<Header>[] {
-  return JSON.parse(wasm.parseStringToArraySync(csv));
+  return JSON.parse(parseStringToArraySync(csv));
 }

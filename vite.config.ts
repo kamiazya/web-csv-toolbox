@@ -1,21 +1,7 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
-import { Plugin } from "vite";
-import rust_ from "@wasm-tool/rollup-plugin-rust";
-
-function rust(options?: any): Plugin {
-  const plugin = rust_(options) as Plugin;
-  return {
-    ...plugin,
-    // If Rust code changes, restart the server.
-    handleHotUpdate(ctx) {
-      if (ctx.file.endsWith(".rs")) {
-        console.log("Rust code changed");
-        ctx.server.restart();
-      }
-    },
-  };
-}
+import wasmPack from "./config/vite-plugin-wasm-pack.ts";
+import wasm from "vite-plugin-wasm";
 
 export default defineConfig({
   build: {
@@ -46,15 +32,12 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
-    rust({
-      experimental: {
-        typescriptDeclarationDir: "./src/wasm",
-      },
-    }),
+    wasm(),
+    wasmPack(["./web-csv-toolbox-wasm"]),
     dts({
       insertTypesEntry: true,
       outDir: "dist/types",
-      exclude: ["**/*.spec.ts", "**/__tests__/**/*", "./src/wasm/target"],
+      exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
       copyDtsFiles: true,
     }),
   ],

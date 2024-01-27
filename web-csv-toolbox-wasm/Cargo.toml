@@ -1,10 +1,10 @@
 [package]
 name = "web-csv-toolbox-wasm"
 version = "0.1.0"
-authors = ["Your Name <you@example.com>"]
-description = "A sample project with wasm-pack"
+authors = ["Yuki Yamazaki <yuki@kamiazya.tech>"]
+description = "A CSV Toolbox by WebAssembly."
 license = "MIT"
-repository = "https://github.com/yourgithubusername/hello-wasm"
+repository = "https://github.com/kamiazya/web-csv-toolbox/"
 edition = "2018"
 
 [lib]
