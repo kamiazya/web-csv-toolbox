@@ -13,37 +13,32 @@ async function exists(filepath: string) {
     return false;
   }
 }
-/**
- *   return a Vite plugin for handling wasm-pack crate
- *
- *   only use local crate
- *
- *   import wasmPack from 'vite-plugin-wasm-pack';
- *
- *   plugins: [wasmPack(['./my-local-crate'])]
- *
- *   only use npm crate, leave the first param to an empty array
- *
- *   plugins: [wasmPack([],['test-npm-crate'])]
- *
- *   use both local and npm crate
- *
- *   plugins: [wasmPack(['./my-local-crate'],['test-npm-crate'])]
- *
- * @param crates local crates paths, if you only use crates from npm, leave an empty array here.
- * @param moduleCrates crates names from npm
- */
-function vitePluginWasmPack(crates: string[] | string): PluginOption {
+
+interface Options {
+  /**
+   * local crates paths, if you only use crates from npm, leave an empty array here.
+   */
+  crates: string[];
+  /**
+   * Emit wasm file to dist folder
+   * @default true
+   */
+  copyWasm?: boolean;
+}
+
+function vitePluginWasmPack({
+  crates,
+  copyWasm = true,
+}: Options): PluginOption {
   const prefix = "\0";
   const pkg = "pkg"; // default folder of wasm-pack module
   let baseDir: string;
-  const cratePaths: string[] = typeof crates === "string" ? [crates] : crates;
 
   type CrateType = { path: string };
   // wasmfileName : CrateType
   // 'my_crate_bg.wasm': {path:'../../my_crate/pkg/my_crate_bg.wasm'}
   const wasmMap = new Map<string, CrateType>();
-  for (const cratePath of cratePaths) {
+  for (const cratePath of crates) {
     // from ../../my-crate  ->  my_crate_bg.wasm
     const wasmFile = path.basename(cratePath).replace(/\-/g, "_") + "_bg.wasm";
     wasmMap.set(wasmFile, {
@@ -59,10 +54,9 @@ function vitePluginWasmPack(crates: string[] | string): PluginOption {
     },
 
     resolveId(id: string) {
-      for (const cratePath of cratePaths) {
+      for (const cratePath of crates) {
         const crateName = path.basename(cratePath);
         if (id.startsWith(crateName)) return prefix + id;
-        // if (path.basename(cratePath).startsWith(id)) return prefix + id;
       }
       return null;
     },
@@ -87,9 +81,11 @@ function vitePluginWasmPack(crates: string[] | string): PluginOption {
     },
 
     async buildStart(_inputOptions) {
-      for await (const cratePath of cratePaths) {
+      for await (const cratePath of crates) {
         const pkgPath = path.join(cratePath, pkg);
         const crateName = path.basename(cratePath);
+
+        // build pkg if not exists
         if ((await exists(pkgPath)) === false) {
           console.error(
             `Error: Can't find ${pkgPath}, run wasm-pack build ${cratePath} --target web first`,
@@ -145,13 +141,15 @@ function vitePluginWasmPack(crates: string[] | string): PluginOption {
     },
 
     buildEnd() {
-      wasmMap.forEach((crate, fileName) => {
-        this.emitFile({
-          type: "asset",
-          fileName: fileName,
-          source: readFileSync(crate.path),
-        });
-      });
+      if (copyWasm) {
+        for (const [fileName, crate] of wasmMap.entries()) {
+          this.emitFile({
+            type: "asset",
+            fileName: fileName,
+            source: readFileSync(crate.path),
+          });
+        }
+      }
     },
   };
 }

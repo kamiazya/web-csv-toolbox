@@ -13,7 +13,12 @@ export default defineConfig({
     minify: "terser",
     sourcemap: true,
   },
-  plugins: [wasmPack(["./web-csv-toolbox-wasm"])],
+  plugins: [
+    wasmPack({
+      crates: ["./web-csv-toolbox-wasm"],
+      copyWasm: false,
+    }),
+  ],
   esbuild: {
     minifyIdentifiers: false,
     keepNames: true,

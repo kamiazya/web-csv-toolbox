@@ -31,7 +31,9 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
-    wasmPack(["./web-csv-toolbox-wasm"]),
+    wasmPack({
+      crates: ["./web-csv-toolbox-wasm"],
+    }),
     dts({
       insertTypesEntry: true,
       outDir: "dist/types",
