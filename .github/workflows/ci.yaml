@@ -166,6 +166,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: pnpm/action-setup@v2
         with:
           version: 8
