@@ -19,6 +19,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -57,6 +59,8 @@ jobs:
       with:
         targets: wasm32-unknown-unknown
         channel: nightly
+    - name: Install wasm-pack
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
     - run: pnpm install --frozen-lockfile
     - run: pnpm run build
     - run: pnpm test run
@@ -100,6 +104,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -129,6 +135,8 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -166,6 +174,8 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - run: pnpm install --frozen-lockfile
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
