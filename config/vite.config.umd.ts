@@ -1,6 +1,5 @@
-import { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
-import rust from "@wasm-tool/rollup-plugin-rust";
+import wasmPack from "./vite-plugin-wasm-pack.ts";
 
 export default defineConfig({
   build: {
@@ -14,11 +13,7 @@ export default defineConfig({
     minify: "terser",
     sourcemap: true,
   },
-  plugins: [
-    rust({
-      inlineWasm: true,
-    }) as Plugin,
-  ],
+  plugins: [wasmPack(["./web-csv-toolbox-wasm"])],
   esbuild: {
     minifyIdentifiers: false,
     keepNames: true,

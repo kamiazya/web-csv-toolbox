@@ -38,6 +38,19 @@
     },
     "./package.json": "./package.json"
   },
+  "imports": {
+    "./loadWASM.js": {
+      "types": "./dist/types/loadWASM.d.ts",
+      "browser": {
+        "import": "./dist/es/loadWASM.web.js",
+        "require": "./dist/cjs/loadWASM.web.cjs",
+        "default": "./dist/es/loadWASM.web.js"
+      },
+      "import": "./dist/es/loadWASM.js",
+      "require": "./dist/cjs/loadWASM.cjs",
+      "default": "./dist/es/loadWASM.js"
+    }
+  },
   "files": [
     "dist",
     "README.md"
@@ -75,6 +88,7 @@
     "@changesets/cli": "^2.27.1",
     "@fast-check/vitest": "^0.0.9",
     "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/pluginutils": "^5.1.0",
     "@vitest/browser": "^1.1.0",
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
@@ -87,7 +101,6 @@
     "typescript": "^5.3.2",
     "vite": "^5.0.11",
     "vite-plugin-dts": "^3.7.0",
-    "vite-plugin-wasm": "^3.3.0",
     "vitest": "^1.1.0",
     "webdriverio": "^8.27.0"
   }

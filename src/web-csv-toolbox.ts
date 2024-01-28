@@ -8,4 +8,5 @@ export * from "./parseUint8ArrayStream.ts";
 export * from "./parseStringStream.ts";
 export * from "./parseResponse.ts";
 export * from "./parse.ts";
-export * from "./wasm/shim.ts";
+export * from "./loadWASM.ts";
+export * from "./parseStringToArraySyncWASM.ts";
