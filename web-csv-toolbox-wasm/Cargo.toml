@@ -21,3 +21,4 @@ web-sys = { version = "0.3", features = ['console'] }
 compiler_builtins = "0.1.106"
 cxx-build = "1.0"
 wasm-opt = "0.116.0"
+wasm-pack = "0.12.1"
