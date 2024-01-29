@@ -1,12 +1,12 @@
 ---
-"web-csv-toolbox": patch
+"web-csv-toolbox": minor
 ---
 
 Support parsing CSV by WASM build by Rust
 
 - **New Features**
 	- Introduced WebAssembly support for high-performance CSV parsing in the CSV Toolbox, including new APIs and limitations.
-	- Added a weekly update schedule for npm and cargo package dependencies.
+	- Added a weekly update schedule for cargo package dependencies.
 	- Implemented a Vite plugin for integrating WebAssembly modules into projects.
 
 - **Enhancements**
