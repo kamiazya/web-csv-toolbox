@@ -221,8 +221,8 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
+        run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
         env:
           RUSTFLAGS: -D warnings
       - name: Run Fmt
-        run: cargo fmt --all -- --check
+        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
