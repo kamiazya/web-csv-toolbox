@@ -22,7 +22,7 @@ devDependencies:
     version: 0.4.4
   '@vitest/browser':
     specifier: ^1.1.0
-    version: 1.2.0(vitest@1.2.1)(webdriverio@8.27.2)
+    version: 1.2.2(vitest@1.2.1)(webdriverio@8.27.2)
   changesets-github-release:
     specifier: ^0.1.0
     version: 0.1.0
@@ -55,7 +55,7 @@ devDependencies:
     version: 3.7.1(typescript@5.3.3)(vite@5.0.12)
   vitest:
     specifier: ^1.1.0
-    version: 1.2.1(@vitest/browser@1.2.0)(terser@5.26.0)
+    version: 1.2.1(@vitest/browser@1.2.2)(terser@5.26.0)
   webdriverio:
     specifier: ^8.27.0
     version: 8.27.2(typescript@5.3.3)
@@ -616,7 +616,7 @@ packages:
       vitest: '>=0.28.1 <1.0.0 || ^1'
     dependencies:
       fast-check: 3.15.0
-      vitest: 1.2.1(@vitest/browser@1.2.0)(terser@5.26.0)
+      vitest: 1.2.1(@vitest/browser@1.2.2)(terser@5.26.0)
     dev: true
 
   /@isaacs/cliui@8.0.2:
@@ -1045,8 +1045,8 @@ packages:
     dev: true
     optional: true
 
-  /@vitest/browser@1.2.0(vitest@1.2.1)(webdriverio@8.27.2):
-    resolution: {integrity: sha512-egA2juStgiDDiHSjw5dloOj9pG+Au1azleKBxEs8E8dafkfQbr5FxswhsAryXdT29kb8EU479wET0KQz3NUSsQ==}
+  /@vitest/browser@1.2.2(vitest@1.2.1)(webdriverio@8.27.2):
+    resolution: {integrity: sha512-N8myxNVLbS9AbZ7B2cK33HTGYVzUTDArbMh3hLojOxaj7s7ZrBYYmzs0Q5J2wyDrOgs51p6OUrrzAIb1Z+Ck3A==}
     peerDependencies:
       playwright: '*'
       safaridriver: '*'
@@ -1060,10 +1060,10 @@ packages:
       webdriverio:
         optional: true
     dependencies:
-      '@vitest/utils': 1.2.0
+      '@vitest/utils': 1.2.2
       magic-string: 0.30.5
       sirv: 2.0.4
-      vitest: 1.2.1(@vitest/browser@1.2.0)(terser@5.26.0)
+      vitest: 1.2.1(@vitest/browser@1.2.2)(terser@5.26.0)
       webdriverio: 8.27.2(typescript@5.3.3)
     dev: true
 
@@ -1097,8 +1097,8 @@ packages:
       tinyspy: 2.2.0
     dev: true
 
-  /@vitest/utils@1.2.0:
-    resolution: {integrity: sha512-FyD5bpugsXlwVpTcGLDf3wSPYy8g541fQt14qtzo8mJ4LdEpDKZ9mQy2+qdJm2TZRpjY5JLXihXCgIxiRJgi5g==}
+  /@vitest/utils@1.2.1:
+    resolution: {integrity: sha512-bsH6WVZYe/J2v3+81M5LDU8kW76xWObKIURpPrOXm2pjBniBu2MERI/XP60GpS4PHU3jyK50LUutOwrx4CyHUg==}
     dependencies:
       diff-sequences: 29.6.3
       estree-walker: 3.0.3
@@ -1106,8 +1106,8 @@ packages:
       pretty-format: 29.7.0
     dev: true
 
-  /@vitest/utils@1.2.1:
-    resolution: {integrity: sha512-bsH6WVZYe/J2v3+81M5LDU8kW76xWObKIURpPrOXm2pjBniBu2MERI/XP60GpS4PHU3jyK50LUutOwrx4CyHUg==}
+  /@vitest/utils@1.2.2:
+    resolution: {integrity: sha512-WKITBHLsBHlpjnDQahr+XK6RE7MiAsgrIkr0pGhQ9ygoxBfUeG0lUG5iLlzqjmKSlBv3+j5EGsriBzh+C3Tq9g==}
     dependencies:
       diff-sequences: 29.6.3
       estree-walker: 3.0.3
@@ -4689,7 +4689,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@1.2.1(@vitest/browser@1.2.0)(terser@5.26.0):
+  /vitest@1.2.1(@vitest/browser@1.2.2)(terser@5.26.0):
     resolution: {integrity: sha512-TRph8N8rnSDa5M2wKWJCMnztCZS9cDcgVTQ6tsTFTG/odHJ4l5yNVqvbeDJYJRZ6is3uxaEpFs8LL6QM+YFSdA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -4714,7 +4714,7 @@ packages:
       jsdom:
         optional: true
     dependencies:
-      '@vitest/browser': 1.2.0(vitest@1.2.1)(webdriverio@8.27.2)
+      '@vitest/browser': 1.2.2(vitest@1.2.1)(webdriverio@8.27.2)
       '@vitest/expect': 1.2.1
       '@vitest/runner': 1.2.1
       '@vitest/snapshot': 1.2.1
