@@ -230,7 +230,7 @@ jobs:
   snapshot_release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     needs: build
     if: |
       github.event_name == 'pull_request' &&
@@ -263,21 +263,16 @@ jobs:
         id: release
         run: |
           pnpm exec changeset version --snapshot pr${{github.event.number}} > version.output.txt 2>&1
-          npx changeset publish --no-git-tag --snapshot --tag pr${{github.event.number}}
           pnpm exec changeset publish --tag pr${{github.event.number}} > publish.output.txt 2>&1
-          echo ::set-output name=publish::`cat publish.output.txt`
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "publish=$(cat publish.output.txt)" >> "$GITHUB_ENV"
       - name: Commet
         uses: actions/github-script@v6
-        env:
-          MESSAGE: ${{ steps.release.outputs.publish }}
+
         with:
           script: |
-            console.log(process.env.MESSAGE);
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '```\n' + process.env.MESSAGE + '\n```',
+              body: '```\n' + process.env.publish + '\n```',
             })
