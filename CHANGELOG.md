@@ -1,5 +1,44 @@
 # web-csv-toolbox
 
+## 0.7.0
+
+### Minor Changes
+
+- [#70](https://github.com/kamiazya/web-csv-toolbox/pull/70) [`75642e9`](https://github.com/kamiazya/web-csv-toolbox/commit/75642e90ace412d1564537d2ca9655b66160949c) Thanks [@kamiazya](https://github.com/kamiazya)! - Support parsing CSV by WASM build by Rust
+
+  - **New Features**
+
+    - Introduced WebAssembly support for high-performance CSV parsing in the CSV Toolbox, including new APIs and limitations.
+    - Added a weekly update schedule for cargo package dependencies.
+    - Implemented a Vite plugin for integrating WebAssembly modules into projects.
+
+  - **Enhancements**
+
+    - Added new configuration rule for Rust files, setting indent size to 4 spaces.
+    - Enhanced continuous integration and deployment workflows with additional steps for Rust and WebAssembly setup.
+    - Updated documentation to reflect WebAssembly features and usage in CSV parsing.
+
+  - **Chores**
+    - Introduced linting and formatting checks for JavaScript, TypeScript, JSON, and Rust files.
+
+### Patch Changes
+
+- [#76](https://github.com/kamiazya/web-csv-toolbox/pull/76) [`c9194d2`](https://github.com/kamiazya/web-csv-toolbox/commit/c9194d22f6ce7883af3bed2bf8bac3abfc2dee33) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vitest from 1.2.0 to 1.2.1
+
+- [#75](https://github.com/kamiazya/web-csv-toolbox/pull/75) [`9680f6b`](https://github.com/kamiazya/web-csv-toolbox/commit/9680f6b83f6557764567afb78ff5880a0d624195) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite-plugin-dts from 3.7.0 to 3.7.1
+
+- [#80](https://github.com/kamiazya/web-csv-toolbox/pull/80) [`b5438c0`](https://github.com/kamiazya/web-csv-toolbox/commit/b5438c0c8dd45fd6161c643e701e88ad9ce77c82) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vitest from 1.2.1 to 1.2.2
+
+- [#82](https://github.com/kamiazya/web-csv-toolbox/pull/82) [`ce5f78c`](https://github.com/kamiazya/web-csv-toolbox/commit/ce5f78c9adf19b6e8d214de1c4293ada7996f64c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.27.2 to 8.29.1
+
+- [#81](https://github.com/kamiazya/web-csv-toolbox/pull/81) [`94010de`](https://github.com/kamiazya/web-csv-toolbox/commit/94010de3cac7041b34b647ec2013a06bea785441) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite from 5.0.11 to 5.0.12
+
+- [#77](https://github.com/kamiazya/web-csv-toolbox/pull/77) [`62d61aa`](https://github.com/kamiazya/web-csv-toolbox/commit/62d61aa1d121f71bd019f3862660ce966f8beb7a) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.12 to 3.1.13
+
+- [#79](https://github.com/kamiazya/web-csv-toolbox/pull/79) [`802a86f`](https://github.com/kamiazya/web-csv-toolbox/commit/802a86f2c6532ffef5984ae89cc6d27b53c6f242) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @vitest/browser from 1.2.0 to 1.2.2
+
+- [#73](https://github.com/kamiazya/web-csv-toolbox/pull/73) [`a9ed6d0`](https://github.com/kamiazya/web-csv-toolbox/commit/a9ed6d0d2aed31e0ab5fada2b50a336258a636f1) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump terser from 5.26.0 to 5.27.0
+
 ## 0.6.1
 
 ### Patch Changes
