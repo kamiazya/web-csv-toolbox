@@ -182,7 +182,7 @@ jobs:
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   check_nodejs:
-    name: Check
+    name: Check Node.js
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -226,3 +226,58 @@ jobs:
           RUSTFLAGS: -D warnings
       - name: Run Fmt
         run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
+
+  snapshot_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: build
+    if: |
+      github.event_name == 'pull_request' &&
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]')
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+      - name: Creating .npmrc
+        if: ${{ github.actor != 'dependabot[bot]' }}
+        run: |
+          cat << EOF > "$HOME/.npmrc"
+            //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Release @PR${{github.event.number}}
+        id: release
+        run: |
+          pnpm exec changeset version --snapshot pr${{github.event.number}} > version.output.txt 2>&1
+          npx changeset publish --no-git-tag --snapshot --tag pr${{github.event.number}}
+          pnpm exec changeset publish --tag pr${{github.event.number}} > publish.output.txt 2>&1
+          echo ::set-output name=publish::`cat publish.output.txt`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commet
+        uses: actions/github-script@v6
+        env:
+          MESSAGE: ${{ steps.release.outputs.publish }}
+        with:
+          script: |
+            console.log(process.env.MESSAGE);
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '```\n' + process.env.MESSAGE + '\n```',
+            })
