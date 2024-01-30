@@ -36,6 +36,7 @@
       "require": "./dist/cjs/utils/*.cjs",
       "default": "./dist/es/utils/*.js"
     },
+    "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
     "./package.json": "./package.json"
   },
   "imports": {
