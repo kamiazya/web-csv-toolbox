@@ -1,11 +1,12 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
+import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
 export default defineConfig({
   build: {
     target: "esnext",
     lib: {
-      entry: "src/web-csv-toolbox.ts",
+      entry: ["src/web-csv-toolbox.ts", "src/loadWASM.web.ts"],
       name: "CSV",
       formats: ["es", "cjs"],
       fileName: (format, entryName) => {
@@ -20,6 +21,7 @@ export default defineConfig({
         inlineDynamicImports: false,
         preserveModules: true,
         preserveModulesRoot: "src",
+        exports: "named",
       },
     },
   },
@@ -29,10 +31,14 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
+    wasmPack({
+      crates: ["./web-csv-toolbox-wasm"],
+    }),
     dts({
       insertTypesEntry: true,
       outDir: "dist/types",
       exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
+      copyDtsFiles: true,
     }),
   ],
   test: {

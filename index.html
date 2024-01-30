@@ -9,12 +9,13 @@
 
 </body>
 <script type="module">
-import { parse } from './src/web-csv-toolbox.ts';
+import { parse, loadWASM, parseStringToArraySyncWASM } from './src/web-csv-toolbox.ts';
+await loadWASM();
 
 const csv = `name,age
 Alice,42
 Bob,69`;
-
+console.log(parseStringToArraySyncWASM(csv));
 for await (const record of parse(csv)) {
   console.log(record);
 }

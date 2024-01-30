@@ -55,6 +55,10 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
   - 🔤 Charset specification for diverse encoding.
+- 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
+- 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
+- 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
+  - 📦 WebAssembly is used for high performance parsing.
 
 ## Installation 📥
 
@@ -275,6 +279,41 @@ ideal for developers looking for in-depth control and flexibility.
   - A TransformStream class for lexical analysis of CSV data.
 - **`class RecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/RecordAssemblerTransformer.html)
   - Handles the assembly of parsed data into records.
+
+### Experimental APIs 🧪
+
+These APIs are experimental and may change in the future.
+
+#### Parsing using WebAssembly for high performance.
+
+You can use WebAssembly to parse CSV data for high performance.
+
+- Parsing with WebAssembly is faster than parsing with JavaScript,
+but it takes time to load the WebAssembly module.
+- Supports only UTF-8 encoding csv data.
+- Demiliter characters are limited to single-byte characters.
+- Quotation characters is only `"`. (Double quotation mark)
+  - If you pass a different character, it will throw an error.
+
+```ts
+import { loadWASM, parseStringWASM } from "web-csv-toolbox";
+
+// load WebAssembly module
+await loadWASM();
+
+const csv = "a,b,c\n1,2,3";
+
+// parse CSV string
+const result = parseStringToArraySyncWASM(csv);
+console.log(result);
+// Prints:
+// [{ a: "1", b: "2", c: "3" }]
+```
+
+- **`function loadWASM(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)
+  - Loads the WebAssembly module.
+- **`function parseStringToArraySyncWASM(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)
+  - Parses CSV strings into an array of records.
 
 ## Options Configuration 🛠️
 

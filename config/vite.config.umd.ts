@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import wasmPack from "./vite-plugin-wasm-pack.ts";
 
 export default defineConfig({
   build: {
@@ -12,6 +13,12 @@ export default defineConfig({
     minify: "terser",
     sourcemap: true,
   },
+  plugins: [
+    wasmPack({
+      crates: ["./web-csv-toolbox-wasm"],
+      copyWasm: false,
+    }),
+  ],
   esbuild: {
     minifyIdentifiers: false,
     keepNames: true,
