@@ -182,7 +182,7 @@ jobs:
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   check_nodejs:
-    name: Check
+    name: Check Node.js
     runs-on: ubuntu-latest
     permissions:
       contents: read

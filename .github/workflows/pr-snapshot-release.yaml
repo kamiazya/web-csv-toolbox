@@ -1,0 +1,225 @@
+name: PullRequest Snapshot Release
+
+on:
+  issue_comment:
+    types:
+      - created
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  # Build the package and upload it as an artifact
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - run: |
+          sudo apt-get update
+          sudo apt-get install libstdc++-12-dev
+      - name: Install latest
+        uses: moonrepo/setup-rust@v1
+        with:
+          targets: wasm32-unknown-unknown
+          channel: nightly
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build
+        run: pnpm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+  snapshot:
+    name: Snapshot Release
+    if: |
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/snapshot-release')
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Enforce permission requirement
+        uses: prince-chrismc/check-actor-permissions-action@v1
+        with:
+          permission: write
+
+      - name: Add initial reaction
+        uses: peter-evans/create-or-update-comment@v2
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+
+      - name: Get PR branch
+        uses: xt0rted/pull-request-comment-branch@v2
+        id: comment-branch
+
+      - name: Set latest commit status as pending
+        uses: myrotvorets/set-commit-status-action@master
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: pending
+
+      - name: Validate pull request
+        uses: actions/github-script@v6
+        id: pr_data
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            try {
+              const pullRequest = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+              })
+
+              // Pull request from fork
+              if (context.payload.repository.full_name !== pullRequest.data.head.repo.full_name) {
+                const errorMessage = '`/snapshot-release` is not supported on pull requests from forked repositories.'
+
+                await github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: errorMessage,
+                })
+
+                core.setFailed(errorMessage)
+              }
+            } catch (err) {
+              core.setFailed(`Request failed with error ${err}`)
+            }
+
+      - name: Checkout default branch
+        uses: actions/checkout@v3
+
+      - name: Checkout pull request branch
+        run: hub pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reset changeset entries on changeset-release/main branch
+        run: |
+          if [[ $(git branch --show-current) == 'changeset-release/main' ]]; then
+            git checkout origin/main -- .changeset
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+      - name: Create an .npmrc
+        run: |
+          cat << EOF > "$HOME/.npmrc"
+            //registry.npmjs.org/:_authToken=$NPM_TOKEN
+          EOF
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create and publish snapshot release
+        uses: actions/github-script@v6
+        id: snapshot-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const execa = require('execa')
+
+            await execa.command('pnpm exec changeset version --snapshot pr' + context.issue.number, { stdio: 'inherit' })
+
+            const releaseProcess = execa.command('pnpm exec release --no-git-tags --snapshot --tag pr' + context.issue.number)
+            releaseProcess.stdout.pipe(process.stdout)
+
+            const {stdout} = await releaseProcess
+
+            const newTags = Array
+              .from(stdout.matchAll(/New tag:\s+([^\s\n]+)/g))
+              .map(([_, tag]) => tag)
+
+            if (newTags.length) {
+              const multiple = newTags.length > 1
+
+              const body = (
+                `🫰✨ **Thanks @${context.actor}! ` +
+                `Your snapshot${multiple ? 's have' : ' has'} been published to npm.**\n\n` +
+                `Test the snapshot${multiple ? 's' : ''} by updating your \`package.json\` ` +
+                `with the newly published version${multiple ? 's' : ''}:\n` +
+                newTags.map(tag => (
+                  '```sh\n' +
+                  `pnpm add ${tag}\n` +
+                  '```'
+                )).join('\n')
+              )
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body,
+              })
+              core.setOutput('succeeded', 'true')
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `💥 **Snapshot release unsuccessful!** No tags have been found.\n\n` +
+                      'Try running the command below and committing your changes.\n\n' +
+                      '```sh\n' +
+                      'yarn changeset\n' +
+                      '```',
+              })
+              core.setOutput('succeeded', 'false')
+            }
+
+      - name: Add success reaction
+        uses: peter-evans/create-or-update-comment@v2
+        if: ${{ steps.snapshot-release.outputs.succeeded == 'true' }}
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: rocket
+
+      - name: Add failure reaction
+        uses: peter-evans/create-or-update-comment@v2
+        if: ${{ steps.snapshot-release.outputs.succeeded == 'false' }}
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: confused
+
+      - name: Fail workflow if snapshot failed
+        uses: actions/github-script@v6
+        if: ${{ steps.snapshot-release.outputs.succeeded == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            core.setFailed('No snapshot tags have been found')
+
+      - name: Set latest commit status as ${{ job.status }}
+        uses: myrotvorets/set-commit-status-action@master
+        if: always()
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
