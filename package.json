@@ -65,7 +65,7 @@
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -94,7 +94,7 @@
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
-    "husky": "^8.0.3",
+    "husky": "^9.0.7",
     "lint-staged": "^15.2.0",
     "terser": "^5.27.0",
     "typedoc": "^0.25.7",
