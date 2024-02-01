@@ -58,6 +58,7 @@ jobs:
     permissions:
       contents: write # Used to commit to "Version Packages" PR
       pull-requests: write # Used to create "Version Packages" PR
+      id-token: write # Used to publish to npm with provenance statements
       # Other permissions are defaulted to none
     steps:
       - name: Checkout Repo
@@ -92,6 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     needs: release
     if: needs.release.outputs.published == 'false'
     steps:
