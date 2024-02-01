@@ -78,8 +78,8 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: npx changeset publish
-          version: npx changeset version
+          publish: pnpm exec changeset publish
+          version: pnpm exec changeset version
           createGithubReleases: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -120,8 +120,8 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: "Release @next"
         run: |
-          npx changeset version --snapshot next
-          npx changeset publish --no-git-tag --snapshot --tag next
+          pnpm exec changeset version --snapshot next
+          pnpm exec changeset publish --no-git-tag --snapshot --tag next
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
