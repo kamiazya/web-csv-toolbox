@@ -133,7 +133,7 @@ jobs:
           EOF
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+      - run: npm install -g execa
       - name: Create and publish snapshot release
         uses: actions/github-script@v6
         id: snapshot-release
