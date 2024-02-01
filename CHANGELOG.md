@@ -1,5 +1,19 @@
 # web-csv-toolbox
 
+## 0.7.1
+
+### Patch Changes
+
+- [#86](https://github.com/kamiazya/web-csv-toolbox/pull/86) [`44a6697`](https://github.com/kamiazya/web-csv-toolbox/commit/44a6697d2daa721d7269971c3c2824ac94b996d5) Thanks [@kamiazya](https://github.com/kamiazya)! - Add web_csv_toolbox_wasm_bg.wasm to package.json
+
+- [#90](https://github.com/kamiazya/web-csv-toolbox/pull/90) [`5dcae2e`](https://github.com/kamiazya/web-csv-toolbox/commit/5dcae2e49b45b6575a088692db2c3ed252e21317) Thanks [@kamiazya](https://github.com/kamiazya)! - Migrate Husky to v9
+
+- [#87](https://github.com/kamiazya/web-csv-toolbox/pull/87) [`e308015`](https://github.com/kamiazya/web-csv-toolbox/commit/e30801534edc487a9df544049be2ae6adad37156) Thanks [@kamiazya](https://github.com/kamiazya)! - Add PullRequest snapshot release action
+
+- [#84](https://github.com/kamiazya/web-csv-toolbox/pull/84) [`de81672`](https://github.com/kamiazya/web-csv-toolbox/commit/de816725338ae2fec542cd505a4922538c86bd68) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde_json from 1.0.112 to 1.0.113 in /web-csv-toolbox-wasm
+
+- [#91](https://github.com/kamiazya/web-csv-toolbox/pull/91) [`14f7dab`](https://github.com/kamiazya/web-csv-toolbox/commit/14f7daba3f72734d4bb975dac3115a6a556a11fd) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix documentation build
+
 ## 0.7.0
 
 ### Minor Changes
