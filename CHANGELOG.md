@@ -1,5 +1,13 @@
 # web-csv-toolbox
 
+## 0.7.2
+
+### Patch Changes
+
+- [#83](https://github.com/kamiazya/web-csv-toolbox/pull/83) [`08de2d0`](https://github.com/kamiazya/web-csv-toolbox/commit/08de2d0e47b58f323129c8a18e2237357bbeaf85) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @biomejs/biome from 1.5.2 to 1.5.3
+
+- [#98](https://github.com/kamiazya/web-csv-toolbox/pull/98) [`e156adb`](https://github.com/kamiazya/web-csv-toolbox/commit/e156adb80493aab43f236c4275bda51ebbc82193) Thanks [@kamiazya](https://github.com/kamiazya)! - Add provenance to publishConfig in package.json
+
 ## 0.7.1
 
 ### Patch Changes
