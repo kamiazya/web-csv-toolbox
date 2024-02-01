@@ -133,7 +133,6 @@ jobs:
           EOF
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm install -g execa
       - name: Create and publish snapshot release
         uses: actions/github-script@v6
         id: snapshot-release
@@ -141,14 +140,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const execa = require('execa')
+            const {exec} = require('@actions/exec');
 
-            await execa.command('pnpm exec changeset version --snapshot pr' + context.issue.number, { stdio: 'inherit' })
+            await exec('pnpm', ['exec', 'changeset', 'version', '--snapshot', 'pr' + context.issue.number])
 
-            const releaseProcess = execa.command('pnpm exec release --no-git-tags --snapshot --tag pr' + context.issue.number)
-            releaseProcess.stdout.pipe(process.stdout)
-
-            const {stdout} = await releaseProcess
+            let stdout = '';
+            await exec('pnpm', ['exec', 'changeset', 'release', '--snapshot', 'pr' + context.issue.number], {
+              listeners: {
+                stdout: (data) => {
+                  stdout += data.toString();
+                },
+              }
+            });
+            console.log(stdout);
 
             const newTags = Array
               .from(stdout.matchAll(/New tag:\s+([^\s\n]+)/g))
