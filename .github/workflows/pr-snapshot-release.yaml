@@ -140,8 +140,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const {exec} = require('@actions/exec');
-
             await exec('pnpm', ['exec', 'changeset', 'version', '--snapshot', 'pr' + context.issue.number])
 
             let stdout = '';
