@@ -140,10 +140,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            await exec('pnpm', ['exec', 'changeset', 'version', '--snapshot', 'pr' + context.issue.number])
+            await exec.exec('pnpm', ['exec', 'changeset', 'version', '--snapshot', 'pr' + context.issue.number])
 
             let stdout = '';
-            await exec('pnpm', ['exec', 'changeset', 'release', '--snapshot', 'pr' + context.issue.number], {
+            await exec.exec('pnpm', ['exec', 'changeset', 'release', '--snapshot', 'pr' + context.issue.number], {
               listeners: {
                 stdout: (data) => {
                   stdout += data.toString();
