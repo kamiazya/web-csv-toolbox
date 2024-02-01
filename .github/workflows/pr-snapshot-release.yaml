@@ -152,21 +152,18 @@ jobs:
                 },
               }
             });
-            console.log(stdout);
 
-            const newTags = Array
-              .from(stdout.matchAll(/New tag:\s+([^\s\n]+)/g))
-              .map(([_, tag]) => tag)
+            const tags = Array.from(stdout.matchAll(/\S+@(\S+)/g)).map(([package]) => package))
 
-            if (newTags.length) {
-              const multiple = newTags.length > 1
+            if (tags.length) {
+              const multiple = tags.length > 1
 
               const body = (
                 `🫰✨ **Thanks @${context.actor}! ` +
                 `Your snapshot${multiple ? 's have' : ' has'} been published to npm.**\n\n` +
                 `Test the snapshot${multiple ? 's' : ''} by updating your \`package.json\` ` +
                 `with the newly published version${multiple ? 's' : ''}:\n` +
-                newTags.flatMap(tag => (
+                tags.flatMap(tag => (
                   '```sh\n' +
                   `# Use npm\n` +
                   `npm install ${tag}\n` +
