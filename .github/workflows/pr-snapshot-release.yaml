@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    if: github.event.sender.type == 'User'
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -69,13 +70,6 @@ jobs:
       - name: Get PR branch
         uses: xt0rted/pull-request-comment-branch@v2
         id: comment-branch
-
-      - name: Set latest commit status as pending
-        uses: myrotvorets/set-commit-status-action@master
-        with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: pending
 
       - name: Validate pull request
         uses: actions/github-script@v6
@@ -215,11 +209,3 @@ jobs:
         with:
           script: |
             core.setFailed('No snapshot tags have been found')
-
-      - name: Set latest commit status as ${{ job.status }}
-        uses: myrotvorets/set-commit-status-action@master
-        if: always()
-        with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: ${{ job.status }}
