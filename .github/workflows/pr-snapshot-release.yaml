@@ -72,6 +72,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      id-token: write
     steps:
       - name: Validate pull request
         uses: actions/github-script@v6
