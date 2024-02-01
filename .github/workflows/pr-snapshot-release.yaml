@@ -143,7 +143,7 @@ jobs:
             await exec.exec('pnpm', ['exec', 'changeset', 'version', '--snapshot', 'pr' + context.issue.number])
 
             let stdout = '';
-            await exec.exec('pnpm', ['exec', 'changeset', 'publish', '--snapshot', 'pr' + context.issue.number], {
+            await exec.exec('pnpm', ['exec', 'changeset', 'publish', '--snapshot', 'pr' + context.issue.number, '--no-git-tag', '--tag', 'develop'], {
               listeners: {
                 stdout: (data) => {
                   stdout += data.toString();
