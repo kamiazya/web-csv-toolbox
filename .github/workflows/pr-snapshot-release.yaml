@@ -18,12 +18,12 @@ jobs:
     if: github.event.sender.type == 'User' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/snapshot-release')
     steps:
       - name: Enforce permission requirement
-        uses: prince-chrismc/check-actor-permissions-action@v1
+        uses: prince-chrismc/check-actor-permissions-action@v3
         with:
           permission: write
 
       - name: Add initial reaction
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ github.event.comment.id }}
           reactions: eyes
@@ -196,7 +196,7 @@ jobs:
             }
 
       - name: Add reaction
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v4
         with:
           comment-id: ${{ github.event.comment.id }}
           reactions: ${{ steps.snapshot-release.outputs.succeeded == 'true' && 'rocket' || 'confused'}}
