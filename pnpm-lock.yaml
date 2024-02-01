@@ -15,8 +15,8 @@ devDependencies:
     specifier: ^2.27.1
     version: 2.27.1
   '@fast-check/vitest':
-    specifier: ^0.0.9
-    version: 0.0.9(vitest@1.2.2)
+    specifier: ^0.1.0
+    version: 0.1.0(vitest@1.2.2)
   '@rollup/plugin-terser':
     specifier: ^0.4.4
     version: 0.4.4
@@ -616,8 +616,8 @@ packages:
     dev: true
     optional: true
 
-  /@fast-check/vitest@0.0.9(vitest@1.2.2):
-    resolution: {integrity: sha512-Rely/2xFVQeDdRqtjDE3eO4K3h1XMj0ci6/L3Lv0CakPdn3WZHvI6K3TnUAuHQK2egmesZt1i2aTPpbEbLs3eA==}
+  /@fast-check/vitest@0.1.0(vitest@1.2.2):
+    resolution: {integrity: sha512-AKgtK1/TOvFC1U8YjYAz1okILr9+ePXPgpMsdlQ0w+slwRzxUYkidSduHE/nN+P9RWlE8VTJC0ma/P86APyxHA==}
     peerDependencies:
       vitest: '>=0.28.1 <1.0.0 || ^1'
     dependencies:
