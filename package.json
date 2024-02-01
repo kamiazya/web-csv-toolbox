@@ -82,6 +82,9 @@
   "bugs": {
     "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
   },
+  "publishConfig": {
+    "provenance": true
+  },
   "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
   "devDependencies": {
     "@biomejs/biome": "1.5.3",
