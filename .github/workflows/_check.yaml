@@ -1,3 +1,4 @@
+name: Check Format and Lint
 on:
   workflow_call:
 
