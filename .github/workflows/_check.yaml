@@ -3,7 +3,7 @@ on:
 
 jobs:
   biome:
-    name: Check Node.js
+    name: Check with Biome
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -22,8 +22,8 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check
         run: npx biome ci .
-  clippy_and_cargofmt:
-    name: Check clippy
+  clippy_and_rustfmt:
+    name: Check with clippy and rustfmt
     runs-on: ubuntu-latest
     permissions:
       contents: read
