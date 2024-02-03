@@ -2,7 +2,7 @@ name: Build
 on:
   workflow_call:
 jobs:
-  build_wasm:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,31 +19,6 @@ jobs:
           channel: nightly
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: build wasm
-        run: pnpm run build:wasm
-      - uses: actions/upload-artifact@v4
-        with:
-          name: web-csv-toolbox-wasm
-          path: |
-            web-csv-toolbox-wasm/**/*
-            !web-csv-toolbox-wasm/src
-            !web-csv-toolbox-wasm/target
-            !web-csv-toolbox-wasm/Cargo.toml
-            !web-csv-toolbox-wasm/Cargo.lock
-            !web-csv-toolbox-wasm/.gitignore
-  build_library:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: build_wasm
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
         with:
           version: 8
@@ -60,3 +35,13 @@ jobs:
         with:
           name: web-csv-toolbox
           path: dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-csv-toolbox-wasm
+          path: |
+            web-csv-toolbox-wasm/**/*
+            !web-csv-toolbox-wasm/src
+            !web-csv-toolbox-wasm/target
+            !web-csv-toolbox-wasm/Cargo.toml
+            !web-csv-toolbox-wasm/Cargo.lock
+            !web-csv-toolbox-wasm/.gitignore
