@@ -58,8 +58,9 @@
   ],
   "scripts": {
     "doc": "typedoc",
-    "test": "pnpm build:wasm && vitest",
+    "test": "vitest",
     "test:browser": "vitest --browser",
+    "test:coverage": "vitest --coverage",
     "build": "pnpm build:wasm && pnpm build:js && pnpm build:browser",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
@@ -94,6 +95,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.0",
     "@vitest/browser": "^1.2.2",
+    "@vitest/coverage-istanbul": "^1.2.2",
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
