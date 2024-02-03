@@ -19,6 +19,13 @@ jobs:
           channel: nightly
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: build wasm
+        run: pnpm run build:wasm
       - uses: actions/upload-artifact@v4
         with:
           name: web-csv-toolbox-wasm
