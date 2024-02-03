@@ -5,9 +5,11 @@ on:
 
 jobs:
   build:
-    uses: ./.github/workflows/_build.yaml
+    name: Build
+    uses: ./.github/workflows/.build.yaml
   check:
-    uses: ./.github/workflows/_check.yaml
+    name: Check
+    uses: ./.github/workflows/.check.yaml
 
   coverage:
     runs-on: ubuntu-latest
