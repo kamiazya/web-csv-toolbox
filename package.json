@@ -94,6 +94,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.0",
     "@vitest/browser": "^1.2.2",
+    "@vitest/coverage-v8": "^1.2.2",
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",

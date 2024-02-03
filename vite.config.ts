@@ -46,5 +46,11 @@ export default defineConfig({
     browser: {
       name: "chrome",
     },
+    coverage: {
+      enabled: true,
+      provider: "v8",
+      include: ["src/**/*.ts"],
+      all: false,
+    },
   },
 });
