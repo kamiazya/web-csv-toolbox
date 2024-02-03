@@ -47,7 +47,6 @@ export default defineConfig({
       name: "chrome",
     },
     coverage: {
-      enabled: true,
       provider: "istanbul", // use istanbul for browser coverage
       include: ["src/**/*.ts"],
       all: false,

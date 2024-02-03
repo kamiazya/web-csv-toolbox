@@ -60,6 +60,7 @@
     "doc": "typedoc",
     "test": "vitest",
     "test:browser": "vitest --browser",
+    "test:coverage": "vitest --coverage",
     "build": "pnpm build:wasm && pnpm build:js && pnpm build:browser",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
