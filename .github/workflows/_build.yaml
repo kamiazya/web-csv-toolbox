@@ -38,7 +38,7 @@ jobs:
         with:
           name: web-csv-toolbox-wasm
           path: |
-            web-csv-toolbox-wasm/pkg/*
+            web-csv-toolbox-wasm/**/*
             !web-csv-toolbox-wasm/src
             !web-csv-toolbox-wasm/target
             !web-csv-toolbox-wasm/Cargo.toml
