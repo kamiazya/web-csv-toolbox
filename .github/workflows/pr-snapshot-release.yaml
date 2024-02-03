@@ -32,6 +32,7 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
+    needs: check
   snapshot:
     name: Snapshot Release
     runs-on: ubuntu-latest
