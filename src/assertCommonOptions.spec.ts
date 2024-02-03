@@ -53,6 +53,36 @@ describe("function assertCommonOptions", () => {
       },
     ));
 
+  it("should be throw error if delimiter includes CR or LF", () =>
+    fc.assert(
+      fc.property(
+        fc.gen().map((g) => {
+          const EOL = g(() => fc.constantFrom("\n", "\r"));
+          const prefix = g(FC.text);
+          const sufix = g(FC.text);
+          return prefix + EOL + sufix;
+        }),
+        (invalidDelimiter) => {
+          expect(() =>
+            assertCommonOptions({
+              quotation: COMMA,
+              delimiter: invalidDelimiter,
+            }),
+          ).toThrow("delimiter must not include CR or LF");
+        },
+      ),
+      {
+        examples: [
+          // "\n" is included
+          ["\n"],
+          // "\r" is included
+          ["\r"],
+          // "\n" and "\r" are included
+          ["\n\r"],
+        ],
+      },
+    ));
+
   it("should be throw error if delimiter and quotation include each other as a substring", () =>
     fc.assert(
       fc.property(

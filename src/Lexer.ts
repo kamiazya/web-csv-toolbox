@@ -73,11 +73,7 @@ export class Lexer {
           yield token;
           break;
         default:
-          if (currentField) {
-            currentField.value += token.value;
-          } else {
-            currentField = token;
-          }
+          currentField = token;
           break;
       }
     }

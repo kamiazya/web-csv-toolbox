@@ -49,7 +49,6 @@ export default defineConfig({
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage
       include: ["src/**/*.ts"],
-      all: false,
     },
   },
 });
