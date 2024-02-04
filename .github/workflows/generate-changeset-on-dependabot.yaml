@@ -26,8 +26,10 @@ jobs:
           "web-csv-toolbox": "patch"
           ---
 
-          ${{ github.event.pull_request.title }}
+          ${PR_TITLE}
           EOF
           git add .changeset/$CHANGESET_NAME
           git commit -m "Add changeset for $CHANGESET_NAME"
           git push
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
