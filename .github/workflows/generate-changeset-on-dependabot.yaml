@@ -1,15 +1,19 @@
-name: Generate changeset for Renovate
+name: Generate Dependency Updates Changeset
 
 on:
+  pull_request: # TODO remove this line when end debugging
+
   pull_request_target:
     paths:
-      - '.github/workflows/generate-changeset-on-dependabot.yaml'
+      - '.github/workflows/*'
       - 'pnpm-lock.yaml'
       - 'package.json'
+      - 'web-csv-toolbox-wasm/Cargo.toml'
+      - 'web-csv-toolbox-wasm/Cargo.lock'
 jobs:
   generate-changeset:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    # if: github.actor == 'dependabot[bot]'
     steps:
       - name: Dependabot metadata
         id: metadata
@@ -24,12 +28,12 @@ jobs:
       - run: echo "${{ steps.metadata.outputs.updated-dependencies-json }}"
       # - name: Generate Changeset
       #   run: |
-      #     cat <<EOF > .changeset/dependabot-pr${{ github.event.pull_request.number }}.md
+      #     cat <<EOF > .changeset/dependency-update-pr${{ github.event.pull_request.number }}.md
       #     ---
       #     "web-csv-toolbox": "patch"
       #     ---
 
       #     EOF
-      #     git add .changeset/dependabot-pr${{ github.event.pull_request.number }}.md
-      #     git commit -m "Add changeset for dependabot-pr${{ github.event.pull_request.number }}.md"
+      #     git add .changeset/dependency-update-pr${{ github.event.pull_request.number }}.md
+      #     git commit -m "Add changeset for dependency-update-pr${{ github.event.pull_request.number }}.md"
       #     git push
