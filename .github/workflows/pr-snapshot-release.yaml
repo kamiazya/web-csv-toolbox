@@ -75,7 +75,7 @@ jobs:
             }
 
       - name: Checkout default branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Checkout pull request branch
         run: gh pr checkout ${{ github.event.issue.number }}
