@@ -1,5 +1,21 @@
 # web-csv-toolbox
 
+## 0.7.3
+
+### Patch Changes
+
+- [#101](https://github.com/kamiazya/web-csv-toolbox/pull/101) [`534dff9`](https://github.com/kamiazya/web-csv-toolbox/commit/534dff9c3e2e02140d79097053603df4283ffa3f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.29.1 to 8.29.7
+
+- [#104](https://github.com/kamiazya/web-csv-toolbox/pull/104) [`10c7be9`](https://github.com/kamiazya/web-csv-toolbox/commit/10c7be97fb84a5d74acae4eaebe379c353c9fc2a) Thanks [@kamiazya](https://github.com/kamiazya)! - Add tests
+
+- [#96](https://github.com/kamiazya/web-csv-toolbox/pull/96) [`93e0f9c`](https://github.com/kamiazya/web-csv-toolbox/commit/93e0f9c6f2d36e4aa856e624ccec513b3f84d462) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump fast-check from 3.15.0 to 3.15.1
+
+- [#102](https://github.com/kamiazya/web-csv-toolbox/pull/102) [`15a15f9`](https://github.com/kamiazya/web-csv-toolbox/commit/15a15f9fc1c973ad6aab9daf6e38e402475b68b7) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix CI triggers
+
+- [#100](https://github.com/kamiazya/web-csv-toolbox/pull/100) [`3eda346`](https://github.com/kamiazya/web-csv-toolbox/commit/3eda346ca68b6a0da36825d3f813e936c34d6aab) Thanks [@kamiazya](https://github.com/kamiazya)! - Update CI/CD workflows and Correct Coverage
+
+- [#92](https://github.com/kamiazya/web-csv-toolbox/pull/92) [`9988bd7`](https://github.com/kamiazya/web-csv-toolbox/commit/9988bd7edaa3ca16c9b16bcdd46ddcee39e61934) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump compiler_builtins from 0.1.106 to 0.1.107 in /web-csv-toolbox-wasm
+
 ## 0.7.2
 
 ### Patch Changes
