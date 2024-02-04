@@ -10,12 +10,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
         with:
           version: 8
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: 20
           cache: pnpm
@@ -30,12 +30,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       - run: |
           sudo apt-get update
           sudo apt-get install libstdc++-12-dev
       - name: Install latest
-        uses: moonrepo/setup-rust@v1
+        uses: moonrepo/setup-rust@b8edcc56aab474d90c7cf0bb8beeaf8334c15e9f # v1.1.0
         with:
           targets: wasm32-unknown-unknown
           channel: nightly

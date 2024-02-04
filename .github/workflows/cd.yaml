@@ -31,21 +31,21 @@ jobs:
       # Other permissions are defaulted to none
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
         with:
           version: 8
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: 20
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       - name: Create Release Pull Request or Publish to npm
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@f13b1baaa620fde937751f5d2c3572b9da32af23 # v1.4.5
         with:
           publish: pnpm exec changeset publish
           version: pnpm exec changeset version
@@ -67,18 +67,18 @@ jobs:
     if: needs.release.outputs.published == 'false'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
         with:
           version: 8
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: 20
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       - name: Creating .npmrc
         if: ${{ github.actor != 'dependabot[bot]' }}
         run: |
@@ -113,28 +113,28 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - uses: pnpm/action-setup@d882d12c64e032187b2edb46d3a0d003b7a43598 # v2.4.0
         with:
           version: 8
       - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
         with:
           node-version: 20
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@6b208ae046db98c579e8a3aa621ab581ff575935 # v4.1.1
       - name: Build
         run: pnpm build:js
       - name: Build documentation
         run: pnpm run doc
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@b8130d9ab958b325bbde9786d62f2c97a9885a0e # v3.0.7
       - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8 # v3.0.0
         with:
           path: doc
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@87c3283f01cd6fe19a0ab93a23b2f6fcba5a8e42 # v4.0.3
