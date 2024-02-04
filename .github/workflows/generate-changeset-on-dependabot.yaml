@@ -1,0 +1,35 @@
+name: Generate Dependency Updates Changeset
+
+on:
+  pull_request_target:
+    paths:
+      - '.github/workflows/*'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'web-csv-toolbox-wasm/Cargo.toml'
+      - 'web-csv-toolbox-wasm/Cargo.lock'
+jobs:
+  generate-changeset:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        with:
+          fetch-depth: 2
+          ref: ${{ github.head_ref }}
+      - name: Generate Changeset
+        run: |
+          CHANGESET_NAME="dependency-update-pr${{ github.event.pull_request.number }}.md"
+          cat <<EOF > .changeset/$CHANGESET_NAME
+          ---
+          "web-csv-toolbox": "patch"
+          ---
+
+          ${PR_TITLE}
+          EOF
+          git add .changeset/$CHANGESET_NAME
+          git commit -m "Add changeset for $CHANGESET_NAME"
+          git push
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
