@@ -41,4 +41,18 @@ describe("parseMime function", () => {
       },
     });
   });
+
+  it("should parse mime type with some parameters", () => {
+    const result = parseMime(
+      "text/csv; charset=utf-8; header=present; delimiter=,",
+    );
+    expect(result).toEqual({
+      type: "text/csv",
+      parameters: {
+        charset: "utf-8",
+        header: "present",
+        delimiter: ",",
+      },
+    });
+  });
 });
