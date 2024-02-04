@@ -1,8 +1,6 @@
 name: Generate Dependency Updates Changeset
 
 on:
-  pull_request: # TODO remove this line when end debugging
-
   pull_request_target:
     paths:
       - '.github/workflows/*'
@@ -13,27 +11,23 @@ on:
 jobs:
   generate-changeset:
     runs-on: ubuntu-latest
-    # if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'dependabot[bot]'
     steps:
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v1
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
           ref: ${{ github.head_ref }}
-      - run: echo "${{ steps.metadata.outputs.updated-dependencies-json }}"
-      # - name: Generate Changeset
-      #   run: |
-      #     cat <<EOF > .changeset/dependency-update-pr${{ github.event.pull_request.number }}.md
-      #     ---
-      #     "web-csv-toolbox": "patch"
-      #     ---
+      - name: Generate Changeset
+        run: |
+          CHANGESET_NAME="dependency-update-pr${{ github.event.pull_request.number }}.md"
+          cat <<EOF > .changeset/$CHANGESET_NAME
+          ---
+          "web-csv-toolbox": "patch"
+          ---
 
-      #     EOF
-      #     git add .changeset/dependency-update-pr${{ github.event.pull_request.number }}.md
-      #     git commit -m "Add changeset for dependency-update-pr${{ github.event.pull_request.number }}.md"
-      #     git push
+          ${{ github.event.pull_request.title }}
+          EOF
+          git add .changeset/$CHANGESET_NAME
+          git commit -m "Add changeset for $CHANGESET_NAME"
+          git push
