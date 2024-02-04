@@ -37,7 +37,7 @@ devDependencies:
     version: 0.1.0
   fast-check:
     specifier: ^3.15.0
-    version: 3.15.0
+    version: 3.15.1
   husky:
     specifier: ^9.0.7
     version: 9.0.7
@@ -779,7 +779,7 @@ packages:
     peerDependencies:
       vitest: '>=0.28.1 <1.0.0 || ^1'
     dependencies:
-      fast-check: 3.15.0
+      fast-check: 3.15.1
       vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.27.0)
     dev: true
 
@@ -2427,8 +2427,8 @@ packages:
       - supports-color
     dev: true
 
-  /fast-check@3.15.0:
-    resolution: {integrity: sha512-iBz6c+EXL6+nI931x/sbZs1JYTZtLG6Cko0ouS8LRTikhDR7+wZk4TYzdRavlnByBs2G6+nuuJ7NYL9QplNt8Q==}
+  /fast-check@3.15.1:
+    resolution: {integrity: sha512-GutOXZ+SCxGaFWfHe0Pbeq8PrkpGtPxA9/hdkI3s9YzqeMlrq5RdJ+QfYZ/S93jMX+tAyqgW0z5c9ppD+vkGUw==}
     engines: {node: '>=8.0.0'}
     dependencies:
       pure-rand: 6.0.4
