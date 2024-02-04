@@ -1,0 +1,35 @@
+name: Generate changeset for Renovate
+
+on:
+  pull_request_target:
+    paths:
+      - '.github/workflows/generate-changeset-on-dependabot.yaml'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+jobs:
+  generate-changeset:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ github.head_ref }}
+      - run: echo "${{ steps.metadata.outputs.updated-dependencies-json }}"
+      # - name: Generate Changeset
+      #   run: |
+      #     cat <<EOF > .changeset/dependabot-pr${{ github.event.pull_request.number }}.md
+      #     ---
+      #     "web-csv-toolbox": "patch"
+      #     ---
+
+      #     EOF
+      #     git add .changeset/dependabot-pr${{ github.event.pull_request.number }}.md
+      #     git commit -m "Add changeset for dependabot-pr${{ github.event.pull_request.number }}.md"
+      #     git push
