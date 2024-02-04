@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Pull artefacts summaries (i.e., git notes) from upstream
         run: git fetch origin refs/notes/*:refs/notes/*
       - name: Retrieve PR's head branch's artefacts summary
