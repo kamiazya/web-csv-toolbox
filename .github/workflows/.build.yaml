@@ -56,6 +56,6 @@ jobs:
           git fetch origin refs/notes/*:refs/notes/*
           git config user.name "GitHub Action"
           git config user.email "action@github.com"
-          git notes add -m "${{ steps.artefacts-summary.outputs.ARTEFACTS_SUMMARY }}"
+          git notes add -f -m "${{ steps.artefacts-summary.outputs.ARTEFACTS_SUMMARY }}"
           git notes show
           git push origin refs/notes/*
