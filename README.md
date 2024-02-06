@@ -9,6 +9,7 @@
 ![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/web-csv-toolbox)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kamiazya/web-csv-toolbox)
 ![npm](https://img.shields.io/npm/dm/web-csv-toolbox)
+[![codecov](https://codecov.io/gh/kamiazya/web-csv-toolbox/graph/badge.svg?token=8RbDcXHTFl)](https://codecov.io/gh/kamiazya/web-csv-toolbox)
 
 # `🌐 web-csv-toolbox 🧰`
 
