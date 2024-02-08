@@ -46,12 +46,14 @@ jobs:
             !web-csv-toolbox-wasm/Cargo.lock
             !web-csv-toolbox-wasm/.gitignore
       - name: Generate artefacts summary
+        if: ${{ github.repository == 'kamiazya/web-csv-toolbox' }}
         id: artefacts-summary
         run: |
           echo "ARTEFACTS_SUMMARY<<EOF" >> $GITHUB_OUTPUT
           find dist/ -type f -exec sha512sum {} \; | sed 's/  /,/' | cat <(echo 'sha512,file_name') - >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Add the artefacts summary as a git notes
+        if: ${{ github.repository == 'kamiazya/web-csv-toolbox' }}
         run: |
           git fetch origin refs/notes/*:refs/notes/*
           git config user.name "GitHub Action"
