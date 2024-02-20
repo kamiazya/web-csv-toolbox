@@ -81,7 +81,7 @@ jobs:
           artefacts_comparison -b base.csv -h head.csv >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Comment PR with artefact comparison report
-        uses: thollander/actions-comment-pull-request@1d3973dc4b8e1399c0620d3f2b1aa5e795465308 # v2.4.3
+        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6 # v2.5.0
         with:
           message: ${{ steps.artefact-comparison-report.outputs.ARTEFACTS_REPORT }}
           comment_tag: artefact_comparison_report
