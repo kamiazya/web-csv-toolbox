@@ -1,5 +1,85 @@
 # web-csv-toolbox
 
+## 0.7.4
+
+### Patch Changes
+
+- [#118](https://github.com/kamiazya/web-csv-toolbox/pull/118) [`3df7386`](https://github.com/kamiazya/web-csv-toolbox/commit/3df73863ed20794985a038f982a6b8ea9f8194cf) Thanks [@kamiazya](https://github.com/kamiazya)! - Create update-license-year.yaml
+
+- [#108](https://github.com/kamiazya/web-csv-toolbox/pull/108) [`bcd6490`](https://github.com/kamiazya/web-csv-toolbox/commit/bcd64903a19c363a289193a65470a8c38b52e94e) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/configure-pages from 3.0.7 to 4.0.0
+
+- [#109](https://github.com/kamiazya/web-csv-toolbox/pull/109) [`401cb18`](https://github.com/kamiazya/web-csv-toolbox/commit/401cb1873ee09dc9deef14488c36272e21421094) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump codecov/codecov-action from 3.1.6 to 4.0.1
+
+- [#110](https://github.com/kamiazya/web-csv-toolbox/pull/110) [`9a030a2`](https://github.com/kamiazya/web-csv-toolbox/commit/9a030a2a60854c2bc5125e99e3835fc3fc75158d) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/github-script from 6.4.1 to 7.0.1
+
+- [#111](https://github.com/kamiazya/web-csv-toolbox/pull/111) [`6a92edd`](https://github.com/kamiazya/web-csv-toolbox/commit/6a92eddc54f673d7765966c6648a88ec3d0184fe) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump denoland/setup-deno from 1.1.3 to 1.1.4
+
+- [#112](https://github.com/kamiazya/web-csv-toolbox/pull/112) [`60d90da`](https://github.com/kamiazya/web-csv-toolbox/commit/60d90da0b0fd271198e4e95e3967c154b15950a9) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/setup-python from 4.7.1 to 5.0.0
+
+- [#113](https://github.com/kamiazya/web-csv-toolbox/pull/113) [`859b0ed`](https://github.com/kamiazya/web-csv-toolbox/commit/859b0edbbee8054dc934f9e9f4d73fc936875854) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.14 to 3.1.15
+
+- [#114](https://github.com/kamiazya/web-csv-toolbox/pull/114) [`46faf64`](https://github.com/kamiazya/web-csv-toolbox/commit/46faf644b63efaae56f63f844189681a82c5eb63) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump husky from 9.0.7 to 9.0.10
+
+- [#124](https://github.com/kamiazya/web-csv-toolbox/pull/124) [`24e3e4b`](https://github.com/kamiazya/web-csv-toolbox/commit/24e3e4b9166e8f141aa65f051ffcf4f5391d051a) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/setup-node from 4.0.1 to 4.0.2
+
+- [#125](https://github.com/kamiazya/web-csv-toolbox/pull/125) [`63fd59c`](https://github.com/kamiazya/web-csv-toolbox/commit/63fd59ca2a76f70a7d92d3718659b4b5131bf663) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/upload-pages-artifact from 3.0.0 to 3.0.1
+
+- [#127](https://github.com/kamiazya/web-csv-toolbox/pull/127) [`268018d`](https://github.com/kamiazya/web-csv-toolbox/commit/268018d07ebed3bafc4be794a43020d6d39b471c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.29.7 to 8.31.0
+
+- [#128](https://github.com/kamiazya/web-csv-toolbox/pull/128) [`95a7d09`](https://github.com/kamiazya/web-csv-toolbox/commit/95a7d0969cc434eb5c8831dced5a155e6cf91bef) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/deploy-pages from 4.0.3 to 4.0.4
+
+- [#129](https://github.com/kamiazya/web-csv-toolbox/pull/129) [`da273c8`](https://github.com/kamiazya/web-csv-toolbox/commit/da273c89927e1627233d6de426e7aad09a58efb0) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump web-sys from 0.3.67 to 0.3.68 in /web-csv-toolbox-wasm
+
+- [#130](https://github.com/kamiazya/web-csv-toolbox/pull/130) [`e66e8ad`](https://github.com/kamiazya/web-csv-toolbox/commit/e66e8ad0572e56c3ac8e67211e9481075aa5cb7a) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/upload-artifact from 4.3.0 to 4.3.1
+
+- [#131](https://github.com/kamiazya/web-csv-toolbox/pull/131) [`8bc8c19`](https://github.com/kamiazya/web-csv-toolbox/commit/8bc8c19e0c694819e3b2e5d40ff1e3f742ea3a5f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump wasm-bindgen from 0.2.90 to 0.2.91 in /web-csv-toolbox-wasm
+
+- [#132](https://github.com/kamiazya/web-csv-toolbox/pull/132) [`73c1409`](https://github.com/kamiazya/web-csv-toolbox/commit/73c1409debefd3a71008978f2074f2e7263b1e15) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump lint-staged from 15.2.1 to 15.2.2
+
+- [#133](https://github.com/kamiazya/web-csv-toolbox/pull/133) [`c1d593b`](https://github.com/kamiazya/web-csv-toolbox/commit/c1d593b93ecdab954958456e7eb3b6710cbb223e) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump compiler_builtins from 0.1.107 to 0.1.108 in /web-csv-toolbox-wasm
+
+- [#136](https://github.com/kamiazya/web-csv-toolbox/pull/136) [`2f60c6f`](https://github.com/kamiazya/web-csv-toolbox/commit/2f60c6f5ab8b1caa39bb89a5442d64600e9f1670) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/download-artifact from 4.1.1 to 4.1.2
+
+- [#137](https://github.com/kamiazya/web-csv-toolbox/pull/137) [`a9d864f`](https://github.com/kamiazya/web-csv-toolbox/commit/a9d864fee5c034d9731a61b49c75dcc0c4d36edd) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump pnpm/action-setup from 2.4.0 to 3.0.0
+
+- [#139](https://github.com/kamiazya/web-csv-toolbox/pull/139) [`88590c2`](https://github.com/kamiazya/web-csv-toolbox/commit/88590c270be142a0923b0f1f3682271924ea6365) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite from 5.0.12 to 5.1.1
+
+- [#140](https://github.com/kamiazya/web-csv-toolbox/pull/140) [`dead424`](https://github.com/kamiazya/web-csv-toolbox/commit/dead4246dbe1ba8ad2c9d2b3413f5d4f7f283fab) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.31.0 to 8.31.1
+
+- [#141](https://github.com/kamiazya/web-csv-toolbox/pull/141) [`4710eec`](https://github.com/kamiazya/web-csv-toolbox/commit/4710eec87cb715989801a4ee3cec37f4fb9444e7) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.15 to 3.1.16
+
+- [#142](https://github.com/kamiazya/web-csv-toolbox/pull/142) [`3a8fc90`](https://github.com/kamiazya/web-csv-toolbox/commit/3a8fc9098648c3d9d5c5327f23f988ed8441f615) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump cxx-build from 1.0.115 to 1.0.116 in /web-csv-toolbox-wasm
+
+- [#143](https://github.com/kamiazya/web-csv-toolbox/pull/143) [`952b6b6`](https://github.com/kamiazya/web-csv-toolbox/commit/952b6b60f3fdd7dc3d7200fcbd164fea212325c6) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump husky from 9.0.10 to 9.0.11
+
+- [#144](https://github.com/kamiazya/web-csv-toolbox/pull/144) [`58bf707`](https://github.com/kamiazya/web-csv-toolbox/commit/58bf70782a7b6bc6a3bb70a16d2677f62587895c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump changesets/action from 1.4.5 to 1.4.6
+
+- [#145](https://github.com/kamiazya/web-csv-toolbox/pull/145) [`5d839be`](https://github.com/kamiazya/web-csv-toolbox/commit/5d839be594804613929e236086d9fa862ccce4bf) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump thollander/actions-comment-pull-request from 2.4.3 to 2.5.0
+
+- [#146](https://github.com/kamiazya/web-csv-toolbox/pull/146) [`15f972e`](https://github.com/kamiazya/web-csv-toolbox/commit/15f972e69227e496d59cdf9d373c7b76132d4562) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump the npm_and_yarn group across 1 directories with 1 update
+
+- [#147](https://github.com/kamiazya/web-csv-toolbox/pull/147) [`0a9d60c`](https://github.com/kamiazya/web-csv-toolbox/commit/0a9d60cae8d547f0d2f13186f0f02c1c12aa37dc) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde_json from 1.0.113 to 1.0.114 in /web-csv-toolbox-wasm
+
+- [#148](https://github.com/kamiazya/web-csv-toolbox/pull/148) [`a4031f5`](https://github.com/kamiazya/web-csv-toolbox/commit/a4031f521043d180f9154e21763ce75620bb6d22) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump codecov/codecov-action from 4.0.1 to 4.0.2
+
+- [#149](https://github.com/kamiazya/web-csv-toolbox/pull/149) [`c7fbb8a`](https://github.com/kamiazya/web-csv-toolbox/commit/c7fbb8ad37262c8a4d3842f6a6e58749b34a7cbd) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump actions/download-artifact from 4.1.2 to 4.1.4
+
+- [#150](https://github.com/kamiazya/web-csv-toolbox/pull/150) [`d2bebfc`](https://github.com/kamiazya/web-csv-toolbox/commit/d2bebfcf374c4144423e4964e06ea74e0325aaaf) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc from 0.25.7 to 0.25.12
+
+- [#134](https://github.com/kamiazya/web-csv-toolbox/pull/134) [`cf1f9ae`](https://github.com/kamiazya/web-csv-toolbox/commit/cf1f9ae6ef379686a68d8afd112dd541129b0a3f) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix artefacts summary generation condition
+
+- [#95](https://github.com/kamiazya/web-csv-toolbox/pull/95) [`8e6b7ac`](https://github.com/kamiazya/web-csv-toolbox/commit/8e6b7ac563e340e72496991d33cde714f4d36b51) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @fast-check/vitest from 0.0.9 to 0.1.0
+
+- [#119](https://github.com/kamiazya/web-csv-toolbox/pull/119) [`4699780`](https://github.com/kamiazya/web-csv-toolbox/commit/4699780384169243e56ef4614035fde57d4ca792) Thanks [@github-actions](https://github.com/apps/github-actions)! - Update license copyright year(s)
+
+- [#115](https://github.com/kamiazya/web-csv-toolbox/pull/115) [`30ab2e8`](https://github.com/kamiazya/web-csv-toolbox/commit/30ab2e82258454fdfde9270b1e797183a7deb4b5) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix Lexer class
+
+- [#107](https://github.com/kamiazya/web-csv-toolbox/pull/107) [`a47248f`](https://github.com/kamiazya/web-csv-toolbox/commit/a47248fb4f23f709753decaba26d9f739c1b7238) Thanks [@kamiazya](https://github.com/kamiazya)! - Improve GitHub Actions Workflows
+
+- [#135](https://github.com/kamiazya/web-csv-toolbox/pull/135) [`21b2d9c`](https://github.com/kamiazya/web-csv-toolbox/commit/21b2d9ccfbb896297a9c47483a2e093aafe3591d) Thanks [@kamiazya](https://github.com/kamiazya)! - Pined license year action versions
+
+- [#94](https://github.com/kamiazya/web-csv-toolbox/pull/94) [`379d899`](https://github.com/kamiazya/web-csv-toolbox/commit/379d899fb3756f5e779771f6c4df68f0bb9289c0) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump lint-staged from 15.2.0 to 15.2.1
+
 ## 0.7.3
 
 ### Patch Changes
