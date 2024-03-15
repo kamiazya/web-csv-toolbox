@@ -1,0 +1,5 @@
+---
+"web-csv-toolbox": "patch"
+---
+
+build(deps): bump actions/checkout from 4.1.1 to 4.1.2
