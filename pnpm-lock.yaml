@@ -46,7 +46,7 @@ devDependencies:
     version: 15.2.2
   terser:
     specifier: ^5.27.0
-    version: 5.27.0
+    version: 5.29.2
   typedoc:
     specifier: ^0.25.7
     version: 0.25.7(typescript@5.3.3)
@@ -58,13 +58,13 @@ devDependencies:
     version: 5.3.3
   vite:
     specifier: ^5.0.12
-    version: 5.1.1(terser@5.27.0)
+    version: 5.1.1(terser@5.29.2)
   vite-plugin-dts:
     specifier: ^3.7.2
     version: 3.7.2(typescript@5.3.3)(vite@5.1.1)
   vitest:
     specifier: ^1.2.2
-    version: 1.2.2(@vitest/browser@1.2.2)(terser@5.27.0)
+    version: 1.2.2(@vitest/browser@1.2.2)(terser@5.29.2)
   webdriverio:
     specifier: ^8.29.1
     version: 8.31.1(typescript@5.3.3)
@@ -780,7 +780,7 @@ packages:
       vitest: '>=0.28.1 <1.0.0 || ^1'
     dependencies:
       fast-check: 3.15.1
-      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.27.0)
+      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.29.2)
     dev: true
 
   /@iarna/toml@2.2.5:
@@ -992,7 +992,7 @@ packages:
     dependencies:
       serialize-javascript: 6.0.2
       smob: 1.4.1
-      terser: 5.27.0
+      terser: 5.29.2
     dev: true
 
   /@rollup/pluginutils@5.1.0:
@@ -1236,7 +1236,7 @@ packages:
       '@vitest/utils': 1.2.2
       magic-string: 0.30.5
       sirv: 2.0.4
-      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.27.0)
+      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.29.2)
       webdriverio: 8.31.1(typescript@5.3.3)
     dev: true
 
@@ -1254,7 +1254,7 @@ packages:
       magicast: 0.3.3
       picocolors: 1.0.0
       test-exclude: 6.0.0
-      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.27.0)
+      vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.29.2)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -4741,8 +4741,8 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /terser@5.27.0:
-    resolution: {integrity: sha512-bi1HRwVRskAjheeYl291n3JC4GgO/Ty4z1nVs5AAsmonJulGxpSektecnNedrwK9C7vpvVtcX3cw00VSLt7U2A==}
+  /terser@5.29.2:
+    resolution: {integrity: sha512-ZiGkhUBIM+7LwkNjXYJq8svgkd+QK3UUr0wJqY4MieaezBSAIPgbSPZyIx0idM6XWK5CMzSWa8MJIzmRcB8Caw==}
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
@@ -5017,7 +5017,7 @@ packages:
     engines: {node: '>= 0.10'}
     dev: true
 
-  /vite-node@1.2.2(terser@5.27.0):
+  /vite-node@1.2.2(terser@5.29.2):
     resolution: {integrity: sha512-1as4rDTgVWJO3n1uHmUYqq7nsFgINQ9u+mRcXpjeOMJUmviqNKjcZB7UfRZrlM7MjYXMKpuWp5oGkjaFLnjawg==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -5026,7 +5026,7 @@ packages:
       debug: 4.3.4
       pathe: 1.1.2
       picocolors: 1.0.0
-      vite: 5.1.1(terser@5.27.0)
+      vite: 5.1.1(terser@5.29.2)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -5054,7 +5054,7 @@ packages:
       debug: 4.3.4
       kolorist: 1.8.0
       typescript: 5.3.3
-      vite: 5.1.1(terser@5.27.0)
+      vite: 5.1.1(terser@5.29.2)
       vue-tsc: 1.8.27(typescript@5.3.3)
     transitivePeerDependencies:
       - '@types/node'
@@ -5062,7 +5062,7 @@ packages:
       - supports-color
     dev: true
 
-  /vite@5.1.1(terser@5.27.0):
+  /vite@5.1.1(terser@5.29.2):
     resolution: {integrity: sha512-wclpAgY3F1tR7t9LL5CcHC41YPkQIpKUGeIuT8MdNwNZr6OqOTLs7JX5vIHAtzqLWXts0T+GDrh9pN2arneKqg==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -5093,12 +5093,12 @@ packages:
       esbuild: 0.19.12
       postcss: 8.4.35
       rollup: 4.9.6
-      terser: 5.27.0
+      terser: 5.29.2
     optionalDependencies:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@1.2.2(@vitest/browser@1.2.2)(terser@5.27.0):
+  /vitest@1.2.2(@vitest/browser@1.2.2)(terser@5.29.2):
     resolution: {integrity: sha512-d5Ouvrnms3GD9USIK36KG8OZ5bEvKEkITFtnGv56HFaSlbItJuYr7hv2Lkn903+AvRAgSixiamozUVfORUekjw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -5142,8 +5142,8 @@ packages:
       strip-literal: 1.3.0
       tinybench: 2.6.0
       tinypool: 0.8.2
-      vite: 5.1.1(terser@5.27.0)
-      vite-node: 1.2.2(terser@5.27.0)
+      vite: 5.1.1(terser@5.29.2)
+      vite-node: 1.2.2(terser@5.29.2)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
       - less
