@@ -1,6 +1,6 @@
 {
   "name": "web-csv-toolbox",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
   "main": "dist/cjs/web-csv-toolbox.cjs",
