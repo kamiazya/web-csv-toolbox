@@ -1,6 +1,6 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { CommonOptions, Token } from "./common/types.ts";
+import type { CommonOptions, Token } from "./common/types.ts";
 import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 

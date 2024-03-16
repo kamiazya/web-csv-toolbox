@@ -1,6 +1,6 @@
 import { Lexer } from "./Lexer.ts";
 import { RecordAssembler } from "./RecordAssembler.ts";
-import { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
 
 export function parseStringToIterableIterator<
   Header extends ReadonlyArray<string>,

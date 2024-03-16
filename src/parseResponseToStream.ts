@@ -1,4 +1,4 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 

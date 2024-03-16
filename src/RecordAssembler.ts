@@ -1,5 +1,9 @@
 import { FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { CSVRecord, RecordAssemblerOptions, Token } from "./common/types.ts";
+import type {
+  CSVRecord,
+  RecordAssemblerOptions,
+  Token,
+} from "./common/types.ts";
 
 export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #fieldIndex = 0;

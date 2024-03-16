@@ -1,4 +1,4 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { parseBinaryToArraySync } from "./parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "./parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "./parseBinaryToStream.ts";

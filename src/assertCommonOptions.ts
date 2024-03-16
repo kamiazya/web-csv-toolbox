@@ -1,4 +1,4 @@
-import { CommonOptions } from "./common/types.ts";
+import type { CommonOptions } from "./common/types.ts";
 import { CR, LF } from "./constants.ts";
 
 /**

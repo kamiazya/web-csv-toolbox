@@ -1,5 +1,5 @@
-import { type assertCommonOptions } from "./assertCommonOptions.ts";
-import { CommonOptions } from "./common/types.ts";
+import type { assertCommonOptions } from "./assertCommonOptions.ts";
+import type { CommonOptions } from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { occurrences } from "./utils/occurrences.ts";
 

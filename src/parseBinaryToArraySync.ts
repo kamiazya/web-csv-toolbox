@@ -1,4 +1,4 @@
-import { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { convertBinaryToString } from "./convertBinaryToString.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 

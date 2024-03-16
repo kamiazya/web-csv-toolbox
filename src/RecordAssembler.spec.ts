@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { RecordAssembler } from "./RecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { Token } from "./common/types.ts";
+import type { Token } from "./common/types.ts";
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {

@@ -1,4 +1,4 @@
-import init, { InitInput } from "web-csv-toolbox-wasm";
+import init, { type InitInput } from "web-csv-toolbox-wasm";
 
 /**
  * Load WASM module.
