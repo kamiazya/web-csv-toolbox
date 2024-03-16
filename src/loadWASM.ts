@@ -1,4 +1,4 @@
-import init, { InitInput } from "web-csv-toolbox-wasm";
+import init, { type InitInput } from "web-csv-toolbox-wasm";
 
 import dataURL from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm";
 

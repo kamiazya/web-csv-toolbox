@@ -1,5 +1,5 @@
 import { Lexer } from "./Lexer.ts";
-import { CommonOptions, Token } from "./common/types.ts";
+import type { CommonOptions, Token } from "./common/types.ts";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.

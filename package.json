@@ -66,7 +66,8 @@
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
-    "prepare": "husky"
+    "prepare": "husky",
+    "format": "biome check --apply ."
   },
   "repository": {
     "type": "git",

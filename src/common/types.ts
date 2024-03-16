@@ -1,4 +1,4 @@
-import { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
+import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
  * Field token type.

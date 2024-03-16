@@ -1,4 +1,4 @@
-import { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
 import { parseResponseToStream } from "./parseResponseToStream.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";

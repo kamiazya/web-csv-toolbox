@@ -1,6 +1,6 @@
 import { LexerTransformer } from "./LexerTransformer.ts";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
-import { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { pipeline } from "./utils/pipeline.ts";
 
 export function parseStringStreamToStream<Header extends ReadonlyArray<string>>(

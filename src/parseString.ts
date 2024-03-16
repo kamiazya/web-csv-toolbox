@@ -1,4 +1,4 @@
-import { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
