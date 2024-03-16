@@ -1,5 +1,25 @@
 # web-csv-toolbox
 
+## 0.7.5
+
+### Patch Changes
+
+- [#151](https://github.com/kamiazya/web-csv-toolbox/pull/151) [`0435339`](https://github.com/kamiazya/web-csv-toolbox/commit/0435339706a973909c58e58a36472c6ac9ff62d9) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde from 1.0.196 to 1.0.197 in /web-csv-toolbox-wasm
+
+- [#152](https://github.com/kamiazya/web-csv-toolbox/pull/152) [`2a39563`](https://github.com/kamiazya/web-csv-toolbox/commit/2a39563cc7e015a220a56b311edba5b731f7c61c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump cxx-build from 1.0.116 to 1.0.119 in /web-csv-toolbox-wasm
+
+- [#153](https://github.com/kamiazya/web-csv-toolbox/pull/153) [`0025866`](https://github.com/kamiazya/web-csv-toolbox/commit/0025866f1c5df2bbc110d92b6fadaa6b55caac30) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump codecov/codecov-action from 4.0.2 to 4.1.0
+
+- [#154](https://github.com/kamiazya/web-csv-toolbox/pull/154) [`65c6413`](https://github.com/kamiazya/web-csv-toolbox/commit/65c6413a63db50fa825a3630d362e1cb26fb81eb) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump terser from 5.27.0 to 5.29.2
+
+- [#155](https://github.com/kamiazya/web-csv-toolbox/pull/155) [`d7dcec4`](https://github.com/kamiazya/web-csv-toolbox/commit/d7dcec41bc17b0dd7ad84c08358c9d5f4784edd3) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump web-sys from 0.3.68 to 0.3.69 in /web-csv-toolbox-wasm
+
+- [#157](https://github.com/kamiazya/web-csv-toolbox/pull/157) [`aea3d17`](https://github.com/kamiazya/web-csv-toolbox/commit/aea3d173bbd6c0b4e2c3a1917354d9d98345bd24) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump wasm-bindgen from 0.2.91 to 0.2.92 in /web-csv-toolbox-wasm
+
+- [#161](https://github.com/kamiazya/web-csv-toolbox/pull/161) [`e61b090`](https://github.com/kamiazya/web-csv-toolbox/commit/e61b0909d4f6b66acc5a1f0e69482687ca21198f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @biomejs/biome from 1.5.3 to 1.6.1
+
+- [#162](https://github.com/kamiazya/web-csv-toolbox/pull/162) [`05bde86`](https://github.com/kamiazya/web-csv-toolbox/commit/05bde864ff2d3bb2ffc603c4ecade3cfbf2e5787) Thanks [@kamiazya](https://github.com/kamiazya)! - Update import statements to use type imports
+
 ## 0.7.4
 
 ### Patch Changes
