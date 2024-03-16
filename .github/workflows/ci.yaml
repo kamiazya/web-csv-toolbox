@@ -39,54 +39,6 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  compare_artefacts:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' }}
-    permissions:
-      contents: read
-      pull-requests: write
-    needs: build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          fetch-depth: 0
-      - name: Pull artefacts summaries (i.e., git notes) from upstream
-        run: git fetch origin refs/notes/*:refs/notes/*
-      - name: Retrieve PR's head branch's artefacts summary
-        id: artefact-summary-head
-        run: |
-          echo "ARTEFACTS_SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          git notes show >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      - name: Retrieve PR's target branch's artefacts summary
-        id: artefact-summary-base
-        run: |
-          git checkout ${{ github.base_ref }}
-          echo "ARTEFACTS_SUMMARY<<EOF" >> $GITHUB_OUTPUT
-          git notes show >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      - name: Setup Python
-        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c # v5.0.0
-        with:
-          python-version: "3.10"
-      - name: Install artefactscomparison package
-        run: pip install -U artefactscomparison
-      - name: Generate artefact comparison report
-        id: artefact-comparison-report
-        run: |
-          echo "${{ steps.artefact-summary-head.outputs.ARTEFACTS_SUMMARY }}" > head.csv
-          echo "${{ steps.artefact-summary-base.outputs.ARTEFACTS_SUMMARY }}" > base.csv
-          echo "ARTEFACTS_REPORT<<EOF" >> $GITHUB_OUTPUT
-          artefacts_comparison -b base.csv -h head.csv >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-      - name: Comment PR with artefact comparison report
-        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6 # v2.5.0
-        with:
-          message: ${{ steps.artefact-comparison-report.outputs.ARTEFACTS_REPORT }}
-          comment_tag: artefact_comparison_report
-          mode: recreate
-
   test_nodejs:
     runs-on: ubuntu-latest
     needs: build
