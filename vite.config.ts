@@ -1,6 +1,7 @@
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
+import codspeed from "@codspeed/vitest-plugin";
 
 export default defineConfig({
   build: {
@@ -31,6 +32,7 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
+    ...(process.env.CI === "true" ? [codspeed()] : []),
     wasmPack({
       crates: ["./web-csv-toolbox-wasm"],
     }),
