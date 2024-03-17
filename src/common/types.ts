@@ -1,3 +1,4 @@
+import type { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "../constants.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -157,12 +158,64 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
   string
 >;
 
+type Split<
+  Char extends string,
+  Delimiter extends string = typeof COMMA,
+> = Char extends `${infer F}${Delimiter}${infer R}`
+  ? [F, ...Split<R, Delimiter>]
+  : [Char];
+
+type Join<
+  Chars extends ReadonlyArray<string | number | boolean | bigint>,
+  Delimiter extends string = typeof COMMA,
+> = Chars extends readonly [infer F, ...infer R]
+  ? F extends string
+    ? R extends string[]
+      ? `${F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter>}`
+      : string
+    : string
+  : "";
+
+type Newline = typeof CR | typeof CRLF | typeof LF;
+
+type InferHeader<
+  CSVSource extends string,
+  Quotation extends string = typeof DOUBLE_QUOTE,
+> = CSVSource extends `${infer A}${Quotation}${infer B}${Quotation}${infer C}`
+  ? `${A}${B}${InferHeader<C, Quotation>}`
+  : CSVSource extends `${infer A}${Newline}${string}`
+    ? A
+    : CSVSource;
+
+/**
+ * Generate a CSV header tuple from a CSVString.
+ *
+ * @category Types
+ */
+export type PickHeader<
+  CSVSource extends CSVString,
+  Delimiter extends string = typeof COMMA,
+  Quotation extends string = typeof DOUBLE_QUOTE,
+> = CSVSource extends
+  | `${infer Source}`
+  // biome-ignore lint/suspicious/noRedeclare: <explanation>
+  | ReadableStream<infer Source>
+  ? readonly [...Split<InferHeader<Source, Quotation>, Delimiter>]
+  : ReadonlyArray<string>;
+
 /**
  * CSV String.
  *
  * @category Types
  */
-export type CSVString = string | ReadableStream<string>;
+export type CSVString<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = typeof COMMA,
+> = Header extends readonly [string, ...string[]]
+  ?
+      | `${Join<Header, Delimiter>}${typeof LF}${string}`
+      | ReadableStream<`${Join<Header, Delimiter>}${typeof LF}${string}`>
+  : string | ReadableStream<string>;
 
 /**
  * CSV Binary.
@@ -180,4 +233,7 @@ export type CSVBinary =
  *
  * @category Types
  */
-export type CSV = CSVString | CSVBinary;
+export type CSV<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = typeof COMMA,
+> = Header extends [] ? CSVString | CSVBinary : CSVString<Header, Delimiter>;
