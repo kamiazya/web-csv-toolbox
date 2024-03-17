@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 import codspeed from "@codspeed/vitest-plugin";
 
-export default defineConfig({
+export default defineConfig(env => ({
   build: {
     target: "esnext",
     lib: {
@@ -52,5 +52,6 @@ export default defineConfig({
       provider: "istanbul", // use istanbul for browser coverage
       include: ["src/**/*.ts"],
     },
+    teardownTimeout: process.env.CI === "true" ? 10 * 60 * 1000 : 10000,
   },
-});
+}));
