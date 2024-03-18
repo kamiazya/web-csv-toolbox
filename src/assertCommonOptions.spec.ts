@@ -2,10 +2,10 @@ import { fc } from "@fast-check/vitest";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
-import { COMMA, CRLF, DOUBLE_QUOTE } from "./constants.ts";
+import { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
 
 describe("function assertCommonOptions", () => {
-  it("should be throw error if quotation is a empty character", () => {
+  it("should throw an error if quotation is an empty character", () => {
     expect(() =>
       assertCommonOptions({
         quotation: "",
@@ -14,7 +14,7 @@ describe("function assertCommonOptions", () => {
     ).toThrow("quotation must not be empty");
   });
 
-  it("should be throw error if delimiter is a empty character", () => {
+  it("should throw an error if delimiter is an empty character", () => {
     expect(() =>
       assertCommonOptions({
         quotation: COMMA,
@@ -23,88 +23,39 @@ describe("function assertCommonOptions", () => {
     ).toThrow("delimiter must not be empty");
   });
 
-  it("should be throw error if quotation includes CR or LF", () =>
+  it("should throw an error if delimiter is the same as quotation", async () => {
     fc.assert(
       fc.property(
-        fc.gen().map((g) => {
-          const EOL = g(() => fc.constantFrom("\n", "\r"));
-          const prefix = g(FC.text);
-          const sufix = g(FC.text);
-          return prefix + EOL + sufix;
-        }),
-        (invalidQuotation) => {
+        FC.text({ minLength: 1, maxLength: 1, excludes: [...CRLF] }).filter(
+          (v) => v.length === 1,
+        ),
+        (value) => {
           expect(() =>
-            assertCommonOptions({
-              quotation: invalidQuotation,
-              delimiter: DOUBLE_QUOTE,
-            }),
-          ).toThrow("quotation must not include CR or LF");
-        },
-      ),
-      {
-        examples: [
-          // "\n" is included
-          ["\n"],
-          // "\r" is included
-          ["\r"],
-          // "\n" and "\r" are included
-          ["\n\r"],
-        ],
-      },
-    ));
-
-  it("should be throw error if delimiter includes CR or LF", () =>
-    fc.assert(
-      fc.property(
-        fc.gen().map((g) => {
-          const EOL = g(() => fc.constantFrom("\n", "\r"));
-          const prefix = g(FC.text);
-          const sufix = g(FC.text);
-          return prefix + EOL + sufix;
-        }),
-        (invalidDelimiter) => {
-          expect(() =>
-            assertCommonOptions({
-              quotation: COMMA,
-              delimiter: invalidDelimiter,
-            }),
-          ).toThrow("delimiter must not include CR or LF");
-        },
-      ),
-      {
-        examples: [
-          // "\n" is included
-          ["\n"],
-          // "\r" is included
-          ["\r"],
-          // "\n" and "\r" are included
-          ["\n\r"],
-        ],
-      },
-    ));
-
-  it("should be throw error if delimiter and quotation include each other as a substring", () =>
-    fc.assert(
-      fc.property(
-        fc.gen().map((g) => {
-          const excludes = [...CRLF];
-          const A = g(FC.text, { minLength: 1, excludes });
-          // B is a string that includes A as a substring.
-          const B = g(FC.text, { excludes }) + A + g(FC.text, { excludes });
-          return { A, B };
-        }),
-        ({ A, B }) => {
-          expect(() =>
-            assertCommonOptions({ quotation: A, delimiter: B }),
+            assertCommonOptions({ quotation: value, delimiter: value }),
           ).toThrow(
-            "delimiter and quotation must not include each other as a substring",
-          );
-          expect(() =>
-            assertCommonOptions({ quotation: B, delimiter: A }),
-          ).toThrow(
-            "delimiter and quotation must not include each other as a substring",
+            "delimiter must not be the same as quotation, use different characters",
           );
         },
       ),
-    ));
+    );
+  });
+
+  it("should throw an error if quotation is CR or LF", () => {
+    for (const quotation of [CR, LF]) {
+      expect(() =>
+        assertCommonOptions({
+          quotation: quotation,
+          delimiter: DOUBLE_QUOTE,
+        }),
+      ).toThrow("quotation must not include CR or LF");
+    }
+    for (const delimiter of [CR, LF]) {
+      expect(() =>
+        assertCommonOptions({
+          quotation: COMMA,
+          delimiter: delimiter,
+        }),
+      ).toThrow("delimiter must not include CR or LF");
+    }
+  });
 });

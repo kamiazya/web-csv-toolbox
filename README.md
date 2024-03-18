@@ -53,7 +53,6 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
   - 🔄 Defaults to `,` and `"` respectively.
-  - 🛠️ Use multi-character/multi-byte delimiters and quotations.
 - 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
