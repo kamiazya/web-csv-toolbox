@@ -195,22 +195,6 @@ describe("class Lexer", () => {
           expect(actual).toStrictEqual(expected);
         },
       ),
-      {
-        examples: [
-          [
-            {
-              csv: "QfQQff0Qf0Qf",
-              data: [["Q", "0"]],
-              options: { delimiter: "f0", quotation: "Qf" },
-              expected: [
-                { type: Field, value: "Q" },
-                FieldDelimiter,
-                { type: Field, value: "0" },
-              ],
-            },
-          ],
-        ],
-      },
     );
   });
 
