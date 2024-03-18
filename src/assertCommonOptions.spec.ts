@@ -58,4 +58,22 @@ describe("function assertCommonOptions", () => {
       ).toThrow("delimiter must not include CR or LF");
     }
   });
+
+  it("should throw an error if quotation is not a string", () => {
+    expect(() =>
+      assertCommonOptions({
+        quotation: 1 as unknown as string,
+        delimiter: DOUBLE_QUOTE,
+      }),
+    ).toThrow("quotation must be a string");
+  });
+
+  it("should throw an error if delimiter is not a string", () => {
+    expect(() =>
+      assertCommonOptions({
+        quotation: COMMA,
+        delimiter: 1 as unknown as string,
+      }),
+    ).toThrow("delimiter must be a string");
+  });
 });

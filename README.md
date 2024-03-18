@@ -293,8 +293,7 @@ You can use WebAssembly to parse CSV data for high performance.
 - Parsing with WebAssembly is faster than parsing with JavaScript,
 but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.
-- Demiliter characters are limited to single-byte characters.
-- Quotation characters is only `"`. (Double quotation mark)
+- Quotation characters are only `"`. (Double quotation mark)
   - If you pass a different character, it will throw an error.
 
 ```ts
