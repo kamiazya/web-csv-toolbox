@@ -168,10 +168,13 @@ type Split<
 type Join<
   Chars extends ReadonlyArray<string | number | boolean | bigint>,
   Delimiter extends string = typeof COMMA,
+  Quotation extends string = typeof DOUBLE_QUOTE,
 > = Chars extends readonly [infer F, ...infer R]
   ? F extends string
     ? R extends string[]
-      ? `${F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter>}`
+      ? `${F extends `${string}${Newline}${string}`
+          ? `${Quotation}${F}${Quotation}`
+          : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
       : string
     : string
   : "";
@@ -211,10 +214,15 @@ export type PickHeader<
 export type CSVString<
   Header extends ReadonlyArray<string> = [],
   Delimiter extends string = typeof COMMA,
+  Quotation extends string = typeof DOUBLE_QUOTE,
 > = Header extends readonly [string, ...string[]]
   ?
-      | `${Join<Header, Delimiter>}${typeof LF}${string}`
-      | ReadableStream<`${Join<Header, Delimiter>}${typeof LF}${string}`>
+      | `${Join<Header, Delimiter, Quotation>}${typeof LF}${string}`
+      | ReadableStream<`${Join<
+          Header,
+          Delimiter,
+          Quotation
+        >}${typeof LF}${string}`>
   : string | ReadableStream<string>;
 
 /**
@@ -236,4 +244,7 @@ export type CSVBinary =
 export type CSV<
   Header extends ReadonlyArray<string> = [],
   Delimiter extends string = typeof COMMA,
-> = Header extends [] ? CSVString | CSVBinary : CSVString<Header, Delimiter>;
+  Quotation extends string = typeof DOUBLE_QUOTE,
+> = Header extends []
+  ? CSVString | CSVBinary
+  : CSVString<Header, Delimiter, Quotation>;
