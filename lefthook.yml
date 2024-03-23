@@ -1,0 +1,18 @@
+pre-push:
+  commands:
+    packages-audit:
+      tags: npm security
+      run: pnpm audit
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      glob: "*.{js,ts,json}"
+      run: pnpm biome check --no-errors-on-unmatched --apply {staged_files}
+    cargo-fmt-clippy:
+      glob: "*.rs"
+      root: web-csv-toolbox-wasm/
+      run: |
+        cargo fmt --all
+        cargo clippy --all-targets --all-features

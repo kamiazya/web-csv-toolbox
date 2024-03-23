@@ -100,6 +100,7 @@
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
+    "lefthook": "^1.6.7",
     "terser": "^5.27.0",
     "typedoc": "^0.25.7",
     "typedoc-plugin-mdn-links": "^3.1.14",
