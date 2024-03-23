@@ -59,14 +59,7 @@ const bench = withCodSpeed(new Bench())
         // noop
       }
     }));
-  })
-  .add('parseBinary.toStream(large-dataset)', async () => {
-    await parseBinary.toStream(binaryCSV).pipeTo(new WritableStream({
-      write(_) {
-        // noop
-      }
-    }));
-  })
+  });
 
 
 await bench.warmup();
