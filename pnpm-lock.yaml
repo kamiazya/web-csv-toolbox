@@ -52,7 +52,7 @@ importers:
         version: 0.25.12(typescript@5.3.3)
       typedoc-plugin-mdn-links:
         specifier: ^3.1.14
-        version: 3.1.16(typedoc@0.25.12)
+        version: 3.1.18(typedoc@0.25.12)
       typescript:
         specifier: ^5.3.3
         version: 5.3.3
@@ -4982,8 +4982,8 @@ packages:
       is-typed-array: 1.1.12
     dev: true
 
-  /typedoc-plugin-mdn-links@3.1.16(typedoc@0.25.12):
-    resolution: {integrity: sha512-Jdnw3tI3KOOMMahUNiCwKXJcH+Ov9y3syRQ8HP1ce8nT2O9Bsg9aqqa0LWye+CdCiSpWJ/USzOK3MFNxRYzL4A==}
+  /typedoc-plugin-mdn-links@3.1.18(typedoc@0.25.12):
+    resolution: {integrity: sha512-BGzSUEHT15o3g2Q1q/5tBQufAM+yqJNwU1aUmYZC9qbfCS1I5qyEkmoxZ9ks2Z3TwPTZ8PMfIKd2vq5/0nmLnw==}
     peerDependencies:
       typedoc: '>= 0.23.14 || 0.24.x || 0.25.x'
     dependencies:
