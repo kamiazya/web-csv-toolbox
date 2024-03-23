@@ -7,7 +7,9 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "include": ["src/**/*"]
+    "include": [
+      "src/**/*"
+    ]
   },
   "organizeImports": {
     "enabled": true
