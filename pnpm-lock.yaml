@@ -61,7 +61,7 @@ importers:
         version: 5.1.1(terser@5.29.2)
       vite-plugin-dts:
         specifier: ^3.7.2
-        version: 3.7.2(typescript@5.3.3)(vite@5.1.1)
+        version: 3.7.3(typescript@5.3.3)(vite@5.1.1)
       vitest:
         specifier: ^1.2.2
         version: 1.2.2(@vitest/browser@1.2.2)(terser@5.29.2)
@@ -5113,8 +5113,8 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-dts@3.7.2(typescript@5.3.3)(vite@5.1.1):
-    resolution: {integrity: sha512-kg//1nDA01b8rufJf4TsvYN8LMkdwv0oBYpiQi6nRwpHyue+wTlhrBiqgipdFpMnW1oOYv6ywmzE5B0vg6vSEA==}
+  /vite-plugin-dts@3.7.3(typescript@5.3.3)(vite@5.1.1):
+    resolution: {integrity: sha512-26eTlBYdpjRLWCsTJebM8vkCieE+p9gP3raf+ecDnzzK5E3FG6VE1wcy55OkRpfWWVlVvKkYFe6uvRHYWx7Nog==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       typescript: '*'
