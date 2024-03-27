@@ -1,5 +1,15 @@
 # web-csv-toolbox
 
+## 0.8.0
+
+### Minor Changes
+
+- [#168](https://github.com/kamiazya/web-csv-toolbox/pull/168) [`7fad0d1`](https://github.com/kamiazya/web-csv-toolbox/commit/7fad0d16446181bcc65d59c6f3298e7a106f3203) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor CSV parsing options and assertions
+
+### Patch Changes
+
+- [`4a0077c`](https://github.com/kamiazya/web-csv-toolbox/commit/4a0077c2e8d708a21b31042df80f979b82ff503c) Thanks [@kamiazya](https://github.com/kamiazya)! - Add vitest benchmark test and codspeed intagration
+
 ## 0.7.5
 
 ### Patch Changes
