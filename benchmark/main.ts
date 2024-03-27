@@ -26,7 +26,9 @@ await loadWASM();
 let binaryCSV: Uint8Array = await getAsBinary()
 let stringCSV: string = await getAsString();
 
-const bench = withCodSpeed(new Bench())
+const bench = withCodSpeed(new Bench({
+  iterations: 50,
+}))
   .add('parseString.toArraySync(large-dataset)', () => {
     parseString.toArraySync(stringCSV);
   })
