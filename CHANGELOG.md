@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.8.1
+
+### Patch Changes
+
+- [#182](https://github.com/kamiazya/web-csv-toolbox/pull/182) [`cb649b3`](https://github.com/kamiazya/web-csv-toolbox/commit/cb649b357585e2947345f836ab19410fb95715f8) Thanks [@kamiazya](https://github.com/kamiazya)! - Update benchmark iterations
+
 ## 0.8.0
 
 ### Minor Changes
