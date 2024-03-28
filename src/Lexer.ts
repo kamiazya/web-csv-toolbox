@@ -1,35 +1,36 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { CommonOptions, Token } from "./common/types.ts";
-import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
-import { escapeRegExp } from "./utils/escapeRegExp.ts";
+import { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
 
+/**
+ * Represents a lexer for parsing CSV data.
+ */
 export class Lexer {
   #delimiter: string;
-  #delimiterLength: number;
   #quotation: string;
-  #quotationLength: number;
-  #matcher: RegExp;
   #buffer = "";
   #flush = false;
 
+  /**
+   * Constructs a new Lexer instance.
+   * @param options - The common options for the lexer.
+   */
   constructor({
     delimiter = COMMA,
     quotation = DOUBLE_QUOTE,
   }: CommonOptions = {}) {
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
-    this.#delimiterLength = delimiter.length;
     this.#quotation = quotation;
-    this.#quotationLength = quotation.length;
-
-    const d = escapeRegExp(delimiter);
-    const q = escapeRegExp(quotation);
-    this.#matcher = new RegExp(
-      `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
-    );
   }
 
+  /**
+   * Lexes the given chunk of CSV data.
+   * @param chunk - The chunk of CSV data to be lexed.
+   * @param buffering - Indicates whether the lexer is buffering or not.
+   * @returns An iterable iterator of tokens.
+   */
   public lex(chunk: string | null, buffering = false): IterableIterator<Token> {
     if (!buffering) {
       this.#flush = true;
@@ -41,11 +42,19 @@ export class Lexer {
     return this.#tokens();
   }
 
+  /**
+   * Flushes the lexer and returns any remaining tokens.
+   * @returns An array of tokens.
+   */
   public flush(): Token[] {
     this.#flush = true;
     return [...this.#tokens()];
   }
 
+  /**
+   * Generates tokens from the buffered CSV data.
+   * @yields Tokens from the buffered CSV data.
+   */
   *#tokens(): Generator<Token> {
     if (this.#flush) {
       // Trim the last CRLF or LF
@@ -87,6 +96,10 @@ export class Lexer {
     }
   }
 
+  /**
+   * Retrieves the next token from the buffered CSV data.
+   * @returns The next token or null if there are no more tokens.
+   */
   #nextToken(): Token | null {
     if (this.#buffer.length === 0) {
       return null;
@@ -113,7 +126,7 @@ export class Lexer {
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
-      this.#buffer = this.#buffer.slice(this.#delimiterLength);
+      this.#buffer = this.#buffer.slice(1);
       return FieldDelimiter;
     }
 
@@ -126,67 +139,66 @@ export class Lexer {
       return this.#extractQuotedString();
     }
 
-    // Check for Unquoted String
-    const match = this.#matcher.exec(this.#buffer);
-    if (match) {
-      // If we're flushing and the match doesn't consume the entire buffer,
-      // then return null
-      if (this.#flush === false && match[0].length === this.#buffer.length) {
-        return null;
-      }
-      this.#buffer = this.#buffer.slice(match[0].length);
-      return { type: Field, value: match[0] };
-    }
-
-    // Otherwise, return null
-    return null;
+    return this.#extractUnquotedString();
   }
 
+  #extractUnquotedString(): Token | null {
+    const field = [];
+    let i = 0;
+
+    for (; i < this.#buffer.length; i++) {
+      const c = this.#buffer.at(i) as string;
+      if (c === this.#delimiter || c === LF || c === CR) {
+        break;
+      }
+      field.push(c);
+    }
+    if (!this.#flush && i === this.#buffer.length) {
+      return null;
+    }
+    if (field.length === 0) {
+      return null;
+    }
+
+    this.#buffer = this.#buffer.slice(i);
+    return { type: Field, value: field.join("") };
+  }
+
+  /**
+   * Extracts a quoted string token from the buffered CSV data.
+   * @returns The quoted string token or null if the string is not properly quoted.
+   */
   #extractQuotedString(): Token | null {
-    let end = this.#quotationLength; // Skip the opening quote
+    let end = 1; // Skip the opening quote
     let value = "";
 
     while (end < this.#buffer.length) {
       // Escaped quote
       if (
-        this.#buffer.slice(end, end + this.#quotationLength) ===
-          this.#quotation &&
-        this.#buffer.slice(
-          end + this.#quotationLength,
-          end + this.#quotationLength * 2,
-        ) === this.#quotation
+        this.#buffer.slice(end, end + 1) === this.#quotation &&
+        this.#buffer.slice(end + 1, end + 1 * 2) === this.#quotation
       ) {
         value += this.#quotation;
-        end += this.#quotationLength * 2;
+        end += 1 * 2;
         continue;
       }
 
       // Closing quote
-      if (
-        this.#buffer.slice(end, end + this.#quotationLength) === this.#quotation
-      ) {
+      if (this.#buffer.slice(end, end + 1) === this.#quotation) {
         // If flushing and the buffer doesn't end with a quote, then return null
         if (
           this.#flush === false &&
-          end + this.#quotationLength < this.#buffer.length &&
-          this.#buffer.slice(
-            end + this.#quotationLength,
-            this.#delimiterLength,
-          ) !== this.#delimiter &&
-          this.#buffer.slice(
-            end + this.#quotationLength,
-            end + this.#quotationLength + 2 /** CRLF.length */,
-          ) !== CRLF &&
-          this.#buffer.slice(
-            end + this.#quotationLength,
-            end + this.#quotationLength + 1 /** LF.length */,
-          ) !== LF
+          end + 1 < this.#buffer.length &&
+          this.#buffer.slice(end + 1, 1) !== this.#delimiter &&
+          this.#buffer.slice(end + 1, end + 1 + 2 /** CRLF.length */) !==
+            CRLF &&
+          this.#buffer.slice(end + 1, end + 1 + 1 /** LF.length */) !== LF
         ) {
           return null;
         }
 
         // Otherwise, return the quoted string
-        this.#buffer = this.#buffer.slice(end + this.#quotationLength);
+        this.#buffer = this.#buffer.slice(end + 1);
         return { type: Field, value };
       }
 
