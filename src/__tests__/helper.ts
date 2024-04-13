@@ -113,8 +113,10 @@ export namespace FC {
     }
     const { excludes = [], ...constraints }: DelimiterConstraints = options;
     return text({
-      minLength: 1,
       ...constraints,
+      minLength: 1,
+      maxLength: 1,
+      kindExcludes: ["string16bits", "unicode"],
     })
       .filter(_excludeFilter([...CRLF]))
       .filter(_excludeFilter(excludes));
@@ -132,6 +134,8 @@ export namespace FC {
     return text({
       ...constraints,
       minLength: 1,
+      maxLength: 1,
+      kindExcludes: ["string16bits", "unicode"],
     })
       .filter(_excludeFilter([...CRLF]))
       .filter(_excludeFilter(excludes));

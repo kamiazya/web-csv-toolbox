@@ -24,19 +24,22 @@ export type Token = FieldToken | typeof FieldDelimiter | typeof RecordDelimiter;
 export interface CommonOptions {
   /**
    * CSV field delimiter.
-   *
-   * @remarks
    * If you want to parse TSV, specify `'\t'`.
    *
-   * This library supports multi-character delimiters.
+   * @remarks
+   * Detail restrictions are as follows:
+   *
+   * - Must not be empty
+   * - Must be a single character
+   *    - Multi-byte characters are not supported
+   * - Must not include CR or LF
+   * - Must not be the same as the quotation
+   *
    * @default ','
    */
   delimiter?: string;
   /**
    * CSV field quotation.
-   *
-   * @remarks
-   * This library supports multi-character quotations.
    *
    * @default '"'
    */

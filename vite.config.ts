@@ -2,7 +2,7 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
-export default defineConfig({
+export default defineConfig(env => ({
   build: {
     target: "esnext",
     lib: {
@@ -51,4 +51,4 @@ export default defineConfig({
       include: ["src/**/*.ts"],
     },
   },
-});
+}));

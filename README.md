@@ -21,6 +21,7 @@ A CSV Toolbox utilizing Web Standard APIs.
 [![npm](https://img.shields.io/badge/-npm-CB3837?logo=npm&style=flat)](https://www.npmjs.com/package/web-csv-toolbox)
 [![API Reference](https://img.shields.io/badge/-API%20Refarence-3178C6?logo=TypeScript&style=flat&logoColor=fff)](https://kamiazya.github.io/web-csv-toolbox/)
 [![Sponsor](https://img.shields.io/badge/-GitHub%20Sponsor-fff?logo=GitHub%20Sponsors&style=flat)](https://github.com/sponsors/kamiazya)
+[![CodSpeed Badge](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/kamiazya/web-csv-toolbox)
 
 
 [![format: Biome](https://img.shields.io/badge/format%20with-Biome-F7B911?logo=biome&style=flat)](https://biomejs.dev/)
@@ -52,7 +53,6 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
   - 🔄 Defaults to `,` and `"` respectively.
-  - 🛠️ Use multi-character/multi-byte delimiters and quotations.
 - 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
@@ -293,8 +293,7 @@ You can use WebAssembly to parse CSV data for high performance.
 - Parsing with WebAssembly is faster than parsing with JavaScript,
 but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.
-- Demiliter characters are limited to single-byte characters.
-- Quotation characters is only `"`. (Double quotation mark)
+- Quotation characters are only `"`. (Double quotation mark)
   - If you pass a different character, it will throw an error.
 
 ```ts
