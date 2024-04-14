@@ -24,12 +24,18 @@ describe("string parsing", () => {
 });
 
 describe("csv literal string parsing", () => {
-  const csv = `name,age,city,zip
+  const csv1 = `name,age,city,zip
 Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
+  const csv2 = "name,age,city,zip";
+
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(parseString(csv)).toEqualTypeOf<
+    expectTypeOf(parseString(csv1)).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+
+    expectTypeOf(parseString(csv2)).toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
@@ -48,6 +54,27 @@ p'
 Alice@24@New York@10001
 Bob@36@Los Angeles@90001`;
 
+  const csv3 = `'name'@'age
+
+'@'c
+ity'@'
+zi
+p'
+Alice@'24'@'Ne
+w York'@'10
+001'
+Bob@36@'Los Ange
+
+les'@'9
+0001'`;
+
+  const csv4 = `'name'@'age
+
+'@'c
+ity'@'
+zi
+p'`;
+
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(parseString(csv1)).toEqualTypeOf<
       AsyncIterableIterator<
@@ -60,6 +87,22 @@ Bob@36@Los Angeles@90001`;
     ).toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "age\n", "city", "zi\np"]>
+      >
+    >();
+
+    expectTypeOf(
+      parseString(csv3, { delimiter: "@", quotation: "'" }),
+    ).toEqualTypeOf<
+      AsyncIterableIterator<
+        CSVRecord<readonly ["name", "age\n\n", "c\nity", "\nzi\np"]>
+      >
+    >();
+
+    expectTypeOf(
+      parseString(csv4, { delimiter: "@", quotation: "'" }),
+    ).toEqualTypeOf<
+      AsyncIterableIterator<
+        CSVRecord<readonly ["name", "age\n\n", "c\nity", "\nzi\np"]>
       >
     >();
   });
