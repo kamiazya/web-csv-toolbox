@@ -291,7 +291,7 @@ export type ToParsedCSVRecords<
  * Alice,42
  * Bob,69`;
  *
- * type _ = PickHeader<typeof csv>
+ * type _ = PickCSVHeader<typeof csv>
  * // ["name", "age"]
  * ```
  *
@@ -304,11 +304,11 @@ export type ToParsedCSVRecords<
  * ce$@42
  * Bob@69`;
  *
- * type _ = PickHeader<typeof csv, "@", "$">
+ * type _ = PickCSVHeader<typeof csv, "@", "$">
  * // ["name", "a\nge"]
  * ```
  */
-export type PickHeader<
+export type PickCSVHeader<
   CSVSource extends CSVString,
   Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
