@@ -1,5 +1,10 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
-import type { CSVRecord, CommonOptions } from "./common/types.ts";
+import type {
+  CSVRecord,
+  CommonOptions,
+  PickCSVHeader,
+  ToParsedCSVRecords,
+} from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
 
@@ -38,6 +43,39 @@ import type { loadWASM } from "./loadWASM.ts";
  * ```
  * @beta
  */
+export function parseStringToArraySyncWASM<
+  CSVSource extends string,
+  Delimiter extends string = typeof COMMA,
+  Quotation extends string = typeof DOUBLE_QUOTE,
+  Header extends ReadonlyArray<string> = PickCSVHeader<
+    CSVSource,
+    Delimiter,
+    Quotation
+  >,
+>(
+  csv: CSVSource,
+  options: CommonOptions & {
+    delimiter?: Delimiter;
+    quotation?: Quotation;
+  },
+): ToParsedCSVRecords<CSVSource, Delimiter, Quotation> extends infer R extends
+  CSVRecord<readonly string[]>[]
+  ? R
+  : CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  CSVSource extends string,
+  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(
+  csv: CSVSource,
+  options?: CommonOptions,
+): ToParsedCSVRecords<CSVSource> extends infer R extends CSVRecord<
+  readonly string[]
+>[]
+  ? R
+  : CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  Header extends ReadonlyArray<string>,
+>(csv: string, options?: CommonOptions): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<Header extends readonly string[]>(
   csv: string,
   options: CommonOptions = {},
