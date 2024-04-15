@@ -198,16 +198,45 @@ type Join<
   : "";
 
 type Newline = typeof CR | typeof CRLF | typeof LF;
-type DummyNewline = "web-csv-toolbox.DummyNewline";
+type DummyNewline<NL extends Newline> =
+  `web-csv-toolbox.DummyNewline-${NL extends typeof CRLF
+    ? "crlf"
+    : NL extends typeof CR
+      ? "cr"
+      : "lf"}`;
+
+type SplitNewline<T extends string> =
+  T extends `${infer A}${typeof CRLF}${infer B}`
+    ? [...Split<A, typeof CRLF>, ...SplitNewline<B>]
+    : T extends `${infer A}${typeof CR}${infer B}`
+      ? [...Split<A, typeof CR>, ...SplitNewline<B>]
+      : T extends `${infer A}${typeof LF}${infer B}`
+        ? [...Split<A, typeof LF>, ...SplitNewline<B>]
+        : [T];
+
+type Newline2DummyNewline<T extends string> =
+  T extends `${infer A}${typeof CRLF}${infer B}`
+    ? Newline2DummyNewline<`${A}${DummyNewline<typeof CRLF>}${B}`>
+    : T extends `${infer A}${typeof CR}${infer B}`
+      ? Newline2DummyNewline<`${A}${DummyNewline<typeof CR>}${B}`>
+      : T extends `${infer A}${typeof LF}${infer B}`
+        ? Newline2DummyNewline<`${A}${DummyNewline<typeof LF>}${B}`>
+        : T;
+
+type DummyNewline2Newline<T extends string> =
+  T extends `${infer A}${DummyNewline<typeof CRLF>}${infer B}`
+    ? DummyNewline2Newline<`${A}${typeof CRLF}${B}`>
+    : T extends `${infer A}${DummyNewline<typeof CR>}${infer B}`
+      ? DummyNewline2Newline<`${A}${typeof CR}${B}`>
+      : T extends `${infer A}${DummyNewline<typeof LF>}${infer B}`
+        ? DummyNewline2Newline<`${A}${typeof LF}${B}`>
+        : T;
 
 type EscapeInnerNewline<
   CSVSource extends string,
   Quotation extends string = typeof DOUBLE_QUOTE,
 > = CSVSource extends `${infer A}${Quotation}${infer B}${Quotation}${infer C}`
-  ? `${A}${Replace<B, Newline, DummyNewline>}${EscapeInnerNewline<
-      C,
-      Quotation
-    >}`
+  ? `${A}${Newline2DummyNewline<B>}${EscapeInnerNewline<C, Quotation>}`
   : CSVSource;
 
 type Row2Record<H extends PropertyKey[], V extends any[][]> = {
@@ -219,11 +248,9 @@ type Row2Record<H extends PropertyKey[], V extends any[][]> = {
 type ToCSVRows<
   T extends string,
   Quotation extends string = typeof DOUBLE_QUOTE,
-> = Split<EscapeInnerNewline<T, Quotation>, Newline> extends infer R
+> = SplitNewline<EscapeInnerNewline<T, Quotation>> extends infer R
   ? {
-      [K in keyof R]: R[K] extends string
-        ? Replace<R[K], DummyNewline, typeof LF>
-        : never;
+      [K in keyof R]: R[K] extends string ? DummyNewline2Newline<R[K]> : never;
     }
   : ReadonlyArray<string>;
 

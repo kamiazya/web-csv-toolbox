@@ -1,4 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
+import { CR, CRLF, LF } from "./constants.ts";
 import { parse } from "./parse.ts";
 import type {
   CSV,
@@ -80,7 +81,7 @@ Bob,36,Los Angeles,90001`;
   });
 });
 
-describe("csv literal string parsing with line breaks, quotation", () => {
+describe("csv literal string parsing with line breaks, quotation, newline", () => {
   const csv1 = `"name","age
 ","city","zi
 p"
@@ -114,6 +115,8 @@ ity'@'
 zi
 p'`;
 
+  const csv5 = `'na${CR}me'@'age'@'ci${CR}${CRLF}ty'@'z${LF}ip'${CR}Alice@24@'New${CR}${LF} York'@10001${LF}Bob@'3${CRLF}6'@'Los Angeles'@'90${CRLF}001'`;
+
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(parse(csv1)).toEqualTypeOf<
       AsyncIterableIterator<
@@ -136,6 +139,12 @@ p'`;
     expectTypeOf(parse(csv4, { delimiter: "@", quotation: "'" })).toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "age\n\n", "c\nity", "\nzi\np"]>
+      >
+    >();
+
+    expectTypeOf(parse(csv5, { delimiter: "@", quotation: "'" })).toEqualTypeOf<
+      AsyncIterableIterator<
+        CSVRecord<readonly ["na\rme", "age", "ci\r\r\nty", "z\nip"]>
       >
     >();
 
