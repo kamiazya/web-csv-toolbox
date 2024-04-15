@@ -1,7 +1,37 @@
 import { Lexer } from "./Lexer.ts";
 import { RecordAssembler } from "./RecordAssembler.ts";
-import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
+import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 
+export function parseStringToIterableIterator<
+  CSVSource extends string,
+  Delimiter extends string = typeof COMMA,
+  Quotation extends string = typeof DOUBLE_QUOTE,
+  Header extends ReadonlyArray<string> = PickCSVHeader<
+    CSVSource,
+    Delimiter,
+    Quotation
+  >,
+>(
+  stream: CSVSource,
+  options: ParseOptions<Header> & {
+    delimiter?: Delimiter;
+    quotation?: Quotation;
+  },
+): IterableIterator<CSVRecord<Header>>;
+export function parseStringToIterableIterator<
+  CSVSource extends string,
+  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(
+  stream: CSVSource,
+  options?: ParseOptions<Header>,
+): IterableIterator<CSVRecord<Header>>;
+export function parseStringToIterableIterator<
+  Header extends ReadonlyArray<string>,
+>(
+  stream: string,
+  options?: ParseOptions<Header>,
+): IterableIterator<CSVRecord<Header>>;
 export function parseStringToIterableIterator<
   Header extends ReadonlyArray<string>,
 >(
