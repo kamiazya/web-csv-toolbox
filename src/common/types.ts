@@ -204,6 +204,7 @@ type DummyNewline<NL extends Newline> =
     : NL extends typeof CR
       ? "cr"
       : "lf"}`;
+type DummyDelimiter = "web-csv-toolbox.DummyDelimiter";
 
 type SplitNewline<T extends string> =
   T extends `${infer A}${typeof CRLF}${infer B}`
@@ -232,11 +233,16 @@ type DummyNewline2Newline<T extends string> =
         ? DummyNewline2Newline<`${A}${typeof LF}${B}`>
         : T;
 
-type EscapeInnerNewline<
+type Escape<
   CSVSource extends string,
+  Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
 > = CSVSource extends `${infer A}${Quotation}${infer B}${Quotation}${infer C}`
-  ? `${A}${Newline2DummyNewline<B>}${EscapeInnerNewline<C, Quotation>}`
+  ? `${A}${Newline2DummyNewline<Replace<B, Delimiter, DummyDelimiter>>}${Escape<
+      C,
+      Delimiter,
+      Quotation
+    >}`
   : CSVSource;
 
 type Row2Record<H extends PropertyKey[], V extends any[][]> = {
@@ -247,8 +253,9 @@ type Row2Record<H extends PropertyKey[], V extends any[][]> = {
 
 type ToCSVRows<
   T extends string,
+  Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
-> = SplitNewline<EscapeInnerNewline<T, Quotation>> extends infer R
+> = SplitNewline<Escape<T, Delimiter, Quotation>> extends infer R
   ? {
       [K in keyof R]: R[K] extends string ? DummyNewline2Newline<R[K]> : never;
     }
@@ -293,14 +300,31 @@ export type ToParsedCSVRecords<
   T extends string,
   Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
-> = ToCSVRows<T, Quotation> extends [infer H extends string, ...infer R]
+> = ToCSVRows<T, Delimiter, Quotation> extends [
+  infer H extends string,
+  ...infer R,
+]
   ? R extends [string, ...string[]]
     ? Row2Record<
-        Split<H, Delimiter> extends PropertyKey[]
-          ? Split<H, Delimiter>
+        Split<H, Delimiter> extends infer H2 extends PropertyKey[]
+          ? {
+              [K in keyof H2]: Replace<
+                H2[K] extends string ? H2[K] : string,
+                DummyDelimiter,
+                Delimiter
+              >;
+            }
           : PropertyKey[],
         {
-          [K in keyof R]: Split<R[K], Delimiter>;
+          [K in keyof R]: Split<R[K], Delimiter> extends infer R2
+            ? {
+                [K in keyof R2]: Replace<
+                  R2[K] extends string ? R2[K] : string,
+                  DummyDelimiter,
+                  Delimiter
+                >;
+              }
+            : ReadonlyArray<string>;
         }
       >
     : CSVRecord<Split<H, Delimiter>>
@@ -343,12 +367,20 @@ export type PickCSVHeader<
   | `${infer Source}`
   // biome-ignore lint/suspicious/noRedeclare: <explanation>
   | ReadableStream<infer Source>
-  ? ToCSVRows<Source, Quotation> extends [
+  ? ToCSVRows<Source, Delimiter, Quotation> extends [
       infer Header extends string,
       ...string[],
     ]
-    ? Split<Header, Delimiter>
-    : []
+    ? Split<Header, Delimiter> extends infer R
+      ? {
+          [K in keyof R]: Replace<
+            R[K] extends string ? R[K] : never,
+            DummyDelimiter,
+            Delimiter
+          >;
+        }
+      : ReadonlyArray<string>
+    : ReadonlyArray<string>
   : ReadonlyArray<string>;
 
 /**
