@@ -3,7 +3,6 @@ import type {
   CSVRecord,
   CommonOptions,
   PickCSVHeader,
-  ToParsedCSVRecords,
 } from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
@@ -58,21 +57,11 @@ export function parseStringToArraySyncWASM<
     delimiter?: Delimiter;
     quotation?: Quotation;
   },
-): ToParsedCSVRecords<CSVSource, Delimiter, Quotation> extends infer R extends
-  CSVRecord<readonly string[]>[]
-  ? R
-  : CSVRecord<Header>[];
+): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
   CSVSource extends string,
   Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(
-  csv: CSVSource,
-  options?: CommonOptions,
-): ToParsedCSVRecords<CSVSource> extends infer R extends CSVRecord<
-  readonly string[]
->[]
-  ? R
-  : CSVRecord<Header>[];
+>(csv: CSVSource, options?: CommonOptions): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
   Header extends ReadonlyArray<string>,
 >(csv: string, options?: CommonOptions): CSVRecord<Header>[];
