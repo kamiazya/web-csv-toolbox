@@ -190,7 +190,7 @@ type Join<
 > = Chars extends readonly [infer F, ...infer R]
   ? F extends string
     ? R extends string[]
-      ? `${F extends `${string}${Newline}${string}`
+      ? `${F extends `${string}${Newline | Delimiter}}${string}`
           ? `${Quotation}${F}${Quotation}`
           : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
       : string
