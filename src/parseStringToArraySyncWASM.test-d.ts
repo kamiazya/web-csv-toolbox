@@ -32,7 +32,20 @@ Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(parseStringToArraySyncWASM(csv1)).toMatchTypeOf<
-      CSVRecord<["name", "age", "city", "zip"]>[]
+      [
+        {
+          name: "Alice";
+          age: "24";
+          city: "New York";
+          zip: "10001";
+        },
+        {
+          name: "Bob";
+          age: "36";
+          city: "Los Angeles";
+          zip: "90001";
+        },
+      ]
     >();
 
     expectTypeOf(parseStringToArraySyncWASM(csv2)).toMatchTypeOf<
@@ -93,16 +106,59 @@ les'@'@9
 
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(parseStringToArraySyncWASM(csv1)).toMatchTypeOf<
-      CSVRecord<["name", "age\n", "city", "zi\np"]>[]
+      [
+        {
+          name: "Alice";
+          "age\n": "24";
+          city: "New York";
+          "zi\np": "10001";
+        },
+        {
+          name: "Bob";
+          "age\n": "36";
+          city: "Los Angeles";
+          "zi\np": "90001";
+        },
+      ]
     >();
 
     expectTypeOf(
       parseStringToArraySyncWASM(csv2, { delimiter: "@", quotation: "'" }),
-    ).toMatchTypeOf<CSVRecord<["name", "age\n", "city", "zi\np"]>[]>();
+    ).toMatchTypeOf<
+      [
+        {
+          name: "Alice";
+          "age\n": "24";
+          city: "New York";
+          "zi\np": "10001";
+        },
+        {
+          name: "Bob";
+          "age\n": "36";
+          city: "Los Angeles";
+          "zi\np": "90001";
+        },
+      ]
+    >();
 
     expectTypeOf(
       parseStringToArraySyncWASM(csv3, { delimiter: "@", quotation: "'" }),
-    ).toMatchTypeOf<CSVRecord<["name", "age\n\n", "c\nity", "\nzi\np"]>[]>();
+    ).toMatchTypeOf<
+      [
+        {
+          name: "Alice";
+          "age\n\n": "24";
+          "c\nity": "Ne\nw York";
+          "\nzi\np": "10\n001";
+        },
+        {
+          name: "Bob";
+          "age\n\n": "36";
+          "c\nity": "Los Ange\n\nles";
+          "\nzi\np": "9\n0001";
+        },
+      ]
+    >();
 
     expectTypeOf(
       parseStringToArraySyncWASM(csv4, { delimiter: "@", quotation: "'" }),
@@ -110,11 +166,41 @@ les'@'@9
 
     expectTypeOf(
       parseStringToArraySyncWASM(csv5, { delimiter: "@", quotation: "'" }),
-    ).toMatchTypeOf<CSVRecord<["na\rme", "age", "ci\r\r\nty", "z\nip"]>[]>();
+    ).toMatchTypeOf<
+      [
+        {
+          "na\rme": "Alice";
+          age: "24";
+          "ci\r\r\nty": "New\r\n York";
+          "z\nip": "10001";
+        },
+        {
+          "na\rme": "Bob";
+          age: "3\r\n6";
+          "ci\r\r\nty": "Los Angeles";
+          "z\nip": "90\r\n001";
+        },
+      ]
+    >();
 
     expectTypeOf(
       parseStringToArraySyncWASM(csv6, { delimiter: "@", quotation: "'" }),
-    ).toMatchTypeOf<CSVRecord<["@name", "age\n\n", "c\n@ity@", "\nzi\np"]>[]>();
+    ).toMatchTypeOf<
+      [
+        {
+          "@name": "Alice@";
+          "age\n\n": "24";
+          "c\n@ity@": "@Ne\nw York";
+          "\nzi\np": "10\n00@1";
+        },
+        {
+          "@name": "Bob";
+          "age\n\n": "36";
+          "c\n@ity@": "Lo@s Ange\n\nles";
+          "\nzi\np": "@9\n0001";
+        },
+      ]
+    >();
   });
 });
 
