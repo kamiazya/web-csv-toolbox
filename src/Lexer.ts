@@ -5,7 +5,9 @@ import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
- * Represents a lexer for parsing CSV data.
+ * CSV Lexer.
+ *
+ * Lexter tokenizes CSV data into fields and records.
  */
 export class Lexer {
   #delimiter: string;
