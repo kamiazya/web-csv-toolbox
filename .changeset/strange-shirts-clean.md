@@ -2,4 +2,4 @@
 "web-csv-toolbox": patch
 ---
 
-Refactor Lexer not to use RegExp for performance improvement
+Refactor Lexer for performance improvement
