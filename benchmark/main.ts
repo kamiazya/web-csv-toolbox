@@ -1,25 +1,29 @@
-import fs from "node:fs/promises";
-import { createReadStream } from "node:fs";
-import { Readable } from "node:stream";
 
-import { Bench } from 'tinybench';
 import { withCodSpeed } from "@codspeed/tinybench-plugin";
+import { Bench } from 'tinybench';
 import { loadWASM, parseBinary, parseString, parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-
-const filePath = new URL(import.meta.resolve("./data/large-dataset.csv")).pathname;
+const csv = [
+  // header
+  'index,"quated",not quated',
+  // body
+  // e.g.
+  // 10,"xxxxxxxxxx",yyyyyyyyyy
+  ...new Array(50).map((_,i) => `${i},"${'x'.repeat(i)}",${'y'.repeat(i)}`),
+  // for the last line
+  ''
+].join('\n');
 
 export async function getAsString() {
-  return await fs.readFile(filePath, "utf-8");
+  return csv;
 }
 
 export async function getAsBinary() {
-  const data = await fs.readFile(filePath);
-  return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  return new TextEncoder().encode(csv);
 }
 
 export async function getAsBinaryStream() {
-  return Readable.toWeb(createReadStream(filePath, 'binary'));
+  return new Blob([csv], { type: 'text/csv' }).stream();
 }
 
 await loadWASM();
@@ -29,33 +33,33 @@ let stringCSV: string = await getAsString();
 const bench = withCodSpeed(new Bench({
   iterations: 50,
 }))
-  .add('parseString.toArraySync(large-dataset)', () => {
+  .add('parseString.toArraySync(50 rows)', () => {
     parseString.toArraySync(stringCSV);
   })
-  .add('parseStringToArraySyncWASM(large-dataset)', () => {
+  .add('parseStringToArraySyncWASM(50 rows)', () => {
     parseStringToArraySyncWASM(stringCSV);
   })
-  .add('parseString.toIterableIterator(large-dataset)', async () => {
+  .add('parseString.toIterableIterator(50 rows)', async () => {
     for await (const _ of parseString.toIterableIterator(stringCSV)) {
       // noop
     }
   })
-  .add('parseString.toStream(large-dataset)', async () => {
+  .add('parseString.toStream(50 rows)', async () => {
     await parseString.toStream(stringCSV).pipeTo(new WritableStream({
       write(_) {
         // noop
       }
     }));
   })
-  .add('parseBinary.toArraySync(large-dataset)', () => {
+  .add('parseBinary.toArraySync(50 rows)', () => {
     parseBinary.toArraySync(binaryCSV);
   })
-  .add('parseBinary.toIterableIterator(large-dataset)', () => {
+  .add('parseBinary.toIterableIterator(50 rows)', () => {
     for (const _ of parseBinary.toIterableIterator(binaryCSV)) {
       // noop
     }
   })
-  .add('parseBinary.toStream(large-dataset)', async () => {
+  .add('parseBinary.toStream(50 rows)', async () => {
     await parseBinary.toStream(binaryCSV).pipeTo(new WritableStream({
       write(_) {
         // noop
