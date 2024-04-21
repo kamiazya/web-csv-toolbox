@@ -1,7 +1,8 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { CommonOptions, Token } from "./common/types.ts";
-import { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
  * Represents a lexer for parsing CSV data.
@@ -11,6 +12,7 @@ export class Lexer {
   #quotation: string;
   #buffer = "";
   #flush = false;
+  #matcher: RegExp;
 
   /**
    * Constructs a new Lexer instance.
@@ -23,6 +25,11 @@ export class Lexer {
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
+    const d = escapeRegExp(delimiter);
+    const q = escapeRegExp(quotation);
+    this.#matcher = new RegExp(
+      `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
+    );
   }
 
   /**
@@ -139,29 +146,20 @@ export class Lexer {
       return this.#extractQuotedString();
     }
 
-    return this.#extractUnquotedString();
-  }
-
-  #extractUnquotedString(): Token | null {
-    const field = [];
-    let i = 0;
-
-    for (; i < this.#buffer.length; i++) {
-      const c = this.#buffer.at(i) as string;
-      if (c === this.#delimiter || c === LF || c === CR) {
-        break;
+    // Check for Unquoted String
+    const match = this.#matcher.exec(this.#buffer);
+    if (match) {
+      // If we're flushing and the match doesn't consume the entire buffer,
+      // then return null
+      if (this.#flush === false && match[0].length === this.#buffer.length) {
+        return null;
       }
-      field.push(c);
-    }
-    if (!this.#flush && i === this.#buffer.length) {
-      return null;
-    }
-    if (field.length === 0) {
-      return null;
+      this.#buffer = this.#buffer.slice(match[0].length);
+      return { type: Field, value: match[0] };
     }
 
-    this.#buffer = this.#buffer.slice(i);
-    return { type: Field, value: field.join("") };
+    // Otherwise, return null
+    return null;
   }
 
   /**
