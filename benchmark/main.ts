@@ -9,7 +9,7 @@ const csv = [
   // body
   // e.g.
   // 10,"xxxxxxxxxx",yyyyyyyyyy
-  ...new Array(50).map((_,i) => `${i},"${'x'.repeat(i)}",${'y'.repeat(i)}`),
+  ...Array.from({length: 50}, (_, i) => `${i},"${'x'.repeat(i)}",${'y'.repeat(i)}`),
   // for the last line
   ''
 ].join('\n');
