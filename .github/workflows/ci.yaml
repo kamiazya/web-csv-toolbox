@@ -31,7 +31,7 @@ jobs:
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
       - name: Coverage
         run: pnpm test:coverage
       - name: Upload coverage reports to Codecov
@@ -55,7 +55,7 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
       - name: Run benchmarks
         uses: CodSpeedHQ/action@1dbf41f0ae41cebfe61e084e535aebe533409b4d # v2.3.0
         with:
@@ -80,7 +80,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: pnpm
     - run: pnpm install --frozen-lockfile
-    - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+    - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
     - run: pnpm test run
 
   test_deno:
@@ -88,7 +88,7 @@ jobs:
     needs: build
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-    - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+    - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
     - uses: denoland/setup-deno@041b854f97b325bd60e53e9dc2de9cb9f9ac0cba # v1.1.4
       with:
         deno-version: v1.x
@@ -124,7 +124,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_macos_browser:
@@ -152,7 +152,7 @@ jobs:
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_windows_browser:
@@ -176,5 +176,5 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@8caf195ad4b1dee92908e23f56eeb0696f1dd42d # v4.1.5
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
