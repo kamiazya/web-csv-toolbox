@@ -218,7 +218,7 @@ type ExtractHeader<
         ? ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
         : Result
       : ExtractHeader<R, Delimiter, Quotation, Escaping, `${Result}${F}`>
-  : "";
+  : Result;
 
 /**
  * Generate a CSV header tuple from a CSVString.
@@ -257,13 +257,7 @@ export type PickCSVHeader<
   | `${infer Source}`
   // biome-ignore lint/suspicious/noRedeclare: <explanation>
   | ReadableStream<infer Source>
-  ? Source extends `${ExtractHeader<
-      Source,
-      Delimiter,
-      Quotation
-    >}${Newline}${string}`
-    ? Split<ExtractHeader<Source, Delimiter, Quotation>, Delimiter, Quotation>
-    : Split<Source, Delimiter, Quotation>
+  ? Split<ExtractHeader<Source, Delimiter, Quotation>, Delimiter, Quotation>
   : ReadonlyArray<string>;
 
 /**
