@@ -102,6 +102,20 @@ Bob@36@'Lo@s Ange
 les'@'@9
 0001'`;
 
+  const csv7 = `'@name'@'a'g'e
+
+'@'c
+@i''ty@'@'
+'zi
+p''
+'Al'ic'e@'@''24''@'@Ne
+w Yo'r'k'@'10
+00@1'
+'Bob'@36@'Lo@s A'nge'
+
+les'@'@9
+0001'''`;
+
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(
       parseStringStream(new ReadableStream<typeof csv1>()),
@@ -163,6 +177,17 @@ les'@'@9
     ).toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["@name", "age\n\n", "c\n@ity@", "\nzi\np"]>
+      >
+    >();
+
+    expectTypeOf(
+      parseStringStream(new ReadableStream<typeof csv7>(), {
+        delimiter: "@",
+        quotation: "'",
+      }),
+    ).toEqualTypeOf<
+      AsyncIterableIterator<
+        CSVRecord<readonly ["@name", "a'g'e\n\n", "c\n@i''ty@", "\n'zi\np'"]>
       >
     >();
   });

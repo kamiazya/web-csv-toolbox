@@ -182,36 +182,42 @@ type Split<
   Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
   Escaping extends boolean = false,
-  Current extends string = "",
+  Col extends string = "",
   Result extends string[] = [],
 > = CSVSource extends `${infer F}${infer R}`
   ? F extends Quotation
     ? Escaping extends true
-      ? Split<R, Delimiter, Quotation, false, Current, Result>
-      : Split<R, Delimiter, Quotation, true, Current, Result>
+      ? R extends "" | Delimiter | `${Delimiter}${string}`
+        ? Split<R, Delimiter, Quotation, false, Col, Result>
+        : Split<R, Delimiter, Quotation, true, `${Col}${Quotation}`, Result>
+      : Split<R, Delimiter, Quotation, true, Col, Result>
     : F extends Delimiter
       ? Escaping extends true
-        ? Split<R, Delimiter, Quotation, true, `${Current}${F}`, Result>
-        : Split<R, Delimiter, Quotation, false, "", [...Result, Current]>
-      : Split<R, Delimiter, Quotation, Escaping, `${Current}${F}`, Result>
-  : [...Result, Current] extends [""]
+        ? Split<R, Delimiter, Quotation, true, `${Col}${F}`, Result>
+        : Split<R, Delimiter, Quotation, false, "", [...Result, Col]>
+      : Split<R, Delimiter, Quotation, Escaping, `${Col}${F}`, Result>
+  : [...Result, Col] extends [""]
     ? readonly string[]
-    : readonly [...Result, Current];
+    : readonly [...Result, Col];
 
-type CSVBody<
+type ExtractHeader<
   CSVSource extends string,
+  Delimiter extends string = typeof COMMA,
   Quotation extends string = typeof DOUBLE_QUOTE,
   Escaping extends boolean = false,
+  Result extends string = "",
 > = CSVSource extends `${infer F}${infer R}`
   ? F extends Quotation
     ? Escaping extends true
-      ? CSVBody<R, Quotation, false>
-      : CSVBody<R, Quotation, true>
+      ? R extends Delimiter | Newline | `${Delimiter | Newline}${string}`
+        ? ExtractHeader<R, Delimiter, Quotation, false, `${Result}${F}`>
+        : ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
+      : ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
     : F extends Newline
       ? Escaping extends true
-        ? CSVBody<R, Quotation, true>
-        : R
-      : CSVBody<R, Quotation, Escaping>
+        ? ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
+        : Result
+      : ExtractHeader<R, Delimiter, Quotation, Escaping, `${Result}${F}`>
   : "";
 
 /**
@@ -251,8 +257,12 @@ export type PickCSVHeader<
   | `${infer Source}`
   // biome-ignore lint/suspicious/noRedeclare: <explanation>
   | ReadableStream<infer Source>
-  ? Source extends `${infer H}${Newline}${CSVBody<Source, Quotation>}`
-    ? Split<H, Delimiter, Quotation>
+  ? Source extends `${ExtractHeader<
+      Source,
+      Delimiter,
+      Quotation
+    >}${Newline}${string}`
+    ? Split<ExtractHeader<Source, Delimiter, Quotation>, Delimiter, Quotation>
     : Split<Source, Delimiter, Quotation>
   : ReadonlyArray<string>;
 
