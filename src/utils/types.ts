@@ -1,4 +1,8 @@
-import type { COMMA, DOUBLE_QUOTE, Newline } from "../constants.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+  Newline,
+} from "../constants.ts";
 import type { CSVString } from "../web-csv-toolbox.ts";
 
 /**
@@ -26,8 +30,8 @@ import type { CSVString } from "../web-csv-toolbox.ts";
  */
 export type Join<
   Chars extends ReadonlyArray<string | number | boolean | bigint>,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Nl extends string = Exclude<Newline, Delimiter | Quotation>,
 > = Chars extends readonly [infer F, ...infer R]
   ? F extends string
@@ -65,8 +69,8 @@ export type Join<
  */
 export type Split<
   Char extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Escaping extends boolean = false,
   Col extends string = "",
   Result extends string[] = [],
@@ -124,8 +128,8 @@ type ExtractString<Source extends CSVString> = Source extends
  */
 export type ExtractCSVHeader<
   CSVSource extends CSVString,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Nl extends string = Exclude<Newline, Delimiter | Quotation>,
   Escaping extends boolean = false,
   Result extends string = "",
@@ -177,8 +181,8 @@ export type ExtractCSVHeader<
  */
 export type PickCSVHeader<
   CSVSource extends CSVString,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 > = ExtractString<CSVSource> extends `${infer S}`
   ? Split<ExtractCSVHeader<S, Delimiter, Quotation>, Delimiter, Quotation>
   : ReadonlyArray<string>;

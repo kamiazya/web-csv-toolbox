@@ -1,7 +1,7 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { CommonOptions, Token } from "./common/types.ts";
-import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 export class Lexer {
@@ -14,8 +14,8 @@ export class Lexer {
   #flush = false;
 
   constructor({
-    delimiter = COMMA,
-    quotation = DOUBLE_QUOTE,
+    delimiter = DEFAULT_DELIMITER,
+    quotation = DEFAULT_QUOTATION,
   }: CommonOptions = {}) {
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
