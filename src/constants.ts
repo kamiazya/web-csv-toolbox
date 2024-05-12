@@ -18,3 +18,9 @@ export const COMMA = ",";
  * DOUBLE_QUOTE is a symbol for double quote(").
  */
 export const DOUBLE_QUOTE = '"';
+
+export const DEFAULT_DELIMITER = COMMA;
+export type DEFAULT_DELIMITER = typeof DEFAULT_DELIMITER;
+
+export const DEFAULT_QUOTATION = DOUBLE_QUOTE;
+export type DEFAULT_QUOTATION = typeof DEFAULT_QUOTATION;

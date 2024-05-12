@@ -1,4 +1,4 @@
-import type { COMMA, DOUBLE_QUOTE } from "../constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../constants.ts";
 import type { Join } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
@@ -169,8 +169,8 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
  */
 export type CSVString<
   Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 > = Header extends readonly [string, ...string[]]
   ?
       | Join<Header, Delimiter, Quotation>
@@ -195,8 +195,8 @@ export type CSVBinary =
  */
 export type CSV<
   Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 > = Header extends []
   ? CSVString | CSVBinary
   : CSVString<Header, Delimiter, Quotation>;
