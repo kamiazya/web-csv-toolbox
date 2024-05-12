@@ -106,12 +106,9 @@ type ExtractCSVBody<
 > = ExtractString<CSVSource> extends `${Quotation}${infer R}`
   ? Escaping extends true
     ? R extends Delimiter | Nl | `${Delimiter | Nl}${string}`
-      ? // biome-ignore format: <explanation>
-        ExtractCSVBody<R, Delimiter, Quotation, Nl, false>
-      : // biome-ignore format: <explanation>
-        ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
-    : // biome-ignore format: <explanation>
-      ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
+      ? ExtractCSVBody<R, Delimiter, Quotation, Nl, false>
+      : ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
+    : ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
   : ExtractString<CSVSource> extends `${infer _ extends Nl}${infer R}`
     ? Escaping extends true
       ? ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
