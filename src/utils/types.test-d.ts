@@ -1,11 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { CR, CRLF, LF } from "../constants";
-import type {
-  ExtractCSVHeader,
-  Join,
-  PickCSVHeader,
-  Split,
-} from "../utils/types";
+import type { ExtractCSVHeader, Join, PickCSVHeader, Split } from "./types";
 
 const case1csv1 = '"na\nme,",age,city,zip';
 
