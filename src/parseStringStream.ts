@@ -1,8 +1,9 @@
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { parseStringStreamToStream } from "./parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string stream to records.

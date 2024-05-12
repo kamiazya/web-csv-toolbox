@@ -1,4 +1,5 @@
-import type { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "../constants.ts";
+import type { COMMA, DOUBLE_QUOTE } from "../constants.ts";
+import type { Join } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -161,105 +162,6 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
   string
 >;
 
-type Newline = typeof CR | typeof CRLF | typeof LF;
-
-type Join<
-  Chars extends ReadonlyArray<string | number | boolean | bigint>,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = Chars extends readonly [infer F, ...infer R]
-  ? F extends string
-    ? R extends string[]
-      ? `${F extends `${string}${Newline | Delimiter}${string}`
-          ? `${Quotation}${F}${Quotation}`
-          : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
-      : string
-    : string
-  : "";
-
-type Split<
-  CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-  Escaping extends boolean = false,
-  Col extends string = "",
-  Result extends string[] = [],
-> = CSVSource extends `${infer F}${infer R}`
-  ? F extends Quotation
-    ? Escaping extends true
-      ? R extends "" | Delimiter | `${Delimiter}${string}`
-        ? Split<R, Delimiter, Quotation, false, Col, Result>
-        : Split<R, Delimiter, Quotation, true, `${Col}${Quotation}`, Result>
-      : Split<R, Delimiter, Quotation, true, Col, Result>
-    : F extends Delimiter
-      ? Escaping extends true
-        ? Split<R, Delimiter, Quotation, true, `${Col}${F}`, Result>
-        : Split<R, Delimiter, Quotation, false, "", [...Result, Col]>
-      : Split<R, Delimiter, Quotation, Escaping, `${Col}${F}`, Result>
-  : [...Result, Col] extends [""]
-    ? readonly string[]
-    : readonly [...Result, Col];
-
-type ExtractHeader<
-  CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-  Escaping extends boolean = false,
-  Result extends string = "",
-> = CSVSource extends `${infer F}${infer R}`
-  ? F extends Quotation
-    ? Escaping extends true
-      ? R extends Delimiter | Newline | `${Delimiter | Newline}${string}`
-        ? ExtractHeader<R, Delimiter, Quotation, false, `${Result}${F}`>
-        : ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
-      : ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
-    : F extends Newline
-      ? Escaping extends true
-        ? ExtractHeader<R, Delimiter, Quotation, true, `${Result}${F}`>
-        : Result
-      : ExtractHeader<R, Delimiter, Quotation, Escaping, `${Result}${F}`>
-  : Result;
-
-/**
- * Generate a CSV header tuple from a CSVString.
- *
- * @category Types
- *
- * @example Default
- *
- * ```ts
- * const csv = `name,age
- * Alice,42
- * Bob,69`;
- *
- * type _ = PickCSVHeader<typeof csv>
- * // ["name", "age"]
- * ```
- *
- * @example With different delimiter and quotation
- *
- * ```ts
- * const csv = `name@$a
- * ge$
- * $Ali
- * ce$@42
- * Bob@69`;
- *
- * type _ = PickCSVHeader<typeof csv, "@", "$">
- * // ["name", "a\nge"]
- * ```
- */
-export type PickCSVHeader<
-  CSVSource extends CSVString,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = CSVSource extends
-  | `${infer Source}`
-  // biome-ignore lint/suspicious/noRedeclare: <explanation>
-  | ReadableStream<infer Source>
-  ? Split<ExtractHeader<Source, Delimiter, Quotation>, Delimiter, Quotation>
-  : ReadonlyArray<string>;
-
 /**
  * CSV String.
  *
@@ -271,8 +173,8 @@ export type CSVString<
   Quotation extends string = typeof DOUBLE_QUOTE,
 > = Header extends readonly [string, ...string[]]
   ?
-      | `${Join<Header, Delimiter, Quotation>}`
-      | ReadableStream<`${Join<Header, Delimiter, Quotation>}`>
+      | Join<Header, Delimiter, Quotation>
+      | ReadableStream<Join<Header, Delimiter, Quotation>>
   : string | ReadableStream<string>;
 
 /**

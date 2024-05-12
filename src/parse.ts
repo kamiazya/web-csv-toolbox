@@ -5,7 +5,6 @@ import type {
   CSVString,
   ParseBinaryOptions,
   ParseOptions,
-  PickCSVHeader,
 } from "./common/types.ts";
 import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { parseBinary } from "./parseBinary.ts";
@@ -14,6 +13,7 @@ import { parseString } from "./parseString.ts";
 import { parseStringStream } from "./parseStringStream.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV to records.

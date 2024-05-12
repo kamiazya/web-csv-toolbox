@@ -1,11 +1,8 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
-import type {
-  CSVRecord,
-  CommonOptions,
-  PickCSVHeader,
-} from "./common/types.ts";
+import type { CSVRecord, CommonOptions } from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to record of arrays.
