@@ -36,7 +36,7 @@ export type Join<
 > = Chars extends readonly [infer F, ...infer R]
   ? F extends string
     ? R extends string[]
-      ? `${F extends `${string}${Nl | Delimiter}${string}`
+      ? `${F extends `${string}${Nl | Delimiter | Quotation}${string}`
           ? `${Quotation}${F}${Quotation}`
           : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
       : string

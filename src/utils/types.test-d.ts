@@ -97,11 +97,11 @@ describe("Join", () => {
       >().toEqualTypeOf<"name@age@city@zip">();
     });
 
-    it("Escape newlines and delimiters", () => {
+    it("Escape newlines and delimiters and quotation", () => {
       expectTypeOf<Join<[], "@", "$">>().toEqualTypeOf<"">();
       expectTypeOf<
-        Join<["name", "a\nge", "city", "zip"]>
-      >().toEqualTypeOf<'name,"a\nge",city,zip'>();
+        Join<["name", "a\nge", "ci,ty", 'zi"p']>
+      >().toEqualTypeOf<'name,"a\nge","ci,ty","zi"p"'>();
     });
   });
 });
