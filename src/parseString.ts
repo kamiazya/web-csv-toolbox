@@ -1,9 +1,10 @@
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
-import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to records.
@@ -33,8 +34,8 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  */
 export function parseString<
   CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,

@@ -1,4 +1,5 @@
-import type { COMMA, CR, CRLF, DOUBLE_QUOTE, LF } from "../constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../constants.ts";
+import type { Join } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -161,228 +162,6 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
   string
 >;
 
-type Concat<T extends any[]> = T extends [infer F, ...infer R]
-  ? R extends any[]
-    ? F & Concat<R>
-    : F
-  : // biome-ignore lint/complexity/noBannedTypes: <explanation>
-    {};
-
-type Replace<
-  Target extends string,
-  From extends string,
-  To extends string,
-> = Target extends `${infer A}${From}${infer B}`
-  ? Replace<`${A}${To}${B}`, From, To>
-  : Target;
-
-type Split<
-  Char extends string,
-  Delimiter extends string = typeof COMMA,
-> = Char extends `${infer F}${Delimiter}${infer R}`
-  ? [F, ...Split<R, Delimiter>]
-  : [Char];
-
-type Join<
-  Chars extends ReadonlyArray<string | number | boolean | bigint>,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = Chars extends readonly [infer F, ...infer R]
-  ? F extends string
-    ? R extends string[]
-      ? `${F extends `${string}${Newline | Delimiter}${string}`
-          ? `${Quotation}${F}${Quotation}`
-          : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
-      : string
-    : string
-  : "";
-
-type Newline = typeof CR | typeof CRLF | typeof LF;
-type DummyNewline<NL extends Newline> =
-  `web-csv-toolbox.DummyNewline-${NL extends typeof CRLF
-    ? "crlf"
-    : NL extends typeof CR
-      ? "cr"
-      : "lf"}`;
-type DummyDelimiter = "web-csv-toolbox.DummyDelimiter";
-
-type SplitNewline<T extends string> =
-  T extends `${infer A}${typeof CRLF}${infer B}`
-    ? [...Split<A, typeof CRLF>, ...SplitNewline<B>]
-    : T extends `${infer A}${typeof CR}${infer B}`
-      ? [...Split<A, typeof CR>, ...SplitNewline<B>]
-      : T extends `${infer A}${typeof LF}${infer B}`
-        ? [...Split<A, typeof LF>, ...SplitNewline<B>]
-        : [T];
-
-type Newline2DummyNewline<T extends string> =
-  T extends `${infer A}${typeof CRLF}${infer B}`
-    ? Newline2DummyNewline<`${A}${DummyNewline<typeof CRLF>}${B}`>
-    : T extends `${infer A}${typeof CR}${infer B}`
-      ? Newline2DummyNewline<`${A}${DummyNewline<typeof CR>}${B}`>
-      : T extends `${infer A}${typeof LF}${infer B}`
-        ? Newline2DummyNewline<`${A}${DummyNewline<typeof LF>}${B}`>
-        : T;
-
-type DummyNewline2Newline<T extends string> =
-  T extends `${infer A}${DummyNewline<typeof CRLF>}${infer B}`
-    ? DummyNewline2Newline<`${A}${typeof CRLF}${B}`>
-    : T extends `${infer A}${DummyNewline<typeof CR>}${infer B}`
-      ? DummyNewline2Newline<`${A}${typeof CR}${B}`>
-      : T extends `${infer A}${DummyNewline<typeof LF>}${infer B}`
-        ? DummyNewline2Newline<`${A}${typeof LF}${B}`>
-        : T;
-
-type Escape<
-  CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = CSVSource extends `${infer A}${Quotation}${infer B}${Quotation}${infer C}`
-  ? `${A}${Newline2DummyNewline<Replace<B, Delimiter, DummyDelimiter>>}${Escape<
-      C,
-      Delimiter,
-      Quotation
-    >}`
-  : CSVSource;
-
-type Row2Record<H extends PropertyKey[], V extends any[][]> = {
-  [K in keyof V]: Concat<{
-    [P in keyof H]: { [Key in H[P]]: V[K][Extract<keyof V[K], P>] };
-  }>;
-};
-
-type ToCSVRows<
-  T extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = SplitNewline<Escape<T, Delimiter, Quotation>> extends infer R
-  ? {
-      [K in keyof R]: R[K] extends string ? DummyNewline2Newline<R[K]> : never;
-    }
-  : ReadonlyArray<string>;
-
-/**
- * Generate a CSV header tuple from a CSVString.
- *
- * @category Types
- *
- * @example Default
- *
- * ```ts
- * const csv = `name,age
- * Alice,42
- * Bob,69`;
- *
- * type _ = ToParsedCSVRecords<typeof csv>
- * // [
- * //   { name: "Alice"; age: "42"; },
- * //   { name: "Bob"; age: "69" }
- * // ]
- *```
- *
- * @example With different delimiter and quotation
- *
- * ```ts
- * const csv = `name@$a
- * ge$
- * $Ali
- * ce$@42
- * Bob@69`;
- *
- * type _ = ToParsedCSVRecords<typeof csv, "@", "$">
- * // [
- * //   { name: "Ali\nce"; "a\nge": "42"; },
- * //   { name: "Bob"; "a\nge": "69" }
- * // ]
- * ```
- */
-export type ToParsedCSVRecords<
-  T extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = ToCSVRows<T, Delimiter, Quotation> extends [
-  infer H extends string,
-  ...infer R,
-]
-  ? R extends [string, ...string[]]
-    ? Row2Record<
-        Split<H, Delimiter> extends infer H2 extends PropertyKey[]
-          ? {
-              [K in keyof H2]: Replace<
-                H2[K] extends string ? H2[K] : string,
-                DummyDelimiter,
-                Delimiter
-              >;
-            }
-          : PropertyKey[],
-        {
-          [K in keyof R]: Split<R[K], Delimiter> extends infer R2
-            ? {
-                [K in keyof R2]: Replace<
-                  R2[K] extends string ? R2[K] : string,
-                  DummyDelimiter,
-                  Delimiter
-                >;
-              }
-            : ReadonlyArray<string>;
-        }
-      >
-    : CSVRecord<Split<H, Delimiter>>
-  : CSVRecord<readonly string[]>;
-
-/**
- * Generate a CSV header tuple from a CSVString.
- *
- * @category Types
- *
- * @example Default
- *
- * ```ts
- * const csv = `name,age
- * Alice,42
- * Bob,69`;
- *
- * type _ = PickCSVHeader<typeof csv>
- * // ["name", "age"]
- * ```
- *
- * @example With different delimiter and quotation
- *
- * ```ts
- * const csv = `name@$a
- * ge$
- * $Ali
- * ce$@42
- * Bob@69`;
- *
- * type _ = PickCSVHeader<typeof csv, "@", "$">
- * // ["name", "a\nge"]
- * ```
- */
-export type PickCSVHeader<
-  CSVSource extends CSVString,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
-> = CSVSource extends
-  | `${infer Source}`
-  // biome-ignore lint/suspicious/noRedeclare: <explanation>
-  | ReadableStream<infer Source>
-  ? ToCSVRows<Source, Delimiter, Quotation> extends [
-      infer Header extends string,
-      ...string[],
-    ]
-    ? Split<Header, Delimiter> extends infer R
-      ? {
-          [K in keyof R]: Replace<
-            R[K] extends string ? R[K] : never,
-            DummyDelimiter,
-            Delimiter
-          >;
-        }
-      : ReadonlyArray<string>
-    : ReadonlyArray<string>
-  : ReadonlyArray<string>;
-
 /**
  * CSV String.
  *
@@ -390,16 +169,12 @@ export type PickCSVHeader<
  */
 export type CSVString<
   Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 > = Header extends readonly [string, ...string[]]
   ?
-      | `${Join<Header, Delimiter, Quotation>}${typeof LF}${string}`
-      | ReadableStream<`${Join<
-          Header,
-          Delimiter,
-          Quotation
-        >}${typeof LF}${string}`>
+      | Join<Header, Delimiter, Quotation>
+      | ReadableStream<Join<Header, Delimiter, Quotation>>
   : string | ReadableStream<string>;
 
 /**
@@ -420,8 +195,8 @@ export type CSVBinary =
  */
 export type CSV<
   Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 > = Header extends []
   ? CSVString | CSVBinary
   : CSVString<Header, Delimiter, Quotation>;

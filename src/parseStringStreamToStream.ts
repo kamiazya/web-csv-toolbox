@@ -1,13 +1,14 @@
 import { LexerTransformer } from "./LexerTransformer.ts";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
-import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { pipeline } from "./utils/pipeline.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 export function parseStringStreamToStream<
   CSVSource extends ReadableStream<string>,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,

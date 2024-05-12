@@ -1,6 +1,6 @@
 import type { assertCommonOptions } from "./assertCommonOptions.ts";
 import type { CommonOptions } from "./common/types.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { occurrences } from "./utils/occurrences.ts";
 
 export interface EscapeFieldOptions extends CommonOptions {
@@ -34,8 +34,8 @@ function specialCheckFordelimiterIsRepetitionOfOneTypeOfCharacter(
 export function escapeField(
   value: string,
   {
-    quotation = DOUBLE_QUOTE,
-    delimiter = COMMA,
+    delimiter = DEFAULT_DELIMITER,
+    quotation = DEFAULT_QUOTATION,
     quote,
   }: EscapeFieldOptions = {},
 ): string {

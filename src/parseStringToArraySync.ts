@@ -1,17 +1,13 @@
 import { Lexer } from "./Lexer.ts";
 import { RecordAssembler } from "./RecordAssembler.ts";
-import type {
-  CSVRecord,
-  ParseOptions,
-  PickCSVHeader,
-  ToParsedCSVRecords,
-} from "./common/types.ts";
-import type { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 export function parseStringToArraySync<
   CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
@@ -23,21 +19,11 @@ export function parseStringToArraySync<
     delimiter?: Delimiter;
     quotation?: Quotation;
   },
-): ToParsedCSVRecords<CSVSource, Delimiter, Quotation> extends infer R extends
-  CSVRecord<readonly string[]>[]
-  ? R
-  : CSVRecord<Header>[];
+): CSVRecord<Header>[];
 export function parseStringToArraySync<
   CSVSource extends string,
   Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(
-  csv: CSVSource,
-  options?: ParseOptions<Header>,
-): ToParsedCSVRecords<CSVSource> extends infer R extends CSVRecord<
-  readonly string[]
->[]
-  ? R
-  : CSVRecord<Header>[];
+>(csv: CSVSource, options?: ParseOptions<Header>): CSVRecord<Header>[];
 export function parseStringToArraySync<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,

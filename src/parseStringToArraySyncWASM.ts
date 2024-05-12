@@ -1,12 +1,12 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
-import type {
-  CSVRecord,
-  CommonOptions,
-  PickCSVHeader,
-  ToParsedCSVRecords,
-} from "./common/types.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import type { CSVRecord, CommonOptions } from "./common/types.ts";
+import {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+  DOUBLE_QUOTE,
+} from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to record of arrays.
@@ -45,8 +45,8 @@ import type { loadWASM } from "./loadWASM.ts";
  */
 export function parseStringToArraySyncWASM<
   CSVSource extends string,
-  Delimiter extends string = typeof COMMA,
-  Quotation extends string = typeof DOUBLE_QUOTE,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
   Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
@@ -58,21 +58,11 @@ export function parseStringToArraySyncWASM<
     delimiter?: Delimiter;
     quotation?: Quotation;
   },
-): ToParsedCSVRecords<CSVSource, Delimiter, Quotation> extends infer R extends
-  CSVRecord<readonly string[]>[]
-  ? R
-  : CSVRecord<Header>[];
+): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
   CSVSource extends string,
   Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(
-  csv: CSVSource,
-  options?: CommonOptions,
-): ToParsedCSVRecords<CSVSource> extends infer R extends CSVRecord<
-  readonly string[]
->[]
-  ? R
-  : CSVRecord<Header>[];
+>(csv: CSVSource, options?: CommonOptions): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
   Header extends ReadonlyArray<string>,
 >(csv: string, options?: CommonOptions): CSVRecord<Header>[];
@@ -80,7 +70,8 @@ export function parseStringToArraySyncWASM<Header extends readonly string[]>(
   csv: string,
   options: CommonOptions = {},
 ): CSVRecord<Header>[] {
-  const { delimiter = COMMA, quotation = DOUBLE_QUOTE } = options;
+  const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
+    options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new Error("Invalid delimiter, must be a single character on WASM.");
   }
