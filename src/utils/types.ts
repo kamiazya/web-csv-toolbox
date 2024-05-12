@@ -97,6 +97,29 @@ type ExtractString<Source extends CSVString> = Source extends
   ? S
   : string;
 
+type ExtractCSVBody<
+  CSVSource extends CSVString,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+  Nl extends string = Exclude<Newline, Delimiter | Quotation>,
+  Escaping extends boolean = false,
+> = ExtractString<CSVSource> extends `${Quotation}${infer R}`
+  ? Escaping extends true
+    ? R extends Delimiter | Nl | `${Delimiter | Nl}${string}`
+      ? // biome-ignore format: <explanation>
+        ExtractCSVBody<R, Delimiter, Quotation, Nl, false>
+      : // biome-ignore format: <explanation>
+        ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
+    : // biome-ignore format: <explanation>
+      ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
+  : ExtractString<CSVSource> extends `${infer _ extends Nl}${infer R}`
+    ? Escaping extends true
+      ? ExtractCSVBody<R, Delimiter, Quotation, Nl, true>
+      : R
+    : ExtractString<CSVSource> extends `${infer _}${infer R}`
+      ? ExtractCSVBody<R, Delimiter, Quotation, Nl, Escaping>
+      : "";
+
 /**
  * Extract a CSV header string from a CSVString.
  *
@@ -132,23 +155,15 @@ export type ExtractCSVHeader<
   Quotation extends string = DEFAULT_QUOTATION,
   Nl extends string = Exclude<Newline, Delimiter | Quotation>,
   Escaping extends boolean = false,
-  Result extends string = "",
-> = ExtractString<CSVSource> extends `${Quotation}${infer R}`
-  ? Escaping extends true
-    ? R extends Delimiter | Nl | `${Delimiter | Nl}${string}`
-      ? // biome-ignore format: <explanation>
-        ExtractCSVHeader<R, Delimiter, Quotation, Nl, false, `${Result}${Quotation}`>
-      : // biome-ignore format: <explanation>
-        ExtractCSVHeader<R, Delimiter, Quotation, Nl, true, `${Result}${Quotation}`>
-    : // biome-ignore format: <explanation>
-      ExtractCSVHeader<R, Delimiter, Quotation, Nl, true, `${Result}${Quotation}`>
-  : ExtractString<CSVSource> extends `${infer N extends Nl}${infer R}`
-    ? Escaping extends true
-      ? ExtractCSVHeader<R, Delimiter, Quotation, Nl, true, `${Result}${N}`>
-      : Result
-    : ExtractString<CSVSource> extends `${infer F}${infer R}`
-      ? ExtractCSVHeader<R, Delimiter, Quotation, Nl, Escaping, `${Result}${F}`>
-      : Result;
+> = ExtractString<CSVSource> extends `${infer H}${Newline}${ExtractCSVBody<
+  CSVSource,
+  Delimiter,
+  Quotation,
+  Nl,
+  Escaping
+>}`
+  ? H
+  : ExtractString<CSVSource>;
 
 /**
  * Generates a delimiter-separated tuple of CSV headers from a CSVString.
