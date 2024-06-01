@@ -99,7 +99,11 @@ export namespace FC {
     minLength = 0,
     ...constraints
   }: TextConstraints = {}): fc.Arbitrary<string> {
-    return text({ minLength, ...constraints });
+    return (
+      text({ minLength, ...constraints })
+        // Filter out BOM to ensure clean test data
+        .filter((v) => !v.startsWith("\ufeff"))
+    );
   }
 
   export interface DelimiterConstraints extends TextConstraints {

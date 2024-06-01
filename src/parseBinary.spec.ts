@@ -15,6 +15,12 @@ describe("parseBinary function", () => {
               kindExcludes: ["string16bits"],
             },
           });
+          const BOM = g(fc.boolean);
+          if (BOM) {
+            // Add BOM to the first field.
+            header[0] = `\ufeff${header[0]}`;
+          }
+
           const EOL = g(FC.eol);
           const csvData = g(FC.csvData, {
             // TextEncoderStream can't handle utf-16 string.
