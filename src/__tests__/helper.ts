@@ -101,7 +101,7 @@ export namespace FC {
   }: TextConstraints = {}): fc.Arbitrary<string> {
     return (
       text({ minLength, ...constraints })
-        // Remove BOM
+        // Filter out BOM to ensure clean test data
         .filter((v) => !v.startsWith("\ufeff"))
     );
   }
