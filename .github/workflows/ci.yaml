@@ -57,7 +57,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@1dbf41f0ae41cebfe61e084e535aebe533409b4d # v2.3.0
+        uses: CodSpeedHQ/action@0b631f8998f2389eb5144632b6f9f8fabd33a86e # v2.4.1
         with:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
