@@ -79,7 +79,7 @@ export interface BinaryOptions {
    * If you specify true, the BOM will be ignored.
    * If you specify false or not specify it, the BOM will be treated as a normal character.
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM | TextDecoderOptions.ignoreBOM} for more information about the BOM.
-   * @default false
+   * @default true In the case of binary, there is no case where the BOM is not be ignored, so the default is treated as true.
    */
   ignoreBOM?: boolean;
   /**

@@ -146,12 +146,11 @@ export function parse<Header extends ReadonlyArray<string>>(
  * ```ts
  * import { parse } from 'web-csv-toolbox';
  *
- * // This CSV data is gzipped and encoded in shift-jis and has BOM.
+ * // This CSV data is gzipped and encoded in shift-jis.
  * const response = await fetch('https://example.com/data.csv.gz');
  *
  * for await (const record of parse(response, {
  *   charset: 'shift-jis',
- *   ignoreBOM: true,
  *   decomposition: 'gzip',
  * })) {
  *   // ...

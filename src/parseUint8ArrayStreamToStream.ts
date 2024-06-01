@@ -7,7 +7,7 @@ export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {
-  const { charset, fatal, ignoreBOM, decomposition } = options ?? {};
+  const { charset, fatal, ignoreBOM = true, decomposition } = options ?? {};
   return decomposition
     ? pipeline(
         stream,
