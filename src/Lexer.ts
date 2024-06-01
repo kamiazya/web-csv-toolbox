@@ -75,7 +75,7 @@ export class Lexer {
     }
     let currentField: Token | null = null;
     for (let token: Token | null; (token = this.#nextToken()); ) {
-      switch (token) {
+      switch (token.type) {
         case FieldDelimiter:
           if (currentField) {
             yield currentField;
@@ -124,19 +124,28 @@ export class Lexer {
     // Check for CRLF
     if (this.#buffer.startsWith(CRLF)) {
       this.#buffer = this.#buffer.slice(2);
-      return RecordDelimiter;
+      return {
+        type: RecordDelimiter,
+        value: CRLF,
+      };
     }
 
     // Check for LF
     if (this.#buffer.startsWith(LF)) {
       this.#buffer = this.#buffer.slice(1);
-      return RecordDelimiter;
+      return {
+        type: RecordDelimiter,
+        value: LF,
+      };
     }
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
       this.#buffer = this.#buffer.slice(1);
-      return FieldDelimiter;
+      return {
+        type: FieldDelimiter,
+        value: this.#delimiter,
+      };
     }
 
     // Check for Quoted String

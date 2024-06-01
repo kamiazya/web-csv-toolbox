@@ -18,7 +18,14 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, expected };
@@ -47,7 +54,14 @@ describe("class Lexer", () => {
               // so empty field should be escaped with double quote
               { type: Field, value: field },
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, expected };
@@ -80,7 +94,14 @@ describe("class Lexer", () => {
                 ? [{ type: Field, value: field }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: delimiter,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { delimiter, csv, expected };
@@ -108,7 +129,14 @@ describe("class Lexer", () => {
               // if field is empty, it should be ignored
               ...(field !== "" ? [{ type: Field, value: field }] : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { quotation, csv, expected };
@@ -138,7 +166,14 @@ describe("class Lexer", () => {
                 ? [{ type: Field, value: field }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: options.delimiter,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { options, row, csv, expected };
@@ -181,10 +216,24 @@ describe("class Lexer", () => {
                   ? [{ type: Field, value: field }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
-                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
+                ...(row.length - 1 !== j
+                  ? [
+                      {
+                        type: FieldDelimiter,
+                        value: options.delimiter,
+                      },
+                    ]
+                  : []),
               ]),
               // if row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
+              ...(data.length - 1 !== i
+                ? [
+                    {
+                      type: RecordDelimiter,
+                      value: eol,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, data, options, expected };

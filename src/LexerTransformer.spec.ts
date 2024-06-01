@@ -28,7 +28,14 @@ describe("LexerTransformer", () => {
               // If the field is empty or quote is true, add a field.
               ...(quote || value ? [{ type: Field, value }] : []),
               // If the field is not the last field, add a field delimiter.
-              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
+              ...(index === row.length - 1
+                ? []
+                : [
+                    {
+                      type: FieldDelimiter,
+                      value: ",",
+                    },
+                  ]),
             ]),
           ];
           return { row, chunks, expected };
@@ -54,7 +61,14 @@ describe("LexerTransformer", () => {
           const expected = [
             ...row.flatMap((value, index) => [
               { type: Field, value },
-              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
+              ...(index === row.length - 1
+                ? []
+                : [
+                    {
+                      type: FieldDelimiter,
+                      value: ",",
+                    },
+                  ]),
             ]),
           ];
           return { expected, chunks };
@@ -97,10 +111,24 @@ describe("LexerTransformer", () => {
                 // If the field is empty or quote is true, add a field.
                 ...(quote || value !== "" ? [{ type: Field, value }] : []),
                 // If the field is not the last field, add a field delimiter.
-                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
+                ...(row.length - 1 !== j
+                  ? [
+                      {
+                        type: FieldDelimiter,
+                        value: options.delimiter,
+                      },
+                    ]
+                  : []),
               ]),
               // If the field is the last field, add a record delimiter.
-              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
+              ...(data.length - 1 !== i
+                ? [
+                    {
+                      type: RecordDelimiter,
+                      value: eol,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { options, chunks, expected };

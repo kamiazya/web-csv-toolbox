@@ -10,11 +10,29 @@ export interface FieldToken {
 }
 
 /**
+ * Field delimiter token type.
+ * @category Types
+ */
+export interface FieldDelimiterToken {
+  type: typeof FieldDelimiter;
+  value: string;
+}
+
+/**
+ * Record delimiter token type.
+ * @category Types
+ */
+export interface RecordDelimiterToken {
+  type: typeof RecordDelimiter;
+  value: string;
+}
+
+/**
  * Token is a atomic unit of a CSV file.
  * It can be a field, field delimiter, or record delimiter.
  * @category Types
  */
-export type Token = FieldToken | typeof FieldDelimiter | typeof RecordDelimiter;
+export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
 
 /**
  * CSV Common Options.

@@ -36,16 +36,34 @@ describe("RecordAssemblerTransformer", () => {
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
-              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
+              i === header.length - 1
+                ? {
+                    type: RecordDelimiter,
+                    value: "\n",
+                  }
+                : {
+                    type: FieldDelimiter,
+                    value: ",",
+                  },
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                FieldDelimiter,
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                },
                 // generate record delimiter token
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: "\n",
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -78,8 +96,18 @@ describe("RecordAssemblerTransformer", () => {
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                FieldDelimiter,
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                },
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: "\n",
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];

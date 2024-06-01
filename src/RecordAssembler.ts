@@ -22,7 +22,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     flush = true,
   ): IterableIterator<CSVRecord<Header>> {
     for (const token of tokens) {
-      switch (token) {
+      switch (token.type) {
         case FieldDelimiter:
           this.#fieldIndex++;
           this.#dirty = true;

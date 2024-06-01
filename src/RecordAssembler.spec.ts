@@ -4,6 +4,7 @@ import { RecordAssembler } from "./RecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
+import { LF } from "./constants.ts";
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
@@ -34,16 +35,31 @@ describe("class RecordAssembler", () => {
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field },
-              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
+              i === header.length - 1
+                ? {
+                    type: RecordDelimiter,
+                    value: EOL,
+                  }
+                : {
+                    type: FieldDelimiter,
+                    value: ",",
+                  },
             ]),
             // generate rows tokens
             ...rows.flatMap<Token>((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                FieldDelimiter,
+                { type: FieldDelimiter, value: "," },
                 // generate record delimiter token
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: LF,
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -76,8 +92,15 @@ describe("class RecordAssembler", () => {
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field },
-                FieldDelimiter,
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                { type: FieldDelimiter, value: "," },
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: LF,
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
