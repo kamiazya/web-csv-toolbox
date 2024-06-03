@@ -206,11 +206,86 @@ export class Lexer {
 
     // Check for Quoted String
     if (this.#buffer.startsWith(this.#quotation)) {
-      // If not flushing and the buffer doesn't end with a quote, then return null.
-      if (this.#flush === false && this.#buffer.endsWith(this.#quotation)) {
-        return null;
-      }
-      return this.#extractQuotedString();
+      /**
+       * Extract Quoted field.
+       *
+       * The following code is equivalent to the following:
+       *
+       * If the next character is a quote:
+       * - If the character after that is a quote, then append a quote to the value and skip two characters.
+       * - Otherwise, return the quoted string.
+       * Otherwise, append the character to the value and skip one character.
+       *
+       * ```plaintext
+       * | `i`        | `i + 1`    | `i + 2`  |
+       * |------------|------------|----------|
+       * | cur        | next       |          | => Variable names
+       * | #quotation | #quotation |          | => Escaped quote
+       * | #quotation | (EOF)      |          | => Closing quote
+       * | #quotation | undefined  |          | => End of buffer
+       * | undefined  |            |          | => End of buffer
+       * ```
+       */
+      let value = "";
+      let offset = 1; // Skip the opening quote
+      let column = 2; // Skip the opening quote
+      let line = 0;
+
+      // Define variables
+      let cur: string = this.#buffer[offset];
+      let next: string | undefined = this.#buffer[offset + 1];
+      do {
+        // If the current character is a quote, check the next characters for closing quotes.
+        if (cur === this.#quotation) {
+          // If the cur character is a quote and the next character is a quote,
+          // then append a quote to the value and skip two characters.
+          if (next === this.#quotation) {
+            // Append a quote to the value and skip two characters.
+            value += this.#quotation;
+            offset += 2;
+            cur = this.#buffer[offset];
+            next = this.#buffer[offset + 1];
+
+            // Update the diff
+            column += 2;
+            continue;
+          }
+
+          // If the cur character is a quote and the next character is undefined,
+          // then return null.
+          if (next === undefined && this.#flush === false) {
+            return null;
+          }
+
+          // Otherwise, return the quoted string.
+          // Update the buffer and return the token
+          offset++;
+          this.#buffer = this.#buffer.slice(offset);
+          return this.#field(value, { column, offset, line });
+        }
+
+        // Append the character to the value.
+        value += cur;
+
+        // Prepare for the next iteration
+        if (cur === LF) {
+          // If the current character is a LF,
+          // then increment the line number and reset the column number.
+          line++;
+          column = 1;
+        } else {
+          // Otherwise, increment the column number and offset.
+          column++;
+        }
+
+        offset++;
+        cur = next;
+        next = this.#buffer[offset + 1];
+      } while (cur !== undefined);
+
+      // If we get here, we've reached the end of the buffer
+      return null;
+      // TODO: If flash is true, the buffer is exiting unquoted and an exception should be raised.
     }
 
     // Check for Unquoted String
@@ -227,90 +302,5 @@ export class Lexer {
 
     // Otherwise, return null
     return null;
-  }
-
-  /**
-   * Extracts a quoted string token from the buffered CSV data.
-   * @returns The quoted string token or null if the string is not properly quoted.
-   */
-  #extractQuotedString(): Token | null {
-    /**
-     * The following code is equivalent to the following:
-     *
-     * If the next character is a quote:
-     * - If the character after that is a quote, then append a quote to the value and skip two characters.
-     * - Otherwise, return the quoted string.
-     * Otherwise, append the character to the value and skip one character.
-     *
-     * ```plaintext
-     * | `i`        | `i + 1`    | `i + 2`  |
-     * |------------|------------|----------|
-     * | cur        | next       |          | => Variable names
-     * | #quotation | #quotation |          | => Escaped quote
-     * | #quotation | #delimiter |          | => Closing quote
-     * | #quotation | (EOF)      |          | => Closing quote
-     * | #quotation | undefined  |          | => End of buffer
-     * | undefined  |            |          | => End of buffer
-     * ```
-     */
-    let offset = 1; // Skip the opening quote
-    let value = "";
-    let column = 1;
-    let line = 0;
-
-    // Define variables
-    let cur: string = this.#buffer[offset];
-    let next: string | undefined = this.#buffer[offset + 1];
-    do {
-      // If the current character is a quote, check the next characters for closing quotes.
-      if (cur === this.#quotation) {
-        // If the cur character is a quote and the next character is a quote,
-        // then append a quote to the value and skip two characters.
-        if (next === this.#quotation) {
-          // Append a quote to the value and skip two characters.
-          value += this.#quotation;
-          offset += 2;
-          cur = this.#buffer[offset];
-          next = this.#buffer[offset + 1];
-
-          // Update the diff
-          column += 2;
-          continue;
-        }
-
-        // If the cur character is a quote and the next character is undefined,
-        // then return null.
-        if (next === undefined && this.#flush === false) {
-          return null;
-        }
-
-        // Otherwise, return the quoted string.
-        // Update the buffer and return the token
-        this.#buffer = this.#buffer.slice(++offset);
-        return this.#field(value, { column, offset, line });
-      }
-
-      // Append the character to the value.
-      value += cur;
-
-      // Prepare for the next iteration
-      if (cur === LF) {
-        // If the current character is a LF,
-        // then increment the line number and reset the column number.
-        line++;
-        column = 1;
-      } else {
-        // Otherwise, increment the column number and offset.
-        column++;
-      }
-
-      offset++;
-      cur = this.#buffer[offset];
-      next = this.#buffer[offset + 1];
-    } while (cur !== undefined);
-
-    // If we get here, we've reached the end of the buffer
-    return null;
-    // TODO: If flash is true, the buffer is exiting unquoted and an exception should be raised.
   }
 }
