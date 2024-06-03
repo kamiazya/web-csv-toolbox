@@ -1,9 +1,9 @@
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
- * Location object.
+ * Position object.
  */
-export interface Location {
+export interface Position {
   /**
    * Line number.
    * Starts from 1.
@@ -28,11 +28,11 @@ export interface TokenLocation {
   /**
    * Start location.
    */
-  start: Location;
+  start: Position;
   /**
    * End location.
    */
-  end: Location;
+  end: Position;
   /**
    * Row number.
    * Starts from 1.

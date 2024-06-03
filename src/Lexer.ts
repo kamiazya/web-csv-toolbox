@@ -2,8 +2,8 @@ import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type {
   CommonOptions,
-  FieldToken,
-  Location,
+  Position,
+  RecordDelimiterToken,
   Token,
 } from "./common/types.ts";
 import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
@@ -22,59 +22,12 @@ export class Lexer {
   #matcher: RegExp;
   #fieldDelimiterLength: number;
 
-  #location: Location = {
+  #cursor: Position = {
     line: 1,
     column: 1,
     offset: 0,
   };
   #rowNumber = 1;
-
-  #field(value: string, diff?: Location): FieldToken {
-    const start: Location = { ...this.#location };
-    this.#location.column += diff?.column ?? value.length;
-    this.#location.offset += diff?.offset ?? value.length;
-    this.#location.line += diff?.line ?? 0;
-    return {
-      type: Field,
-      value,
-      location: {
-        start,
-        end: { ...this.#location },
-        rowNumber: this.#rowNumber,
-      },
-    };
-  }
-
-  #fieldDelimiter(): Token {
-    const start: Location = { ...this.#location };
-    this.#location.column += this.#fieldDelimiterLength;
-    this.#location.offset += this.#fieldDelimiterLength;
-    return {
-      type: FieldDelimiter,
-      value: this.#delimiter,
-      location: {
-        start,
-        end: { ...this.#location },
-        rowNumber: this.#rowNumber,
-      },
-    };
-  }
-
-  #recordDelimiter(value: string): Token {
-    const start: Location = { ...this.#location };
-    this.#location.line++;
-    this.#location.column = 1;
-    this.#location.offset += value.length;
-    return {
-      type: RecordDelimiter,
-      value,
-      location: {
-        start,
-        end: { ...this.#location },
-        rowNumber: this.#rowNumber,
-      },
-    };
-  }
 
   /**
    * Constructs a new Lexer instance.
@@ -185,23 +138,56 @@ export class Lexer {
     // Check for CRLF
     if (this.#buffer.startsWith(CRLF)) {
       this.#buffer = this.#buffer.slice(2);
-      const token = this.#recordDelimiter(CRLF);
-      this.#rowNumber++;
+      const start: Position = { ...this.#cursor };
+      this.#cursor.line++;
+      this.#cursor.column = 1;
+      this.#cursor.offset += 2; // CRLF.length
+      const token: RecordDelimiterToken = {
+        type: RecordDelimiter,
+        value: CRLF,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber++,
+        },
+      };
       return token;
     }
 
     // Check for LF
     if (this.#buffer.startsWith(LF)) {
       this.#buffer = this.#buffer.slice(1);
-      const token = this.#recordDelimiter(LF);
-      this.#rowNumber++;
+      const start: Position = { ...this.#cursor };
+      this.#cursor.line++;
+      this.#cursor.column = 1;
+      this.#cursor.offset += 1; // LF.length
+      const token: RecordDelimiterToken = {
+        type: RecordDelimiter,
+        value: LF,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber++,
+        },
+      };
       return token;
     }
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
       this.#buffer = this.#buffer.slice(1);
-      return this.#fieldDelimiter();
+      const start: Position = { ...this.#cursor };
+      this.#cursor.column += this.#fieldDelimiterLength;
+      this.#cursor.offset += this.#fieldDelimiterLength;
+      return {
+        type: FieldDelimiter,
+        value: this.#delimiter,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+        },
+      };
     }
 
     // Check for Quoted String
@@ -261,7 +247,20 @@ export class Lexer {
           // Update the buffer and return the token
           offset++;
           this.#buffer = this.#buffer.slice(offset);
-          return this.#field(value, { column, offset, line });
+          const start: Position = { ...this.#cursor };
+          this.#cursor.column += column;
+          this.#cursor.offset += offset;
+          this.#cursor.line += line;
+          return {
+            type: Field,
+            value,
+            location: {
+              start,
+              end: { ...this.#cursor },
+              rowNumber: this.#rowNumber,
+            },
+          };
+          // return this.#field(value, { column, offset, line });
         }
 
         // Append the character to the value.
@@ -296,8 +295,20 @@ export class Lexer {
       if (this.#flush === false && match[0].length === this.#buffer.length) {
         return null;
       }
-      this.#buffer = this.#buffer.slice(match[0].length);
-      return this.#field(match[0]);
+      const value = match[1];
+      this.#buffer = this.#buffer.slice(value.length);
+      const start: Position = { ...this.#cursor };
+      this.#cursor.column += value.length;
+      this.#cursor.offset += value.length;
+      return {
+        type: Field,
+        value,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+        },
+      };
     }
 
     // Otherwise, return null
