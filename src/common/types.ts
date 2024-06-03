@@ -1,3 +1,5 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../constants.ts";
+import type { Join } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -165,7 +167,15 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
  *
  * @category Types
  */
-export type CSVString = string | ReadableStream<string>;
+export type CSVString<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> = Header extends readonly [string, ...string[]]
+  ?
+      | Join<Header, Delimiter, Quotation>
+      | ReadableStream<Join<Header, Delimiter, Quotation>>
+  : string | ReadableStream<string>;
 
 /**
  * CSV Binary.
@@ -183,4 +193,10 @@ export type CSVBinary =
  *
  * @category Types
  */
-export type CSV = CSVString | CSVBinary;
+export type CSV<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> = Header extends []
+  ? CSVString | CSVBinary
+  : CSVString<Header, Delimiter, Quotation>;
