@@ -1,12 +1,57 @@
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
+ * Location object.
+ */
+export interface Location {
+  /**
+   * Line number.
+   * Starts from 1.
+   */
+  line: number;
+  /**
+   * Column number.
+   * Starts from 1.
+   */
+  column: number;
+  /**
+   * Character offset.
+   * Starts from 0.
+   */
+  offset: number;
+}
+
+/**
+ * Token location object.
+ */
+export interface TokenLocation {
+  /**
+   * Start location.
+   */
+  start: Location;
+  /**
+   * End location.
+   */
+  end: Location;
+  /**
+   * Row number.
+   * Starts from 1.
+   *
+   * @remarks
+   * This represents the logical row number in the CSV,
+   * counting from 1 for the first row, whether it is a header or not.
+   */
+  rowNumber: number;
+}
+
+/**
  * Field token type.
  * @category Types
  */
 export interface FieldToken {
   type: typeof Field;
   value: string;
+  location: TokenLocation;
 }
 
 /**
@@ -16,6 +61,7 @@ export interface FieldToken {
 export interface FieldDelimiterToken {
   type: typeof FieldDelimiter;
   value: string;
+  location: TokenLocation;
 }
 
 /**
@@ -25,6 +71,7 @@ export interface FieldDelimiterToken {
 export interface RecordDelimiterToken {
   type: typeof RecordDelimiter;
   value: string;
+  location: TokenLocation;
 }
 
 /**

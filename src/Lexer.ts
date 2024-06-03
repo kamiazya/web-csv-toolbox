@@ -1,6 +1,11 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import type { CommonOptions, Token } from "./common/types.ts";
+import type {
+  CommonOptions,
+  FieldToken,
+  Location,
+  Token,
+} from "./common/types.ts";
 import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
@@ -15,6 +20,61 @@ export class Lexer {
   #buffer = "";
   #flush = false;
   #matcher: RegExp;
+  #fieldDelimiterLength: number;
+
+  #location: Location = {
+    line: 1,
+    column: 1,
+    offset: 0,
+  };
+  #rowNumber = 1;
+
+  #field(value: string, diff?: Location): FieldToken {
+    const start: Location = { ...this.#location };
+    this.#location.column += diff?.column ?? value.length;
+    this.#location.offset += diff?.offset ?? value.length;
+    this.#location.line += diff?.line ?? 0;
+    return {
+      type: Field,
+      value,
+      location: {
+        start,
+        end: { ...this.#location },
+        rowNumber: this.#rowNumber,
+      },
+    };
+  }
+
+  #fieldDelimiter(): Token {
+    const start: Location = { ...this.#location };
+    this.#location.column += this.#fieldDelimiterLength;
+    this.#location.offset += this.#fieldDelimiterLength;
+    return {
+      type: FieldDelimiter,
+      value: this.#delimiter,
+      location: {
+        start,
+        end: { ...this.#location },
+        rowNumber: this.#rowNumber,
+      },
+    };
+  }
+
+  #recordDelimiter(value: string): Token {
+    const start: Location = { ...this.#location };
+    this.#location.line++;
+    this.#location.column = 1;
+    this.#location.offset += value.length;
+    return {
+      type: RecordDelimiter,
+      value,
+      location: {
+        start,
+        end: { ...this.#location },
+        rowNumber: this.#rowNumber,
+      },
+    };
+  }
 
   /**
    * Constructs a new Lexer instance.
@@ -27,6 +87,7 @@ export class Lexer {
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
+    this.#fieldDelimiterLength = delimiter.length;
     const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
@@ -68,9 +129,9 @@ export class Lexer {
     if (this.#flush) {
       // Trim the last CRLF or LF
       if (this.#buffer.endsWith(CRLF)) {
-        this.#buffer = this.#buffer.slice(0, -CRLF.length);
+        this.#buffer = this.#buffer.slice(0, -2 /* -CRLF.length */);
       } else if (this.#buffer.endsWith(LF)) {
-        this.#buffer = this.#buffer.slice(0, -LF.length);
+        this.#buffer = this.#buffer.slice(0, -1 /* -LF.length */);
       }
     }
     let currentField: Token | null = null;
@@ -124,28 +185,23 @@ export class Lexer {
     // Check for CRLF
     if (this.#buffer.startsWith(CRLF)) {
       this.#buffer = this.#buffer.slice(2);
-      return {
-        type: RecordDelimiter,
-        value: CRLF,
-      };
+      const token = this.#recordDelimiter(CRLF);
+      this.#rowNumber++;
+      return token;
     }
 
     // Check for LF
     if (this.#buffer.startsWith(LF)) {
       this.#buffer = this.#buffer.slice(1);
-      return {
-        type: RecordDelimiter,
-        value: LF,
-      };
+      const token = this.#recordDelimiter(LF);
+      this.#rowNumber++;
+      return token;
     }
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
       this.#buffer = this.#buffer.slice(1);
-      return {
-        type: FieldDelimiter,
-        value: this.#delimiter,
-      };
+      return this.#fieldDelimiter();
     }
 
     // Check for Quoted String
@@ -166,7 +222,7 @@ export class Lexer {
         return null;
       }
       this.#buffer = this.#buffer.slice(match[0].length);
-      return { type: Field, value: match[0] };
+      return this.#field(match[0]);
     }
 
     // Otherwise, return null
@@ -178,44 +234,83 @@ export class Lexer {
    * @returns The quoted string token or null if the string is not properly quoted.
    */
   #extractQuotedString(): Token | null {
-    let end = 1; // Skip the opening quote
+    /**
+     * The following code is equivalent to the following:
+     *
+     * If the next character is a quote:
+     * - If the character after that is a quote, then append a quote to the value and skip two characters.
+     * - Otherwise, return the quoted string.
+     * Otherwise, append the character to the value and skip one character.
+     *
+     * ```plaintext
+     * | `i`        | `i + 1`    | `i + 2`  |
+     * |------------|------------|----------|
+     * | cur        | next       |          | => Variable names
+     * | #quotation | #quotation |          | => Escaped quote
+     * | #quotation | #delimiter |          | => Closing quote
+     * | #quotation | (EOF)      |          | => Closing quote
+     * | #quotation | undefined  |          | => End of buffer
+     * | undefined  |            |          | => End of buffer
+     * ```
+     */
+    let offset = 1; // Skip the opening quote
     let value = "";
+    let column = 1;
+    let line = 0;
 
-    while (end < this.#buffer.length) {
-      // Escaped quote
-      if (
-        this.#buffer.slice(end, end + 1) === this.#quotation &&
-        this.#buffer.slice(end + 1, end + 1 * 2) === this.#quotation
-      ) {
-        value += this.#quotation;
-        end += 1 * 2;
-        continue;
-      }
+    // Define variables
+    let cur: string = this.#buffer[offset];
+    let next: string | undefined = this.#buffer[offset + 1];
+    do {
+      // If the current character is a quote, check the next characters for closing quotes.
+      if (cur === this.#quotation) {
+        // If the cur character is a quote and the next character is a quote,
+        // then append a quote to the value and skip two characters.
+        if (next === this.#quotation) {
+          // Append a quote to the value and skip two characters.
+          value += this.#quotation;
+          offset += 2;
+          cur = this.#buffer[offset];
+          next = this.#buffer[offset + 1];
 
-      // Closing quote
-      if (this.#buffer.slice(end, end + 1) === this.#quotation) {
-        // If flushing and the buffer doesn't end with a quote, then return null
-        if (
-          this.#flush === false &&
-          end + 1 < this.#buffer.length &&
-          this.#buffer.slice(end + 1, 1) !== this.#delimiter &&
-          this.#buffer.slice(end + 1, end + 1 + 2 /** CRLF.length */) !==
-            CRLF &&
-          this.#buffer.slice(end + 1, end + 1 + 1 /** LF.length */) !== LF
-        ) {
+          // Update the diff
+          column += 2;
+          continue;
+        }
+
+        // If the cur character is a quote and the next character is undefined,
+        // then return null.
+        if (next === undefined && this.#flush === false) {
           return null;
         }
 
-        // Otherwise, return the quoted string
-        this.#buffer = this.#buffer.slice(end + 1);
-        return { type: Field, value };
+        // Otherwise, return the quoted string.
+        // Update the buffer and return the token
+        this.#buffer = this.#buffer.slice(++offset);
+        return this.#field(value, { column, offset, line });
       }
 
-      value += this.#buffer[end];
-      end++;
-    }
+      // Append the character to the value.
+      value += cur;
+
+      // Prepare for the next iteration
+      if (cur === LF) {
+        // If the current character is a LF,
+        // then increment the line number and reset the column number.
+        line++;
+        column = 1;
+      } else {
+        // Otherwise, increment the column number and offset.
+        column++;
+      }
+
+      offset++;
+      cur = this.#buffer[offset];
+      next = this.#buffer[offset + 1];
+    } while (cur !== undefined);
 
     // If we get here, we've reached the end of the buffer
     return null;
+    // TODO: If flash is true, the buffer is exiting unquoted and an exception should be raised.
   }
 }
