@@ -8,6 +8,20 @@ import type { Token } from "./common/types.ts";
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
+
 describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
     expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
@@ -35,25 +49,28 @@ describe("RecordAssemblerTransformer", () => {
           const tokens: Token[] = [
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field },
+              { type: Field, value: field, location: LOCATION_SHAPE },
               i === header.length - 1
                 ? {
                     type: RecordDelimiter,
                     value: "\n",
+                    location: LOCATION_SHAPE,
                   }
                 : {
                     type: FieldDelimiter,
                     value: ",",
+                    location: LOCATION_SHAPE,
                   },
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
+                { type: Field, value: field, location: LOCATION_SHAPE },
                 {
                   type: FieldDelimiter,
                   value: ",",
+                  location: LOCATION_SHAPE,
                 },
                 // generate record delimiter token
                 ...((j === row.length - 1
@@ -95,10 +112,11 @@ describe("RecordAssemblerTransformer", () => {
           const tokens = [
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
+                { type: Field, value: field, location: LOCATION_SHAPE },
                 {
                   type: FieldDelimiter,
                   value: ",",
+                  location: LOCATION_SHAPE,
                 },
                 ...((j === row.length - 1
                   ? [
