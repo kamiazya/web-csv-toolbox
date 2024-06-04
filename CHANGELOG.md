@@ -1,5 +1,29 @@
 # web-csv-toolbox
 
+## 0.9.0
+
+### Minor Changes
+
+- [`d8ad2f7`](https://github.com/kamiazya/web-csv-toolbox/commit/d8ad2f75267e78a1e30a0cb6f2c596925cf60c96) Thanks [@kamiazya](https://github.com/kamiazya)! - Add detailed position tracking for tokens
+
+### Patch Changes
+
+- [#208](https://github.com/kamiazya/web-csv-toolbox/pull/208) [`35997de`](https://github.com/kamiazya/web-csv-toolbox/commit/35997de35b4b06e1993bedc5986400a669e0adc9) Thanks [@kamiazya](https://github.com/kamiazya)! - Create tea.yaml
+
+- [#233](https://github.com/kamiazya/web-csv-toolbox/pull/233) [`4d3e09f`](https://github.com/kamiazya/web-csv-toolbox/commit/4d3e09f95735559101993f23a01c27bc6f93409e) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor test CSV generation code around BOM
+
+- [#175](https://github.com/kamiazya/web-csv-toolbox/pull/175) [`f3234a7`](https://github.com/kamiazya/web-csv-toolbox/commit/f3234a74c91369ad03b51d41967bb9ea968f5550) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor Lexer for performance improvement
+
+- [#182](https://github.com/kamiazya/web-csv-toolbox/pull/182) [`cb649b3`](https://github.com/kamiazya/web-csv-toolbox/commit/cb649b357585e2947345f836ab19410fb95715f8) Thanks [@kamiazya](https://github.com/kamiazya)! - Update benchmark iterations
+
+- [#240](https://github.com/kamiazya/web-csv-toolbox/pull/240) [`cdfa359`](https://github.com/kamiazya/web-csv-toolbox/commit/cdfa359c8c68bba94a65d312c78e311bcdb02a64) Thanks [@kamiazya](https://github.com/kamiazya)! - Improve CSV token handling
+
+- [#175](https://github.com/kamiazya/web-csv-toolbox/pull/175) [`f3234a7`](https://github.com/kamiazya/web-csv-toolbox/commit/f3234a74c91369ad03b51d41967bb9ea968f5550) Thanks [@kamiazya](https://github.com/kamiazya)! - Improve Lexer internal operation
+
+- [#236](https://github.com/kamiazya/web-csv-toolbox/pull/236) [`129235a`](https://github.com/kamiazya/web-csv-toolbox/commit/129235a851281b4f225cfece23c63645ad22b031) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump terser from 5.29.2 to 5.31.0
+
+- [#217](https://github.com/kamiazya/web-csv-toolbox/pull/217) [`ac010a7`](https://github.com/kamiazya/web-csv-toolbox/commit/ac010a7748aa90aa6cb7fc67d844528af748fde4) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @biomejs/biome from 1.6.1 to 1.7.3
+
 ## 0.8.0
 
 ### Minor Changes
