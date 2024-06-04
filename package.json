@@ -59,6 +59,8 @@
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
+    "check:type": "tsc --noEmit",
+    "check:format": "biome ci .",
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",

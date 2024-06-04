@@ -6,6 +6,20 @@ import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
 import { LF } from "./constants.ts";
 
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
+
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
     expect(() => new RecordAssembler({ header: [] })).toThrowError(
@@ -34,23 +48,25 @@ describe("class RecordAssembler", () => {
           const tokens = [
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field },
+              { type: Field, value: field, location: LOCATION_SHAPE },
               i === header.length - 1
                 ? {
                     type: RecordDelimiter,
                     value: EOL,
+                    location: LOCATION_SHAPE,
                   }
                 : {
                     type: FieldDelimiter,
                     value: ",",
+                    location: LOCATION_SHAPE,
                   },
             ]),
             // generate rows tokens
             ...rows.flatMap<Token>((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
                 // generate record delimiter token
                 ...((j === row.length - 1
                   ? [
@@ -91,8 +107,8 @@ describe("class RecordAssembler", () => {
           const tokens: Token[] = [
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                { type: FieldDelimiter, value: "," },
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
                 ...((j === row.length - 1
                   ? [
                       {
