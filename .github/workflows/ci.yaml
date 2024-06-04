@@ -79,9 +79,11 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - name: Copy artifacts
+        run: cp -r ${{ github.workspace }}/web-csv-toolbox-wasm/pkg ${{ github.workspace }}/node_modules/web-csv-toolbox-wasm
       - name: Check
         run: pnpm check:type
 
