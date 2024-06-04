@@ -87,35 +87,9 @@ export class Lexer {
         this.#buffer = this.#buffer.slice(0, -1 /* -LF.length */);
       }
     }
-    let currentField: Token | null = null;
-    for (let token: Token | null; (token = this.#nextToken()); ) {
-      switch (token.type) {
-        case FieldDelimiter:
-          if (currentField) {
-            yield currentField;
-            currentField = null;
-          }
-          yield token;
-          break;
-        case RecordDelimiter:
-          if (currentField) {
-            yield currentField;
-            currentField = null;
-          }
-          yield token;
-          break;
-        default:
-          // If currentField is not null, append the new token's value to it
-          if (currentField) {
-            currentField.value += token.value;
-          } else {
-            currentField = token;
-          }
-          break;
-      }
-    }
-    if (currentField) {
-      yield currentField;
+    let token: Token | null;
+    while ((token = this.#nextToken())) {
+      yield token;
     }
   }
 
