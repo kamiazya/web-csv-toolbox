@@ -8,6 +8,20 @@ import { escapeField } from "./escapeField.ts";
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
+
 describe("LexerTransformer", () => {
   it("should be a TransformStream", () => {
     expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
@@ -26,9 +40,19 @@ describe("LexerTransformer", () => {
           const expected = [
             ...row.flatMap((value, index) => [
               // If the field is empty or quote is true, add a field.
-              ...(quote || value ? [{ type: Field, value }] : []),
+              ...(quote || value
+                ? [{ type: Field, value, location: LOCATION_SHAPE }]
+                : []),
               // If the field is not the last field, add a field delimiter.
-              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
+              ...(index === row.length - 1
+                ? []
+                : [
+                    {
+                      type: FieldDelimiter,
+                      value: ",",
+                      location: LOCATION_SHAPE,
+                    },
+                  ]),
             ]),
           ];
           return { row, chunks, expected };
@@ -36,7 +60,7 @@ describe("LexerTransformer", () => {
         async ({ chunks, expected }) => {
           const lexer = new LexerTransformer();
           const actual = (await transform(lexer, chunks)).flat();
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -53,8 +77,16 @@ describe("LexerTransformer", () => {
           );
           const expected = [
             ...row.flatMap((value, index) => [
-              { type: Field, value },
-              ...(index === row.length - 1 ? [] : [FieldDelimiter]),
+              { type: Field, value, location: LOCATION_SHAPE },
+              ...(index === row.length - 1
+                ? []
+                : [
+                    {
+                      type: FieldDelimiter,
+                      value: ",",
+                      location: LOCATION_SHAPE,
+                    },
+                  ]),
             ]),
           ];
           return { expected, chunks };
@@ -62,7 +94,7 @@ describe("LexerTransformer", () => {
         async ({ expected, chunks }) => {
           const lexer = new LexerTransformer();
           const actual = (await transform(lexer, chunks)).flat();
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -97,10 +129,26 @@ describe("LexerTransformer", () => {
                 // If the field is empty or quote is true, add a field.
                 ...(quote || value !== "" ? [{ type: Field, value }] : []),
                 // If the field is not the last field, add a field delimiter.
-                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
+                ...(row.length - 1 !== j
+                  ? [
+                      {
+                        type: FieldDelimiter,
+                        value: options.delimiter,
+                        location: LOCATION_SHAPE,
+                      },
+                    ]
+                  : []),
               ]),
               // If the field is the last field, add a record delimiter.
-              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
+              ...(data.length - 1 !== i
+                ? [
+                    {
+                      type: RecordDelimiter,
+                      value: eol,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { options, chunks, expected };
@@ -108,7 +156,7 @@ describe("LexerTransformer", () => {
         async ({ options, chunks, expected }) => {
           const lexer = new LexerTransformer(options);
           const actual = (await transform(lexer, chunks)).flat();
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
       {
