@@ -43,7 +43,7 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
       - name: Check
-        run: pnpm type-check
+        run: pnpm check:type
 
   clippy_and_rustfmt:
     name: Check with clippy and rustfmt
