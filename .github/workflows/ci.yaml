@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install libstdc++-12-dev
       - name: Install latest
-        uses: moonrepo/setup-rust@b8edcc56aab474d90c7cf0bb8beeaf8334c15e9f # v1.1.0
+        uses: moonrepo/setup-rust@d8048d4fdff0633123678b093726e6d7c8ad6de5 # v1.2.0
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
