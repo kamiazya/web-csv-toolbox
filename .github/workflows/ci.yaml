@@ -8,12 +8,14 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  build:
-    name: Build
-    uses: ./.github/workflows/.build.yaml
   check:
     name: Check
     uses: ./.github/workflows/.check.yaml
+
+  build:
+    name: Build
+    uses: ./.github/workflows/.build.yaml
+    needs: check
 
   coverage:
     runs-on: ubuntu-latest
