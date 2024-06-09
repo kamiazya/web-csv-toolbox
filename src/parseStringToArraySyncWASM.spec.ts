@@ -60,16 +60,22 @@ describe("parseStringToArraySyncWASM", async () => {
   it("should throw error when delimiter is not a single character", async () => {
     const csv = "a,b,c\n1,2,3";
 
-    expect(() => parseStringToArraySyncWASM(csv, { delimiter: "ab" })).toThrow(
-      "Invalid delimiter, must be a single character on WASM.",
+    expect(() =>
+      parseStringToArraySyncWASM(csv, { delimiter: "ab" }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[InvalidOptionError: Invalid delimiter, must be a single character on WASM.]`,
     );
   });
 
   it("should throw error when quotation is not double quote", async () => {
     const csv = "a,b,c\n1,2,3";
 
-    expect(() => parseStringToArraySyncWASM(csv, { quotation: "'" })).toThrow(
-      "Invalid quotation, must be double quote on WASM.",
+    expect(() =>
+      parseStringToArraySyncWASM(csv, { quotation: "'" }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[InvalidOptionError: Invalid quotation, must be double quote on WASM.]`,
     );
   });
 });

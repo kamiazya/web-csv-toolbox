@@ -1,5 +1,6 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
+import { InvalidOptionError } from "./common/errors.ts";
 import type { CSVRecord, CommonOptions } from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
@@ -45,10 +46,14 @@ export function parseStringToArraySyncWASM<Header extends readonly string[]>(
 ): CSVRecord<Header>[] {
   const { delimiter = COMMA, quotation = DOUBLE_QUOTE } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
-    throw new Error("Invalid delimiter, must be a single character on WASM.");
+    throw new InvalidOptionError(
+      "Invalid delimiter, must be a single character on WASM.",
+    );
   }
   if (quotation !== DOUBLE_QUOTE) {
-    throw new Error("Invalid quotation, must be double quote on WASM.");
+    throw new InvalidOptionError(
+      "Invalid quotation, must be double quote on WASM.",
+    );
   }
   assertCommonOptions({ delimiter, quotation });
   const demiliterCode = delimiter.charCodeAt(0);
