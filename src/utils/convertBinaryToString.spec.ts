@@ -18,9 +18,8 @@ describe("function convertBinaryToString", () => {
   it("should throw error if invalid charset", () => {
     expect(() =>
       convertBinaryToString(binary, { charset: "invalid" }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[RangeError: The "invalid" encoding is not supported]`,
-    );
+    ).toThrowError(RangeError);
+    // NOTE: The error message is different between Node.js and browser.
   });
 
   it("should remove BOM by default(ignoreBOM is false)", () => {
@@ -44,10 +43,8 @@ describe("function convertBinaryToString", () => {
     const invalidBinary = new Uint8Array([0x80]);
     expect(() =>
       convertBinaryToString(invalidBinary, { fatal: true }),
-    ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[TypeError: The encoded data was not valid for encoding utf-8]`,
-    );
+    ).toThrowError(TypeError);
+    // NOTE: The error message is different between Node.js and browser.
   });
 
   it("should replace invalid data with U+FFFD by default(if fatal is false)", () => {
