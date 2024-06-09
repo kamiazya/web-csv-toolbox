@@ -3,6 +3,7 @@ import { describe as describe_, expect, it as it_, vi } from "vitest";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import { FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
+import { ParseError } from "./common/errors.ts";
 import type { Token } from "./common/types.ts";
 
 const describe = describe_.concurrent;
@@ -153,13 +154,13 @@ describe("RecordAssemblerTransformer", () => {
   it("should throw an error if throws error on assemble", async () => {
     const transformer = new RecordAssemblerTransformer();
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
-      throw new Error("test");
+      throw new ParseError("test");
     });
     expect(async () => {
       await transform(transformer, [[]]);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[Error: test]`,
+      `[ParseError: test]`,
     );
   });
 
