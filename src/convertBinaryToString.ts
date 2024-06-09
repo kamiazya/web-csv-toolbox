@@ -1,8 +1,17 @@
-import type { ParseBinaryOptions } from "./common/types.ts";
+import type { BinaryOptions } from "./common/types.ts";
 
-export function convertBinaryToString<Header extends ReadonlyArray<string>>(
+/**
+ * Converts a binary string to a string.
+ *
+ * @param binary - The binary string to convert.
+ * @param options - The options for parsing the binary string.
+ * @returns The converted string.
+ * @throws {RangeError} The given charset is not supported.
+ * @throws {TypeError} The encoded data was not valid.
+ */
+export function convertBinaryToString(
   binary: Uint8Array | ArrayBuffer,
-  options: ParseBinaryOptions<Header>,
+  options: BinaryOptions,
 ): string {
   return new TextDecoder(options?.charset, {
     ignoreBOM: options?.ignoreBOM,
