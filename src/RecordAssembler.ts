@@ -1,4 +1,5 @@
 import { FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
+import { ParseError } from "./common/errors.ts";
 import type {
   CSVRecord,
   RecordAssemblerOptions,
@@ -76,10 +77,10 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #setHeader(header: Header) {
     this.#header = header;
     if (this.#header.length === 0) {
-      throw new Error("The header must not be empty.");
+      throw new ParseError("The header must not be empty.");
     }
     if (new Set(this.#header).size !== this.#header.length) {
-      throw new Error("The header must not contain duplicate fields.");
+      throw new ParseError("The header must not contain duplicate fields.");
     }
   }
 }
