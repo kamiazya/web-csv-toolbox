@@ -207,8 +207,9 @@ jobs:
       matrix:
         browsers:
           - chrome
-          - firefox
-          # Headless Safari is currentry not supported
+          # TODO: Consider alternatives to frequent rate limit restrictions.
+          # - firefox
+          # NOTE: Headless Safari is currentry not supported
           # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
           # - safari
     steps:
