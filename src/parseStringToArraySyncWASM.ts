@@ -1,4 +1,5 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
+import { assertCommonOptions } from "./assertCommonOptions.ts";
 import type { CSVRecord, CommonOptions } from "./common/types.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
@@ -49,6 +50,7 @@ export function parseStringToArraySyncWASM<Header extends readonly string[]>(
   if (quotation !== DOUBLE_QUOTE) {
     throw new Error("Invalid quotation, must be double quote on WASM.");
   }
+  assertCommonOptions({ delimiter, quotation });
   const demiliterCode = delimiter.charCodeAt(0);
   return JSON.parse(parseStringToArraySync(csv, demiliterCode));
 }
