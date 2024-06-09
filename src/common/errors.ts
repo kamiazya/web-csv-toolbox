@@ -10,7 +10,13 @@ export class InvalidOptionError extends Error {
   }
 }
 
+/**
+ * Options for creating a parse error.
+ */
 export interface ParseErrorOptions extends ErrorOptions {
+  /**
+   * The position where the error occurred.
+   */
   position?: Position;
 }
 
