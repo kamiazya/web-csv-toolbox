@@ -22,14 +22,20 @@ const LOCATION_SHAPE = {
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
-    expect(() => new RecordAssembler({ header: [] })).toThrowError(
-      "The header must not be empty.",
+    expect(
+      () => new RecordAssembler({ header: [] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw an error for duplicate headers", () => {
-    expect(() => new RecordAssembler({ header: ["a", "a"] })).toThrowError(
-      "The header must not contain duplicate fields.",
+    expect(
+      () => new RecordAssembler({ header: ["a", "a"] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not contain duplicate fields.]`,
     );
   });
 
