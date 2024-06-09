@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import { parseStringStreamToStream } from "./parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -41,8 +42,12 @@ export function parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const recordStream = parseStringStreamToStream(stream, options);
-  return convertStreamToAsyncIterableIterator(recordStream);
+  try {
+    const recordStream = parseStringStreamToStream(stream, options);
+    return convertStreamToAsyncIterableIterator(recordStream);
+  } catch (error) {
+    commonParseErrorHandling(error);
+  }
 }
 
 export declare namespace parseStringStream {
