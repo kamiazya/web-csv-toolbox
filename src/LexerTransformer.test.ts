@@ -1,4 +1,10 @@
-import { describe as describe_, expect, it as it_ } from "vitest";
+import {
+  beforeEach,
+  describe as describe_,
+  expect,
+  it as it_,
+  vi,
+} from "vitest";
 import { LexerTransformer } from "./LexerTransformer.ts";
 import { transform } from "./__tests__/helper.ts";
 
@@ -6,6 +12,11 @@ const describe = describe_.concurrent;
 const it = it_.concurrent;
 
 describe("LexerTransformer", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.restoreAllMocks();
+  });
+
   it("should throw an error if options is invalid", async () => {
     expect(
       () =>
@@ -35,6 +46,19 @@ describe("LexerTransformer", () => {
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: Unexpected EOF while parsing quoted field.]`,
+    );
+  });
+
+  it("should throw an error if the input is invalid", async () => {
+    const transformer = new LexerTransformer();
+    vi.spyOn(transformer.lexer, "lex").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, ["aaa"]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
     );
   });
 });

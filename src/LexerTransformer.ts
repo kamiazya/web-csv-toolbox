@@ -32,13 +32,13 @@ import type { CommonOptions, Token } from "./common/types.ts";
  * ```
  */
 export class LexerTransformer extends TransformStream<string, Token[]> {
+  public readonly lexer: Lexer;
   constructor(options: CommonOptions = {}) {
-    const lexer = new Lexer(options);
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {
           try {
-            controller.enqueue([...lexer.lex(chunk, true)]);
+            controller.enqueue([...this.lexer.lex(chunk, true)]);
           } catch (error) {
             controller.error(error);
           }
@@ -46,11 +46,12 @@ export class LexerTransformer extends TransformStream<string, Token[]> {
       },
       flush: (controller) => {
         try {
-          controller.enqueue(lexer.flush());
+          controller.enqueue(this.lexer.flush());
         } catch (error) {
           controller.error(error);
         }
       },
     });
+    this.lexer = new Lexer(options);
   }
 }
