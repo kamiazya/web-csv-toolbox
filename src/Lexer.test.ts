@@ -234,4 +234,11 @@ describe("Lexer", () => {
       },
     ]);
   });
+
+  test("should thorw an error if the field is not closed", () => {
+    expect(() => [...lexer.lex('"Hello')]).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+    );
+  });
 });

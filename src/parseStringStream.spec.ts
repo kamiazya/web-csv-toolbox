@@ -1,5 +1,5 @@
 import { fc } from "@fast-check/vitest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseStringStream } from "./parseStringStream.ts";
@@ -42,4 +42,17 @@ describe("parseStringStream function", () => {
         },
       ),
     ));
+});
+
+test("throws an error if invalid input", async () => {
+  await expect(async () => {
+    for await (const _ of parseStringStream(
+      new SingleValueReadableStream('a\n"'),
+    )) {
+      // Do nothing
+    }
+  }).rejects.toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[ParseError: Unexpected EOF while parsing quoted field.]`,
+  );
 });

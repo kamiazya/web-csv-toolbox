@@ -12,8 +12,9 @@ describe("parseRequest function", () => {
         "content-type": "application/json",
       },
     });
-    expect(() => parseResponse(response)).toThrow(
-      `Invalid mime type: ${response.headers.get("content-type")}`,
+    expect(() => parseResponse(response)).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: An error occurred while parsing the CSV data.]`,
     );
   });
   it("should throw error if request body is null", async () => {
@@ -22,7 +23,10 @@ describe("parseRequest function", () => {
         "content-type": "text/csv",
       },
     });
-    expect(() => parseResponse(response)).toThrow("Response body is null");
+    expect(() => parseResponse(response)).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: An error occurred while parsing the CSV data.]`,
+    );
   });
 
   it("should parse CSV", () =>

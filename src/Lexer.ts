@@ -1,5 +1,6 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
+import { ParseError } from "./common/errors.ts";
 import type {
   CommonOptions,
   Position,
@@ -234,7 +235,6 @@ export class Lexer {
               rowNumber: this.#rowNumber,
             },
           };
-          // return this.#field(value, { column, offset, line });
         }
 
         // Append the character to the value.
@@ -256,9 +256,12 @@ export class Lexer {
         next = this.#buffer[offset + 1];
       } while (cur !== undefined);
 
-      // If we get here, we've reached the end of the buffer
+      if (this.#flush) {
+        throw new ParseError("Unexpected EOF while parsing quoted field.", {
+          position: { ...this.#cursor },
+        });
+      }
       return null;
-      // TODO: If flash is true, the buffer is exiting unquoted and an exception should be raised.
     }
 
     // Check for Unquoted String

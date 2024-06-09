@@ -11,7 +11,10 @@ describe("function assertCommonOptions", () => {
         quotation: "",
         delimiter: DOUBLE_QUOTE,
       }),
-    ).toThrow("quotation must not be empty");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[InvalidOptionError: quotation must not be empty]`,
+    );
   });
 
   it("should throw an error if delimiter is an empty character", () => {
@@ -20,7 +23,10 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: "",
       }),
-    ).toThrow("delimiter must not be empty");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[InvalidOptionError: delimiter must not be empty]`,
+    );
   });
 
   it("should throw an error if delimiter is the same as quotation", async () => {
@@ -32,8 +38,9 @@ describe("function assertCommonOptions", () => {
         (value) => {
           expect(() =>
             assertCommonOptions({ quotation: value, delimiter: value }),
-          ).toThrow(
-            "delimiter must not be the same as quotation, use different characters",
+          ).toThrowErrorMatchingInlineSnapshot(
+            // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+            `[InvalidOptionError: delimiter must not be the same as quotation, use different characters]`,
           );
         },
       ),
@@ -47,7 +54,10 @@ describe("function assertCommonOptions", () => {
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
         }),
-      ).toThrow("quotation must not include CR or LF");
+      ).toThrowErrorMatchingInlineSnapshot(
+        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+        `[InvalidOptionError: quotation must not include CR or LF]`,
+      );
     }
     for (const delimiter of [CR, LF]) {
       expect(() =>
@@ -55,7 +65,10 @@ describe("function assertCommonOptions", () => {
           quotation: COMMA,
           delimiter: delimiter,
         }),
-      ).toThrow("delimiter must not include CR or LF");
+      ).toThrowErrorMatchingInlineSnapshot(
+        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+        `[InvalidOptionError: delimiter must not include CR or LF]`,
+      );
     }
   });
 
@@ -65,7 +78,10 @@ describe("function assertCommonOptions", () => {
         quotation: 1 as unknown as string,
         delimiter: DOUBLE_QUOTE,
       }),
-    ).toThrow("quotation must be a string");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[TypeError: quotation must be a string]`,
+    );
   });
 
   it("should throw an error if delimiter is not a string", () => {
@@ -74,6 +90,9 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: 1 as unknown as string,
       }),
-    ).toThrow("delimiter must be a string");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[TypeError: delimiter must be a string]`,
+    );
   });
 });

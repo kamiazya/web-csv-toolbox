@@ -1,5 +1,5 @@
 import { fc } from "@fast-check/vitest";
-import { describe as describe_, expect, it as it_ } from "vitest";
+import { describe as describe_, expect, it as it_, vi } from "vitest";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import { FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
@@ -24,15 +24,21 @@ const LOCATION_SHAPE = {
 
 describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
-      "The header must not be empty.",
+    expect(
+      () => new RecordAssemblerTransformer({ header: [] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
     expect(
       () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
-    ).toThrowError("The header must not contain duplicate fields.");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not contain duplicate fields.]`,
+    );
   });
 
   it("should parse a CSV with headers by data", () =>
@@ -143,4 +149,30 @@ describe("RecordAssemblerTransformer", () => {
         },
       ),
     ));
+
+  it("should throw an error if throws error on assemble", async () => {
+    const transformer = new RecordAssemblerTransformer();
+    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
+    );
+  });
+
+  it("should throw an error if throws error on flush", async () => {
+    const transformer = new RecordAssemblerTransformer();
+    vi.spyOn(transformer.assembler, "flush").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
+    );
+  });
 });
