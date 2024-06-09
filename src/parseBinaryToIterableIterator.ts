@@ -1,7 +1,7 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
-import { convertBinaryToString } from "./convertBinaryToString.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
+import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
 
 /**
  * Parses the given binary data into an iterable iterator of CSV records.

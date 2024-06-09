@@ -1,4 +1,4 @@
-import type { BinaryOptions } from "./common/types.ts";
+import type { BinaryOptions } from "../common/types.ts";
 
 /**
  * Converts a binary string to a string.

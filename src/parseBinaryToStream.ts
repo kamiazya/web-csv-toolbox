@@ -1,7 +1,7 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
-import { convertBinaryToString } from "./convertBinaryToString.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
+import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
 
 export function parseBinaryToStream<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,
