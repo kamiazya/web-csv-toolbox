@@ -24,15 +24,21 @@ const LOCATION_SHAPE = {
 
 describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
-      "The header must not be empty.",
+    expect(
+      () => new RecordAssemblerTransformer({ header: [] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
     expect(
       () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
-    ).toThrowError("The header must not contain duplicate fields.");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not contain duplicate fields.]`,
+    );
   });
 
   it("should parse a CSV with headers by data", () =>
