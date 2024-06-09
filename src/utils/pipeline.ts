@@ -33,7 +33,8 @@ export function pipeline<I, O>(
               write: (v) => controller.enqueue(v),
               close: () => controller.close(),
             }),
-          ))();
+          )
+          .catch((error) => controller.error(error)))();
     },
   });
 }

@@ -1,5 +1,4 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import { parseStringStream } from "./parseStringStream.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
@@ -43,12 +42,8 @@ export function parseUint8ArrayStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  try {
-    const recordStream = parseUint8ArrayStreamToStream(stream, options);
-    return convertStreamToAsyncIterableIterator(recordStream);
-  } catch (error) {
-    commonParseErrorHandling(error);
-  }
+  const recordStream = parseUint8ArrayStreamToStream(stream, options);
+  return convertStreamToAsyncIterableIterator(recordStream);
 }
 
 export declare namespace parseUint8ArrayStream {

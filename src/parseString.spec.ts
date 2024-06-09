@@ -41,6 +41,28 @@ describe("parseString function", () => {
         },
       ),
     ));
+
+  it("should throw an error if the CSV is invalid", () => {
+    expect(async () => {
+      for await (const _ of parseString('a\na"')) {
+        // Do nothing.
+      }
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+    );
+  });
+
+  it("should throw an error if options is invalid", () => {
+    expect(async () => {
+      for await (const _ of parseString("", { delimiter: "" })) {
+        // Do nothing.
+      }
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[InvalidOptionError: delimiter must not be empty]`,
+    );
+  });
 });
 
 describe("parseString.toArray function", () => {
