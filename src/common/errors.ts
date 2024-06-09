@@ -1,9 +1,9 @@
 /**
- * Error class for invalid setting errors.
+ * Error class for invalid option errors.
  */
-export class InvalidSettingError extends Error {
+export class InvalidOptionError extends Error {
   constructor(...args: ConstructorParameters<typeof Error>) {
     super(...args);
-    this.name = "InvalidSettingError";
+    this.name = "InvalidOptionError";
   }
 }
