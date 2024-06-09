@@ -55,13 +55,21 @@ export class RecordAssemblerTransformer<
     const assembler = new RecordAssembler(options);
     super({
       transform: (tokens, controller) => {
-        for (const token of assembler.assemble(tokens, false)) {
-          controller.enqueue(token);
+        try {
+          for (const token of assembler.assemble(tokens, false)) {
+            controller.enqueue(token);
+          }
+        } catch (error) {
+          controller.error(error);
         }
       },
       flush: (controller) => {
-        for (const token of assembler.flush()) {
-          controller.enqueue(token);
+        try {
+          for (const token of assembler.flush()) {
+            controller.enqueue(token);
+          }
+        } catch (error) {
+          controller.error(error);
         }
       },
     });
