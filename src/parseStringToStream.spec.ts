@@ -20,3 +20,18 @@ test("parseStringToStream", async () => {
     }),
   );
 });
+
+test("throws an error if the CSV is invalid", async () => {
+  await expect(async () => {
+    await parseStringToStream('a\n"').pipeTo(
+      new WritableStream({
+        write() {
+          // Do nothing
+        },
+      }),
+    );
+  }).rejects.toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[ParseError: Unexpected EOF while parsing quoted field.]`,
+  );
+});

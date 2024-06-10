@@ -4,17 +4,38 @@ import { RecordAssembler } from "./RecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
+import { LF } from "./constants.ts";
+
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
-    expect(() => new RecordAssembler({ header: [] })).toThrowError(
-      "The header must not be empty.",
+    expect(
+      () => new RecordAssembler({ header: [] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw an error for duplicate headers", () => {
-    expect(() => new RecordAssembler({ header: ["a", "a"] })).toThrowError(
-      "The header must not contain duplicate fields.",
+    expect(
+      () => new RecordAssembler({ header: ["a", "a"] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not contain duplicate fields.]`,
     );
   });
 
@@ -33,17 +54,34 @@ describe("class RecordAssembler", () => {
           const tokens = [
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field },
-              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
+              { type: Field, value: field, location: LOCATION_SHAPE },
+              i === header.length - 1
+                ? {
+                    type: RecordDelimiter,
+                    value: EOL,
+                    location: LOCATION_SHAPE,
+                  }
+                : {
+                    type: FieldDelimiter,
+                    value: ",",
+                    location: LOCATION_SHAPE,
+                  },
             ]),
             // generate rows tokens
             ...rows.flatMap<Token>((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                FieldDelimiter,
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
                 // generate record delimiter token
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: LF,
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -75,9 +113,16 @@ describe("class RecordAssembler", () => {
           const tokens: Token[] = [
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                FieldDelimiter,
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: LF,
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];

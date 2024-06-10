@@ -1,5 +1,5 @@
 import { fc } from "@fast-check/vitest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
@@ -140,4 +140,19 @@ describe("parseUint8ArrayStream function", () => {
         },
       ),
     ));
+});
+
+test("throws an error if the CSV is invalid", async () => {
+  await expect(async () => {
+    for await (const _ of parseUint8ArrayStream(
+      new SingleValueReadableStream('a\n"').pipeThrough(
+        new TextEncoderStream(),
+      ),
+    )) {
+      // Do nothing
+    }
+  }).rejects.toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[ParseError: Unexpected EOF while parsing quoted field.]`,
+  );
 });

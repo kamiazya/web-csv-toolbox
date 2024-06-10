@@ -8,20 +8,93 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
+  check_format:
+    name: Check format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: 8
+      - name: Setup Node.js 20
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check
+        run: pnpm check:format
+
+  check_clippy_and_rustfmt:
+    name: Check with clippy and rustfmt
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - run: |
+          sudo apt-get update
+          sudo apt-get install libstdc++-12-dev
+      - name: Install latest
+        uses: moonrepo/setup-rust@d8048d4fdff0633123678b093726e6d7c8ad6de5 # v1.2.0
+        with:
+          targets: wasm32-unknown-unknown
+          channel: nightly
+          components: clippy,rustfmt
+          target-dirs: web-csv-toolbox-wasm/target
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      - name: Run Clippy
+        run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
+        env:
+          RUSTFLAGS: -D warnings
+      - name: Run Fmt
+        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
+
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
-  check:
-    name: Check
-    uses: ./.github/workflows/.check.yaml
+    needs:
+      - check_format
+      - check_clippy_and_rustfmt
+
+  cehck_type:
+    name: Check type
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+        with:
+          version: 8
+      - name: Setup Node.js 20
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - name: Copy artifacts
+        run: cp -r ${{ github.workspace }}/web-csv-toolbox-wasm/pkg ${{ github.workspace }}/node_modules/web-csv-toolbox-wasm
+      - name: Check
+        run: pnpm check:type
 
   coverage:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 8
       - name: Setup Node.js
@@ -31,11 +104,11 @@ jobs:
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Coverage
         run: pnpm test:coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@84508663e988701840491b86de86b666e8a86bed # v4.3.0
+        uses: codecov/codecov-action@125fc84a9a348dbcf27191600683ec096ec9021c # v4.4.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -44,8 +117,8 @@ jobs:
     needs: build
     steps:
       - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 8
       - name: Setup Node.js
@@ -55,9 +128,9 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@1dbf41f0ae41cebfe61e084e535aebe533409b4d # v2.3.0
+        uses: CodSpeedHQ/action@0b631f8998f2389eb5144632b6f9f8fabd33a86e # v2.4.1
         with:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
@@ -70,8 +143,8 @@ jobs:
         node-version: [18.x, 20.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-    - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
       with:
         version: 8
     - name: Use Node.js ${{ matrix.node-version }}
@@ -80,15 +153,15 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: pnpm
     - run: pnpm install --frozen-lockfile
-    - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
     - run: pnpm test run
 
   test_deno:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-    - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
     - uses: denoland/setup-deno@041b854f97b325bd60e53e9dc2de9cb9f9ac0cba # v1.1.4
       with:
         deno-version: v1.x
@@ -114,8 +187,8 @@ jobs:
           - chrome
           - firefox
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 8
       - name: Use Node.js
@@ -124,7 +197,7 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_macos_browser:
@@ -135,13 +208,14 @@ jobs:
       matrix:
         browsers:
           - chrome
-          - firefox
-          # Headless Safari is currentry not supported
+          # TODO: Consider alternatives to frequent rate limit restrictions.
+          # - firefox
+          # NOTE: Headless Safari is currentry not supported
           # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
           # - safari
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 8
       - name: Use Node.js
@@ -152,7 +226,7 @@ jobs:
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_windows_browser:
@@ -166,8 +240,8 @@ jobs:
           - firefox
           - edge
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
         with:
           version: 8
       - name: Use Node.js
@@ -176,5 +250,5 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless

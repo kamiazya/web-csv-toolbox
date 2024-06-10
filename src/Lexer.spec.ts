@@ -6,6 +6,20 @@ import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
 
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
+
 describe("class Lexer", () => {
   it("should lex with comma as a default field delimiter", () => {
     fc.assert(
@@ -16,9 +30,19 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== "" ? [{ type: Field, value: field }] : []),
+              ...(field !== ""
+                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
+                : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, expected };
@@ -26,7 +50,7 @@ describe("class Lexer", () => {
         ({ csv, expected }) => {
           const lexer = new Lexer();
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -45,9 +69,17 @@ describe("class Lexer", () => {
             ...row.flatMap((field, i) => [
               // field should be escaped with double quote,
               // so empty field should be escaped with double quote
-              { type: Field, value: field },
+              { type: Field, value: field, location: LOCATION_SHAPE },
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, expected };
@@ -55,7 +87,7 @@ describe("class Lexer", () => {
         ({ csv, expected }) => {
           const lexer = new Lexer();
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -77,10 +109,18 @@ describe("class Lexer", () => {
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
               ...(field !== "" || escapeField(field, { delimiter }) !== field
-                ? [{ type: Field, value: field }]
+                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: delimiter,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { delimiter, csv, expected };
@@ -88,7 +128,7 @@ describe("class Lexer", () => {
         ({ delimiter, csv, expected }) => {
           const lexer = new Lexer({ delimiter });
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -106,9 +146,19 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== "" ? [{ type: Field, value: field }] : []),
+              ...(field !== ""
+                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
+                : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: COMMA,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { quotation, csv, expected };
@@ -116,7 +166,7 @@ describe("class Lexer", () => {
         ({ quotation, csv, expected }) => {
           const lexer = new Lexer({ quotation });
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -135,10 +185,18 @@ describe("class Lexer", () => {
             ...row.flatMap((field, i) => [
               // if field is empty or field is escaped, it should be escaped.
               ...(field !== "" || escapeField(field, options) !== field
-                ? [{ type: Field, value: field }]
+                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i ? [FieldDelimiter] : []),
+              ...(row.length - 1 !== i
+                ? [
+                    {
+                      type: FieldDelimiter,
+                      value: options.delimiter,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { options, row, csv, expected };
@@ -146,7 +204,7 @@ describe("class Lexer", () => {
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -181,10 +239,26 @@ describe("class Lexer", () => {
                   ? [{ type: Field, value: field }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
-                ...(row.length - 1 !== j ? [FieldDelimiter] : []),
+                ...(row.length - 1 !== j
+                  ? [
+                      {
+                        type: FieldDelimiter,
+                        value: options.delimiter,
+                        location: LOCATION_SHAPE,
+                      },
+                    ]
+                  : []),
               ]),
               // if row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i ? [RecordDelimiter] : []),
+              ...(data.length - 1 !== i
+                ? [
+                    {
+                      type: RecordDelimiter,
+                      value: eol,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
             ]),
           ];
           return { csv, data, options, expected };
@@ -192,7 +266,7 @@ describe("class Lexer", () => {
         ({ options, csv, expected }) => {
           const lexer = new Lexer(options);
           const actual = [...lexer.lex(csv)];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
@@ -235,7 +309,7 @@ describe("class Lexer", () => {
             // flush lexer2
             ...lexer2.flush(),
           ];
-          expect(actual).toStrictEqual(expected);
+          expect(actual).toMatchObject(expected);
         },
       ),
     );
