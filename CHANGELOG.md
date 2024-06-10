@@ -1,5 +1,31 @@
 # web-csv-toolbox
 
+## 0.10.0
+
+### Minor Changes
+
+- [#243](https://github.com/kamiazya/web-csv-toolbox/pull/243) [`aafb636`](https://github.com/kamiazya/web-csv-toolbox/commit/aafb636c8fb881a0477e64ecb9cac2b343692931) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor error handling and add new error classes
+
+### Patch Changes
+
+- [#247](https://github.com/kamiazya/web-csv-toolbox/pull/247) [`7153f3f`](https://github.com/kamiazya/web-csv-toolbox/commit/7153f3fae3bba9573c91b8c8196a487112a9b61b) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump cxx-build from 1.0.119 to 1.0.123 in /web-csv-toolbox-wasm
+
+- [#235](https://github.com/kamiazya/web-csv-toolbox/pull/235) [`27fa1c5`](https://github.com/kamiazya/web-csv-toolbox/commit/27fa1c5be91fcf2a21563547e32c5cad24197f6f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump moonrepo/setup-rust from 1.1.0 to 1.2.0
+
+- [#246](https://github.com/kamiazya/web-csv-toolbox/pull/246) [`30d72ae`](https://github.com/kamiazya/web-csv-toolbox/commit/30d72aea39e215cd66eedb6d026fa7981ce4ee6e) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite from 5.1.7 to 5.2.13
+
+- [#223](https://github.com/kamiazya/web-csv-toolbox/pull/223) [`a42c031`](https://github.com/kamiazya/web-csv-toolbox/commit/a42c03198a8b618023291770c9d3e08a14c1351f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump compiler_builtins from 0.1.108 to 0.1.112 in /web-csv-toolbox-wasm
+
+- [#221](https://github.com/kamiazya/web-csv-toolbox/pull/221) [`1cadf27`](https://github.com/kamiazya/web-csv-toolbox/commit/1cadf274b8b6a90bad5df19ec856e3f212a4b6d3) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde_json from 1.0.114 to 1.0.117 in /web-csv-toolbox-wasm
+
+- [#245](https://github.com/kamiazya/web-csv-toolbox/pull/245) [`edb135f`](https://github.com/kamiazya/web-csv-toolbox/commit/edb135fb0f1b69e3969b6aa9e51a367b462573df) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump fast-check from 3.15.1 to 3.19.0
+
+- [#228](https://github.com/kamiazya/web-csv-toolbox/pull/228) [`68f804c`](https://github.com/kamiazya/web-csv-toolbox/commit/68f804c07ac03062a869caedcf78e16c2bb1d63c) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde from 1.0.197 to 1.0.203 in /web-csv-toolbox-wasm
+
+- [#244](https://github.com/kamiazya/web-csv-toolbox/pull/244) [`22b2986`](https://github.com/kamiazya/web-csv-toolbox/commit/22b2986af685f73f766dfbdefdecd17121ec06c9) Thanks [@kamiazya](https://github.com/kamiazya)! - Disable macos FireFox browser testing on CI
+
+- [#241](https://github.com/kamiazya/web-csv-toolbox/pull/241) [`24497d9`](https://github.com/kamiazya/web-csv-toolbox/commit/24497d9a9adc50bc51b84175bbaf306d5babec76) Thanks [@kamiazya](https://github.com/kamiazya)! - Add type check script and update CI workflow
+
 ## 0.9.0
 
 ### Minor Changes
