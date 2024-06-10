@@ -1,6 +1,7 @@
 import { Lexer } from "./Lexer.ts";
 import { RecordAssembler } from "./RecordAssembler.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 
 export function parseStringToIterableIterator<
   Header extends ReadonlyArray<string>,
@@ -8,8 +9,12 @@ export function parseStringToIterableIterator<
   csv: string,
   options?: ParseOptions<Header>,
 ): IterableIterator<CSVRecord<Header>> {
-  const lexer = new Lexer(options);
-  const assembler = new RecordAssembler(options);
-  const tokens = lexer.lex(csv);
-  return assembler.assemble(tokens);
+  try {
+    const lexer = new Lexer(options);
+    const assembler = new RecordAssembler(options);
+    const tokens = lexer.lex(csv);
+    return assembler.assemble(tokens);
+  } catch (error) {
+    commonParseErrorHandling(error);
+  }
 }

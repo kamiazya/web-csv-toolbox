@@ -12,8 +12,9 @@ describe("parseRequest function", () => {
         "content-type": "application/json",
       },
     });
-    expect(() => parseResponse(response)).toThrow(
-      `Invalid mime type: ${response.headers.get("content-type")}`,
+    expect(() => parseResponse(response)).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: An error occurred while parsing the CSV data.]`,
     );
   });
   it("should throw error if request body is null", async () => {
@@ -22,7 +23,10 @@ describe("parseRequest function", () => {
         "content-type": "text/csv",
       },
     });
-    expect(() => parseResponse(response)).toThrow("Response body is null");
+    expect(() => parseResponse(response)).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: An error occurred while parsing the CSV data.]`,
+    );
   });
 
   it("should parse CSV", () =>
@@ -35,6 +39,11 @@ describe("parseRequest function", () => {
               kindExcludes: ["string16bits"],
             },
           });
+          const BOM = g(fc.boolean);
+          if (BOM) {
+            // Add BOM to the first field.
+            header[0] = `\ufeff${header[0]}`;
+          }
           const EOL = g(FC.eol);
           const csvData = g(FC.csvData, {
             // TextEncoderStream can't handle utf-16 string.

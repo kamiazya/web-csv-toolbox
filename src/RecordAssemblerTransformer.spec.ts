@@ -1,5 +1,5 @@
 import { fc } from "@fast-check/vitest";
-import { describe as describe_, expect, it as it_ } from "vitest";
+import { describe as describe_, expect, it as it_, vi } from "vitest";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import { FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
@@ -8,17 +8,37 @@ import type { Token } from "./common/types.ts";
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
+const LOCATION_SHAPE = {
+  start: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  end: {
+    line: expect.any(Number),
+    column: expect.any(Number),
+    offset: expect.any(Number),
+  },
+  rowNumber: expect.any(Number),
+};
+
 describe("RecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(() => new RecordAssemblerTransformer({ header: [] })).toThrowError(
-      "The header must not be empty.",
+    expect(
+      () => new RecordAssemblerTransformer({ header: [] }),
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
     expect(
       () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
-    ).toThrowError("The header must not contain duplicate fields.");
+    ).toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[ParseError: The header must not contain duplicate fields.]`,
+    );
   });
 
   it("should parse a CSV with headers by data", () =>
@@ -35,17 +55,38 @@ describe("RecordAssemblerTransformer", () => {
           const tokens: Token[] = [
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field },
-              i === header.length - 1 ? RecordDelimiter : FieldDelimiter,
+              { type: Field, value: field, location: LOCATION_SHAPE },
+              i === header.length - 1
+                ? {
+                    type: RecordDelimiter,
+                    value: "\n",
+                    location: LOCATION_SHAPE,
+                  }
+                : {
+                    type: FieldDelimiter,
+                    value: ",",
+                    location: LOCATION_SHAPE,
+                  },
             ]),
             // generate rows tokens
             ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                FieldDelimiter,
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                  location: LOCATION_SHAPE,
+                },
                 // generate record delimiter token
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: "\n",
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -77,9 +118,20 @@ describe("RecordAssemblerTransformer", () => {
           const tokens = [
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
-                { type: Field, value: field },
-                FieldDelimiter,
-                ...((j === row.length - 1 ? [RecordDelimiter] : []) as Token[]),
+                { type: Field, value: field, location: LOCATION_SHAPE },
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                  location: LOCATION_SHAPE,
+                },
+                ...((j === row.length - 1
+                  ? [
+                      {
+                        type: RecordDelimiter,
+                        value: "\n",
+                      },
+                    ]
+                  : []) as Token[]),
               ]),
             ),
           ];
@@ -97,4 +149,30 @@ describe("RecordAssemblerTransformer", () => {
         },
       ),
     ));
+
+  it("should throw an error if throws error on assemble", async () => {
+    const transformer = new RecordAssemblerTransformer();
+    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
+    );
+  });
+
+  it("should throw an error if throws error on flush", async () => {
+    const transformer = new RecordAssemblerTransformer();
+    vi.spyOn(transformer.assembler, "flush").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
+    );
+  });
 });
