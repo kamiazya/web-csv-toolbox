@@ -40,7 +40,7 @@ importers:
         version: 0.1.0
       fast-check:
         specifier: ^3.15.0
-        version: 3.15.1
+        version: 3.19.0
       lefthook:
         specifier: ^1.6.7
         version: 1.6.7
@@ -794,7 +794,7 @@ packages:
     peerDependencies:
       vitest: '>=0.28.1 <1.0.0 || ^1'
     dependencies:
-      fast-check: 3.15.1
+      fast-check: 3.19.0
       vitest: 1.2.2(@vitest/browser@1.2.2)(terser@5.31.0)
     dev: true
 
@@ -2459,11 +2459,11 @@ packages:
       - supports-color
     dev: true
 
-  /fast-check@3.15.1:
-    resolution: {integrity: sha512-GutOXZ+SCxGaFWfHe0Pbeq8PrkpGtPxA9/hdkI3s9YzqeMlrq5RdJ+QfYZ/S93jMX+tAyqgW0z5c9ppD+vkGUw==}
+  /fast-check@3.19.0:
+    resolution: {integrity: sha512-CO2JX/8/PT9bDGO1iXa5h5ey1skaKI1dvecERyhH4pp3PGjwd3KIjMAXEg79Ps9nclsdt4oPbfqiAnLU0EwrAQ==}
     engines: {node: '>=8.0.0'}
     dependencies:
-      pure-rand: 6.0.4
+      pure-rand: 6.1.0
     dev: true
 
   /fast-deep-equal@2.0.1:
@@ -4154,8 +4154,8 @@ packages:
       - utf-8-validate
     dev: true
 
-  /pure-rand@6.0.4:
-    resolution: {integrity: sha512-LA0Y9kxMYv47GIPJy6MI84fqTd2HmYZI83W/kM/SkKfDlajnZYfmXFTxkbY+xSBPkLJxltMa9hIkmdc29eguMA==}
+  /pure-rand@6.1.0:
+    resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
     dev: true
 
   /query-selector-shadow-dom@1.0.1:
