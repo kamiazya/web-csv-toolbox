@@ -46,6 +46,7 @@ jobs:
           targets: wasm32-unknown-unknown
           channel: nightly
           components: clippy,rustfmt
+          target-dirs: web-csv-toolbox-wasm/target
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - name: Run Clippy

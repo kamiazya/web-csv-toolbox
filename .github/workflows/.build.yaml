@@ -17,6 +17,7 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           channel: nightly
+          target-dirs: web-csv-toolbox-wasm/target
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
