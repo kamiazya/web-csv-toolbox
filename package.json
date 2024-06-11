@@ -7,6 +7,7 @@
   "module": "dist/es/web-csv-toolbox.js",
   "types": "dist/types/web-csv-toolbox.d.ts",
   "unpkg": "dist/web-csv-toolbox.umd.js",
+  "packageManager": "pnpm@9.3.0",
   "engines": {
     "node": ">=18.0.0"
   },
