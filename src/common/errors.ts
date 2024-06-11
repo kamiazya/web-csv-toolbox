@@ -22,8 +22,15 @@ export interface ParseErrorOptions extends ErrorOptions {
 
 /**
  * Error class for parse errors.
+ *
+ * @remarks
+ * This error is thrown when a parsing error occurs.
+ * {@link ParseError} is a subclass of {@link !SyntaxError}.
+ *
+ * This is in reference to the specification
+ * that the error thrown when a parse error occurs in the {@link !JSON.parse} function is {@link !SyntaxError}.
  */
-export class ParseError extends Error {
+export class ParseError extends SyntaxError {
   /**
    * The position where the error occurred.
    */
