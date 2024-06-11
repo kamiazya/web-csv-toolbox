@@ -1,4 +1,5 @@
 export * from "./common/constants.ts";
+export * from "./common/errors.ts";
 export * from "./common/types.ts";
 export * from "./LexerTransformer.ts";
 export * from "./loadWASM.ts";
