@@ -60,7 +60,8 @@
     "doc": "typedoc",
     "test": "vitest",
     "check:type": "tsc --noEmit",
-    "check:format": "biome ci .",
+    "check:format": "pnpm check:format:js",
+    "check:format:js": "biome ci .",
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
@@ -69,7 +70,9 @@
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
-    "format": "biome check --apply ."
+    "format": "pnpm format:js && pnpm format:rust",
+    "format:js": "biome check --apply .",
+    "format:rust": "cargo fmt --manifest-path web-csv-toolbox-wasm/Cargo.toml --all && cargo clippy --manifest-path web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features"
   },
   "repository": {
     "type": "git",
