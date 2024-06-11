@@ -17,12 +17,10 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
-          node-version: 20
+          node-version-file: ./.node-version
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -73,12 +71,10 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
-          node-version: 20
+          node-version-file: ./.node-version
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -95,12 +91,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
-          node-version: 20
+          node-version-file: ./.node-version
           cache: pnpm
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -119,12 +113,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
-          node-version: 20
+          node-version-file: ./.node-version
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -140,13 +132,11 @@ jobs:
     needs: build
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [18.x, 20.x, 22.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
     - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      with:
-        version: 8
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
       with:
@@ -189,8 +179,6 @@ jobs:
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
       - name: Use Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
@@ -216,8 +204,6 @@ jobs:
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
       - name: Use Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
@@ -242,8 +228,6 @@ jobs:
     steps:
       - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-        with:
-          version: 8
       - name: Use Node.js
         uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
         with:
