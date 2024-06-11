@@ -19,7 +19,7 @@ importers:
         version: 2.27.1
       '@fast-check/vitest':
         specifier: ^0.1.0
-        version: 0.1.0(vitest@1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.0))
+        version: 0.1.1(vitest@1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.0))
       '@rollup/plugin-terser':
         specifier: ^0.4.4
         version: 0.4.4(rollup@4.18.0)
@@ -573,8 +573,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@fast-check/vitest@0.1.0':
-    resolution: {integrity: sha512-AKgtK1/TOvFC1U8YjYAz1okILr9+ePXPgpMsdlQ0w+slwRzxUYkidSduHE/nN+P9RWlE8VTJC0ma/P86APyxHA==}
+  '@fast-check/vitest@0.1.1':
+    resolution: {integrity: sha512-hxBUieogCiugTY0RZTBcFRfCVja4CxLMXwCKXyf6OtP65gGWoRI17iu/SwcGZp2hzlpxiSIgHFYfQXBEx+jxfQ==}
     peerDependencies:
       vitest: '>=0.28.1 <1.0.0 || ^1'
 
@@ -1758,6 +1758,7 @@ packages:
 
   inflight@1.0.6:
     resolution: {integrity: sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==}
+    deprecated: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -3693,7 +3694,7 @@ snapshots:
   '@esbuild/win32-x64@0.20.2':
     optional: true
 
-  '@fast-check/vitest@0.1.0(vitest@1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.0))':
+  '@fast-check/vitest@0.1.1(vitest@1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.0))':
     dependencies:
       fast-check: 3.19.0
       vitest: 1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.0)
