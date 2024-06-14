@@ -1,5 +1,31 @@
 # web-csv-toolbox
 
+## 0.10.1
+
+### Patch Changes
+
+- [#253](https://github.com/kamiazya/web-csv-toolbox/pull/253) [`044b0e6`](https://github.com/kamiazya/web-csv-toolbox/commit/044b0e63da3c583aaf2e04c301eeb56e0ff2ed2d) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc from 0.25.12 to 0.25.13
+
+- [#257](https://github.com/kamiazya/web-csv-toolbox/pull/257) [`926244a`](https://github.com/kamiazya/web-csv-toolbox/commit/926244a20b763d94f0956d5b1363c71fb3af7209) Thanks [@kamiazya](https://github.com/kamiazya)! - Remove lefthook configuration file
+
+- [#259](https://github.com/kamiazya/web-csv-toolbox/pull/259) [`f4dd3d8`](https://github.com/kamiazya/web-csv-toolbox/commit/f4dd3d82c8f9921973463e2e0e001deccec262ca) Thanks [@kamiazya](https://github.com/kamiazya)! - Add .node-version file and update Node.js setup in GitHub workflows
+
+- [#256](https://github.com/kamiazya/web-csv-toolbox/pull/256) [`a6b22e9`](https://github.com/kamiazya/web-csv-toolbox/commit/a6b22e993a1eeb93ddd177963afc8132852ea15b) Thanks [@kamiazya](https://github.com/kamiazya)! - Export errors classes
+
+- [#250](https://github.com/kamiazya/web-csv-toolbox/pull/250) [`cbdb5cb`](https://github.com/kamiazya/web-csv-toolbox/commit/cbdb5cb45b90d6e174d96808ac576338993a9794) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite-plugin-dts from 3.7.3 to 3.9.1
+
+- [#255](https://github.com/kamiazya/web-csv-toolbox/pull/255) [`49af679`](https://github.com/kamiazya/web-csv-toolbox/commit/49af67945b5589d83ac00d2be4b83feb5e4a3859) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor ParseError class to extend SyntaxError
+
+- [#251](https://github.com/kamiazya/web-csv-toolbox/pull/251) [`65db459`](https://github.com/kamiazya/web-csv-toolbox/commit/65db45913456c3df355c75afd1120f791bec79fa) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @fast-check/vitest from 0.1.0 to 0.1.1
+
+- [#260](https://github.com/kamiazya/web-csv-toolbox/pull/260) [`6047e50`](https://github.com/kamiazya/web-csv-toolbox/commit/6047e50c151c93994aca59fac9d29ecb33d8a015) Thanks [@kamiazya](https://github.com/kamiazya)! - Add test on Node.js 22
+
+- [#258](https://github.com/kamiazya/web-csv-toolbox/pull/258) [`824ef20`](https://github.com/kamiazya/web-csv-toolbox/commit/824ef201be688a22e699259f86d8cb9a5ebf734f) Thanks [@kamiazya](https://github.com/kamiazya)! - Update package manager to pnpm@9.3.0
+
+- [#252](https://github.com/kamiazya/web-csv-toolbox/pull/252) [`1ebbdb4`](https://github.com/kamiazya/web-csv-toolbox/commit/1ebbdb43e954a236b889a0ca166386c836cc7e36) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.18 to 3.1.29
+
+- [#239](https://github.com/kamiazya/web-csv-toolbox/pull/239) [`88fbef6`](https://github.com/kamiazya/web-csv-toolbox/commit/88fbef62cd710ad7fb85123276cb560634692d31) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump webdriverio from 8.34.1 to 8.38.2
+
 ## 0.10.0
 
 ### Minor Changes
