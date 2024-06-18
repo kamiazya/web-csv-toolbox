@@ -60,6 +60,8 @@ jobs:
     needs:
       - check_format
       - check_clippy_and_rustfmt
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   cehck_type:
     name: Check type

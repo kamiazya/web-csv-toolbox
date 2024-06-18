@@ -1,6 +1,10 @@
 name: Build
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: true
+        description: The token to upload coverage reports to Codecov
 jobs:
   build:
     runs-on: ubuntu-latest
