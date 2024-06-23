@@ -3,7 +3,7 @@ on:
   workflow_call:
     secrets:
       CODECOV_TOKEN:
-        required: true
+        required: false
         description: The token to upload coverage reports to Codecov
 jobs:
   build:
