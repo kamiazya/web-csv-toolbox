@@ -1,3 +1,4 @@
+import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./vite-plugin-wasm-pack.ts";
 
@@ -17,6 +18,11 @@ export default defineConfig({
     wasmPack({
       crates: ["./web-csv-toolbox-wasm"],
       copyWasm: false,
+    }),
+    codecovVitePlugin({
+      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      bundleName: "web-csv-toolbox",
+      uploadToken: process.env.CODECOV_TOKEN,
     }),
   ],
   esbuild: {
