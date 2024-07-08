@@ -1,5 +1,23 @@
 # web-csv-toolbox
 
+## 0.10.2
+
+### Patch Changes
+
+- [#269](https://github.com/kamiazya/web-csv-toolbox/pull/269) [`7b84c8c`](https://github.com/kamiazya/web-csv-toolbox/commit/7b84c8c8f6979cc45508bd1c3e1daeca8fe0a00a) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump cxx-build from 1.0.123 to 1.0.124 in /web-csv-toolbox-wasm
+
+- [#272](https://github.com/kamiazya/web-csv-toolbox/pull/272) [`574bee2`](https://github.com/kamiazya/web-csv-toolbox/commit/574bee290399ac05fcd73c60c757421d23b317de) Thanks [@kamiazya](https://github.com/kamiazya)! - Update Snapshot release configuration
+
+- [#274](https://github.com/kamiazya/web-csv-toolbox/pull/274) [`a163f35`](https://github.com/kamiazya/web-csv-toolbox/commit/a163f35fa08c92a57e24891740b488c906cf4dac) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.1.29 to 3.2.1
+
+- [#276](https://github.com/kamiazya/web-csv-toolbox/pull/276) [`5daa58b`](https://github.com/kamiazya/web-csv-toolbox/commit/5daa58b5ed03fb78bf51f31ee26f3d680fac7ee4) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @biomejs/biome from 1.7.3 to 1.8.2
+
+- [#266](https://github.com/kamiazya/web-csv-toolbox/pull/266) [`2c1e872`](https://github.com/kamiazya/web-csv-toolbox/commit/2c1e87207af2448180a6dc07be5290ab3744f005) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump terser from 5.31.0 to 5.31.1
+
+- [#275](https://github.com/kamiazya/web-csv-toolbox/pull/275) [`2aa667c`](https://github.com/kamiazya/web-csv-toolbox/commit/2aa667c478c23d1aa9427e4c2a1c6c1aeb447b12) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @changesets/cli from 2.27.1 to 2.27.6
+
+- [#267](https://github.com/kamiazya/web-csv-toolbox/pull/267) [`b6db634`](https://github.com/kamiazya/web-csv-toolbox/commit/b6db634668df4e5f15ea388eef66b2420a11ea42) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite from 5.2.13 to 5.3.1
+
 ## 0.10.1
 
 ### Patch Changes
