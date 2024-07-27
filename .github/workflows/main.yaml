@@ -117,7 +117,6 @@ jobs:
     - name: Setup
       uses: ./.github/actions/setup
       with:
-        skip-rust-setup: 'true'
         node-version: ${{ matrix.node-version }}
     - run: pnpm test run
 
