@@ -16,14 +16,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - name: Check
         run: pnpm check:format
 
@@ -35,18 +31,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - run: |
-          sudo apt-get update
-          sudo apt-get install libstdc++-12-dev
-      - name: Install latest
-        uses: moonrepo/setup-rust@d8048d4fdff0633123678b093726e6d7c8ad6de5 # v1.2.0
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          targets: wasm32-unknown-unknown
-          channel: nightly
-          components: clippy,rustfmt
-          target-dirs: web-csv-toolbox-wasm/target
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+          skip-rust-setup: 'true'
       - name: Run Clippy
         run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
         env:
@@ -72,14 +60,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Copy artifacts
         run: cp -r ${{ github.workspace }}/web-csv-toolbox-wasm/pkg ${{ github.workspace }}/node_modules/web-csv-toolbox-wasm
@@ -92,14 +76,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Coverage
         run: pnpm test:coverage
@@ -114,14 +94,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Run benchmarks
         uses: CodSpeedHQ/action@f11c406b8c87cda176ff341ed4925bc98086f6d1 # v2.4.2
@@ -138,14 +114,11 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+    - name: Setup
+      uses: ./.github/actions/setup
       with:
+        skip-rust-setup: 'true'
         node-version: ${{ matrix.node-version }}
-        cache: pnpm
-    - run: pnpm install --frozen-lockfile
-    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
     - run: pnpm test run
 
   test_deno:
@@ -180,13 +153,10 @@ jobs:
           - firefox
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Use Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
@@ -206,14 +176,12 @@ jobs:
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Use Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version: 20
-          cache: pnpm
+          skip-rust-setup: 'true'
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
-      - run: pnpm install --frozen-lockfile
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
@@ -229,13 +197,10 @@ jobs:
           - edge
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Use Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version: 20
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
@@ -266,14 +231,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Create Release Pull Request or Publish to npm
         id: changesets
@@ -299,14 +260,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - name: Creating .npmrc
         if: ${{ github.actor != 'dependabot[bot]' }}
@@ -343,15 +300,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      - name: Setup
+        uses: ./.github/actions/setup
         with:
-          node-version-file: ./.node-version
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+          skip-rust-setup: 'true'
       - name: Build documentation
         run: pnpm run doc
       - name: Configure GitHub Pages
