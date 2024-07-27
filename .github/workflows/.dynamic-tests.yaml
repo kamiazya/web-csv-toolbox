@@ -105,8 +105,6 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup
         uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
       - working-directory: web-csv-toolbox-wasm
@@ -129,8 +127,6 @@ jobs:
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
       - name: Setup
         uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
@@ -152,8 +148,6 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
       - name: Setup
         uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
       - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
       - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
       - if: ${{ matrix.browsers != 'edge' }}
