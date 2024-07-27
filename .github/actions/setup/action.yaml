@@ -32,7 +32,7 @@ runs:
       run: pnpm install --frozen-lockfile
       shell: bash
     - name: Setup C++
-      if: ${{ inputs.skip-rust-setup != 'true' }}
+      if: ${{ runner.os != 'Windows' && inputs.skip-rust-setup != 'true' }}
       run: |
         sudo apt-get update
         sudo apt-get install libstdc++-12-dev
