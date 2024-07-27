@@ -8,309 +8,36 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  check_format:
-    name: Check format
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - name: Check
-        run: pnpm check:format
 
-  check_clippy_and_rustfmt:
-    name: Check with clippy and rustfmt
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - name: Run Clippy
-        run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
-        env:
-          RUSTFLAGS: -D warnings
-      - name: Run Fmt
-        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
+  static_tests:
+    name: Static Tests
+    uses: ./.github/workflows/.static-tests.yaml
 
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
     needs:
-      - check_format
-      - check_clippy_and_rustfmt
+      - static_tests
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  cehck_type:
-    name: Check type
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - name: Copy artifacts
-        run: cp -r ${{ github.workspace }}/web-csv-toolbox-wasm/pkg ${{ github.workspace }}/node_modules/web-csv-toolbox-wasm
-      - name: Check
-        run: pnpm check:type
+  dynamic_tests:
+    name: Dynamic Tests
+    uses: ./.github/workflows/.dynamic-tests.yaml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
+    needs:
+      - static_tests
 
-  coverage:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - name: Coverage
-        run: pnpm test:coverage
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  benchmarks:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - name: Run benchmarks
-        uses: CodSpeedHQ/action@f11c406b8c87cda176ff341ed4925bc98086f6d1 # v2.4.2
-        with:
-          run: pnpm test:bench
-          token: ${{ secrets.CODSPEED_TOKEN }}
-
-  test_nodejs:
-    runs-on: ubuntu-latest
-    needs: build
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Setup
-      uses: ./.github/actions/setup
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: pnpm test run
-
-  test_deno:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-    - uses: denoland/setup-deno@041b854f97b325bd60e53e9dc2de9cb9f9ac0cba # v1.1.4
-      with:
-        deno-version: v1.x
-    - run: |
-        deno eval '
-        import { parse } from "./dist/es/web-csv-toolbox.js";
-
-        const csv = `name,age
-        Alice,42
-        Bob,69`;
-
-        for await (const record of parse(csv)) {
-          console.log(record);
-        }'
-
-  test_linux_browser:
-    runs-on: ubuntu-latest
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          - firefox
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
-
-  test_macos_browser:
-    runs-on: macos-latest
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          # TODO: Consider alternatives to frequent rate limit restrictions.
-          # - firefox
-          # NOTE: Headless Safari is currentry not supported
-          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
-          # - safari
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      # - if: matrix.browsers == 'safari'
-      #   run: sudo safaridriver --enable
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
-
-  test_windows_browser:
-    runs-on: windows-latest
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          - firefox
-          - edge
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
-
-  # Release the package to npm
   release:
     name: Release
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/.release.yaml
     needs:
-      - cehck_type
-      - check_format
-      - check_clippy_and_rustfmt
-      - check_format
+      - static_tests
       - build
-      - test_nodejs
-      - test_deno
-      - test_linux_browser
-      - test_macos_browser
-      - test_windows_browser
-      - coverage
-      - benchmarks
-    # Only run this job if the workflow_run's conclusion was "success"
-    if: ${{ success() && github.repository == 'kamiazya/web-csv-toolbox' && github.ref == 'refs/heads/main' }}
-    permissions:
-      contents: write # Used to commit to "Version Packages" PR
-      pull-requests: write # Used to create "Version Packages" PR
-      id-token: write # Used to publish to npm with provenance statements
-      # Other permissions are defaulted to none
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
-        uses: changesets/action@aba318e9165b45b7948c60273e0b72fce0a64eb9 # v1.4.7
-        with:
-          publish: pnpm exec changeset publish
-          version: pnpm exec changeset version
-          createGithubReleases: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-    outputs:
-      published: ${{ steps.changesets.outputs.published }}
-  # If the release job not published, run this job to publish a prerelease
-  prerelease:
-    name: Prerelease
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    needs: release
-    if: ${{ success() && github.repository == 'kamiazya/web-csv-toolbox' && github.ref == 'refs/heads/main' && needs.release.outputs.published == 'false' }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-      - name: Creating .npmrc
-        if: ${{ github.actor != 'dependabot[bot]' }}
-        run: |
-          cat << EOF > "$HOME/.npmrc"
-            //registry.npmjs.org/:_authToken=$NPM_TOKEN
-          EOF
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: "Release @next"
-        run: |
-          pnpm exec changeset version --snapshot next
-          pnpm exec changeset publish --no-git-tag --snapshot --tag next
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # This job is used to deploy the documentation to GitHub Pages
-  doc:
-    runs-on: ubuntu-latest
-    # if the release job was successful, run this job
-    needs:
-      - build
-      - release
-    if: needs.release.outputs.published == 'true'
-    concurrency:
-      group: GitHub Pages
-      cancel-in-progress: true
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - name: Build documentation
-        run: pnpm run doc
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
-        with:
-          path: doc
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+      - dynamic_tests
+    if: ${{ github.repository == 'kamiazya/web-csv-toolbox' && github.ref == 'refs/heads/main' && success() }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
