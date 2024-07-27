@@ -25,3 +25,21 @@ pub fn parse_string_to_array_sync(input: &str, demiliter: u8) -> JsValue {
     let json_str = serde_json::to_string(&records).unwrap();
     JsValue::from_str(&json_str)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn test_parse_string_to_array_sync() {
+        let input = "name,age\nAlice,20\nBob,30\n";
+        let demiliter = b',';
+        let result = parse_string_to_array_sync(input, demiliter);
+
+        let expected = r#"[{"age":"20","name":"Alice"},{"age":"30","name":"Bob"}]"#;
+        assert_eq!(result, expected);
+    }
+}
