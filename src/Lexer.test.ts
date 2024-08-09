@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { assert, beforeEach, describe, expect, test } from "vitest";
 import { Lexer } from "./Lexer";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 
@@ -253,16 +253,13 @@ describe("Lexer", () => {
 
     test("should thorw DOMException named AbortError if the signal is aborted", () => {
       controller.abort();
-
-      expect(() => [...lexer.lex('"Hello"')]).toThrow(DOMException);
-
-      expect(() => [
-        ...lexer.lex('"Hello"'),
-      ]).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[AbortError: This operation was aborted]`,
-      );
-      //
+      try {
+        [...lexer.lex('"Hello"')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof DOMException);
+        expect(error.name).toBe("AbortError");
+      }
     });
 
     test("should throw custom error if the signal is aborted with custom reason", () => {
