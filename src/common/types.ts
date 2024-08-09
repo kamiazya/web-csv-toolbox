@@ -82,6 +82,15 @@ export interface RecordDelimiterToken {
 export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
 
 /**
+ * AbortSignal Options.
+ *
+ * @category Types
+ */
+export interface AbortSignalOptions {
+  signal?: AbortSignal;
+}
+
+/**
  * CSV Common Options.
  * @category Types
  */
@@ -197,7 +206,8 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>> {
  */
 export interface ParseOptions<Header extends ReadonlyArray<string>>
   extends CommonOptions,
-    RecordAssemblerOptions<Header> {}
+    RecordAssemblerOptions<Header>,
+    AbortSignalOptions {}
 
 /**
  * Parse options for CSV binary.
