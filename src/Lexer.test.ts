@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "vitest";
+import { assert, beforeEach, describe, expect, test } from "vitest";
 import { Lexer } from "./Lexer";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 
@@ -240,5 +240,65 @@ describe("Lexer", () => {
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: Unexpected EOF while parsing quoted field.]`,
     );
+  });
+
+  describe("when AbortSignal is provided", () => {
+    let controller: AbortController;
+    beforeEach(() => {
+      controller = new AbortController();
+      lexer = new Lexer({
+        signal: controller.signal,
+      });
+    });
+
+    test("should thorw DOMException named AbortError if the signal is aborted", () => {
+      controller.abort();
+      try {
+        [...lexer.lex('"Hello"')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof DOMException);
+        expect(error.name).toBe("AbortError");
+      }
+    });
+
+    test("should throw custom error if the signal is aborted with custom reason", () => {
+      class MyCustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = "MyCustomError";
+        }
+      }
+
+      controller.abort(new MyCustomError("Custom reason"));
+
+      expect(() => [
+        ...lexer.lex('"Hello"'),
+      ]).toThrowErrorMatchingInlineSnapshot(
+        // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+        `[MyCustomError: Custom reason]`,
+      );
+    });
+  });
+
+  test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
+    function waitAbort(signal: AbortSignal) {
+      return new Promise<void>((resolve) => {
+        signal.addEventListener("abort", () => {
+          resolve();
+        });
+      });
+    }
+    const signal = AbortSignal.timeout(0);
+    await waitAbort(signal);
+
+    lexer = new Lexer({ signal });
+    try {
+      [...lexer.lex('"Hello"')];
+      expect.unreachable();
+    } catch (error) {
+      assert(error instanceof DOMException);
+      expect(error.name).toBe("TimeoutError");
+    }
   });
 });

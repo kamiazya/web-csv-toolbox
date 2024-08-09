@@ -11,10 +11,14 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #row: string[] = [];
   #header: Header | undefined;
   #dirty = false;
+  #signal?: AbortSignal;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
+    }
+    if (options.signal) {
+      this.#signal = options.signal;
     }
   }
 
@@ -23,6 +27,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     flush = true,
   ): IterableIterator<CSVRecord<Header>> {
     for (const token of tokens) {
+      this.#signal?.throwIfAborted();
       switch (token.type) {
         case FieldDelimiter:
           this.#fieldIndex++;
