@@ -1,0 +1,51 @@
+name: Setup Action
+description: Composite Setup Action
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: ''
+  skip-rust-setup:
+    description: Skip Rust setup
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+    - if: ${{ inputs.node-version == '' }}
+      name: Setup Node.js
+      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      with:
+        node-version-file: ./.node-version
+        cache: pnpm
+    - if: ${{ inputs.node-version != '' }}
+      name: Setup Node.js v${{ inputs.node-version }}
+      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+    - name: Install Dependencies
+      run: pnpm install --frozen-lockfile
+      shell: bash
+    - name: Setup C++
+      if: ${{ inputs.skip-rust-setup != 'true' }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install libstdc++-12-dev
+      shell: bash
+    - name: Setup Rust
+      if: ${{ inputs.skip-rust-setup != 'true' }}
+      uses: moonrepo/setup-rust@d8048d4fdff0633123678b093726e6d7c8ad6de5 # v1.2.0
+      with:
+        targets: wasm32-unknown-unknown
+        channel: nightly
+        components: clippy,rustfmt
+        target-dirs: web-csv-toolbox-wasm/target
+    - name: Install wasm-pack
+      if: ${{ inputs.skip-rust-setup != 'true' }}
+      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      shell: bash

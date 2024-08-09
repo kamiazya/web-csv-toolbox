@@ -1,0 +1,140 @@
+name: Dynamic Tests
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: true
+        description: The token to upload coverage reports to Codecov
+      CODSPEED_TOKEN:
+        required: true
+        description: The token to upload benchmarks to CodSpeed
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - name: Coverage
+        run: pnpm test:coverage
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@f11c406b8c87cda176ff341ed4925bc98086f6d1 # v2.4.2
+        with:
+          run: pnpm test:bench
+          token: ${{ secrets.CODSPEED_TOKEN }}
+
+  test_nodejs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - name: Setup
+      uses: ./.github/actions/setup
+      with:
+        node-version: ${{ matrix.node-version }}
+    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+    - run: pnpm test run
+
+
+  test_deno:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+    - uses: denoland/setup-deno@041b854f97b325bd60e53e9dc2de9cb9f9ac0cba # v1.1.4
+      with:
+        deno-version: v1.x
+    - run: |
+        deno eval '
+        import { parse } from "./dist/es/web-csv-toolbox.js";
+
+        const csv = `name,age
+        Alice,42
+        Bob,69`;
+
+        for await (const record of parse(csv)) {
+          console.log(record);
+        }'
+
+  test_linux_browser:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+  test_macos_browser:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          # TODO: Consider alternatives to frequent rate limit restrictions.
+          # - firefox
+          # NOTE: Headless Safari is currentry not supported
+          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
+          # - safari
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      # - if: matrix.browsers == 'safari'
+      #   run: sudo safaridriver --enable
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+
+
+  test_windows_browser:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browsers:
+          - chrome
+          - firefox
+          - edge
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
