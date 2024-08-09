@@ -64,7 +64,7 @@ jobs:
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
     - uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
-    - uses: denoland/setup-deno@041b854f97b325bd60e53e9dc2de9cb9f9ac0cba # v1.1.4
+    - uses: denoland/setup-deno@5fae568d37c3b73449009674875529a984555dd1 # v1.3.0
       with:
         deno-version: v1.x
     - run: |
