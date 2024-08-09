@@ -184,7 +184,8 @@ export interface BinaryOptions {
  * If you don't specify `header`,
  * the first record will be treated as a header.
  */
-export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>> {
+export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
+  extends AbortSignalOptions {
   /**
    * CSV header.
    *
