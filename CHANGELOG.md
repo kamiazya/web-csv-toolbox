@@ -1,5 +1,13 @@
 # web-csv-toolbox
 
+## 0.10.3
+
+### Patch Changes
+
+- [#297](https://github.com/kamiazya/web-csv-toolbox/pull/297) [`93c79c3`](https://github.com/kamiazya/web-csv-toolbox/commit/93c79c386fb886443324ce76c136824a6ce8bc93) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.2.1 to 3.2.4
+
+- [#302](https://github.com/kamiazya/web-csv-toolbox/pull/302) [`1032118`](https://github.com/kamiazya/web-csv-toolbox/commit/10321180d04c1d67f731d55f6c6190691c0d7ba6) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor CI/CD workflow
+
 ## 0.10.2
 
 ### Patch Changes
