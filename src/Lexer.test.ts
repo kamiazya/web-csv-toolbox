@@ -280,4 +280,25 @@ describe("Lexer", () => {
       );
     });
   });
+
+  test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
+    function waitAbort(signal: AbortSignal) {
+      return new Promise<void>((resolve) => {
+        signal.addEventListener("abort", () => {
+          resolve();
+        });
+      });
+    }
+    const signal = AbortSignal.timeout(0);
+    await waitAbort(signal);
+
+    lexer = new Lexer({ signal });
+    try {
+      [...lexer.lex('"Hello"')];
+      expect.unreachable();
+    } catch (error) {
+      assert(error instanceof DOMException);
+      expect(error.name).toBe("TimeoutError");
+    }
+  });
 });
