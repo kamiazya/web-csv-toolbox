@@ -53,6 +53,9 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
   - 🔄 Defaults to `,` and `"` respectively.
+- 🛑 **AbortSignal and Timeout Support**: Ensure your CSV processing is cancellable, including support for automatic timeouts.
+  - ✋ Integrate with [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController) to manually cancel operations as needed.
+  - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
 - 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
@@ -212,6 +215,67 @@ for await (const record of parse(csv, { headers: ['name', 'age'] })) {
 // { name: 'Bob', age: '69' }
 ```
 
+### `AbortSignal` / `AbortController` Support
+
+Support for [`AbortSignal`](https://developer.mozilla.org/docs/Web/API/AbortSignal) / [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController), enabling you to cancel ongoing asynchronous CSV processing tasks.
+
+This feature is useful for scenarios where processing needs to be halted, such as when a user navigates away from the page or other conditions that require stopping the task early.
+
+#### Example Use Case: Abort with user action
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const controller = new AbortController();
+const csv = "name,age\nAlice,30\nBob,25";
+
+try {
+  // Parse the CSV data then pass the AbortSignal to the parse function
+  for await (const record of parse(csv, { signal: controller.signal })) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+     // The CSV processing was aborted by the user
+    console.log('CSV processing was aborted by the user.');
+  } else {
+    // An error occurred during CSV processing
+    console.error('An error occurred:', error);
+  }
+}
+
+// Some abort logic, like a cancel button
+document.getElementById('cancel-button')
+  .addEventListener('click', () => {
+    controller.abort();
+  });
+```
+
+#### Example Use Case: Abort with timeout
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Set up a timeout of 5 seconds (5000 milliseconds)
+const signal = AbortSignal.timeout(5000);
+
+const csv = "name,age\nAlice,30\nBob,25";
+
+try {
+  // Pass the AbortSignal to the parse function
+  const result = await parse.toArray(csv, { signal });
+  console.log(result);
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    // Handle the case where the processing was aborted due to timeout
+    console.log('CSV processing was aborted due to timeout.');
+  } else {
+    // Handle other errors
+    console.error('An error occurred during CSV processing:', error);
+  }
+}
+```
+
 ## Supported Runtimes 💻
 
 ### Works on Node.js
@@ -320,11 +384,12 @@ console.log(result);
 
 ### Common Options ⚙️
 
-| Option      | Description                           | Default   | Notes                                             |
-| ----------- | ------------------------------------- | --------- | ------------------------------------------------- |
-| `delimiter` | Character to separate fields          | `,`       |                                                   |
-| `quotation` | Character used for quoting fields     | `"`       |                                                   |
-| `headers`   | Custom headers for the parsed records | First row | If not provided, the first row is used as headers |
+| Option      | Description                           | Default     | Notes                                             |
+| ----------- | ------------------------------------- | ----------- | ------------------------------------------------- |
+| `delimiter` | Character to separate fields          | `,`         |                                                   |
+| `quotation` | Character used for quoting fields     | `"`         |                                                   |
+| `headers`   | Custom headers for the parsed records | First row   | If not provided, the first row is used as headers |
+| `signal`    | AbortSignal to cancel processing      | `undefined` | Allows aborting of long-running operations        |
 
 ### Advanced Options (Binary-Specific) 🧬
 
