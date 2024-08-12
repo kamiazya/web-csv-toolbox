@@ -1,6 +1,14 @@
 import type { ParseBinaryOptions } from "./common/types.ts";
 import { parseMime } from "./utils/parseMime.ts";
 
+/**
+ * Extracts the options from the response object.
+ *
+ * @param response - The response object from which to extract the options.
+ * @param options - The options to merge with the extracted options.
+ * @returns The options extracted from the response.
+ * @throws {RangeError} - The content type is not supported.
+ */
 export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   response: Response,
   options: ParseBinaryOptions<Header> = {},
@@ -9,7 +17,7 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   const contentType = headers.get("content-type") ?? "text/csv";
   const mime = parseMime(contentType);
   if (mime.type !== "text/csv") {
-    throw new Error(`Invalid mime type: ${contentType}`);
+    throw new RangeError(`Invalid mime type: "${contentType}"`);
   }
   const decomposition =
     (headers.get("content-encoding") as CompressionFormat) ?? undefined;

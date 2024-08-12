@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
 import { parseResponseToStream } from "./parseResponseToStream.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
@@ -40,11 +41,15 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   response: Response,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const options_ = getOptionsFromResponse(response, options);
-  if (response.body === null) {
-    throw new Error("Response body is null");
+  try {
+    const options_ = getOptionsFromResponse(response, options);
+    if (response.body === null) {
+      throw new RangeError("Response body is null");
+    }
+    return parseUint8ArrayStream(response.body, options_);
+  } catch (error) {
+    commonParseErrorHandling(error);
   }
-  return parseUint8ArrayStream(response.body, options_);
 }
 
 export declare namespace parseResponse {

@@ -1,6 +1,7 @@
 import { Lexer } from "./Lexer.ts";
 import { RecordAssembler } from "./RecordAssembler.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
 
@@ -35,15 +36,19 @@ export function parseStringToStream<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {
-  const lexer = new Lexer(options);
-  const assembler = new RecordAssembler(options);
-  return new ReadableStream({
-    start(controller) {
-      const tokens = lexer.lex(csv);
-      for (const record of assembler.assemble(tokens)) {
-        controller.enqueue(record);
-      }
-      controller.close();
-    },
-  });
+  try {
+    const lexer = new Lexer(options);
+    const assembler = new RecordAssembler(options);
+    return new ReadableStream({
+      start(controller) {
+        const tokens = lexer.lex(csv);
+        for (const record of assembler.assemble(tokens)) {
+          controller.enqueue(record);
+        }
+        controller.close();
+      },
+    });
+  } catch (error) {
+    commonParseErrorHandling(error);
+  }
 }

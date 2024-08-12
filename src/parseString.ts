@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
@@ -63,7 +64,11 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  yield* parseStringToIterableIterator(csv, options);
+  try {
+    yield* parseStringToIterableIterator(csv, options);
+  } catch (error) {
+    commonParseErrorHandling(error);
+  }
 }
 export declare namespace parseString {
   /**

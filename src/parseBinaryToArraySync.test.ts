@@ -13,3 +13,14 @@ const expected = [
 test("parseBinaryToArraySync", async () => {
   expect(parseBinaryToArraySync(csv)).toEqual(expected);
 });
+
+test("throws an error if the binary is invalid", () => {
+  expect(() =>
+    parseBinaryToArraySync(new Uint8Array([0x80]), {
+      fatal: true,
+    }),
+  ).toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[ParseError: An error occurred while parsing the CSV data.]`,
+  );
+});

@@ -1,3 +1,4 @@
+import { codecovVitePlugin } from "@codecov/vite-plugin";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
@@ -39,6 +40,11 @@ export default defineConfig(env => ({
       outDir: "dist/types",
       exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
       copyDtsFiles: true,
+    }),
+    codecovVitePlugin({
+      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      bundleName: "web-csv-toolbox",
+      uploadToken: process.env.CODECOV_TOKEN,
     }),
   ],
   test: {

@@ -1,0 +1,38 @@
+name: Static Tests
+
+on:
+  workflow_call:
+jobs:
+  check_format:
+    name: Check format
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - name: Check
+        run: pnpm check:format
+
+  check_clippy_and_rustfmt:
+    name: Check with clippy and rustfmt
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - name: Run Clippy
+        run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
+        env:
+          RUSTFLAGS: -D warnings
+      - name: Run Fmt
+        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check

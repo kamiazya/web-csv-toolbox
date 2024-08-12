@@ -75,7 +75,7 @@ jobs:
             }
 
       - name: Checkout default branch
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
 
       - name: Checkout pull request branch
         run: gh pr checkout ${{ github.event.issue.number }}
@@ -88,16 +88,8 @@ jobs:
             git checkout origin/main -- .changeset
           fi
 
-      - name: Setup Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
-        with:
-          node-version: 20
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
-        with:
-          version: 8
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      - name: Setup
+        uses: ./.github/actions/setup
       - name: Create an .npmrc
         run: |
           cat << EOF > "$HOME/.npmrc"

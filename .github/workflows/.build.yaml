@@ -1,6 +1,10 @@
 name: Build
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+        description: The token to upload coverage reports to Codecov
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -8,34 +12,20 @@ jobs:
       contents: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - run: |
-          sudo apt-get update
-          sudo apt-get install libstdc++-12-dev
-      - name: Install latest
-        uses: moonrepo/setup-rust@b8edcc56aab474d90c7cf0bb8beeaf8334c15e9f # v1.1.0
-        with:
-          targets: wasm32-unknown-unknown
-          channel: nightly
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d # v3.0.0
-        with:
-          version: 8
-      - name: Setup Node.js 20
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
-        with:
-          node-version: 20
-          cache: pnpm
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      - name: Setup
+        uses: ./.github/actions/setup
       - name: Build
         run: pnpm run build
-      - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Type Check
+        run: pnpm check:type
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: dist
           path: dist
-      - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         with:
           name: web-csv-toolbox-wasm
           path: |

@@ -1,12 +1,13 @@
 {
   "name": "web-csv-toolbox",
-  "version": "0.8.0",
+  "version": "0.10.2",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
   "main": "dist/cjs/web-csv-toolbox.cjs",
   "module": "dist/es/web-csv-toolbox.js",
   "types": "dist/types/web-csv-toolbox.d.ts",
   "unpkg": "dist/web-csv-toolbox.umd.js",
+  "packageManager": "pnpm@9.3.0",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -59,6 +60,9 @@
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
+    "check:type": "tsc --noEmit",
+    "check:format": "pnpm check:format:js",
+    "check:format:js": "biome ci .",
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
@@ -67,7 +71,9 @@
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
-    "format": "biome check --apply ."
+    "format": "pnpm format:js && pnpm format:rust",
+    "format:js": "biome check --apply .",
+    "format:rust": "cargo fmt --manifest-path web-csv-toolbox-wasm/Cargo.toml --all && cargo clippy --manifest-path web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features"
   },
   "repository": {
     "type": "git",
@@ -89,9 +95,10 @@
   },
   "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
   "devDependencies": {
-    "@biomejs/biome": "1.6.1",
+    "@biomejs/biome": "1.8.2",
     "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.1",
+    "@codecov/vite-plugin": "0.0.1-beta.10",
     "@fast-check/vitest": "^0.1.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.0",
@@ -100,7 +107,6 @@
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
-    "lefthook": "^1.6.7",
     "terser": "^5.27.0",
     "typedoc": "^0.25.7",
     "typedoc-plugin-mdn-links": "^3.1.14",
