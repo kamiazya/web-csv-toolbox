@@ -1,9 +1,6 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { ParseError } from "./common/errors.ts";
-import type { Position, RecordDelimiterToken } from "./common/types.ts";
-
-
 import type {
   AbortSignalOptions,
   CommonOptions,
@@ -11,7 +8,7 @@ import type {
   RecordDelimiterToken,
   Token,
 } from "./common/types.ts";
-import { COMMA, CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
