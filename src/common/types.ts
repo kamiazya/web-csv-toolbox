@@ -84,6 +84,59 @@ export interface RecordDelimiterToken {
 export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
 
 /**
+ * AbortSignal Options.
+ *
+ * @category Types
+ */
+export interface AbortSignalOptions {
+  /**
+   * The signal to abort the operation.
+   *
+   * @remarks
+   *
+   * If the signal is aborted, the operation will be stopped.
+   *
+   * @example Abort with user action
+   *
+   * ```ts
+   * const controller = new AbortController();
+   *
+   * const csv = "foo,bar\n1,2\n3,4";
+   * try {
+   *   const result = await parse(csv, { signal: controller.signal });
+   * } catch (e) {
+   *   if (e instanceof DOMException && e.name === "AbortError") {
+   *     console.log("Aborted");
+   *   }
+   * }
+   *
+   * // Abort with user action
+   * document.getElementById("cancel-button")
+   *  .addEventListener("click", () => {
+   *    controller.abort();
+   *   });
+   * ```
+   *
+   * @example Abort with timeout
+   *
+   * ```ts
+   * const csv = "foo,bar\n1,2\n3,4";
+   *
+   * try {
+   *   const result = await parse(csv, { signal: AbortSignal.timeout(1000) });
+   * } catch (e) {
+   *   if (e instanceof DOMException && e.name === "TimeoutError") {
+   *     console.log("Timeout");
+   *   }
+   * }
+   * ```
+   *
+   * @default undefined
+   */
+  signal?: AbortSignal;
+}
+
+/**
  * CSV Common Options.
  * @category Types
  */
@@ -177,7 +230,8 @@ export interface BinaryOptions {
  * If you don't specify `header`,
  * the first record will be treated as a header.
  */
-export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>> {
+export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
+  extends AbortSignalOptions {
   /**
    * CSV header.
    *
@@ -199,7 +253,8 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>> {
  */
 export interface ParseOptions<Header extends ReadonlyArray<string>>
   extends CommonOptions,
-    RecordAssemblerOptions<Header> {}
+    RecordAssemblerOptions<Header>,
+    AbortSignalOptions {}
 
 /**
  * Parse options for CSV binary.

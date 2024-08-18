@@ -3,8 +3,7 @@ export function convertIterableIteratorToAsync<T>(
 ): AsyncIterableIterator<T> {
   return {
     async next() {
-      const result = iterator.next();
-      return Promise.resolve(result);
+      return iterator.next();
     },
     [Symbol.asyncIterator]() {
       return this;

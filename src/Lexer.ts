@@ -1,9 +1,17 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { ParseError } from "./common/errors.ts";
-import type { CommonOptions, Token } from "./common/types.ts";
 import type { Position, RecordDelimiterToken } from "./common/types.ts";
-import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
+
+
+import type {
+  AbortSignalOptions,
+  CommonOptions,
+  Position,
+  RecordDelimiterToken,
+  Token,
+} from "./common/types.ts";
+import { COMMA, CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, DOUBLE_QUOTE, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
@@ -26,6 +34,8 @@ export class Lexer {
   };
   #rowNumber = 1;
 
+  #signal?: AbortSignal;
+
   /**
    * Constructs a new Lexer instance.
    * @param options - The common options for the lexer.
@@ -33,7 +43,8 @@ export class Lexer {
   constructor({
     delimiter = DEFAULT_DELIMITER,
     quotation = DEFAULT_QUOTATION,
-  }: CommonOptions = {}) {
+    signal,
+  }: CommonOptions & AbortSignalOptions = {}) {
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
@@ -43,6 +54,9 @@ export class Lexer {
     this.#matcher = new RegExp(
       `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
     );
+    if (signal) {
+      this.#signal = signal;
+    }
   }
 
   /**
@@ -95,6 +109,7 @@ export class Lexer {
    * @returns The next token or null if there are no more tokens.
    */
   #nextToken(): Token | null {
+    this.#signal?.throwIfAborted();
     if (this.#buffer.length === 0) {
       return null;
     }
