@@ -13,18 +13,18 @@ import type { CSVString } from "../web-csv-toolbox.ts";
  * @example Default
  *
  * ```ts
- * const csv = ["name", "age", "city", "zip"];
+ * const header = ["name", "age", "city", "zip"];
  *
- * type _ = Join<typeof csv>
+ * type _ = Join<typeof header>
  * // `name,age,city,zip`
  * ```
  *
  * @example With different delimiter and quotation
  *
  * ```ts
- * const csv = ["name", "a\nge", "city", "zip"];
+ * const header = ["name", "a\nge", "city", "zip"];
  *
- * type _ = Join<typeof csv, "@", "$">
+ * type _ = Join<typeof header, "@", "$">
  * // `name@$a\nge$@city@zip`
  * ```
  */
@@ -51,19 +51,19 @@ export type Join<
  * @example Default
  *
  * ```ts
- * const csv = `name,age,city,zip`;
+ * const header = `name,age,city,zip`;
  *
- * type _ = Split<typeof csv>
+ * type _ = Split<typeof header>
  * // ["name", "age", "city", "zip"]
  * ```
  *
  * @example With different delimiter and quotation
  *
  * ```ts
- * const csv = `name@$a
+ * const header = `name@$a
  * ge$@city@zip`;
  *
- * type _ = Split<typeof csv, "@", "$">
+ * type _ = Split<typeof header, "@", "$">
  * // ["name", "a\nge", "city", "zip"]
  * ```
  */
