@@ -2,8 +2,13 @@ import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { InvalidOptionError } from "./common/errors.ts";
 import type { CSVRecord, CommonOptions } from "./common/types.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+  DOUBLE_QUOTE,
+} from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to record of arrays.
@@ -40,11 +45,35 @@ import type { loadWASM } from "./loadWASM.ts";
  * ```
  * @beta
  */
+export function parseStringToArraySyncWASM<
+  CSVSource extends string,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+  Header extends ReadonlyArray<string> = PickCSVHeader<
+    CSVSource,
+    Delimiter,
+    Quotation
+  >,
+>(
+  csv: CSVSource,
+  options: CommonOptions & {
+    delimiter?: Delimiter;
+    quotation?: Quotation;
+  },
+): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  CSVSource extends string,
+  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(csv: CSVSource, options?: CommonOptions): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  Header extends ReadonlyArray<string>,
+>(csv: string, options?: CommonOptions): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<Header extends readonly string[]>(
   csv: string,
   options: CommonOptions = {},
 ): CSVRecord<Header>[] {
-  const { delimiter = COMMA, quotation = DOUBLE_QUOTE } = options;
+  const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
+    options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new InvalidOptionError(
       "Invalid delimiter, must be a single character on WASM.",

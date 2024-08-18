@@ -1,9 +1,11 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to records.
@@ -31,6 +33,33 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  * // { name: 'Bob', age: '69' }
  * ```
  */
+export function parseString<
+  CSVSource extends string,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+  Header extends ReadonlyArray<string> = PickCSVHeader<
+    CSVSource,
+    Delimiter,
+    Quotation
+  >,
+>(
+  csv: CSVSource,
+  options: ParseOptions<Header> & {
+    delimiter?: Delimiter;
+    quotation?: Quotation;
+  },
+): AsyncIterableIterator<CSVRecord<Header>>;
+export function parseString<
+  CSVSource extends string,
+  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(
+  csv: CSVSource,
+  options?: ParseOptions<Header>,
+): AsyncIterableIterator<CSVRecord<Header>>;
+export function parseString<Header extends ReadonlyArray<string>>(
+  csv: string,
+  options?: ParseOptions<Header>,
+): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parseString<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
