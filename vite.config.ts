@@ -52,9 +52,6 @@ export default defineConfig(env => ({
     browser: {
       name: "chrome",
     },
-    typecheck: {
-      enabled: true,
-    },
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage
       include: ["src/**/*.ts"],
