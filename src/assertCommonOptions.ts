@@ -1,4 +1,3 @@
-import { InvalidOptionError } from "./common/errors.ts";
 import type { CommonOptions } from "./common/types.ts";
 import { CR, LF } from "./constants.ts";
 
@@ -6,7 +5,7 @@ import { CR, LF } from "./constants.ts";
  * Asserts that the provided value is a string and satisfies certain conditions.
  * @param value - The value to be checked.
  * @param name - The name of the option.
- * @throws {InvalidOptionError} If the value is empty, longer than 1 byte, or includes CR or LF.
+ * @throws {RangeError} If the value is empty, longer than 1 byte, or includes CR or LF.
  * @throws {TypeError} If the value is not a string.
  */
 function assertOptionValue(
@@ -16,12 +15,12 @@ function assertOptionValue(
   if (typeof value === "string") {
     switch (true) {
       case value.length === 0:
-        throw new InvalidOptionError(`${name} must not be empty`);
+        throw new RangeError(`${name} must not be empty`);
       case value.length > 1:
-        throw new InvalidOptionError(`${name} must be a single character`);
+        throw new RangeError(`${name} must be a single character`);
       case value === LF:
       case value === CR:
-        throw new InvalidOptionError(`${name} must not include CR or LF`);
+        throw new RangeError(`${name} must not include CR or LF`);
       default:
         break;
     }
@@ -46,7 +45,7 @@ function assertOptionValue(
  * ```
  *
  * @param options - The options object to be validated.
- * @throws {InvalidOptionError} If any required property is missing or if the delimiter is the same as the quotation.
+ * @throws {RangeError} If any required property is missing or if the delimiter is the same as the quotation.
  * @throws {TypeError} If any required property is not a string.
  */
 export function assertCommonOptions(
@@ -56,7 +55,7 @@ export function assertCommonOptions(
     assertOptionValue(options[name], name);
   }
   if (options.delimiter === options.quotation) {
-    throw new InvalidOptionError(
+    throw new RangeError(
       "delimiter must not be the same as quotation, use different characters",
     );
   }

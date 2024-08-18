@@ -21,6 +21,6 @@ test("throws an error if the binary is invalid", () => {
     }),
   ).toThrowErrorMatchingInlineSnapshot(
     // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-    `[ParseError: An error occurred while parsing the CSV data.]`,
+    `[TypeError: The encoded data was not valid for encoding utf-8]`,
   );
 });

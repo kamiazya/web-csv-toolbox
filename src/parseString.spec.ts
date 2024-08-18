@@ -60,7 +60,7 @@ describe("parseString function", () => {
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: delimiter must not be empty]`,
+      `[RangeError: delimiter must not be empty]`,
     );
   });
 });

@@ -64,7 +64,7 @@ describe("parseStringToArraySyncWASM", async () => {
       parseStringToArraySyncWASM(csv, { delimiter: "ab" }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: Invalid delimiter, must be a single character on WASM.]`,
+      `[RangeError: Invalid delimiter, must be a single character on WASM.]`,
     );
   });
 
@@ -75,7 +75,7 @@ describe("parseStringToArraySyncWASM", async () => {
       parseStringToArraySyncWASM(csv, { quotation: "'" }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: Invalid quotation, must be double quote on WASM.]`,
+      `[RangeError: Invalid quotation, must be double quote on WASM.]`,
     );
   });
 });

@@ -1,22 +1,23 @@
 import { describe, expect, it } from "vitest";
-import { InvalidOptionError, ParseError } from "./common/errors";
+import { ParseError } from "./common/errors";
 import { commonParseErrorHandling } from "./commonParseErrorHandling";
 
 describe("function commonParseErrorHandling", () => {
   it("should throws ParseError for ParseError instance", () => {
-    const parseError = new ParseError(
+    const error = new ParseError(
       "An error occurred while parsing the CSV data.",
     );
-    expect(() => commonParseErrorHandling(parseError)).toThrowError(parseError);
+    expect(() => commonParseErrorHandling(error)).toThrowError(error);
   });
 
-  it("should throws InvalidOptionError for InvalidOptionError instance", () => {
-    const invalidOptionError = new InvalidOptionError(
-      "Invalid option provided.",
-    );
-    expect(() => commonParseErrorHandling(invalidOptionError)).toThrowError(
-      invalidOptionError,
-    );
+  it("should throws RangeError for RangeError instance", () => {
+    const error = new RangeError("Invalid option provided.");
+    expect(() => commonParseErrorHandling(error)).toThrowError(error);
+  });
+
+  it("should throws TypeError for TypeError instance", () => {
+    const error = new TypeError("Invalid option provided.");
+    expect(() => commonParseErrorHandling(error)).toThrowError(error);
   });
 
   it("should throws ParseError for unknown error", () => {

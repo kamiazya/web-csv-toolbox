@@ -25,7 +25,7 @@ describe("LexerTransformer", () => {
         }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: delimiter must not be empty]`,
+      `[RangeError: delimiter must not be empty]`,
     );
 
     expect(
@@ -35,7 +35,7 @@ describe("LexerTransformer", () => {
         }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: quotation must not be empty]`,
+      `[RangeError: quotation must not be empty]`,
     );
   });
 
