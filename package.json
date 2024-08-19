@@ -108,7 +108,7 @@
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
     "terser": "^5.27.0",
-    "typedoc": "^0.25.7",
+    "typedoc": "^0.26.6",
     "typedoc-plugin-mdn-links": "^3.1.14",
     "typescript": "^5.3.3",
     "vite": "^5.0.12",
