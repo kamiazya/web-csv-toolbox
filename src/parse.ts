@@ -120,32 +120,28 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * // { name: 'Bob', age: '69' }
  * ```
  */
+export function parse<const CSVSource extends CSVString>(
+  csv: CSVSource,
+): AsyncIterableIterator<CSVRecord<PickCSVHeader<CSVSource>>>;
+export function parse<const Header extends ReadonlyArray<string>>(
+  csv: CSVString,
+): AsyncIterableIterator<CSVRecord<Header>>;
+export function parse<const Header extends ReadonlyArray<string>>(
+  csv: CSVString,
+  options: ParseOptions<Header>,
+): AsyncIterableIterator<CSVRecord<Header>>;
 export function parse<
-  CSVSource extends CSVString,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-  Header extends ReadonlyArray<string> = PickCSVHeader<
+  const CSVSource extends CSVString,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
     Quotation
   >,
 >(
   csv: CSVSource,
-  options: ParseOptions<Header> & {
-    delimiter?: Delimiter;
-    quotation?: Quotation;
-  },
-): AsyncIterableIterator<CSVRecord<Header>>;
-export function parse<
-  CSVSource extends CSVString,
-  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(
-  csv: CSVSource,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>>;
-export function parse<Header extends ReadonlyArray<string>>(
-  csv: CSVString,
-  options?: ParseOptions<Header>,
+  options: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
 /**
  * Parse CSV binary to records.
@@ -183,11 +179,11 @@ export function parse<Header extends ReadonlyArray<string>>(
  * }
  * ```
  */
-export function parse<Header extends ReadonlyArray<string>>(
+export function parse<const Header extends ReadonlyArray<string>>(
   csv: CSVBinary,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
-export async function* parse<Header extends ReadonlyArray<string>>(
+export async function* parse<const Header extends ReadonlyArray<string>>(
   csv: CSV,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {

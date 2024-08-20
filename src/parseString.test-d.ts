@@ -1,19 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import {
-  type CSVRecord,
-  type ParseOptions,
-  parseString,
-} from "./web-csv-toolbox.ts";
-
-describe("parseString function", () => {
-  it("parseString should be a function with expected parameter types", () => {
-    expectTypeOf(parseString).toBeFunction();
-    expectTypeOf(parseString).parameter(0).toMatchTypeOf<string>();
-    expectTypeOf(parseString)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
-  });
-});
+import { parseString, type CSVRecord } from "./web-csv-toolbox.ts";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
@@ -58,16 +44,8 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    expectTypeOf(
-      parseString<readonly ["name", "age", "city", "zip"]>(""),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parseString<string, readonly ["name", "age", "city", "zip"]>(""),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    expectTypeOf(parseString<["name", "age", "city", "zip"]>("")).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(

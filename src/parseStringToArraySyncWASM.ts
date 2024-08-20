@@ -46,31 +46,42 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * @beta
  */
 export function parseStringToArraySyncWASM<
-  CSVSource extends string,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-  Header extends ReadonlyArray<string> = PickCSVHeader<
+  const CSVSource extends string,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
     Quotation
   >,
 >(
   csv: CSVSource,
-  options: CommonOptions & {
-    delimiter?: Delimiter;
-    quotation?: Quotation;
-  },
+  options: CommonOptions<Delimiter, Quotation>,
 ): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
-  CSVSource extends string,
-  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(csv: CSVSource, options?: CommonOptions): CSVRecord<Header>[];
+  const CSVSource extends string,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(
+  csv: CSVSource,
+  options?: CommonOptions<Delimiter, Quotation>,
+): CSVRecord<Header>[];
 export function parseStringToArraySyncWASM<
-  Header extends ReadonlyArray<string>,
->(csv: string, options?: CommonOptions): CSVRecord<Header>[];
-export function parseStringToArraySyncWASM<Header extends readonly string[]>(
+  const Header extends ReadonlyArray<string>,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+>(
   csv: string,
-  options: CommonOptions = {},
+  options?: CommonOptions<Delimiter, Quotation>,
+): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  const Header extends readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+>(
+  csv: string,
+  options: CommonOptions<Delimiter, Quotation> = {},
 ): CSVRecord<Header>[] {
   const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
     options;

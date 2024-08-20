@@ -152,14 +152,14 @@ export type ExtractCSVHeader<
   Quotation extends string = DEFAULT_QUOTATION,
   Nl extends string = Exclude<Newline, Delimiter | Quotation>,
   Escaping extends boolean = false,
-> = ExtractString<CSVSource> extends `${infer H}${Newline}${ExtractCSVBody<
+> = ExtractString<CSVSource> extends `${infer Header}${Newline}${ExtractCSVBody<
   CSVSource,
   Delimiter,
   Quotation,
   Nl,
   Escaping
 >}`
-  ? H
+  ? Header
   : ExtractString<CSVSource>;
 
 /**

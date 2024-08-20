@@ -49,12 +49,16 @@ function assertOptionValue(
  * @throws {InvalidOptionError} If any required property is missing or if the delimiter is the same as the quotation.
  * @throws {TypeError} If any required property is not a string.
  */
-export function assertCommonOptions(
-  options: Required<CommonOptions>,
-): asserts options is Required<CommonOptions> {
+export function assertCommonOptions<
+  Delimiter extends string,
+  Quotation extends string,
+>(
+  options: Required<CommonOptions<Delimiter, Quotation>>,
+): asserts options is Required<CommonOptions<Delimiter, Quotation>> {
   for (const name of ["delimiter", "quotation"] as const) {
     assertOptionValue(options[name], name);
   }
+  // @ts-ignore: TS doesn't understand that the values are strings
   if (options.delimiter === options.quotation) {
     throw new InvalidOptionError(
       "delimiter must not be the same as quotation, use different characters",

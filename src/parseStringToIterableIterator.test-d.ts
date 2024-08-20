@@ -58,20 +58,15 @@ Angeles$*90001`;
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
     expectTypeOf(
-      parseStringToIterableIterator<readonly ["name", "age", "city", "zip"]>(
-        "",
-      ),
+      parseStringToIterableIterator<["name", "age", "city", "zip"]>(""),
     ).toEqualTypeOf<
-      IterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      IterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
-      parseStringToIterableIterator<
-        string,
-        readonly ["name", "age", "city", "zip"]
-      >(""),
+      parseStringToIterableIterator<string, ["name", "age", "city", "zip"]>(""),
     ).toEqualTypeOf<
-      IterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      IterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
@@ -79,13 +74,13 @@ describe("generics", () => {
         string,
         "#",
         "$",
-        readonly ["name", "age", "city", "zip"]
+        ["name", "age", "city", "zip"]
       >("", {
         delimiter: "#",
         quotation: "$",
       }),
     ).toEqualTypeOf<
-      IterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      IterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
   });
 });

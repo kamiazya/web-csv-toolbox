@@ -140,7 +140,10 @@ export interface AbortSignalOptions {
  * CSV Common Options.
  * @category Types
  */
-export interface CommonOptions {
+export interface CommonOptions<
+  Delimiter extends string,
+  Quotation extends string,
+> {
   /**
    * CSV field delimiter.
    * If you want to parse TSV, specify `'\t'`.
@@ -156,13 +159,13 @@ export interface CommonOptions {
    *
    * @default ','
    */
-  delimiter?: string;
+  delimiter?: Delimiter;
   /**
    * CSV field quotation.
    *
    * @default '"'
    */
-  quotation?: string;
+  quotation?: Quotation;
 }
 
 /**
@@ -251,8 +254,11 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
  * Parse options for CSV string.
  * @category Types
  */
-export interface ParseOptions<Header extends ReadonlyArray<string>>
-  extends CommonOptions,
+export interface ParseOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
     AbortSignalOptions {}
 

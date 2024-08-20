@@ -40,29 +40,26 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * ```
  */
 export function parseStringStream<
-  CSVSource extends ReadableStream<string>,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-  Header extends ReadonlyArray<string> = PickCSVHeader<
+  const CSVSource extends ReadableStream<string>,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
     Quotation
   >,
 >(
   csv: CSVSource,
-  options: ParseOptions<Header> & {
-    delimiter?: Delimiter;
-    quotation?: Quotation;
-  },
+  options: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export function parseStringStream<
-  CSVSource extends ReadableStream<string>,
-  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+  const CSVSource extends ReadableStream<string>,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
 >(
   csv: CSVSource,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
-export function parseStringStream<Header extends ReadonlyArray<string>>(
+export function parseStringStream<const Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;

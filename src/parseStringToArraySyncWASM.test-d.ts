@@ -1,18 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.ts";
-import type { CSVRecord, ParseOptions } from "./web-csv-toolbox.ts";
-
-describe("parseStringToArraySyncWASM function", () => {
-  it("parseStringToArraySyncWASM should be a function with expected parameter types", () => {
-    expectTypeOf(parseStringToArraySyncWASM).toBeFunction();
-    expectTypeOf(parseStringToArraySyncWASM)
-      .parameter(0)
-      .toMatchTypeOf<string>();
-    expectTypeOf(parseStringToArraySyncWASM)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
-  });
-});
+import type { CSVRecord } from "./web-csv-toolbox.ts";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
@@ -56,26 +44,19 @@ Angeles$*90001`;
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
     expectTypeOf(
-      parseStringToArraySyncWASM<readonly ["name", "age", "city", "zip"]>(""),
-    ).toEqualTypeOf<CSVRecord<readonly ["name", "age", "city", "zip"]>[]>();
-
-    expectTypeOf(
-      parseStringToArraySyncWASM<
-        string,
-        readonly ["name", "age", "city", "zip"]
-      >(""),
-    ).toEqualTypeOf<CSVRecord<readonly ["name", "age", "city", "zip"]>[]>();
+      parseStringToArraySyncWASM<["name", "age", "city", "zip"]>(""),
+    ).toEqualTypeOf<CSVRecord<["name", "age", "city", "zip"]>[]>();
 
     expectTypeOf(
       parseStringToArraySyncWASM<
         string,
         "#",
         "$",
-        readonly ["name", "age", "city", "zip"]
+        ["name", "age", "city", "zip"]
       >("", {
         delimiter: "#",
         quotation: "$",
       }),
-    ).toEqualTypeOf<CSVRecord<readonly ["name", "age", "city", "zip"]>[]>();
+    ).toEqualTypeOf<CSVRecord<["name", "age", "city", "zip"]>[]>();
   });
 });

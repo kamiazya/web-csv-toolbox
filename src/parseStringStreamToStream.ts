@@ -6,33 +6,34 @@ import { pipeline } from "./utils/pipeline.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
 
 export function parseStringStreamToStream<
-  CSVSource extends ReadableStream<string>,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-  Header extends ReadonlyArray<string> = PickCSVHeader<
+  const CSVSource extends ReadableStream<string>,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<
     CSVSource,
     Delimiter,
     Quotation
   >,
 >(
   stream: CSVSource,
-  options: ParseOptions<Header> & {
-    delimiter?: Delimiter;
-    quotation?: Quotation;
-  },
+  options: ParseOptions<Header, Delimiter, Quotation>,
 ): ReadableStream<CSVRecord<Header>>;
 export function parseStringStreamToStream<
-  CSVSource extends ReadableStream<string>,
-  Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+  const CSVSource extends ReadableStream<string>,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
 >(
   stream: CSVSource,
   options?: ParseOptions<Header>,
 ): ReadableStream<CSVRecord<Header>>;
-export function parseStringStreamToStream<Header extends ReadonlyArray<string>>(
+export function parseStringStreamToStream<
+  const Header extends ReadonlyArray<string>,
+>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): ReadableStream<CSVRecord<Header>>;
-export function parseStringStreamToStream<Header extends ReadonlyArray<string>>(
+export function parseStringStreamToStream<
+  const Header extends ReadonlyArray<string>,
+>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {

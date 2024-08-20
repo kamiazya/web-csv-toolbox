@@ -55,7 +55,7 @@ describe("parseString function", () => {
 
   it("should throw an error if options is invalid", () => {
     expect(async () => {
-      for await (const _ of parseString<"">("", { delimiter: "" })) {
+      for await (const _ of parseString("", { delimiter: "" as string })) {
         // Do nothing.
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(

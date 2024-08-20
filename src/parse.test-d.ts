@@ -16,6 +16,12 @@ describe("parse function", () => {
       .parameter(1)
       .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
   });
+  it("should return AsyncIterableIterator<>", () => {
+    const result = parse("", { header: ["a", "b"] });
+    expectTypeOf<typeof result>().toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<["a", "b"]>>
+    >();
+  });
 });
 
 describe("binary parsing", () => {
@@ -122,64 +128,30 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    expectTypeOf(
-      parse<readonly ["name", "age", "city", "zip"]>(""),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    expectTypeOf(parse<["name", "age", "city", "zip"]>("")).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
-      parse<readonly ["name", "age", "city", "zip"]>({} as CSVBinary),
+      parse<["name", "age", "city", "zip"]>({} as CSVBinary),
     ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
-      parse<readonly ["name", "age", "city", "zip"]>({} as ReadableStream),
+      parse<["name", "age", "city", "zip"]>({} as ReadableStream),
     ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
-      parse<readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream<string>,
-      ),
+      parse<["name", "age", "city", "zip"]>({} as ReadableStream<string>),
     ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
       parse<readonly ["name", "age", "city", "zip"]>("" as CSVString),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parse<string, readonly ["name", "age", "city", "zip"]>(""),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parse<ReadableStream, readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream,
-      ),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parse<ReadableStream<string>, readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream<string>,
-      ),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parse<CSVString, readonly ["name", "age", "city", "zip"]>(
-        "" as CSVString,
-      ),
     ).toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
@@ -206,21 +178,19 @@ describe("generics", () => {
     >();
 
     expectTypeOf(
-      parse<
-        ReadableStream<string>,
-        "#",
-        "$",
-        readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream<string>, {
-        delimiter: "#",
-        quotation: "$",
-      }),
+      parse<ReadableStream<string>, "#", "$", ["name", "age", "city", "zip"]>(
+        {} as ReadableStream<string>,
+        {
+          delimiter: "#",
+          quotation: "$",
+        },
+      ),
     ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
     expectTypeOf(
-      parse<CSVString, "#", "$", readonly ["name", "age", "city", "zip"]>(
+      parse<CSVString, "#", "$", ["name", "age", "city", "zip"]>(
         "" as CSVString,
         {
           delimiter: "#",
@@ -228,7 +198,7 @@ describe("generics", () => {
         },
       ),
     ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+      AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
   });
 });
