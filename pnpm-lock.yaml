@@ -43,7 +43,7 @@ importers:
         version: 0.1.0
       fast-check:
         specifier: ^3.15.0
-        version: 3.19.0
+        version: 3.21.0
       terser:
         specifier: ^5.27.0
         version: 5.31.1
@@ -1414,8 +1414,8 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
 
-  fast-check@3.19.0:
-    resolution: {integrity: sha512-CO2JX/8/PT9bDGO1iXa5h5ey1skaKI1dvecERyhH4pp3PGjwd3KIjMAXEg79Ps9nclsdt4oPbfqiAnLU0EwrAQ==}
+  fast-check@3.21.0:
+    resolution: {integrity: sha512-QpmbiqRFRZ+SIlBJh6xi5d/PgXciUc/xWKc4Vi2RWEHHIRx6oM3f0fWNna++zP9VB5HUBTObUK9gTKQP3vVcrQ==}
     engines: {node: '>=8.0.0'}
 
   fast-deep-equal@2.0.1:
@@ -3395,7 +3395,7 @@ snapshots:
 
   '@fast-check/vitest@0.1.1(vitest@1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.1))':
     dependencies:
-      fast-check: 3.19.0
+      fast-check: 3.21.0
       vitest: 1.2.2(@types/node@20.11.10)(@vitest/browser@1.2.2)(terser@5.31.1)
 
   '@iarna/toml@2.2.5': {}
@@ -4329,7 +4329,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fast-check@3.19.0:
+  fast-check@3.21.0:
     dependencies:
       pure-rand: 6.1.0
 
