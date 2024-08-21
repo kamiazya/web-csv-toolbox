@@ -1,16 +1,6 @@
 import type { Position } from "./types.js";
 
 /**
- * Error class for invalid option errors.
- */
-export class InvalidOptionError extends Error {
-  constructor(message?: string, options?: ErrorOptions) {
-    super(message, options);
-    this.name = "InvalidOptionError";
-  }
-}
-
-/**
  * Options for creating a parse error.
  */
 export interface ParseErrorOptions extends ErrorOptions {

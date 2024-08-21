@@ -1,40 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { InvalidOptionError, ParseError } from "./errors";
-
-describe("InvalidOptionError", () => {
-  it("should be an instance of Error", () => {
-    // The InvalidOptionError class should be an instance of Error.
-    expect(new InvalidOptionError()).toBeInstanceOf(Error);
-  });
-
-  it("should have a name property", () => {
-    // The InvalidOptionError class should have
-    // a name property equal to "InvalidOptionError".
-    expect(new InvalidOptionError().name).toStrictEqual("InvalidOptionError");
-  });
-
-  it("should have a message property", () => {
-    // The InvalidOptionError class should have
-    // a message property equal to empty string.
-    expect(new InvalidOptionError().message).toStrictEqual("");
-
-    // The InvalidOptionError class should have
-    // a message property equal to the provided value.
-    expect(new InvalidOptionError("message").message).toStrictEqual("message");
-  });
-
-  it("should have a cause property", () => {
-    // The InvalidOptionError class should have
-    // a cause property equal to undefined.
-    expect(new InvalidOptionError().cause).toBeUndefined();
-
-    // The InvalidOptionError class should have
-    // a cause property equal to the provided value.
-    expect(
-      new InvalidOptionError("", { cause: new Error() }).cause,
-    ).toStrictEqual(new Error());
-  });
-});
+import { ParseError } from "./errors";
 
 describe("ParseError", () => {
   it("should be an instance of Error", () => {

@@ -26,8 +26,5 @@ test("throws an error if the binary is invalid", () => {
     parseBinaryToStream(new Uint8Array([0x80]), {
       fatal: true,
     }),
-  ).toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-    `[ParseError: An error occurred while parsing the CSV data.]`,
-  );
+  ).toThrowError(TypeError); // NOTE: Error messages vary depending on the execution environment.
 });

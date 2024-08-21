@@ -13,7 +13,7 @@ describe("function assertCommonOptions", () => {
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: quotation must not be empty]`,
+      `[RangeError: quotation must not be empty]`,
     );
   });
 
@@ -25,7 +25,7 @@ describe("function assertCommonOptions", () => {
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[InvalidOptionError: delimiter must not be empty]`,
+      `[RangeError: delimiter must not be empty]`,
     );
   });
 
@@ -40,7 +40,7 @@ describe("function assertCommonOptions", () => {
             assertCommonOptions({ quotation: value, delimiter: value }),
           ).toThrowErrorMatchingInlineSnapshot(
             // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-            `[InvalidOptionError: delimiter must not be the same as quotation, use different characters]`,
+            `[RangeError: delimiter must not be the same as quotation, use different characters]`,
           );
         },
       ),
@@ -56,7 +56,7 @@ describe("function assertCommonOptions", () => {
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[InvalidOptionError: quotation must not include CR or LF]`,
+        `[RangeError: quotation must not include CR or LF]`,
       );
     }
     for (const delimiter of [CR, LF]) {
@@ -67,7 +67,7 @@ describe("function assertCommonOptions", () => {
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[InvalidOptionError: delimiter must not include CR or LF]`,
+        `[RangeError: delimiter must not include CR or LF]`,
       );
     }
   });
