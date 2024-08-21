@@ -1,8 +1,13 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import type { CSVRecord, CommonOptions } from "./common/types.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+  DOUBLE_QUOTE,
+} from "./constants.ts";
 import type { loadWASM } from "./loadWASM.ts";
+import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to record of arrays.
@@ -40,11 +45,46 @@ import type { loadWASM } from "./loadWASM.ts";
  * @beta
  * @throws {RangeError | TypeError} - If provided options are invalid.
  */
-export function parseStringToArraySyncWASM<Header extends readonly string[]>(
+export function parseStringToArraySyncWASM<
+  const CSVSource extends string,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<
+    CSVSource,
+    Delimiter,
+    Quotation
+  >,
+>(
+  csv: CSVSource,
+  options: CommonOptions<Delimiter, Quotation>,
+): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  const CSVSource extends string,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+>(
+  csv: CSVSource,
+  options?: CommonOptions<Delimiter, Quotation>,
+): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  const Header extends ReadonlyArray<string>,
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+>(
   csv: string,
-  options: CommonOptions = {},
+  options?: CommonOptions<Delimiter, Quotation>,
+): CSVRecord<Header>[];
+export function parseStringToArraySyncWASM<
+  const Header extends readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+>(
+  csv: string,
+  options: CommonOptions<Delimiter, Quotation> = {},
 ): CSVRecord<Header>[] {
-  const { delimiter = COMMA, quotation = DOUBLE_QUOTE } = options;
+  const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
+    options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(
       "Invalid delimiter, must be a single character on WASM.",

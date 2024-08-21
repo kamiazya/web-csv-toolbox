@@ -1,9 +1,12 @@
 import type { assertCommonOptions } from "./assertCommonOptions.ts";
 import type { CommonOptions } from "./common/types.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { occurrences } from "./utils/occurrences.ts";
 
-export interface EscapeFieldOptions extends CommonOptions {
+export interface EscapeFieldOptions<
+  Delimiter extends string,
+  Quotation extends string,
+> extends CommonOptions<Delimiter, Quotation> {
   quote?: true;
 }
 
@@ -17,14 +20,18 @@ const REPLACED_PATTERN_CACHE = new Map<string, string>();
  * @param options The options.
  * @returns The escaped field.
  */
-export function escapeField(
+export function escapeField<
+  const Delimiter extends string,
+  const Quotation extends string,
+>(
   value: string,
-  {
-    quotation = DOUBLE_QUOTE,
-    delimiter = COMMA,
-    quote,
-  }: EscapeFieldOptions = {},
+  options: EscapeFieldOptions<Delimiter, Quotation> = {},
 ): string {
+  const {
+    delimiter = DEFAULT_DELIMITER,
+    quotation = DEFAULT_QUOTATION,
+    quote,
+  } = options;
   if (!REPLACED_PATTERN_CACHE.has(quotation)) {
     REPLACED_PATTERN_CACHE.set(
       quotation,

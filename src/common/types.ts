@@ -1,3 +1,5 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../constants.ts";
+import type { Join } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -138,7 +140,10 @@ export interface AbortSignalOptions {
  * CSV Common Options.
  * @category Types
  */
-export interface CommonOptions {
+export interface CommonOptions<
+  Delimiter extends string,
+  Quotation extends string,
+> {
   /**
    * CSV field delimiter.
    * If you want to parse TSV, specify `'\t'`.
@@ -154,13 +159,13 @@ export interface CommonOptions {
    *
    * @default ','
    */
-  delimiter?: string;
+  delimiter?: Delimiter;
   /**
    * CSV field quotation.
    *
    * @default '"'
    */
-  quotation?: string;
+  quotation?: Quotation;
 }
 
 /**
@@ -249,8 +254,11 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
  * Parse options for CSV string.
  * @category Types
  */
-export interface ParseOptions<Header extends ReadonlyArray<string>>
-  extends CommonOptions,
+export interface ParseOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
     AbortSignalOptions {}
 
@@ -285,7 +293,15 @@ export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
  *
  * @category Types
  */
-export type CSVString = string | ReadableStream<string>;
+export type CSVString<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> = Header extends readonly [string, ...string[]]
+  ?
+      | Join<Header, Delimiter, Quotation>
+      | ReadableStream<Join<Header, Delimiter, Quotation>>
+  : string | ReadableStream<string>;
 
 /**
  * CSV Binary.
@@ -303,4 +319,10 @@ export type CSVBinary =
  *
  * @category Types
  */
-export type CSV = CSVString | CSVBinary;
+export type CSV<
+  Header extends ReadonlyArray<string> = [],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> = Header extends []
+  ? CSVString | CSVBinary
+  : CSVString<Header, Delimiter, Quotation>;

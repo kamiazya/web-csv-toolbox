@@ -1,5 +1,6 @@
 import { Lexer } from "./Lexer.ts";
 import type { CommonOptions, Token } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
@@ -31,9 +32,12 @@ import type { CommonOptions, Token } from "./common/types.ts";
  * // { type: RecordDelimiter, value: "\r\n", location: {...} }
  * ```
  */
-export class LexerTransformer extends TransformStream<string, Token[]> {
-  public readonly lexer: Lexer;
-  constructor(options: CommonOptions = {}) {
+export class LexerTransformer<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends TransformStream<string, Token[]> {
+  public readonly lexer: Lexer<Delimiter, Quotation>;
+  constructor(options: CommonOptions<Delimiter, Quotation> = {}) {
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {

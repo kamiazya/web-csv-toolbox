@@ -8,7 +8,7 @@ import type {
   RecordDelimiterToken,
   Token,
 } from "./common/types.ts";
-import { COMMA, CRLF, DOUBLE_QUOTE, LF } from "./constants.ts";
+import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
@@ -16,7 +16,10 @@ import { escapeRegExp } from "./utils/escapeRegExp.ts";
  *
  * Lexter tokenizes CSV data into fields and records.
  */
-export class Lexer {
+export class Lexer<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> {
   #delimiter: string;
   #quotation: string;
   #buffer = "";
@@ -37,11 +40,14 @@ export class Lexer {
    * Constructs a new Lexer instance.
    * @param options - The common options for the lexer.
    */
-  constructor({
-    delimiter = COMMA,
-    quotation = DOUBLE_QUOTE,
-    signal,
-  }: CommonOptions & AbortSignalOptions = {}) {
+  constructor(
+    options: CommonOptions<Delimiter, Quotation> & AbortSignalOptions = {},
+  ) {
+    const {
+      delimiter = DEFAULT_DELIMITER,
+      quotation = DEFAULT_QUOTATION,
+      signal,
+    } = options;
     assertCommonOptions({ delimiter, quotation });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
