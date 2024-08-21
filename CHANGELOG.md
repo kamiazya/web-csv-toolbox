@@ -1,43 +1,5 @@
 # web-csv-toolbox
 
-## 0.11.0
-
-### Minor Changes
-
-- [#329](https://github.com/kamiazya/web-csv-toolbox/pull/329) [`0d717de`](https://github.com/kamiazya/web-csv-toolbox/commit/0d717debabfdae743295c1993013538ce0a3176e) Thanks [@kamiazya](https://github.com/kamiazya)! - Dynamic Type Inference and User-Defined Types from CSV Headers
-
-- [#327](https://github.com/kamiazya/web-csv-toolbox/pull/327) [`54f6ecb`](https://github.com/kamiazya/web-csv-toolbox/commit/54f6ecbf50cbd5ac250ab75b1261d971c0cea72f) Thanks [@kamiazya](https://github.com/kamiazya)! - Remove InvalidOptionError class
-
-- [#312](https://github.com/kamiazya/web-csv-toolbox/pull/312) [`15ec136`](https://github.com/kamiazya/web-csv-toolbox/commit/15ec1363a1f8064b33306871989088ab40f44a94) Thanks [@kamiazya](https://github.com/kamiazya)! - Support AbortSignal
-
-### Patch Changes
-
-- [#339](https://github.com/kamiazya/web-csv-toolbox/pull/339) [`6988fad`](https://github.com/kamiazya/web-csv-toolbox/commit/6988fadbf6c77c5ac905a4d22e634cfe46d3a938) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc from 0.25.13 to 0.26.6
-
-- [#323](https://github.com/kamiazya/web-csv-toolbox/pull/323) [`4ca6044`](https://github.com/kamiazya/web-csv-toolbox/commit/4ca6044baf3acea032c044b80a6b5ee054c9be72) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump fast-check from 3.19.0 to 3.21.0
-
-- [#285](https://github.com/kamiazya/web-csv-toolbox/pull/285) [`c8ca586`](https://github.com/kamiazya/web-csv-toolbox/commit/c8ca586035617ade78b04504db7ba745993a9ae6) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump wasm-pack from 0.12.1 to 0.13.0 in /web-csv-toolbox-wasm
-
-- [#314](https://github.com/kamiazya/web-csv-toolbox/pull/314) [`3e76d72`](https://github.com/kamiazya/web-csv-toolbox/commit/3e76d727a5e0c4f1fbd537e0a89bed474495294b) Thanks [@kamiazya](https://github.com/kamiazya)! - Remove unnecessary processes for convertIterableIteratorToAsync function
-
-- [#336](https://github.com/kamiazya/web-csv-toolbox/pull/336) [`bf64607`](https://github.com/kamiazya/web-csv-toolbox/commit/bf64607f3f016d12020cf969d2afca586ff815bf) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde_json from 1.0.117 to 1.0.125 in /web-csv-toolbox-wasm
-
-- [#333](https://github.com/kamiazya/web-csv-toolbox/pull/333) [`0220cd3`](https://github.com/kamiazya/web-csv-toolbox/commit/0220cd33b7088986afcd77e0cfe1c04d11eb251d) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde from 1.0.203 to 1.0.208 in /web-csv-toolbox-wasm
-
-- [#297](https://github.com/kamiazya/web-csv-toolbox/pull/297) [`93c79c3`](https://github.com/kamiazya/web-csv-toolbox/commit/93c79c386fb886443324ce76c136824a6ce8bc93) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.2.1 to 3.2.4
-
-- [#342](https://github.com/kamiazya/web-csv-toolbox/pull/342) [`436468c`](https://github.com/kamiazya/web-csv-toolbox/commit/436468cb953d4b2b450a08ffc961ab4b8eff6c5b) Thanks [@kamiazya](https://github.com/kamiazya)! - Update concurrency configuration in main Workflow
-
-- [#334](https://github.com/kamiazya/web-csv-toolbox/pull/334) [`3068e2d`](https://github.com/kamiazya/web-csv-toolbox/commit/3068e2d4d95e43fb65ad5e0e9be996e1aeabf459) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump cxx-build from 1.0.124 to 1.0.126 in /web-csv-toolbox-wasm
-
-- [#335](https://github.com/kamiazya/web-csv-toolbox/pull/335) [`16a01dd`](https://github.com/kamiazya/web-csv-toolbox/commit/16a01ddf36039e22588966e6ecf1854c5690e038) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump compiler_builtins from 0.1.112 to 0.1.119 in /web-csv-toolbox-wasm
-
-- [#340](https://github.com/kamiazya/web-csv-toolbox/pull/340) [`0cb5788`](https://github.com/kamiazya/web-csv-toolbox/commit/0cb5788ab07498053eb5301e099797771815f67f) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump vite from 5.3.1 to 5.4.2
-
-- [#302](https://github.com/kamiazya/web-csv-toolbox/pull/302) [`1032118`](https://github.com/kamiazya/web-csv-toolbox/commit/10321180d04c1d67f731d55f6c6190691c0d7ba6) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor CI/CD workflow
-
-- [#282](https://github.com/kamiazya/web-csv-toolbox/pull/282) [`b3edf0b`](https://github.com/kamiazya/web-csv-toolbox/commit/b3edf0b096cab4824ee7b36e52de04def896659d) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @biomejs/biome from 1.8.2 to 1.8.3
-
 ## 0.10.2
 
 ### Patch Changes
