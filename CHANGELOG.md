@@ -1,5 +1,43 @@
 # web-csv-toolbox
 
+## 0.11.0
+
+### Minor Changes
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Dynamic Type Inference and User-Defined Types from CSV Headers
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Remove InvalidOptionError class
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Support AbortSignal
+
+### Patch Changes
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps-dev): bump typedoc from 0.25.13 to 0.26.6
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps-dev): bump fast-check from 3.19.0 to 3.21.0
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps): bump wasm-pack from 0.12.1 to 0.13.0 in /web-csv-toolbox-wasm
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Remove unnecessary processes for convertIterableIteratorToAsync function
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps): bump serde_json from 1.0.117 to 1.0.125 in /web-csv-toolbox-wasm
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps): bump serde from 1.0.203 to 1.0.208 in /web-csv-toolbox-wasm
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.2.1 to 3.2.4
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Update concurrency configuration in main Workflow
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps): bump cxx-build from 1.0.124 to 1.0.126 in /web-csv-toolbox-wasm
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps): bump compiler_builtins from 0.1.112 to 0.1.119 in /web-csv-toolbox-wasm
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps-dev): bump vite from 5.3.1 to 5.4.2
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - Refactor CI/CD workflow
+
+- [#343](https://github.com/kamiazya/web-csv-toolbox/pull/343) [`139f3c2`](https://github.com/kamiazya/web-csv-toolbox/commit/139f3c2e7e2dd12605b98fb10f885ed47e154f47) Thanks [@nagasawaryoya](https://github.com/nagasawaryoya)! - build(deps-dev): bump @biomejs/biome from 1.8.2 to 1.8.3
+
 ## 0.10.2
 
 ### Patch Changes
