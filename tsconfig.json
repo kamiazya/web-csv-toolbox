@@ -12,12 +12,12 @@
     ],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "${configDir}/dist",
+    "paths": {
+      "#/*": [
+        "./*"
+      ]
+    }
+  }
 }

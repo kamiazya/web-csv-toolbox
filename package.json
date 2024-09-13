@@ -1,62 +1,12 @@
 {
-  "name": "web-csv-toolbox",
-  "version": "0.11.0",
+  "name": "@web-csv-toolbox/monorepo",
+  "private": true,
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "main": "dist/cjs/web-csv-toolbox.cjs",
-  "module": "dist/es/web-csv-toolbox.js",
-  "types": "dist/types/web-csv-toolbox.d.ts",
-  "unpkg": "dist/web-csv-toolbox.umd.js",
   "packageManager": "pnpm@9.3.0",
   "engines": {
     "node": ">=18.0.0"
   },
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/types/web-csv-toolbox.d.ts",
-      "import": "./dist/es/web-csv-toolbox.js",
-      "require": "./dist/cjs/web-csv-toolbox.cjs",
-      "default": "./dist/es/web-csv-toolbox.js"
-    },
-    "./*": {
-      "types": "./dist/types/*.d.ts",
-      "import": "./dist/es/*.js",
-      "require": "./dist/cjs/*.cjs",
-      "default": "./dist/es/*.js"
-    },
-    "./common/*": {
-      "types": "./dist/types/common/*.d.ts",
-      "import": "./dist/es/common/*.js",
-      "require": "./dist/cjs/common/*.cjs",
-      "default": "./dist/es/common/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/types/utils/*.d.ts",
-      "import": "./dist/es/utils/*.js",
-      "require": "./dist/cjs/utils/*.cjs",
-      "default": "./dist/es/utils/*.js"
-    },
-    "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
-    "./package.json": "./package.json"
-  },
-  "imports": {
-    "./loadWASM.js": {
-      "types": "./dist/types/loadWASM.d.ts",
-      "browser": {
-        "import": "./dist/es/loadWASM.web.js",
-        "require": "./dist/cjs/loadWASM.web.cjs",
-        "default": "./dist/es/loadWASM.web.js"
-      },
-      "import": "./dist/es/loadWASM.js",
-      "require": "./dist/cjs/loadWASM.cjs",
-      "default": "./dist/es/loadWASM.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
@@ -67,7 +17,9 @@
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
     "build": "pnpm build:wasm && pnpm build:js && pnpm build:browser",
-    "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
+    "build:wasm": "pnpm build:wasm:nodejs && pnpm build:wasm:web",
+    "build:wasm:nodejs": "wasm-pack build web-csv-toolbox-wasm --target bundler --no-pack --out-dir ../packages/wasm/build --out-name nodejs",
+    "build:wasm:web": "wasm-pack build web-csv-toolbox-wasm --target web --no-pack --out-dir ../packages/wasm/build --out-name web",
     "build:js": "vite build",
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
@@ -79,19 +31,10 @@
     "type": "git",
     "url": "git+https://github.com/kamiazya/web-csv-toolbox.git"
   },
-  "keywords": [
-    "csv",
-    "parser",
-    "web-streams",
-    "web-streams-api"
-  ],
   "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
-  },
-  "publishConfig": {
-    "provenance": true
   },
   "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
   "devDependencies": {
@@ -105,15 +48,19 @@
     "@vitest/browser": "^1.2.2",
     "@vitest/coverage-istanbul": "^1.2.2",
     "@wasm-tool/rollup-plugin-rust": "^2.4.5",
+    "@web-csv-toolbox/common": "workspace:*",
+    "@web-csv-toolbox/parser": "workspace:*",
+    "@web-csv-toolbox/wasm": "workspace:*",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^3.15.0",
     "terser": "^5.27.0",
     "typedoc": "^0.26.6",
     "typedoc-plugin-mdn-links": "^3.1.14",
-    "typescript": "^5.3.3",
+    "typescript": "~5.4.5",
     "vite": "^5.0.12",
-    "vite-plugin-dts": "^3.7.2",
+    "vite-plugin-dts": "^4.0.3",
     "vitest": "^1.2.2",
-    "webdriverio": "^9.0.6"
+    "webdriverio": "^9.0.6",
+    "web-csv-toolbox": "workspace:*"
   }
 }

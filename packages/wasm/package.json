@@ -1,0 +1,97 @@
+{
+  "name": "@web-csv-toolbox/wasm",
+  "version": "0.11.0",
+  "description": "A CSV Toolbox utilizing Web Standard APIs.",
+  "type": "module",
+  "main": "src/wasm.ts",
+  "module": "src/wasm.ts",
+  "types": "src/wasm.ts",
+  "sideEffects": true,
+  "exports": {
+    ".": {
+      "types": "./src/wasm.ts",
+      "import": "./src/wasm.ts",
+      "require": "./src/wasm.ts",
+      "browser": "./src/wasm.web.ts",
+      "default": "./src/wasm.ts"
+    },
+    "./bg.wasm": {
+      "types": "./build/nodejs_bg.d.ts",
+      "import": "./build/nodejs_bg.wasm",
+      "require": "./build/nodejs_bg.wasm",
+      "browser": "./build/web_bg.wasm",
+      "default": "./build/nodejs_bg.wasm"
+    },
+    "./package.json": "./package.json"
+  },
+  "imports": {
+    "#wasm": {
+      "types": {
+        "browser": "./build/web_bg.wasm.d.ts",
+        "default": "./build/nodejs_bg.d.ts"
+      },
+      "browser": "./build/web_bg.wasm",
+      "default": "./build/nodejs_bg.wasm"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamiazya/web-csv-toolbox.git",
+    "directory": "packages/wasm"
+  },
+  "keywords": [
+    "csv",
+    "wasm",
+    "web-streams",
+    "web-streams-api"
+  ],
+  "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
+  },
+  "publishConfig": {
+    "provenance": true,
+    "access": "public",
+    "main": "dist/wasm.cjs",
+    "module": "dist/wasm.js",
+    "types": "dist/wasm.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/wasm.d.ts",
+        "import": "./dist/wasm.js",
+        "require": "./dist/wasm.cjs",
+        "browser": "./dist/wasm.web.js",
+        "default": "./dist/wasm.js"
+      },
+      "./bg.wasm": {
+        "types": "./dist/nodejs_bg.d.ts",
+        "import": "./dist/nodejs_bg.wasm",
+        "require": "./dist/nodejs_bg.wasm",
+        "browser": "./dist/web_bg.wasm",
+        "default": "./dist/nodejs_bg.wasm"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@web-csv-toolbox/common": "workspace:^"
+  },
+  "devDependencies": {
+    "@rollup/pluginutils": "^5.1.0",
+    "typescript": "~5.4.5",
+    "vite": "^5.4.2",
+    "vite-plugin-dts": "^4.0.3",
+    "vite-plugin-top-level-await": "^1.4.4",
+    "vite-plugin-wasm": "^3.3.0",
+    "vite-tsconfig-paths": "^5.0.1"
+  }
+}

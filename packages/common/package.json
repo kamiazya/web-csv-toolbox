@@ -1,0 +1,67 @@
+{
+  "name": "@web-csv-toolbox/common",
+  "version": "0.11.0",
+  "description": "A CSV Toolbox utilizing Web Standard APIs.",
+  "type": "module",
+  "main": "./src/common.ts",
+  "module": "./src/common.ts",
+  "types": "./src/common.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/common.ts",
+      "import": "./src/common.ts",
+      "require": "./src/common.ts",
+      "default": "./src/common.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamiazya/web-csv-toolbox.git",
+    "directory": "packages/common"
+  },
+  "keywords": [
+    "csv",
+    "parser",
+    "web-streams",
+    "web-streams-api"
+  ],
+  "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
+  },
+  "publishConfig": {
+    "provenance": true,
+    "access": "public",
+    "main": "./dist/common.cjs",
+    "module": "./dist/common.js",
+    "types": "./dist/common.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/common.d.ts",
+        "import": "./dist/common.js",
+        "require": "./dist/common.cjs",
+        "default": "./dist/common.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@web-csv-toolbox/shared": "workspace:^"
+  },
+  "devDependencies": {
+    "typescript": "~5.4.5",
+    "vite": "^5.4.2",
+    "vite-plugin-dts": "^4.0.3"
+  }
+}

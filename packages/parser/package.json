@@ -1,0 +1,68 @@
+{
+  "name": "@web-csv-toolbox/parser",
+  "version": "0.11.0",
+  "description": "A CSV Toolbox utilizing Web Standard APIs.",
+  "type": "module",
+  "main": "src/parser.ts",
+  "module": "src/parser.ts",
+  "types": "src/parser.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/parser.ts",
+      "import": "./src/parser.ts",
+      "require": "./src/parser.ts",
+      "default": "./src/parser.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamiazya/web-csv-toolbox.git",
+    "directory": "packages/parser"
+  },
+  "keywords": [
+    "csv",
+    "parser",
+    "web-streams",
+    "web-streams-api"
+  ],
+  "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kamiazya/web-csv-toolbox/issues"
+  },
+  "publishConfig": {
+    "provenance": true,
+    "main": "dist/shared.cjs",
+    "module": "dist/shared.js",
+    "types": "dist/shared.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/shared.d.ts",
+        "import": "./dist/shared.js",
+        "require": "./dist/shared.cjs",
+        "default": "./dist/shared.js"
+      },
+      "./package.json": "./package.json"
+    }
+  },
+  "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
+  "dependencies": {
+    "@web-csv-toolbox/common": "workspace:^",
+    "@web-csv-toolbox/shared": "workspace:^",
+    "@web-csv-toolbox/wasm": "workspace:^"
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "typescript": "~5.4.5",
+    "vite": "^5.4.2",
+    "vite-plugin-dts": "^4.0.3"
+  }
+}
