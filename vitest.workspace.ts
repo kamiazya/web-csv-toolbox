@@ -1,3 +1,4 @@
+import codspeedPlugin from "@codspeed/vitest-plugin";
 import { defaultExclude, defineWorkspace } from "vitest/config";
 
 export default defineWorkspace([
@@ -18,6 +19,7 @@ export default defineWorkspace([
       environment: "node",
       exclude: [...defaultExclude, "**/*.browser.{spec,test}.ts"],
     },
+    plugins: [codspeedPlugin() as any],
   },
   {
     extends: "./vite.config.ts",
