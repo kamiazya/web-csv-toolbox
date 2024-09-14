@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   plugins: [wasm(), tsconfigPaths() as any],
   test: {
-    setupFiles: ["config/vitest.setup.ts"],
+    setupFiles: [".config/vitest.setup.ts"],
     browser: {
       name: "chrome",
     },

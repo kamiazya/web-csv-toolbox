@@ -1,0 +1,18 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPointStrategy": "packages",
+  "entryPoints": [
+    "../packages/*"
+  ],
+  "out": "../doc",
+  "plugin": [
+    "typedoc-plugin-mdn-links"
+  ],
+  "categoryOrder": [
+    "Types",
+    "Constants",
+    "High-level API",
+    "Middle-level API",
+    "Low-level API"
+  ]
+}
