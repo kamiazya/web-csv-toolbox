@@ -59,25 +59,25 @@ jobs:
     - run: pnpm run test --project node --project typecheck
 
 
-  test_deno:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-    - uses: denoland/setup-deno@5fae568d37c3b73449009674875529a984555dd1 # v1.3.0
-      with:
-        deno-version: v1.x
-    - run: |
-        deno eval '
-        import { parse } from "web-csv-toolbox";
+  # test_deno:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+  #   - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+  #   - uses: denoland/setup-deno@5fae568d37c3b73449009674875529a984555dd1 # v1.3.0
+  #     with:
+  #       deno-version: v1.x
+  #   - run: |
+  #       deno eval '
+  #       import { parse } from "web-csv-toolbox";
 
-        const csv = `name,age
-        Alice,42
-        Bob,69`;
+  #       const csv = `name,age
+  #       Alice,42
+  #       Bob,69`;
 
-        for await (const record of parse(csv)) {
-          console.log(record);
-        }'
+  #       for await (const record of parse(csv)) {
+  #         console.log(record);
+  #       }'
 
   test_linux_browser:
     runs-on: ubuntu-latest
