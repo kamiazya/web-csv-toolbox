@@ -1,3 +1,5 @@
+import { codecovVitePlugin } from "@codecov/vite-plugin";
+import type { Plugin } from "vite";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 
@@ -30,5 +32,11 @@ export default defineConfig({
   },
   plugins: [
     dts(),
+    codecovVitePlugin({
+      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      bundleName : "@web-csv-toolbox/shared",
+      uploadToken : process.env.CODECOV_TOKEN,
+      gitService : "github",
+    }) as any as Plugin,
   ],
 });

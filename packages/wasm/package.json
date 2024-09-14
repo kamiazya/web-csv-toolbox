@@ -86,12 +86,11 @@
     "@web-csv-toolbox/common": "workspace:^"
   },
   "devDependencies": {
-    "@rollup/pluginutils": "^5.1.0",
-    "typescript": "~5.4.5",
-    "vite": "^5.4.2",
-    "vite-plugin-dts": "^4.0.3",
-    "vite-plugin-top-level-await": "^1.4.4",
-    "vite-plugin-wasm": "^3.3.0",
-    "vite-tsconfig-paths": "^5.0.1"
+    "@codecov/vite-plugin": "catalog:",
+    "@rollup/pluginutils": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vite-plugin-wasm": "^3.3.0"
   }
 }

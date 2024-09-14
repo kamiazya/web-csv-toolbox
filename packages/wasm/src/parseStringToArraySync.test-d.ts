@@ -2,11 +2,11 @@ import { describe, expectTypeOf, it } from "vitest";
 
 import type { CSVRecord } from "@web-csv-toolbox/common";
 
-import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM";
+import { parseStringToArraySync } from "./wasm.js";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
-    expectTypeOf(parseStringToArraySyncWASM("" as string)).toEqualTypeOf<
+    expectTypeOf(parseStringToArraySync("" as string)).toEqualTypeOf<
       CSVRecord<readonly string[]>[]
     >();
   });
@@ -18,7 +18,7 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(parseStringToArraySyncWASM(csv1)).toMatchTypeOf<
+    expectTypeOf(parseStringToArraySync(csv1)).toMatchTypeOf<
       CSVRecord<["name", "age", "city", "zip"]>[]
     >();
   });
@@ -36,7 +36,7 @@ Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(
-      parseStringToArraySyncWASM(csv1, { delimiter: "*", quotation: "$" }),
+      parseStringToArraySync(csv1, { delimiter: "*", quotation: "$" }),
     ).toMatchTypeOf<
       CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>[]
     >();
@@ -46,19 +46,17 @@ Angeles$*90001`;
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
     expectTypeOf(
-      parseStringToArraySyncWASM<["name", "age", "city", "zip"]>(""),
+      parseStringToArraySync<["name", "age", "city", "zip"]>(""),
     ).toEqualTypeOf<CSVRecord<["name", "age", "city", "zip"]>[]>();
 
     expectTypeOf(
-      parseStringToArraySyncWASM<
-        string,
-        "#",
-        "$",
-        ["name", "age", "city", "zip"]
-      >("", {
-        delimiter: "#",
-        quotation: "$",
-      }),
+      parseStringToArraySync<string, "#", "$", ["name", "age", "city", "zip"]>(
+        "",
+        {
+          delimiter: "#",
+          quotation: "$",
+        },
+      ),
     ).toEqualTypeOf<CSVRecord<["name", "age", "city", "zip"]>[]>();
   });
 });

@@ -1,7 +1,7 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
 
-import { Field } from "#/common/lib/constants";
-import { RecordAssembler } from "#/parser/models/RecordAssembler.js";
+import { Field } from "@web-csv-toolbox/common";
+import { RecordAssembler } from "@web-csv-toolbox/parser";
 
 describe("RecordAssembler", () => {
   describe("when AbortSignal is provided", () => {

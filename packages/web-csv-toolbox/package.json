@@ -6,7 +6,6 @@
   "main": "src/web-csv-toolbox.ts",
   "module": "src/web-csv-toolbox.ts",
   "types": "src/web-csv-toolbox.ts",
-  "unpkg": "src-csv-toolbox.umd.ts",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -65,8 +64,9 @@
     "@web-csv-toolbox/wasm": "workspace:^"
   },
   "devDependencies": {
-    "typescript": "~5.4.5",
-    "vite": "^5.4.2",
-    "vite-plugin-dts": "^4.0.3"
+    "@codecov/vite-plugin": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:"
   }
 }

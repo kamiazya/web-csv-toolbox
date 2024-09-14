@@ -3,11 +3,12 @@ import { beforeAll, describe, expect, it } from "vitest";
 
 import { escapeField } from "@web-csv-toolbox/common";
 import { loadWASM } from "@web-csv-toolbox/wasm";
+
 import { FC } from "#/tests/utils/helper";
 
-import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM";
+import { parseStringToArraySync } from "./wasm";
 
-describe("parseStringToArraySyncWASM", async () => {
+describe("parseStringToArraySync", async () => {
   beforeAll(async () => {
     await loadWASM();
   });
@@ -49,7 +50,7 @@ describe("parseStringToArraySyncWASM", async () => {
         }),
         async ({ data, csv }) => {
           let i = 0;
-          const result = parseStringToArraySyncWASM(csv);
+          const result = parseStringToArraySync(csv);
           expect(result.length).toEqual(data.length);
           for (const record of result) {
             expect(data[i++]).toEqual(record);
@@ -63,10 +64,10 @@ describe("parseStringToArraySyncWASM", async () => {
     const csv = "a,b,c\n1,2,3";
 
     expect(() =>
-      parseStringToArraySyncWASM(csv, { delimiter: "ab" }),
+      parseStringToArraySync(csv, { delimiter: "ab" }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[RangeError: Invalid delimiter, must be a single character on WASM.]`,
+      `[RangeError: delimiter must be a single character]`,
     );
   });
 
@@ -74,7 +75,7 @@ describe("parseStringToArraySyncWASM", async () => {
     const csv = "a,b,c\n1,2,3";
 
     expect(() =>
-      parseStringToArraySyncWASM(csv, { quotation: "'" }),
+      parseStringToArraySync(csv, { quotation: "'" }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: Invalid quotation, must be double quote on WASM.]`,
