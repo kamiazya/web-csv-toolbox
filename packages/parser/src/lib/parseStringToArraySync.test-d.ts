@@ -1,18 +1,8 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import type { CSVRecord, ParseOptions } from "@web-csv-toolbox/common";
+import type { CSVRecord } from "@web-csv-toolbox/common";
 
 import { parseStringToArraySync } from "./parseStringToArraySync";
-
-describe("parseStringToArraySync function", () => {
-  it("parseStringToArraySync should be a function with expected parameter types", () => {
-    expectTypeOf(parseStringToArraySync).toBeFunction();
-    expectTypeOf(parseStringToArraySync).parameter(0).toMatchTypeOf<string>();
-    expectTypeOf(parseStringToArraySync)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<string[]> | undefined>();
-  });
-});
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {

@@ -16,7 +16,5 @@
     "useCalculatedVersion": true
   },
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "web-csv-toolbox-benchmark"
-  ]
+  "ignore": ["web-csv-toolbox-benchmark"]
 }

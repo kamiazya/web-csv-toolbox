@@ -59,17 +59,11 @@ export function parseString<
   >,
 >(
   csv: CSVSource,
-  options?: ParseOptions<Header, Delimiter, Quotation>,
-): AsyncIterableIterator<
-  CSVRecord<PickCSVHeader<CSVSource, Delimiter, Quotation>>
->;
-export function parseString(
-  csv: string,
-  options?: ParseOptions,
-): AsyncIterableIterator<CSVRecord<string[]>>;
+  options: ParseOptions<Header, Delimiter, Quotation>,
+): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parseString<Header extends ReadonlyArray<string>>(
   csv: string,
-  options?: ParseOptions<Header>,
+  options: ParseOptions<Header> = {},
 ): AsyncIterableIterator<CSVRecord<Header>> {
   try {
     yield* parseStringToIterableIterator(csv, options);

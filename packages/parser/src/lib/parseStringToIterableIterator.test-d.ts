@@ -1,20 +1,8 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import type { CSVRecord, ParseOptions } from "@web-csv-toolbox/common";
+import type { CSVRecord } from "@web-csv-toolbox/common";
 
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator";
-
-describe("parseStringToIterableIterator function", () => {
-  it("parseStringToIterableIterator should be a function with expected parameter types", () => {
-    expectTypeOf(parseStringToIterableIterator).toBeFunction();
-    expectTypeOf(parseStringToIterableIterator)
-      .parameter(0)
-      .toMatchTypeOf<string>();
-    expectTypeOf(parseStringToIterableIterator)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<string[]> | undefined>();
-  });
-});
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {

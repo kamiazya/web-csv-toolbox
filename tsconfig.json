@@ -6,18 +6,13 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "strict": true,
-    "lib": [
-      "DOM",
-      "ESNext"
-    ],
+    "lib": ["DOM", "ESNext"],
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "${configDir}/dist",
     "paths": {
-      "#/*": [
-        "./*"
-      ]
+      "#/*": ["./*"]
     }
   }
 }

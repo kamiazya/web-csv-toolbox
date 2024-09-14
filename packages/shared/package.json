@@ -16,21 +16,13 @@
     },
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kamiazya/web-csv-toolbox.git",
     "directory": "packages/shared"
   },
-  "keywords": [
-    "csv",
-    "shared",
-    "web-streams",
-    "web-streams-api"
-  ],
+  "keywords": ["csv", "shared", "web-streams", "web-streams-api"],
   "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {

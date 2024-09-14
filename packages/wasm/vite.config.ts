@@ -4,7 +4,7 @@ import dts from "vite-plugin-dts";
 import wasm from "vite-plugin-wasm";
 import { defineConfig } from "vitest/config";
 
-import wasmBase64Plugin from '../../config/vite-plugin-wasm-base64';
+import wasmBase64Plugin from "../../config/vite-plugin-wasm-base64";
 
 export default defineConfig({
   build: {
@@ -20,9 +20,7 @@ export default defineConfig({
         preserveModulesRoot: "src",
         exports: "named",
       },
-      external: [
-        "@web-csv-toolbox/common",
-      ],
+      external: ["@web-csv-toolbox/common"],
     },
     outDir: "dist",
   },
@@ -40,9 +38,9 @@ export default defineConfig({
     }),
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-      bundleName : "@web-csv-toolbox/wasm",
-      uploadToken : process.env.CODECOV_TOKEN,
-      gitService : "github",
+      bundleName: "@web-csv-toolbox/wasm",
+      uploadToken: process.env.CODECOV_TOKEN,
+      gitService: "github",
     }) as any as Plugin,
   ],
 });

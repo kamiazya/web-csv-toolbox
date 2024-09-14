@@ -187,7 +187,7 @@ export function parse<const Header extends ReadonlyArray<string>>(
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parse<const Header extends ReadonlyArray<string>>(
   csv: CSV,
-  options?: ParseBinaryOptions<Header>,
+  options: ParseBinaryOptions<Header> = {},
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {
     yield* parseString(csv, options);

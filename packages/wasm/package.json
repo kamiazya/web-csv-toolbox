@@ -34,21 +34,13 @@
       "default": "./build/nodejs_bg.wasm"
     }
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kamiazya/web-csv-toolbox.git",
     "directory": "packages/wasm"
   },
-  "keywords": [
-    "csv",
-    "wasm",
-    "web-streams",
-    "web-streams-api"
-  ],
+  "keywords": ["csv", "wasm", "web-streams", "web-streams-api"],
   "author": "Yuki Yamazaki <yuki@kamiazya.tech>",
   "license": "MIT",
   "bugs": {

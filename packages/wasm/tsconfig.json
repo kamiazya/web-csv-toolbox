@@ -3,15 +3,12 @@
   "compilerOptions": {
     "allowJs": true
   },
-  "include": [
-    "src",
-    "build"
-  ],
+  "include": ["src", "build"],
   "exclude": [
     "node_modules",
     "**/__tests__/*",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "**/*.test-d.ts",
+    "**/*.test-d.ts"
   ]
 }

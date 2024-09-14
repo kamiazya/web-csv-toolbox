@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile } from "node:fs/promises";
 
 import { dataToEsm } from "@rollup/pluginutils";
 import type { Plugin } from "vite";

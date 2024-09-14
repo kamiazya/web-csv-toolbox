@@ -24,7 +24,7 @@
     "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
-    "format:js": "biome check --apply .",
+    "format:js": "biome check --write .",
     "format:rust": "cargo fmt --manifest-path web-csv-toolbox-wasm/Cargo.toml --all && cargo clippy --manifest-path web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features"
   },
   "repository": {
