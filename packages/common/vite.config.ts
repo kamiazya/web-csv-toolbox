@@ -29,7 +29,6 @@ export default defineConfig({
   plugins: [
     dts({
       rollupTypes: true,
-      outDir: "dist",
     }),
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,

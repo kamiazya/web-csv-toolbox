@@ -1,10 +1,9 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
-import type { Plugin } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import dts from "vite-plugin-dts";
 import wasm from "vite-plugin-wasm";
-import { defineConfig } from "vitest/config";
 
-import wasmBase64Plugin from "../../config/vite-plugin-wasm-base64";
+// import wasmBase64Plugin from "../../config/vite-plugin-wasm-base64";
 
 export default defineConfig({
   build: {
@@ -30,11 +29,9 @@ export default defineConfig({
     minifySyntax: true,
   },
   plugins: [
-    wasmBase64Plugin(),
     wasm(),
     dts({
       rollupTypes: true,
-      outDir: "dist",
     }),
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
