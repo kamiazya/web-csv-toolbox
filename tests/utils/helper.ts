@@ -46,52 +46,16 @@ export namespace FC {
     };
   }
 
-  export type StringKind =
-    | "hexa"
-    | "string"
-    | "ascii"
-    | "unicode"
-    | "fullUnicode"
-    | "string16bits";
-
-  export interface TextConstraints extends fc.StringSharedConstraints {
-    kindExcludes?: readonly StringKind[];
+  export interface TextConstraints extends fc.StringConstraints {
     excludes?: string[];
   }
 
   export function text({
     excludes = [],
-    kindExcludes = [],
     ...constraints
   }: TextConstraints = {}): fc.Arbitrary<string> {
     return fc
-      .constantFrom(
-        ...([
-          "hexa",
-          "string",
-          "ascii",
-          "unicode",
-          "fullUnicode",
-          "string16bits",
-        ] as const),
-      )
-      .filter((v) => !kindExcludes.includes(v))
-      .chain((kind) => {
-        switch (kind) {
-          case "hexa":
-            return fc.hexaString(constraints);
-          case "string":
-            return fc.string(constraints);
-          case "ascii":
-            return fc.asciiString(constraints);
-          case "unicode":
-            return fc.unicodeString(constraints);
-          case "fullUnicode":
-            return fc.fullUnicodeString(constraints);
-          case "string16bits":
-            return fc.string16bits(constraints);
-        }
-      })
+      .string({ unit: "grapheme", ...constraints })
       .filter(_excludeFilter(excludes));
   }
 
@@ -120,10 +84,8 @@ export namespace FC {
       ...constraints,
       minLength: 1,
       maxLength: 1,
-      kindExcludes: ["string16bits", "unicode"],
-    })
-      .filter(_excludeFilter([...CRLF]))
-      .filter(_excludeFilter(excludes));
+      unit: "grapheme-composite",
+    }).filter(_excludeFilter([...CRLF, ...excludes]));
   }
 
   export interface QuotationConstraints extends TextConstraints {
@@ -139,10 +101,8 @@ export namespace FC {
       ...constraints,
       minLength: 1,
       maxLength: 1,
-      kindExcludes: ["string16bits", "unicode"],
-    })
-      .filter(_excludeFilter([...CRLF]))
-      .filter(_excludeFilter(excludes));
+      unit: "grapheme-composite",
+    }).filter(_excludeFilter([...CRLF, ...excludes]));
   }
 
   export interface CommonOptionsConstraints {

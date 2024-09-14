@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 
 import { FC, autoChunk, transform } from "#/tests/utils/helper";

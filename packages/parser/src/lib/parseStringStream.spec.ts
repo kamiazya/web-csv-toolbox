@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 
 import { FC } from "#/tests/utils/helper";

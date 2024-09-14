@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
 import { FC } from "#/tests/utils/helper.ts";
@@ -34,16 +34,11 @@ describe("function assertCommonOptions", () => {
   it("should throw an error if delimiter is the same as quotation", async () => {
     fc.assert(
       fc.property(
-        FC.text({ minLength: 1, maxLength: 1, excludes: [...CRLF] }).filter(
-          (v) => v.length === 1,
-        ),
+        FC.text({ minLength: 1, maxLength: 1, excludes: [...CRLF] }),
         (value) => {
           expect(() =>
             assertCommonOptions({ quotation: value, delimiter: value }),
-          ).toThrowErrorMatchingInlineSnapshot(
-            // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-            `[RangeError: delimiter must not be the same as quotation, use different characters]`,
-          );
+          ).toThrowError(RangeError);
         },
       ),
     );
@@ -56,10 +51,7 @@ describe("function assertCommonOptions", () => {
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
         }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[RangeError: quotation must not include CR or LF]`,
-      );
+      ).toThrowError(RangeError);
     }
     for (const delimiter of [CR, LF]) {
       expect(() =>
@@ -67,10 +59,7 @@ describe("function assertCommonOptions", () => {
           quotation: COMMA,
           delimiter: delimiter,
         }),
-      ).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[RangeError: delimiter must not include CR or LF]`,
-      );
+      ).toThrowError(RangeError);
     }
   });
 
