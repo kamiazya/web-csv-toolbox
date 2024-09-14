@@ -15,6 +15,5 @@
     "prereleaseTemplate": "{tag}-{commit}",
     "useCalculatedVersion": true
   },
-  "updateInternalDependencies": "patch",
-  "ignore": ["web-csv-toolbox-benchmark"]
+  "updateInternalDependencies": "patch"
 }
