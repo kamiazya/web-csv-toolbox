@@ -7,12 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": [
-      "node_modules",
-      "web-csv-toolbox-wasm",
-      "packages/wasm/build",
-      "**/package.json"
-    ]
+    "ignore": ["node_modules", "packages/wasm", "**/package.json"]
   },
   "organizeImports": {
     "enabled": true

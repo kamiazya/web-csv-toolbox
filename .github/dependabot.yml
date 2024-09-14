@@ -10,7 +10,7 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: cargo
-    directory: "/web-csv-toolbox-wasm"
+    directory: "/packages/wasm"
     schedule:
       interval: "weekly"
   - package-ecosystem: 'github-actions'

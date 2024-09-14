@@ -1,13 +1,13 @@
 import {
-  type CSVRecord,
-  type CommonOptions,
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
-  type PickCSVHeader,
   assertCommonOptions,
+  type CSVRecord,
+  type CommonOptions,
+  type PickCSVHeader,
 } from "@web-csv-toolbox/common";
 
-import { parseStringToArraySync as $parseStringToArraySync } from "../build/nodejs";
+import { parseStringToArraySync as $parseStringToArraySync } from "./lib/nodejs/build/wasm.js";
 
 /**
  * Load WASM module.

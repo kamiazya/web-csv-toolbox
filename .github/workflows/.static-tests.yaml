@@ -31,8 +31,8 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - name: Run Clippy
-        run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
+        run: cargo clippy --manifest-path=./packages/wasm/Cargo.toml --all-targets --all-features
         env:
           RUSTFLAGS: -D warnings
       - name: Run Fmt
-        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
+        run: cargo fmt --manifest-path=./packages/wasm/Cargo.toml --all -- --check

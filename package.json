@@ -16,15 +16,11 @@
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
-    "build": "pnpm build:wasm && pnpm build:js",
-    "build:wasm": "pnpm build:wasm:nodejs && pnpm build:wasm:web",
-    "build:wasm:nodejs": "wasm-pack build web-csv-toolbox-wasm --target bundler --no-pack --out-dir ../packages/wasm/build --out-name nodejs",
-    "build:wasm:web": "wasm-pack build web-csv-toolbox-wasm --target web --no-pack --out-dir ../packages/wasm/build --out-name web",
-    "build:js": "pnpm -r build",
+    "build": "pnpm -r build",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",
-    "format:rust": "cargo fmt --manifest-path web-csv-toolbox-wasm/Cargo.toml --all && cargo clippy --manifest-path web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features"
+    "format:rust": "cargo fmt --manifest-path packages/wasm/Cargo.toml --all && cargo clippy --manifest-path packages/wasm/Cargo.toml --all-targets --all-features"
   },
   "repository": {
     "type": "git",

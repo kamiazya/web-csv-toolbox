@@ -27,11 +27,11 @@ jobs:
           path: dist
       - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
         with:
-          name: web-csv-toolbox-wasm
+          name: packages/wasm
           path: |
-            web-csv-toolbox-wasm/**/*
-            !web-csv-toolbox-wasm/src
-            !web-csv-toolbox-wasm/target
-            !web-csv-toolbox-wasm/Cargo.toml
-            !web-csv-toolbox-wasm/Cargo.lock
-            !web-csv-toolbox-wasm/.gitignore
+            packages/wasm/src/lib/**/build/*
+            !packages/wasm/src
+            !packages/wasm/target
+            !packages/wasm/Cargo.toml
+            !packages/wasm/Cargo.lock
+            !packages/wasm/.gitignore

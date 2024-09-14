@@ -44,7 +44,7 @@ runs:
         targets: wasm32-unknown-unknown
         channel: nightly
         components: clippy,rustfmt
-        target-dirs: web-csv-toolbox-wasm/target
+        target-dirs: packages/wasm/target
     - name: Install wasm-pack
       if: ${{ inputs.skip-rust-setup != 'true' }}
       run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh

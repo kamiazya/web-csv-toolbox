@@ -9,9 +9,12 @@
   "sideEffects": true,
   "exports": {
     ".": {
-      "types": "./src/wasm.ts",
+      "types": {
+        "browser": "./src/wasm.browser.ts",
+        "import": "./src/wasm.ts"
+      },
       "import": "./src/wasm.ts",
-      "browser": "./src/wasm.web.ts",
+      "browser": "./src/wasm.browser.ts",
       "default": "./src/wasm.ts"
     },
     "./package.json": "./package.json"
@@ -48,7 +51,11 @@
   },
   "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
   "scripts": {
-    "build": "vite build"
+    "build:wasm": "pnpm build:wasm:nodejs && pnpm build:wasm:web",
+    "build:wasm:nodejs": "wasm-pack build . --target bundler --no-pack --out-dir ./src/lib/nodejs/build --out-name wasm",
+    "build:wasm:web": "wasm-pack build . --target web --no-pack --out-dir ./src/lib/browser/build --out-name wasm",
+    "build:js": "vite build",
+    "build": "pnpm build:wasm && pnpm build:js"
   },
   "dependencies": {
     "@web-csv-toolbox/common": "workspace:^"
