@@ -30,14 +30,12 @@
   },
   "publishConfig": {
     "provenance": true,
-    "main": "dist/shared.cjs",
     "module": "dist/shared.js",
     "types": "dist/shared.d.ts",
     "exports": {
       ".": {
         "types": "./dist/shared.d.ts",
         "import": "./dist/shared.js",
-        "require": "./dist/shared.cjs",
         "default": "./dist/shared.js"
       },
       "./package.json": "./package.json"

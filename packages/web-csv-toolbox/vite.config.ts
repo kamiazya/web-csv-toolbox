@@ -8,9 +8,9 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: "src/web-csv-toolbox.ts",
-      formats: ["es", "cjs"],
+      formats: ["es"],
     },
-    minify: "terser",
+    minify: true,
     rollupOptions: {
       output: {
         inlineDynamicImports: false,

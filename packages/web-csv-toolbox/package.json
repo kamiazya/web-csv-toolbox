@@ -33,14 +33,12 @@
   },
   "publishConfig": {
     "provenance": true,
-    "main": "./dist/web-csv-toolbox.cjs",
     "module": "./dist/web-csv-toolbox.js",
     "types": "./dist/web-csv-toolbox.d.ts",
     "exports": {
       ".": {
         "types": "./dist/web-csv-toolbox.d.ts",
         "import": "./dist/web-csv-toolbox.js",
-        "require": "./dist/web-csv-toolbox.cjs",
         "default": "./dist/web-csv-toolbox.js"
       },
       "./package.json": "./package.json"

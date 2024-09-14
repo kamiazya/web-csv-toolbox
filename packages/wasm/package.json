@@ -11,28 +11,10 @@
     ".": {
       "types": "./src/wasm.ts",
       "import": "./src/wasm.ts",
-      "require": "./src/wasm.ts",
       "browser": "./src/wasm.web.ts",
       "default": "./src/wasm.ts"
     },
-    "./bg.wasm": {
-      "types": "./build/nodejs_bg.d.ts",
-      "import": "./build/nodejs_bg.wasm",
-      "require": "./build/nodejs_bg.wasm",
-      "browser": "./build/web_bg.wasm",
-      "default": "./build/nodejs_bg.wasm"
-    },
     "./package.json": "./package.json"
-  },
-  "imports": {
-    "#wasm": {
-      "types": {
-        "browser": "./build/web_bg.wasm.d.ts",
-        "default": "./build/nodejs_bg.d.ts"
-      },
-      "browser": "./build/web_bg.wasm",
-      "default": "./build/nodejs_bg.wasm"
-    }
   },
   "files": ["dist", "README.md"],
   "repository": {
@@ -49,23 +31,17 @@
   "publishConfig": {
     "provenance": true,
     "access": "public",
-    "main": "dist/wasm.cjs",
     "module": "dist/wasm.js",
     "types": "dist/wasm.d.ts",
     "exports": {
       ".": {
-        "types": "./dist/wasm.d.ts",
+        "types": {
+          "browser": "./dist/wasm.browser.d.ts",
+          "import": "./dist/wasm.d.ts"
+        },
         "import": "./dist/wasm.js",
-        "require": "./dist/wasm.cjs",
-        "browser": "./dist/wasm.web.js",
+        "browser": "./dist/wasm.browser.js",
         "default": "./dist/wasm.js"
-      },
-      "./bg.wasm": {
-        "types": "./dist/nodejs_bg.d.ts",
-        "import": "./dist/nodejs_bg.wasm",
-        "require": "./dist/nodejs_bg.wasm",
-        "browser": "./dist/web_bg.wasm",
-        "default": "./dist/nodejs_bg.wasm"
       },
       "./package.json": "./package.json"
     }

@@ -11,9 +11,9 @@ export default defineConfig({
     target: "esnext",
     lib: {
       entry: ["src/wasm.ts", "src/wasm.browser.ts"],
-      formats: ["es", "cjs"],
+      formats: ["es"],
     },
-    minify: "terser",
+    minify: true,
     rollupOptions: {
       output: {
         inlineDynamicImports: false,

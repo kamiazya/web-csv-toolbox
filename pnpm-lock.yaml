@@ -60,9 +60,6 @@ importers:
       fast-check:
         specifier: ^3.15.0
         version: 3.21.0
-      terser:
-        specifier: ^5.27.0
-        version: 5.31.1
       typedoc:
         specifier: ^0.26.6
         version: 0.26.6(typescript@5.4.5)
@@ -3599,6 +3596,7 @@ snapshots:
     dependencies:
       '@jridgewell/gen-mapping': 0.3.3
       '@jridgewell/trace-mapping': 0.3.22
+    optional: true
 
   '@jridgewell/sourcemap-codec@1.4.15': {}
 
@@ -4213,7 +4211,8 @@ snapshots:
 
   buffer-crc32@1.0.0: {}
 
-  buffer-from@1.1.2: {}
+  buffer-from@1.1.2:
+    optional: true
 
   buffer@5.7.1:
     dependencies:
@@ -4319,7 +4318,8 @@ snapshots:
     dependencies:
       delayed-stream: 1.0.0
 
-  commander@2.20.3: {}
+  commander@2.20.3:
+    optional: true
 
   commander@9.5.0: {}
 
@@ -5476,6 +5476,7 @@ snapshots:
     dependencies:
       buffer-from: 1.1.2
       source-map: 0.6.1
+    optional: true
 
   source-map@0.6.1: {}
 
@@ -5588,6 +5589,7 @@ snapshots:
       acorn: 8.11.3
       commander: 2.20.3
       source-map-support: 0.5.21
+    optional: true
 
   test-exclude@6.0.0:
     dependencies:

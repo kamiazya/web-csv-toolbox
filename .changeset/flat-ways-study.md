@@ -2,4 +2,4 @@
 "web-csv-toolbox": minor
 ---
 
-Unsupport UMD
+Unsupport UMD and CJS
