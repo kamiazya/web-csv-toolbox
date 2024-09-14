@@ -29,7 +29,8 @@ jobs:
         with:
           name: packages/wasm
           path: |
-            packages/wasm/src/lib/**/build/*
+            packages/wasm/src/lib/browser/build/*
+            packages/wasm/src/lib/nodejs/build/*
             !packages/wasm/src
             !packages/wasm/target
             !packages/wasm/Cargo.toml
