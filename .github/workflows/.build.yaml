@@ -25,10 +25,6 @@ jobs:
         with:
           name: packages
           path: |
-            **/packages/*/dist/*
-      - uses: actions/upload-artifact@834a144ee995460fba8ed112a2fc961b36a5ec5a # v4.3.6
-        with:
-          name: wasm
-          path: |
-            **/packages/wasm/src/lib/browser/build/*
-            **/packages/wasm/src/lib/nodejs/build/*
+            packages/*/dist/*
+            packages/wasm/src/lib/browser/build/*
+            packages/wasm/src/lib/nodejs/build/*
