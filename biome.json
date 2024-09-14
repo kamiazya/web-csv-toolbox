@@ -7,14 +7,17 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "ignore": ["node_modules", "packages/wasm", "**/package.json"]
+    "include": ["**/*.ts", "**/*.json", "**/*.jsonc"],
+    "ignore": ["node_modules", "packages/wasm"]
   },
   "organizeImports": {
     "enabled": true
   },
   "formatter": {
     "enabled": true,
-    "useEditorconfig": true
+    "useEditorconfig": true,
+    "indentStyle": "space",
+    "indentWidth": 2
   },
   "linter": {
     "enabled": true,
