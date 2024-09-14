@@ -14,7 +14,7 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   options: ParseBinaryOptions<Header> = {},
 ): ParseBinaryOptions<Header> {
   const { headers } = response;
-  const contentType = headers.get("content-type") ?? "text/csv";
+  const contentType = headers.get("content-type")!;
   const mime = parseMime(contentType);
   if (mime.type !== "text/csv") {
     throw new RangeError(`Invalid mime type: "${contentType}"`);

@@ -2,11 +2,10 @@ import fc from "fast-check";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { escapeField } from "@web-csv-toolbox/common";
-import { loadWASM } from "@web-csv-toolbox/wasm";
 
 import { FC } from "#/tests/utils/helper";
 
-import { parseStringToArraySync } from "./wasm";
+import { loadWASM, parseStringToArraySync } from "./wasm.browser";
 
 describe("parseStringToArraySync", async () => {
   beforeAll(async () => {
@@ -19,13 +18,13 @@ describe("parseStringToArraySync", async () => {
         fc.gen().map((g) => {
           const header = g(FC.header, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
           const csvData = g(FC.csvData, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
             columnsConstraints: {
               minLength: header.length,

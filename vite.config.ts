@@ -6,10 +6,8 @@ export default defineConfig({
   plugins: [wasm(), tsconfigPaths() as any],
   test: {
     setupFiles: [".config/vitest.setup.ts"],
-    browser: {
-      name: "chrome",
-    },
     coverage: {
+      enabled: true,
       provider: "istanbul", // use istanbul for browser coverage
       include: ["packages/**/*.ts"],
     },

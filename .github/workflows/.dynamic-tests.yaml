@@ -56,7 +56,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-    - run: pnpm test run
+    - run: pnpm test run --project node
 
 
   test_deno:
@@ -69,7 +69,7 @@ jobs:
         deno-version: v1.x
     - run: |
         deno eval '
-        import { parse } from "./dist/es/web-csv-toolbox.js";
+        import { parse } from "./packages/web-csv-toolbox/dist/web-csv-toolbox.js";
 
         const csv = `name,age
         Alice,42
@@ -94,7 +94,7 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_macos_browser:
     runs-on: macos-latest
@@ -118,8 +118,7 @@ jobs:
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
-
+      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_windows_browser:
     runs-on: windows-latest
@@ -137,4 +136,4 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless

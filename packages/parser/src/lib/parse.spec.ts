@@ -81,7 +81,7 @@ describe("parse function", () => {
         fc.gen().map((g) => {
           const header = g(FC.header, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
@@ -96,14 +96,14 @@ describe("parse function", () => {
                 maxLength: header.length,
               },
               fieldConstraints: {
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
             }),
             // Last row is not empty for testing.
             g(FC.row, {
               fieldConstraints: {
                 minLength: 1,
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
               columnsConstraints: {
                 minLength: header.length,
@@ -139,7 +139,7 @@ describe("parse function", () => {
         fc.gen().map((g) => {
           const header = g(FC.header, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
@@ -154,14 +154,14 @@ describe("parse function", () => {
                 maxLength: header.length,
               },
               fieldConstraints: {
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
             }),
             // Last row is not empty for testing.
             g(FC.row, {
               fieldConstraints: {
                 minLength: 1,
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
               columnsConstraints: {
                 minLength: header.length,
@@ -252,7 +252,7 @@ describe("parse function", () => {
         fc.gen().map((g) => {
           const header = g(FC.header, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
@@ -267,14 +267,14 @@ describe("parse function", () => {
                 maxLength: header.length,
               },
               fieldConstraints: {
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
             }),
             // Last row is not empty for testing.
             g(FC.row, {
               fieldConstraints: {
                 minLength: 1,
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
               columnsConstraints: {
                 minLength: header.length,
@@ -313,7 +313,7 @@ describe("parse function", () => {
         fc.gen().map((g) => {
           const header = g(FC.header, {
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
@@ -328,14 +328,14 @@ describe("parse function", () => {
                 maxLength: header.length,
               },
               fieldConstraints: {
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
             }),
             // Last row is not empty for testing.
             g(FC.row, {
               fieldConstraints: {
                 minLength: 1,
-                kindExcludes: ["string16bits"],
+                unit: "grapheme",
               },
               columnsConstraints: {
                 minLength: header.length,

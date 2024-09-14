@@ -5,7 +5,7 @@ export interface ParseMimeResult {
   };
 }
 
-export function parseMime(contentType: string) {
+export function parseMime(contentType: string): ParseMimeResult {
   const [type, ...parameters] = contentType.split(";");
   const result: ParseMimeResult = {
     type: type.trim(),

@@ -16,14 +16,14 @@ describe("parseUint8ArrayStream function", () => {
           const header = g(FC.header, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
           const csvData = g(FC.csvData, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
             columnsConstraints: {
               minLength: header.length,
@@ -89,14 +89,14 @@ describe("parseUint8ArrayStream function", () => {
           const header = g(FC.header, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const EOL = g(FC.eol);
           const csvData = g(FC.csvData, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
             columnsConstraints: {
               minLength: header.length,

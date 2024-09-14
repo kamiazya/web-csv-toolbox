@@ -15,7 +15,7 @@ describe("parseBinary function", () => {
           const header = g(FC.header, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
           });
           const BOM = g(fc.boolean);
@@ -28,7 +28,7 @@ describe("parseBinary function", () => {
           const csvData = g(FC.csvData, {
             // TextEncoderStream can't handle utf-16 string.
             fieldConstraints: {
-              kindExcludes: ["string16bits"],
+              unit: "grapheme",
             },
             columnsConstraints: {
               minLength: header.length,
