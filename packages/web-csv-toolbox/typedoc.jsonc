@@ -1,6 +1,4 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": [
-    "./src/web-csv-toolbox.ts"
-  ]
+  "entryPoints": ["./src/web-csv-toolbox.ts"]
 }
