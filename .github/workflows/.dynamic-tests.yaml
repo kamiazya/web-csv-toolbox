@@ -69,7 +69,7 @@ jobs:
         deno-version: v1.x
     - run: |
         deno eval '
-        import { parse } from "./packages/web-csv-toolbox/dist/web-csv-toolbox.js";
+        import { parse } from "web-csv-toolbox";
 
         const csv = `name,age
         Alice,42
