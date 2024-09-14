@@ -34,7 +34,7 @@ export default defineConfig({
     dts(),
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-      bundleName: "@web-csv-toolbox/shared",
+      bundleName: "web-csv-toolbox",
       uploadToken: process.env.CODECOV_TOKEN,
       gitService: "github",
     }) as any as Plugin,
