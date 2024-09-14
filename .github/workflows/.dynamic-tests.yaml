@@ -56,7 +56,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-    - run: pnpm test run --project node
+    - run: pnpm run test --project node --project typecheck
 
 
   test_deno:
@@ -94,7 +94,7 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm run test --project browser --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_macos_browser:
     runs-on: macos-latest
@@ -118,7 +118,7 @@ jobs:
       # - if: matrix.browsers == 'safari'
       #   run: sudo safaridriver --enable
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm run test --project browser --browser.name=${{ matrix.browsers }} --browser.headless
 
   test_windows_browser:
     runs-on: windows-latest
@@ -136,4 +136,4 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
-      - run: pnpm test run --project browser --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm run test --project browser --browser.name=${{ matrix.browsers }} --browser.headless

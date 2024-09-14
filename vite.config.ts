@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     setupFiles: [".config/vitest.setup.ts"],
     coverage: {
-      enabled: true,
+      enabled: false,
       provider: "istanbul", // use istanbul for browser coverage
       include: ["packages/**/*.ts"],
     },
