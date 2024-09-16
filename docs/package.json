@@ -4,7 +4,7 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "tsx main.ts"
+    "doc": "tsx main.ts"
   },
   "devDependencies": {
     "liquidjs": "^10.16.7",
