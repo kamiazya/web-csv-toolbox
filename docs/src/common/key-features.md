@@ -1,0 +1,17 @@
+- 🌊 **Efficient CSV Parsing with Streams**
+  - 💻 Leveraging the [WHATWG Streams API](https://streams.spec.whatwg.org/) and other Web APIs for seamless and efficient data processing.
+- 🛑 **AbortSignal and Timeout Support**: Ensure your CSV processing is cancellable, including support for automatic timeouts.
+  - ✋ Integrate with [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController) to manually cancel operations as needed.
+  - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
+- 🎨 **Flexible Source Support**
+  - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
+- ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
+  - 🔄 Defaults to `,` and `"` respectively.
+- 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
+  - 🔄 Flexible BOM handling.
+  - 🗜️ Supports various compression formats.
+  - 🔤 Charset specification for diverse encoding.
+- 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
+  - 📦 WebAssembly is used for high performance parsing.
+- 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
+- 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).

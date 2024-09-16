@@ -1,0 +1,11 @@
+
+- 🌐 **Web Standards first.**
+  - Utilizing the Web Standards APIs, such as the [Web Streams API](https://developer.mozilla.org/en/docs/Web/API/Streams_API).
+- ❤️ **TypeScript friendly & User friendly.**
+  - Fully typed and documented.
+- 0️⃣ **Zero dependencies.**
+  - Using only Web Standards APIs.
+- 💪 **Property-based testing.**
+  - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
+- ✅ **Cross-platform.**
+  - Works on browsers, Node.js, and Deno.

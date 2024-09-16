@@ -30,13 +30,13 @@
   },
   "publishConfig": {
     "provenance": true,
-    "module": "dist/shared.js",
-    "types": "dist/shared.d.ts",
+    "module": "dist/parser.js",
+    "types": "dist/parser.d.ts",
     "exports": {
       ".": {
-        "types": "./dist/shared.d.ts",
-        "import": "./dist/shared.js",
-        "default": "./dist/shared.js"
+        "types": "./dist/parser.d.ts",
+        "import": "./dist/parser.js",
+        "default": "./dist/parser.js"
       },
       "./package.json": "./package.json"
     }

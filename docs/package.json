@@ -1,0 +1,13 @@
+{
+  "name": "@web-csv-toolbox/docs",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "tsx main.ts"
+  },
+  "devDependencies": {
+    "liquidjs": "^10.16.7",
+    "tsx": "^4.19.1"
+  }
+}
