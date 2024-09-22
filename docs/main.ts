@@ -1,5 +1,5 @@
-import { Liquid } from "liquidjs";
 import { readFile, writeFile } from "node:fs/promises";
+import { Liquid } from "liquidjs";
 
 const engine = new Liquid({
   root: ["src"],
