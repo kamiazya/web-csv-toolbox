@@ -73,10 +73,10 @@ importers:
     dependencies:
       '@codspeed/tinybench-plugin':
         specifier: ^3.1.0
-        version: 3.1.0(tinybench@2.6.0)
+        version: 3.1.0(tinybench@3.0.0)
       tinybench:
-        specifier: ^2.6.0
-        version: 2.6.0
+        specifier: ^3.0.0
+        version: 3.0.0
       tsx:
         specifier: ^4.7.1
         version: 4.7.1
@@ -2465,11 +2465,12 @@ packages:
   through@2.3.8:
     resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
 
-  tinybench@2.6.0:
-    resolution: {integrity: sha512-N8hW3PG/3aOoZAN5V/NSAEDz0ZixDSSt5b/a05iqtpgfLWMSVuCo7w0k2vVvEjdrIoeGqZzweX2WlyioNIHchA==}
-
   tinybench@2.8.0:
     resolution: {integrity: sha512-1/eK7zUnIklz4JUUlL+658n58XO2hHLQfSk1Zf2LKieUjxidN16eKFEoDEfjHc3ohofSSqK3X5yO6VGb6iW8Lw==}
+
+  tinybench@3.0.0:
+    resolution: {integrity: sha512-931sGm66Zjp7c4o/DePaq8AKlCdq/ZldpS1b8O7r3SxSuxJpqoqeUprTOsW2CBhrw54U3mTmcS97LsBqPXEQLw==}
+    engines: {node: '>=18.0.0'}
 
   tinypool@0.8.2:
     resolution: {integrity: sha512-SUszKYe5wgsxnNOVlBYO6IC+8VGWdVGZWAqUxp3UErNBtptZvWbwyUOyzNL59zigz2rCA92QiL3wvG+JDSdJdQ==}
@@ -3169,11 +3170,11 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@codspeed/tinybench-plugin@3.1.0(tinybench@2.6.0)':
+  '@codspeed/tinybench-plugin@3.1.0(tinybench@3.0.0)':
     dependencies:
       '@codspeed/core': 3.1.0
       stack-trace: 1.0.0-pre2
-      tinybench: 2.6.0
+      tinybench: 3.0.0
     transitivePeerDependencies:
       - debug
 
@@ -5327,9 +5328,9 @@ snapshots:
 
   through@2.3.8: {}
 
-  tinybench@2.6.0: {}
-
   tinybench@2.8.0: {}
+
+  tinybench@3.0.0: {}
 
   tinypool@0.8.2: {}
 
