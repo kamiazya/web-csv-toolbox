@@ -18,7 +18,7 @@ serde_json = "1.0"
 web-sys = { version = "0.3", features = ['console'] }
 
 [build-dependencies]
-compiler_builtins = "0.1.119"
+compiler_builtins = "0.1.136"
 cxx-build = "1.0"
 wasm-opt = "0.116.1"
 wasm-pack = "0.13.0"
