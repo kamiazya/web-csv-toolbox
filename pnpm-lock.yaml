@@ -20,9 +20,6 @@ importers:
       '@codecov/vite-plugin':
         specifier: 0.0.1-beta.10
         version: 0.0.1-beta.10(vite@5.4.2(@types/node@20.16.1)(terser@5.31.1))
-      '@fast-check/vitest':
-        specifier: ^0.1.0
-        version: 0.1.1(vitest@1.2.2(@types/node@20.16.1)(@vitest/browser@1.2.2)(terser@5.31.1))
       '@rollup/plugin-terser':
         specifier: ^0.4.4
         version: 0.4.4(rollup@4.21.0)
@@ -588,11 +585,6 @@ packages:
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
-
-  '@fast-check/vitest@0.1.1':
-    resolution: {integrity: sha512-hxBUieogCiugTY0RZTBcFRfCVja4CxLMXwCKXyf6OtP65gGWoRI17iu/SwcGZp2hzlpxiSIgHFYfQXBEx+jxfQ==}
-    peerDependencies:
-      vitest: '>=0.28.1 <1.0.0 || ^1'
 
   '@iarna/toml@2.2.5':
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
@@ -3314,11 +3306,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.21.5':
     optional: true
-
-  '@fast-check/vitest@0.1.1(vitest@1.2.2(@types/node@20.16.1)(@vitest/browser@1.2.2)(terser@5.31.1))':
-    dependencies:
-      fast-check: 3.21.0
-      vitest: 1.2.2(@types/node@20.16.1)(@vitest/browser@1.2.2)(terser@5.31.1)
 
   '@iarna/toml@2.2.5': {}
 
