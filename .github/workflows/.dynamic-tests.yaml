@@ -38,7 +38,7 @@ jobs:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@ab07afd34cbbb7a1306e8d14b7cc44e029eee37a # v3.0.0
+        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
         with:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
