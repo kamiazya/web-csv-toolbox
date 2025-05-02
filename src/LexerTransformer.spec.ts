@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { LexerTransformer } from "./LexerTransformer.ts";
 import { FC, autoChunk, transform } from "./__tests__/helper.ts";

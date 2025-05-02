@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { beforeAll, describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
 import { escapeField } from "./escapeField.ts";

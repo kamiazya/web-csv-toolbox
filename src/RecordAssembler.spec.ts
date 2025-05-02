@@ -1,4 +1,4 @@
-import { fc } from "@fast-check/vitest";
+import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { RecordAssembler } from "./RecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
