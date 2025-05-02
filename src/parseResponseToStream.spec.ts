@@ -27,7 +27,6 @@ describe("parseResponseToStream", () => {
     expect(() =>
       parseResponseToStream(response),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: Invalid mime type: "application/json"]`,
     );
   });
