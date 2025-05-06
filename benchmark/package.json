@@ -9,7 +9,7 @@
   "license": "MIT",
   "dependencies": {
     "@codspeed/tinybench-plugin": "^3.1.0",
-    "tinybench": "^2.6.0",
+    "tinybench": "^4.0.1",
     "tsx": "^4.7.1",
     "web-csv-toolbox": "workspace:*"
   }
