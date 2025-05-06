@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.11.1
+
+### Patch Changes
+
+- [#438](https://github.com/kamiazya/web-csv-toolbox/pull/438) [`fb706b1`](https://github.com/kamiazya/web-csv-toolbox/commit/fb706b1cb14c761e4e12ba9f1c7dc3377ac86b92) Thanks [@kamiazya](https://github.com/kamiazya)! - Use fast-check instead of @fast-check/vitest in test files
+
 ## 0.11.0
 
 ### Minor Changes
