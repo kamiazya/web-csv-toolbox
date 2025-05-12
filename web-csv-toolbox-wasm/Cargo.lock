@@ -346,9 +346,9 @@ checksum = "acbf1af155f9b9ef647e42cdc158db4b64a1b61f743629225fde6f3e0be2a7c7"
 
 [[package]]
 name = "compiler_builtins"
-version = "0.1.119"
+version = "0.1.158"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f33ff92be528a1a48723e7da561cb3a0edb4736f3dd094011d9fe75febce0acb"
+checksum = "164cdc689e4c6d69417f77a5f48be240c291e84fbef0b1281755dc754b19c809"
 
 [[package]]
 name = "console"
