@@ -1,5 +1,23 @@
 # web-csv-toolbox
 
+## 0.11.1
+
+### Patch Changes
+
+- [#445](https://github.com/kamiazya/web-csv-toolbox/pull/445) [`c5adab5`](https://github.com/kamiazya/web-csv-toolbox/commit/c5adab54b60a421dc749ae9fc1b98e4b0ace4f17) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump serde_json from 1.0.125 to 1.0.140 in /web-csv-toolbox-wasm
+
+- [#459](https://github.com/kamiazya/web-csv-toolbox/pull/459) [`345725d`](https://github.com/kamiazya/web-csv-toolbox/commit/345725da742433fe3e6e5851ca1a474862c6f4d4) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump csv from 1.3.0 to 1.3.1 in /web-csv-toolbox-wasm
+
+- [#458](https://github.com/kamiazya/web-csv-toolbox/pull/458) [`ae27c2e`](https://github.com/kamiazya/web-csv-toolbox/commit/ae27c2e9b633263ab4527608eee6f60d9a59eaf1) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump compiler_builtins from 0.1.119 to 0.1.158 in /web-csv-toolbox-wasm
+
+- [#450](https://github.com/kamiazya/web-csv-toolbox/pull/450) [`95bd151`](https://github.com/kamiazya/web-csv-toolbox/commit/95bd1518926c9edf5af710ad02c129dff074fe72) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.2.4 to 4.0.15
+
+- [#449](https://github.com/kamiazya/web-csv-toolbox/pull/449) [`9547ca0`](https://github.com/kamiazya/web-csv-toolbox/commit/9547ca09fae175e790c9cb46b6a9b03bf87285ba) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps-dev): bump @changesets/cli from 2.27.6 to 2.29.3
+
+- [#438](https://github.com/kamiazya/web-csv-toolbox/pull/438) [`fb706b1`](https://github.com/kamiazya/web-csv-toolbox/commit/fb706b1cb14c761e4e12ba9f1c7dc3377ac86b92) Thanks [@kamiazya](https://github.com/kamiazya)! - Use fast-check instead of @fast-check/vitest in test files
+
+- [#454](https://github.com/kamiazya/web-csv-toolbox/pull/454) [`15835ca`](https://github.com/kamiazya/web-csv-toolbox/commit/15835cae6e54840c1e1e7567cacd776559fad661) Thanks [@dependabot](https://github.com/apps/dependabot)! - build(deps): bump the cargo group in /web-csv-toolbox-wasm with 2 updates
+
 ## 0.11.0
 
 ### Minor Changes
