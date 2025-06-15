@@ -58,6 +58,34 @@ export namespace FC {
     kindExcludes?: readonly StringKind[];
     excludes?: string[];
   }
+  function hexa(): fc.Arbitrary<string> {
+    const items = "0123456789abcdef";
+    return fc.integer({ min: 0, max: 15 }).map(
+      (n) => items[n]!,
+      (c) => items.indexOf(c as string),
+    );
+  }
+  const gapSize = 0xdfff + 1 - 0xd800;
+  function unicodeMapper(v: number) {
+    if (v < 0xd800) return v;
+    return v + gapSize;
+  }
+  function unicodeUnmapper(v: number) {
+    if (v < 0xd800) return v;
+    if (v <= 0xdfff) return -1;
+    return v - gapSize;
+  }
+  function unicode(): fc.Arbitrary<string> {
+    return fc.integer({ min: 0, max: 0xffff - gapSize }).map(
+      (v) => String.fromCodePoint(unicodeMapper(v)),
+      (s) => {
+        if (typeof s !== "string") throw new Error("Invalid");
+        if (s.length !== 1) throw new Error("Invalid");
+        return unicodeUnmapper(s.codePointAt(0) ?? -1);
+      },
+    );
+  }
+  const char16bits = fc.nat({ max: 0xffff }).map((n) => String.fromCharCode(n));
 
   export function text({
     excludes = [],
@@ -79,17 +107,32 @@ export namespace FC {
       .chain((kind) => {
         switch (kind) {
           case "hexa":
-            return fc.hexaString(constraints);
+            return fc.string({
+              ...constraints,
+              unit: hexa(),
+            });
           case "string":
             return fc.string(constraints);
           case "ascii":
-            return fc.asciiString(constraints);
+            return fc.string({
+              ...constraints,
+              unit: "binary-ascii",
+            });
           case "unicode":
-            return fc.unicodeString(constraints);
+            return fc.string({
+              ...constraints,
+              unit: unicode(),
+            });
           case "fullUnicode":
-            return fc.fullUnicodeString(constraints);
+            return fc.string({
+              ...constraints,
+              unit: "binary",
+            });
           case "string16bits":
-            return fc.string16bits(constraints);
+            return fc.string({
+              ...constraints,
+              unit: char16bits,
+            });
         }
       })
       .filter(_excludeFilter(excludes));
