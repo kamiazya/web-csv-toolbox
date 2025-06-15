@@ -38,6 +38,8 @@ jobs:
 
   doc:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs:
       - build
     concurrency:
