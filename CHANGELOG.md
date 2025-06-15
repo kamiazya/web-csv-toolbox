@@ -1,5 +1,43 @@
 # web-csv-toolbox
 
+## 0.11.1
+
+### Patch Changes
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps): bump serde_json from 1.0.125 to 1.0.140 in /web-csv-toolbox-wasm
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps): bump csv from 1.3.0 to 1.3.1 in /web-csv-toolbox-wasm
+
+- [#472](https://github.com/kamiazya/web-csv-toolbox/pull/472) [`96582d0`](https://github.com/kamiazya/web-csv-toolbox/commit/96582d0588a88a6c5dbb592a2ca1f3369118ea94) Thanks [@kamiazya](https://github.com/kamiazya)! - Upgrade dev dependencies
+
+  - Add wasm-pack to 0.13
+  - Updated biome to 1.9
+  - Updated typedoc to 0.28
+  - Updated TypeScript to 5.8
+  - Updated Vite to 6.3
+  - Updated vite-plugin-dts to 4.5
+  - Updated vitest to 3.2
+  - Updated webdriverio to 9.15
+
+  ## Summary of Changes
+
+  - Added `hexa` function for generating hexadecimal strings.
+  - Introduced `unicode` and `unicodeMapper` functions for better Unicode string handling.
+  - Updated `text` function to utilize new string generation methods for "hexa", "unicode", and "string16bits".
+  - Cleaned up snapshot tests in `parseResponse.spec.ts` and `parseResponseToStream.spec.ts` by removing unnecessary comments.
+  - Created a new declaration file for the `web-csv-toolbox-wasm` module to improve type safety.
+  - Modified `tsconfig.json` to exclude all test files from compilation, improving build performance.
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps): bump compiler_builtins from 0.1.119 to 0.1.158 in /web-csv-toolbox-wasm
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps-dev): bump typedoc-plugin-mdn-links from 3.2.4 to 4.0.15
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps-dev): bump @changesets/cli from 2.27.6 to 2.29.3
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - Use fast-check instead of @fast-check/vitest in test files
+
+- [#471](https://github.com/kamiazya/web-csv-toolbox/pull/471) [`ff5534e`](https://github.com/kamiazya/web-csv-toolbox/commit/ff5534eaed8b774c50297cbf783dde2853663b42) Thanks [@kamiazya](https://github.com/kamiazya)! - build(deps): bump the cargo group in /web-csv-toolbox-wasm with 2 updates
+
 ## 0.11.0
 
 ### Minor Changes
