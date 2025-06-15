@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.11.2
+
+### Patch Changes
+
+- [#474](https://github.com/kamiazya/web-csv-toolbox/pull/474) [`21a3e4e`](https://github.com/kamiazya/web-csv-toolbox/commit/21a3e4ed39573526303b3caa93747bf0ac1b83f7) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix and refactor documentation deploy workflow
+
 ## 0.11.1
 
 ### Patch Changes
