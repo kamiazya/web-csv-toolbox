@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.12.0
+
+### Minor Changes
+
+- [#476](https://github.com/kamiazya/web-csv-toolbox/pull/476) [`ae54611`](https://github.com/kamiazya/web-csv-toolbox/commit/ae54611c2b5801dc7027e1c7d2d89cca51e6dd5f) Thanks [@kamiazya](https://github.com/kamiazya)! - Drop support Node.js v18 and Add test on Node.js v24
+
 ## 0.11.2
 
 ### Patch Changes
