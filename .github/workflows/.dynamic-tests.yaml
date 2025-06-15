@@ -96,29 +96,30 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
-  test_macos_browser:
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          # TODO: Consider alternatives to frequent rate limit restrictions.
-          # - firefox
-          # NOTE: Headless Safari is currentry not supported
-          # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
-          # - safari
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      # - if: matrix.browsers == 'safari'
-      #   run: sudo safaridriver --enable
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+  # TODO: Consider alternatives to unstable macos browser testing.
+  # test_macos_browser:
+  #   runs-on: macos-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       browsers:
+  #         - chrome
+  #         # TODO: Consider alternatives to frequent rate limit restrictions.
+  #         # - firefox
+  #         # NOTE: Headless Safari is currentry not supported
+  #         # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
+  #         # - safari
+  #   steps:
+  #     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+  #     - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+  #     - name: Setup
+  #       uses: ./.github/actions/setup
+  #       with:
+  #         skip-rust-setup: 'true'
+  #     # - if: matrix.browsers == 'safari'
+  #     #   run: sudo safaridriver --enable
+  #     - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+  #     - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
 
 
   test_windows_browser:
