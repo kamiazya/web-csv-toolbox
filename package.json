@@ -9,7 +9,7 @@
   "unpkg": "dist/web-csv-toolbox.umd.js",
   "packageManager": "pnpm@9.3.0",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "sideEffects": false,
   "exports": {
