@@ -35,3 +35,9 @@ jobs:
             !web-csv-toolbox-wasm/Cargo.toml
             !web-csv-toolbox-wasm/Cargo.lock
             !web-csv-toolbox-wasm/.gitignore
+      - name: Build documentation
+        run: pnpm run doc
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: doc
+          path: doc
