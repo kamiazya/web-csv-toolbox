@@ -1,6 +1,12 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { CR, CRLF, LF } from "../constants";
-import type { ExtractCSVHeader, Join, PickCSVHeader, Split, SplitNewline } from "./types";
+import type {
+  ExtractCSVHeader,
+  Join,
+  PickCSVHeader,
+  Split,
+  SplitNewline,
+} from "./types";
 
 const case1csv1 = '"na\nme,",age,city,zip';
 
@@ -409,9 +415,7 @@ describe("SplitNewline", () => {
     });
 
     it("Handles CR only as newline", () => {
-      expectTypeOf<SplitNewline<"a\rb\rc">>().toMatchTypeOf<
-        ["a", "b", "c"]
-      >();
+      expectTypeOf<SplitNewline<"a\rb\rc">>().toMatchTypeOf<["a", "b", "c"]>();
     });
   });
 });

@@ -190,8 +190,20 @@ export type SplitNewline<
   ? InQuotes extends true
     ? Rest extends `${Quotation}${infer After}`
       ? After extends `${Quotation}${infer Continue}`
-        ? SplitNewline<Continue, Quotation, true, `${Current}${Quotation}${Quotation}`, Result>
-        : SplitNewline<After, Quotation, false, `${Current}${Quotation}${Quotation}`, Result>
+        ? SplitNewline<
+            Continue,
+            Quotation,
+            true,
+            `${Current}${Quotation}${Quotation}`,
+            Result
+          >
+        : SplitNewline<
+            After,
+            Quotation,
+            false,
+            `${Current}${Quotation}${Quotation}`,
+            Result
+          >
       : SplitNewline<Rest, Quotation, true, `${Current}${Quotation}`, Result>
     : SplitNewline<Rest, Quotation, true, `${Current}${Quotation}`, Result>
   : Input extends `\r\n${infer Rest}`
