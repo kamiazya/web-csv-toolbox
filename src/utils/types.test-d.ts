@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { CR, CRLF, LF } from "../constants";
-import type { ExtractCSVHeader, Join, PickCSVHeader, Split } from "./types";
+import type { ExtractCSVHeader, Join, PickCSVHeader, Split, SplitNewline } from "./types";
 
 const case1csv1 = '"na\nme,",age,city,zip';
 
@@ -352,6 +352,66 @@ describe("PickCSVHeader", () => {
       expectTypeOf<
         PickCSVHeader<ReadableStream<typeof case2csv9>, "@", "quotation">
       >().toEqualTypeOf<readonly ["name", "a\nge", "city", "zip"]>();
+    });
+  });
+});
+
+describe("SplitNewline", () => {
+  describe("Split string by newline characters while respecting quoted sections", () => {
+    it("Case 1: Correct handling of \\n inside quotes", () => {
+      expectTypeOf<SplitNewline<'"a\n"\r\nb\r\nc'>>().toMatchTypeOf<
+        ['"a\n"', "b", "c"]
+      >();
+    });
+
+    it("Case 2: Correct handling of \\r\\n inside quotes", () => {
+      expectTypeOf<SplitNewline<'"a\r\n"\r\nb\r\nc'>>().toMatchTypeOf<
+        ['"a\r\n"', "b", "c"]
+      >();
+    });
+
+    it("Handles empty string", () => {
+      expectTypeOf<SplitNewline<"">>().toMatchTypeOf<[]>();
+    });
+
+    it("Handles string without newlines", () => {
+      expectTypeOf<SplitNewline<"abc">>().toMatchTypeOf<["abc"]>();
+    });
+
+    it("Handles mixed newline types", () => {
+      expectTypeOf<SplitNewline<"a\nb\r\nc\rd">>().toMatchTypeOf<
+        ["a", "b", "c", "d"]
+      >();
+    });
+
+    it("Handles escaped quotes", () => {
+      expectTypeOf<SplitNewline<'""a\n""\r\nb'>>().toMatchTypeOf<
+        ['""a\n""', "b"]
+      >();
+    });
+
+    it("Handles quotes at beginning and end", () => {
+      expectTypeOf<SplitNewline<'"\n"\r\n"\r\n"'>>().toMatchTypeOf<
+        ['"\n"', '"\r\n"']
+      >();
+    });
+
+    it("Handles multiple quoted sections", () => {
+      expectTypeOf<SplitNewline<'"a\n"b"c\r\n"\r\nd'>>().toMatchTypeOf<
+        ['"a\n"b"c\r\n"', "d"]
+      >();
+    });
+
+    it("Handles custom quotation character", () => {
+      expectTypeOf<SplitNewline<"'a\n'\r\nb\r\nc", "'">>().toMatchTypeOf<
+        ["'a\n'", "b", "c"]
+      >();
+    });
+
+    it("Handles CR only as newline", () => {
+      expectTypeOf<SplitNewline<"a\rb\rc">>().toMatchTypeOf<
+        ["a", "b", "c"]
+      >();
     });
   });
 });

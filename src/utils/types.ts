@@ -163,6 +163,56 @@ export type ExtractCSVHeader<
   : ExtractString<CSVSource>;
 
 /**
+ * Splits a string by newline characters while respecting quoted sections.
+ * Handles \r\n, \n, and \r as line separators, but ignores them inside quoted strings.
+ *
+ * @category Types
+ *
+ * @example Newlines inside quotes are preserved
+ * ```ts
+ * type _ = SplitNewline<'"a\n"\r\nb\r\nc'>
+ * // ['"a\n"', "b", "c"]
+ * ```
+ *
+ * @example CRLF inside quotes is preserved
+ * ```ts
+ * type _ = SplitNewline<'"a\r\n"\r\nb\r\nc'>
+ * // ['"a\r\n"', "b", "c"]
+ * ```
+ */
+export type SplitNewline<
+  Input extends string,
+  Quotation extends string = DEFAULT_QUOTATION,
+  InQuotes extends boolean = false,
+  Current extends string = "",
+  Result extends string[] = [],
+> = Input extends `${Quotation}${infer Rest}`
+  ? InQuotes extends true
+    ? Rest extends `${Quotation}${infer After}`
+      ? After extends `${Quotation}${infer Continue}`
+        ? SplitNewline<Continue, Quotation, true, `${Current}${Quotation}${Quotation}`, Result>
+        : SplitNewline<After, Quotation, false, `${Current}${Quotation}${Quotation}`, Result>
+      : SplitNewline<Rest, Quotation, true, `${Current}${Quotation}`, Result>
+    : SplitNewline<Rest, Quotation, true, `${Current}${Quotation}`, Result>
+  : Input extends `\r\n${infer Rest}`
+    ? InQuotes extends true
+      ? SplitNewline<Rest, Quotation, true, `${Current}\r\n`, Result>
+      : SplitNewline<Rest, Quotation, false, "", [...Result, Current]>
+    : Input extends `\n${infer Rest}`
+      ? InQuotes extends true
+        ? SplitNewline<Rest, Quotation, true, `${Current}\n`, Result>
+        : SplitNewline<Rest, Quotation, false, "", [...Result, Current]>
+      : Input extends `\r${infer Rest}`
+        ? InQuotes extends true
+          ? SplitNewline<Rest, Quotation, true, `${Current}\r`, Result>
+          : SplitNewline<Rest, Quotation, false, "", [...Result, Current]>
+        : Input extends `${infer Char}${infer Rest}`
+          ? SplitNewline<Rest, Quotation, InQuotes, `${Current}${Char}`, Result>
+          : Current extends ""
+            ? Result
+            : [...Result, Current];
+
+/**
  * Generates a delimiter-separated tuple of CSV headers from a CSVString.
  *
  * @category Types
