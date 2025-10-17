@@ -1,130 +1,107 @@
 import { describe, it, expect } from 'vitest';
 import { pipeline } from './pipeline';
 
+async function streamToArray<T>(stream: ReadableStream<T>): Promise<T[]> {
+  const reader = stream.getReader();
+  const chunks: T[] = [];
+  let result;
+  while (!(result = await reader.read()).done) {
+    chunks.push(result.value);
+  }
+  return chunks;
+}
+
+const createInputStream = (values: any[]) => new ReadableStream({
+  start(controller) {
+    for (const value of values) {
+      controller.enqueue(value);
+    }
+    controller.close();
+  }
+});
+
+const createDoubleTransformer = () => new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk * 2);
+  }
+});
+
+const createAddOneTransformer = () => new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk + 1);
+  }
+});
+
+const createToStringTransformer = () => new TransformStream({
+    transform(chunk, controller) {
+      controller.enqueue(String(chunk));
+    }
+  });
+
+const createErrorTransformer = () => new TransformStream({
+  transform() {
+    throw new Error('test error');
+  }
+});
+
+const createErrorControllerTransformer = () => new TransformStream({
+  transform(chunk, controller) {
+    controller.error(new Error('test error'));
+  }
+});
+
+const createIdentityTransformer = () => new TransformStream({
+  transform(chunk, controller) {
+    controller.enqueue(chunk);
+  }
+});
+
 describe('pipeline', () => {
   it('should chain two transformers', async () => {
-    const input = new ReadableStream({
-      start(controller) {
-        controller.enqueue(1);
-        controller.enqueue(2);
-        controller.close();
-      }
-    });
-
-    const double = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk * 2);
-      }
-    });
-
-    const addOne = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk + 1);
-      }
-    });
+    const input = createInputStream([1, 2]);
+    const double = createDoubleTransformer();
+    const addOne = createAddOneTransformer();
 
     const result = pipeline(input, double, addOne);
-    const reader = result.getReader();
     
-    expect((await reader.read()).value).toBe(3); // (1 * 2) + 1
-    expect((await reader.read()).value).toBe(5); // (2 * 2) + 1
-    expect((await reader.read()).done).toBe(true);
+    expect(await streamToArray(result)).toEqual([3, 5]);
   });
 
   it('should chain three transformers', async () => {
-    const input = new ReadableStream({
-      start(controller) {
-        controller.enqueue(1);
-        controller.enqueue(2);
-        controller.close();
-      }
-    });
-
-    const double = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk * 2);
-      }
-    });
-
-    const addOne = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk + 1);
-      }
-    });
-
-    const toString = new TransformStream({
-        transform(chunk, controller) {
-          controller.enqueue(String(chunk));
-        }
-      });
+    const input = createInputStream([1, 2]);
+    const double = createDoubleTransformer();
+    const addOne = createAddOneTransformer();
+    const toString = createToStringTransformer();
 
     const result = pipeline(input, double, addOne, toString);
-    const reader = result.getReader();
     
-    expect((await reader.read()).value).toBe('3');
-    expect((await reader.read()).value).toBe('5');
-    expect((await reader.read()).done).toBe(true);
+    expect(await streamToArray(result)).toEqual(['3', '5']);
   });
 
   it('should propagate errors', async () => {
-    const input = new ReadableStream({
-      start(controller) {
-        controller.enqueue(1);
-        controller.close();
-      }
-    });
-
-    const errorTransformer = new TransformStream({
-      transform() {
-        throw new Error('test error');
-      }
-    });
+    const input = createInputStream([1]);
+    const errorTransformer = createErrorTransformer();
 
     const result = pipeline(input, errorTransformer);
-    const reader = result.getReader();
 
-    await expect(reader.read()).rejects.toThrow('test error');
+    await expect(streamToArray(result)).rejects.toThrow('test error');
   });
 
   it('should propagate errors from controller', async () => {
-    const input = new ReadableStream({
-        start(controller) {
-          controller.enqueue(1);
-          controller.close();
-        }
-      });
-  
-      const errorTransformer = new TransformStream({
-        transform(chunk, controller) {
-          controller.error(new Error('test error'));
-        }
-      });
-  
-      const result = pipeline(input, errorTransformer);
-      const reader = result.getReader();
-  
-      await expect(reader.read()).rejects.toThrow('test error');
+    const input = createInputStream([1]);
+    const errorTransformer = createErrorControllerTransformer();
+
+    const result = pipeline(input, errorTransformer);
+
+    await expect(streamToArray(result)).rejects.toThrow('test error');
   });
 
   it('should close the stream', async () => {
-    const input = new ReadableStream({
-      start(controller) {
-        controller.enqueue(1);
-        controller.close();
-      }
-    });
-
-    const identity = new TransformStream({
-      transform(chunk, controller) {
-        controller.enqueue(chunk);
-      }
-    });
+    const input = createInputStream([1]);
+    const identity = createIdentityTransformer();
 
     const result = pipeline(input, identity);
-    const reader = result.getReader();
     
-    await reader.read();
-    const { done } = await reader.read();
-    expect(done).toBe(true);
+    expect(await streamToArray(result)).toEqual([1]);
   });
 });
