@@ -41,5 +41,3 @@ jobs:
       - build
       - dynamic_tests
     if: ${{ github.repository == 'kamiazya/web-csv-toolbox' && github.ref == 'refs/heads/main' && success() }}
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
