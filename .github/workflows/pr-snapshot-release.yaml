@@ -36,6 +36,7 @@ jobs:
   snapshot:
     name: Snapshot Release
     runs-on: ubuntu-latest
+    environment: npm
     needs: build
     permissions:
       contents: write
@@ -90,13 +91,6 @@ jobs:
 
       - name: Setup
         uses: ./.github/actions/setup
-      - name: Create an .npmrc
-        run: |
-          cat << EOF > "$HOME/.npmrc"
-            //registry.npmjs.org/:_authToken=$NPM_TOKEN
-          EOF
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Create and publish snapshot release
         uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
         id: snapshot-release
