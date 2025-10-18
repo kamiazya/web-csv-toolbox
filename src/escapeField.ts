@@ -15,7 +15,7 @@ const REPLACED_PATTERN_CACHE = new Map<string, string>();
 /**
  * Escape the field.
  *
- * DO NOT USE THIS FUNCTION BEFORE ASSTPTED BY `{@link assertCommonOptions}`.
+ * DO NOT USE THIS FUNCTION BEFORE ASSERTED BY `{@link assertCommonOptions}`.
  * @param value The field value to escape.
  * @param options The options.
  * @returns The escaped field.
