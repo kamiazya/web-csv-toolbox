@@ -14,7 +14,7 @@ import { escapeRegExp } from "./utils/escapeRegExp.ts";
 /**
  * CSV Lexer.
  *
- * Lexter tokenizes CSV data into fields and records.
+ * Lexer tokenizes CSV data into fields and records.
  */
 export class Lexer<
   Delimiter extends string = DEFAULT_DELIMITER,
