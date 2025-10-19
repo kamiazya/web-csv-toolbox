@@ -434,19 +434,21 @@ describe('Line Ending Compatibility (CRLF vs LF)', () => {
     const csvWithTrailingCRLF = 'name,age\nAlice,42\r\n';
     expect(await toArray(csvWithTrailingCRLF)).toEqual(expected);
     
-    // 1. LF + LF (Your original passing test)
+    // Double trailing EOL combinations (should produce 2 records)
+    
+    // 1. LF + LF
     const csvWithDoubleTrailingLF = 'name,age\nAlice,42\n\n';
     expect(await toArray(csvWithDoubleTrailingLF)).toEqual(expectedWithEmpty);
     
-    // 2. CRLF + CRLF (New: All Windows)
+    // 2. CRLF + CRLF
     const csvWithDoubleTrailingCRLF = 'name,age\r\nAlice,42\r\n\r\n';
     expect(await toArray(csvWithDoubleTrailingCRLF)).toEqual(expectedWithEmpty);
     
-    // 3. LF + CRLF (New: Mixed)
+    // 3. LF + CRLF (Mixed)
     const csvWithDoubleTrailingMixed1 = 'name,age\nAlice,42\n\r\n';
     expect(await toArray(csvWithDoubleTrailingMixed1)).toEqual(expectedWithEmpty);
     
-    // 4. CRLF + LF (New: Mixed)
+    // 4. CRLF + LF (Mixed)
     const csvWithDoubleTrailingMixed2 = 'name,age\r\nAlice,42\r\n\n';
     expect(await toArray(csvWithDoubleTrailingMixed2)).toEqual(expectedWithEmpty);
   });

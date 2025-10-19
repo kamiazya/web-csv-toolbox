@@ -45,7 +45,7 @@ describe("class Lexer", () => {
           const expected = [
             ...data.flatMap((row, i) => [
               ...row.flatMap((field, j) => [
-                { type: Field, value: field },
+                { type: Field, value: field, location: LOCATION_SHAPE },
                 ...(row.length - 1 !== j
                   ? [
                       {
