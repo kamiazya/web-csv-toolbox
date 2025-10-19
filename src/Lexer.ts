@@ -156,21 +156,23 @@ export class Lexer<
     }
 
     // Check for Delimiter
-    if (this.#buffer.startsWith(this.#delimiter)) {
-      this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength);
-      const start: Position = { ...this.#cursor };
-      this.#cursor.column += this.#fieldDelimiterLength;
-      this.#cursor.offset += this.#fieldDelimiterLength;
-      return {
-        type: FieldDelimiter,
-        value: this.#delimiter,
-        location: {
-          start,
-          end: { ...this.#cursor },
-          rowNumber: this.#rowNumber,
-        },
-      };
-    }
+    if (this.#buffer.startsWith(this.#delimiter)) {
+      // FIX: Slice the buffer by the full delimiter length
+      this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength); 
+      const start: Position = { ...this.#cursor };
+      // FIX: Advance the column/offset by the full delimiter length
+      this.#cursor.column += this.#fieldDelimiterLength;
+      this.#cursor.offset += this.#fieldDelimiterLength; 
+      return {
+        type: FieldDelimiter,
+        value: this.#delimiter,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+        },
+      };
+    }
 
     // Check for Quoted String
     if (this.#buffer.startsWith(this.#quotation)) {
@@ -274,8 +276,8 @@ export class Lexer<
     // Check for Unquoted String
     const match = this.#matcher.exec(this.#buffer);
     if (match) {
-      // If we're flushing and the match doesn't consume the entire buffer,
-      // then return null
+      // When buffering (not flushing) and the match fully consumes the buffer,
+      // defer emission to wait for the next chunk (field may be followed by delimiter/quote)
       if (this.#flush === false && match[0].length === this.#buffer.length) {
         return null;
       }
