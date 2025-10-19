@@ -422,6 +422,11 @@ describe('Line Ending Compatibility (CRLF vs LF)', () => {
 
   it('should ignore a single trailing line ending (LF or CRLF) but handle double trailing EOL', async () => {
     const expected = [{ name: 'Alice', age: '42' }];
+    const expectedWithEmpty = [...expected, { name: '', age: '' }];
+
+    // Single trailing EOLs (should produce 1 record)
+    const csvWithoutTrailing = 'name,age\nAlice,42';
+    expect(await toArray(csvWithoutTrailing)).toEqual(expected);
 
     const csvWithTrailingLF = 'name,age\nAlice,42\n';
     expect(await toArray(csvWithTrailingLF)).toEqual(expected);
@@ -429,9 +434,21 @@ describe('Line Ending Compatibility (CRLF vs LF)', () => {
     const csvWithTrailingCRLF = 'name,age\nAlice,42\r\n';
     expect(await toArray(csvWithTrailingCRLF)).toEqual(expected);
     
-    const csvWithDoubleTrailing = 'name,age\nAlice,42\n\n';
-    const expectedWithEmpty = [...expected, { name: '', age: '' }];
-    expect(await toArray(csvWithDoubleTrailing)).toEqual(expectedWithEmpty);
+    // 1. LF + LF (Your original passing test)
+    const csvWithDoubleTrailingLF = 'name,age\nAlice,42\n\n';
+    expect(await toArray(csvWithDoubleTrailingLF)).toEqual(expectedWithEmpty);
+    
+    // 2. CRLF + CRLF (New: All Windows)
+    const csvWithDoubleTrailingCRLF = 'name,age\r\nAlice,42\r\n\r\n';
+    expect(await toArray(csvWithDoubleTrailingCRLF)).toEqual(expectedWithEmpty);
+    
+    // 3. LF + CRLF (New: Mixed)
+    const csvWithDoubleTrailingMixed1 = 'name,age\nAlice,42\n\r\n';
+    expect(await toArray(csvWithDoubleTrailingMixed1)).toEqual(expectedWithEmpty);
+    
+    // 4. CRLF + LF (New: Mixed)
+    const csvWithDoubleTrailingMixed2 = 'name,age\r\nAlice,42\r\n\n';
+    expect(await toArray(csvWithDoubleTrailingMixed2)).toEqual(expectedWithEmpty);
   });
 });
 });

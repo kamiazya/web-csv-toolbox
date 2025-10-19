@@ -77,6 +77,7 @@ describe("class Lexer", () => {
       ),
     );
   });
+
   it("should lex with comma as a default field delimiter", () => {
     fc.assert(
       fc.property(

@@ -161,14 +161,20 @@ describe("LexerTransformer", () => {
       ),
       {
         examples: [
-          [
-            // only EOL is ignored
-            {
-              options: { delimiter: ",", quotation: '"' },
-              chunks: ["\n"],
-              expected: [],
-            },
-          ],
+          [
+            // The single EOL must now be tokenized correctly by the fixed Lexer
+            {
+              options: { delimiter: ",", quotation: '"' },
+              chunks: ["\n"],
+              expected: [
+                {
+                  type: RecordDelimiter,
+                  value: "\n",
+                  location: LOCATION_SHAPE, 
+                },
+              ],
+            },
+          ],
         ],
       },
     );
