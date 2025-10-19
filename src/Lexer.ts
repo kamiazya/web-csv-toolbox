@@ -93,14 +93,7 @@ export class Lexer<
    * @yields Tokens from the buffered CSV data.
    */
   *#tokens(): Generator<Token> {
-    if (this.#flush) {
-      // Trim the last CRLF or LF
-      if (this.#buffer.endsWith(CRLF)) {
-        this.#buffer = this.#buffer.slice(0, -2 /* -CRLF.length */);
-      } else if (this.#buffer.endsWith(LF)) {
-        this.#buffer = this.#buffer.slice(0, -1 /* -LF.length */);
-      }
-    }
+
     let token: Token | null;
     while ((token = this.#nextToken())) {
       yield token;

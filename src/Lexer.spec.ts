@@ -21,6 +21,62 @@ const LOCATION_SHAPE = {
 };
 
 describe("class Lexer", () => {
+
+  it("should tokenize record delimiters correctly for various EOL (property test)", () => {
+    fc.assert(
+      fc.property(
+        fc.gen().map((g) => {
+          const options = g(FC.commonOptions);
+          const eol = g(FC.eol); 
+          const data = g(FC.csvData, {
+            fieldConstraints: { minLength: 1 },
+            rowsConstraints: { minLength: 1 },
+            columnsConstraints: { minLength: 1 },
+          });
+          const csv = 
+            data
+              .map((row) =>
+                row
+                  .map((field) => escapeField(field, { ...options, quote: true }))
+                  .join(options.delimiter),
+              )
+              .join(eol);
+          
+          const expected = [
+            ...data.flatMap((row, i) => [
+              ...row.flatMap((field, j) => [
+                { type: Field, value: field },
+                ...(row.length - 1 !== j
+                  ? [
+                      {
+                        type: FieldDelimiter,
+                        value: options.delimiter,
+                        location: LOCATION_SHAPE,
+                      },
+                    ]
+                  : []),
+              ]),
+              ...(data.length - 1 !== i
+                ? [
+                    {
+                      type: RecordDelimiter,
+                      value: eol,
+                      location: LOCATION_SHAPE,
+                    },
+                  ]
+                : []),
+            ]),
+          ];
+          return { csv, options, expected };
+        }),
+        ({ options, csv, expected }) => {
+          const lexer = new Lexer(options);
+          const actual = [...lexer.lex(csv)];
+          expect(actual).toMatchObject(expected);
+        },
+      ),
+    );
+  });
   it("should lex with comma as a default field delimiter", () => {
     fc.assert(
       fc.property(
@@ -236,7 +292,7 @@ describe("class Lexer", () => {
               ...row.flatMap((field, j) => [
                 // if quote is false and field is empty, it should be ignored
                 ...(quote || field !== ""
-                  ? [{ type: Field, value: field }]
+                  ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
                   : []),
                 // if field is not last field, it should be followed by a field delimiter
                 ...(row.length - 1 !== j
@@ -261,6 +317,13 @@ describe("class Lexer", () => {
                 : []),
             ]),
           ];
+          if (data.length > 0 && EOF) {
+              expected.push({ 
+                  type: RecordDelimiter, 
+                  value: eol, 
+                  location: LOCATION_SHAPE
+              });
+          }
           return { csv, data, options, expected };
         }),
         ({ options, csv, expected }) => {
