@@ -82,29 +82,9 @@ $ pnpm add web-csv-toolbox
 
 ### From CDN (unpkg.com) 🌐
 
-#### UMD Style 🔄
-
-```html
-<script src="https://unpkg.com/web-csv-toolbox"></script>
-<script>
-const csv = `name,age
-Alice,42
-Bob,69`;
-
-(async function () {
-  for await (const record of CSV.parse(csv)) {
-    console.log(record);
-  }
-})();
-</script>
-```
-
-
-#### ESModule Style 📦
-
 ```html
 <script type="module">
-import { parse } from 'https://unpkg.com/web-csv-toolbox?module';
+import { parse } from 'https://unpkg.com/web-csv-toolbox';
 
 const csv = `name,age
 Alice,42
@@ -283,7 +263,7 @@ try {
 | Versions | Status |
 | -------- | ------ |
 | 20.x     | ✅     |
-| 18.x     | ✅     |
+| 24.x     | ✅     |
 
 
 ### Works on Browser
