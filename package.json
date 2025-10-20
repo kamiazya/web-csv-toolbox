@@ -14,22 +14,18 @@
   "exports": {
     ".": {
       "types": "./dist/web-csv-toolbox.d.ts",
-      "import": "./dist/web-csv-toolbox.js",
       "default": "./dist/web-csv-toolbox.js"
     },
     "./*": {
       "types": "./dist/*.d.ts",
-      "import": "./dist/*.js",
       "default": "./dist/*.js"
     },
     "./common/*": {
       "types": "./dist/common/*.d.ts",
-      "import": "./dist/common/*.js",
       "default": "./dist/common/*.js"
     },
     "./utils/*": {
       "types": "./dist/utils/*.d.ts",
-      "import": "./dist/utils/*.js",
       "default": "./dist/utils/*.js"
     },
     "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
@@ -38,11 +34,7 @@
   "imports": {
     "./loadWASM.js": {
       "types": "./dist/loadWASM.d.ts",
-      "browser": {
-        "import": "./dist/loadWASM.web.js",
-        "default": "./dist/loadWASM.web.js"
-      },
-      "import": "./dist/loadWASM.js",
+      "browser": "./dist/loadWASM.web.js",
       "default": "./dist/loadWASM.js"
     }
   },
