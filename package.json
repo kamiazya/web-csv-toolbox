@@ -3,10 +3,8 @@
   "version": "0.11.2",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "main": "dist/cjs/web-csv-toolbox.cjs",
-  "module": "dist/es/web-csv-toolbox.js",
-  "types": "dist/types/web-csv-toolbox.d.ts",
-  "unpkg": "dist/web-csv-toolbox.umd.js",
+  "module": "dist/web-csv-toolbox.js",
+  "types": "dist/web-csv-toolbox.d.ts",
   "packageManager": "pnpm@9.3.0",
   "engines": {
     "node": ">=20.0.0"
@@ -14,43 +12,29 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/types/web-csv-toolbox.d.ts",
-      "import": "./dist/es/web-csv-toolbox.js",
-      "require": "./dist/cjs/web-csv-toolbox.cjs",
-      "default": "./dist/es/web-csv-toolbox.js"
+      "types": "./dist/web-csv-toolbox.d.ts",
+      "default": "./dist/web-csv-toolbox.js"
     },
     "./*": {
-      "types": "./dist/types/*.d.ts",
-      "import": "./dist/es/*.js",
-      "require": "./dist/cjs/*.cjs",
-      "default": "./dist/es/*.js"
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
     },
     "./common/*": {
-      "types": "./dist/types/common/*.d.ts",
-      "import": "./dist/es/common/*.js",
-      "require": "./dist/cjs/common/*.cjs",
-      "default": "./dist/es/common/*.js"
+      "types": "./dist/common/*.d.ts",
+      "default": "./dist/common/*.js"
     },
     "./utils/*": {
-      "types": "./dist/types/utils/*.d.ts",
-      "import": "./dist/es/utils/*.js",
-      "require": "./dist/cjs/utils/*.cjs",
-      "default": "./dist/es/utils/*.js"
+      "types": "./dist/utils/*.d.ts",
+      "default": "./dist/utils/*.js"
     },
     "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
     "./package.json": "./package.json"
   },
   "imports": {
     "./loadWASM.js": {
-      "types": "./dist/types/loadWASM.d.ts",
-      "browser": {
-        "import": "./dist/es/loadWASM.web.js",
-        "require": "./dist/cjs/loadWASM.web.cjs",
-        "default": "./dist/es/loadWASM.web.js"
-      },
-      "import": "./dist/es/loadWASM.js",
-      "require": "./dist/cjs/loadWASM.cjs",
-      "default": "./dist/es/loadWASM.js"
+      "types": "./dist/loadWASM.d.ts",
+      "browser": "./dist/loadWASM.web.js",
+      "default": "./dist/loadWASM.js"
     }
   },
   "files": [
@@ -66,10 +50,9 @@
     "test:browser": "vitest --browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
-    "build": "pnpm build:wasm && pnpm build:js && pnpm build:browser",
+    "build": "pnpm build:wasm && pnpm build:js",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
-    "build:browser": "vite build --config config/vite.config.umd.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",
