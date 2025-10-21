@@ -1,5 +1,5 @@
 ---
-"@fake-scope/fake-pkg": patch
+web-csv-toolbox: patch
 ---
 
 Fix typo in escapeField.ts comment: maatching -> matching
