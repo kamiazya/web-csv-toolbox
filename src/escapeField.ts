@@ -36,7 +36,7 @@ export function escapeField<
     REPLACED_PATTERN_CACHE.set(
       quotation,
       quotation
-        .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern maatching syntax)
+        .replaceAll("$", "$$$$") // $ -> $$ (escape for replaceAll pattern matching syntax)
         .repeat(2),
     );
   }
