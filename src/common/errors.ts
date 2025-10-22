@@ -8,6 +8,10 @@ export interface ParseErrorOptions extends ErrorOptions {
    * The position where the error occurred.
    */
   position?: Position;
+  /**
+   * The row number where the error occurred.
+   */
+  rowNumber?: number;
 }
 
 /**
@@ -25,10 +29,15 @@ export class ParseError extends SyntaxError {
    * The position where the error occurred.
    */
   public position?: Position;
+  /**
+   * The row number where the error occurred.
+   */
+  public rowNumber?: number;
 
   constructor(message?: string, options?: ParseErrorOptions) {
     super(message, { cause: options?.cause });
     this.name = "ParseError";
     this.position = options?.position;
+    this.rowNumber = options?.rowNumber;
   }
 }

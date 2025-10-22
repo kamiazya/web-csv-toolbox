@@ -273,6 +273,7 @@ export class Lexer<
       if (this.#flush) {
         throw new ParseError("Unexpected EOF while parsing quoted field.", {
           position: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
         });
       }
       return null;

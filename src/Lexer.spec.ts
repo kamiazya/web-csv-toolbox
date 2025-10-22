@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Lexer } from "./Lexer.ts";
 import { FC, autoChunk } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
+import { ParseError } from "./common/errors.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
 
@@ -313,5 +314,28 @@ describe("class Lexer", () => {
         },
       ),
     );
+  });
+
+  it("should throw ParseError with rowNumber on unclosed quoted field", () => {
+    const csv = `name,age
+Alice,42
+Bob,"unclosed quote
+Charlie,30`;
+    const lexer = new Lexer();
+
+    expect(() => {
+      [...lexer.lex(csv)];
+    }).toThrow(ParseError);
+
+    try {
+      [...lexer.lex(csv)];
+    } catch (error) {
+      expect(error).toBeInstanceOf(ParseError);
+      if (error instanceof ParseError) {
+        expect(error.rowNumber).toBe(3);
+        expect(error.position).toBeDefined();
+        expect(error.position?.line).toBe(3);
+      }
+    }
   });
 });

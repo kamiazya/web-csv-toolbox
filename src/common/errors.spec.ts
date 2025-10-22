@@ -51,4 +51,14 @@ describe("ParseError", () => {
       new Error(),
     );
   });
+
+  it("should have a rowNumber property", () => {
+    // The ParseError class should have
+    // a rowNumber property equal to undefined.
+    expect(new ParseError().rowNumber).toBeUndefined();
+
+    // The ParseError class should have
+    // a rowNumber property equal to the provided value.
+    expect(new ParseError("", { rowNumber: 3 }).rowNumber).toStrictEqual(3);
+  });
 });
