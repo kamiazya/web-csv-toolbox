@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { occurrences } from './occurrences';
-import { escapeRegExp } from './escapeRegExp';
-
-vi.mock('./escapeRegExp', () => ({
-  escapeRegExp: vi.fn((str: string) => {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  })
-}));
+import * as escapeRegExpModule from './escapeRegExp';
 
 describe('occurrences', () => {
   beforeEach(() => {
-    vi.mocked(escapeRegExp).mockClear();
+    vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('basic counting', () => {
@@ -71,9 +65,13 @@ describe('occurrences', () => {
       expect(occurrences('a$b$c', '$')).toBe(2);
     });
 
-    it('should call escapeRegExp for patterns', () => {
-      occurrences('test', 'test');
-      expect(escapeRegExp).toHaveBeenCalled();
+    it('should use cache for repeated patterns', () => {
+      const escapeSpy = vi.spyOn(escapeRegExpModule, 'escapeRegExp');
+      occurrences('test string', 't');
+      expect(escapeSpy).toHaveBeenCalledTimes(1);
+
+      occurrences('another test', 't');
+      expect(escapeSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should handle parentheses and brackets', () => {
