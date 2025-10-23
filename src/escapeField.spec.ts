@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, test, it } from "vitest";
 import { escapeField } from "./escapeField.ts";
-import { FC } from "./__tests__/helper.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 
 const LOCATION_SHAPE = {
