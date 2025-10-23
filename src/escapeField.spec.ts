@@ -85,7 +85,7 @@ describe("escapeField property-based tests", () => {
             // all internal quotation characters are doubled
             const occurrences = field.split(quotation).length - 1;
             if (occurrences > 0) {
-              const doubledCount = (inner.match(new RegExp(quotation + quotation, "g")) || []).length;
+              const doubledCount = (inner.match(new RegExp((quotation + quotation).replace(/[.*+?^${}()|[\\\]]/g, '\\$&'), "g")) || []).length;
               expect(doubledCount).toBe(occurrences);
             }
           });
