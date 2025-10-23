@@ -24,7 +24,7 @@ describe("escapeField property-based tests", () => {
       fc.property(fc.array(fc.string()), (row) => {
         row.forEach((field) => {
           const escaped = escapeField(field);
-          if (field.includes("\n") || field.includes("\r") || field.includes(COMMA) || field.includes('"')) {
+          if (/[\n\r",]/.test(field)) {
             expect(escaped.startsWith('"') && escaped.endsWith('"')).toBe(true);
           }
         });
