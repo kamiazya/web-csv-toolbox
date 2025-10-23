@@ -83,14 +83,15 @@ describe("escapeField property-based tests", () => {
   it("should work with custom delimiters", () => {
     fc.assert(
       fc.property(
-        fc.array(fc.string()), // row
+        fc.string(),
+        fc.string(),
         fc.constantFrom("|", "||", ";"), // delimiter
-        (row, delimiter) => {
-          row.forEach((field, idx) => {
-            const escaped = escapeField(field, { delimiter, quote: true });
-            // outer quotes are present if quote=true
-            expect(escaped.startsWith('"') && escaped.endsWith('"')).toBe(true);
-          });
+        (part1, part2, delimiter) => {
+          const field = `${part1}${delimiter}${part2}`;
+          const escaped = escapeField(field, { delimiter });
+          // Fields containing the delimiter should be quoted.
+          expect(escaped.startsWith(DOUBLE_QUOTE)).toBe(true);
+          expect(escaped.endsWith(DOUBLE_QUOTE)).toBe(true);
         }
       )
     );
