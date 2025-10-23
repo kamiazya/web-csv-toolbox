@@ -164,7 +164,7 @@ export class Lexer<
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
-      this.#buffer = this.#buffer.slice(1);
+      this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength);
       const start: Position = { ...this.#cursor };
       this.#cursor.column += this.#fieldDelimiterLength;
       this.#cursor.offset += this.#fieldDelimiterLength;
