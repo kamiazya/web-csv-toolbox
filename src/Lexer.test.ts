@@ -11,24 +11,112 @@ describe("Lexer", () => {
   test("should parse mixed CRLF and LF record delimiters correctly", () => {
     const csvMixed = "field1,field2\r\nfield3,field4\nfield5,field6";
     const tokens = lexer.lex(csvMixed);
-    
+
     expect([...tokens]).toStrictEqual([
       // --- Row 1 (Field 1, Delimiter, Field 2) ---
-      { type: Field, value: "field1", location: { start: { line: 1, column: 1, offset: 0 }, end: { line: 1, column: 7, offset: 6 }, rowNumber: 1, } },
-      { type: FieldDelimiter, value: ",", location: { start: { line: 1, column: 7, offset: 6 }, end: { line: 1, column: 8, offset: 7 }, rowNumber: 1, } },
-      { type: Field, value: "field2", location: { start: { line: 1, column: 8, offset: 7 }, end: { line: 1, column: 14, offset: 13 }, rowNumber: 1, } },
+      {
+        type: Field,
+        value: "field1",
+        location: {
+          start: { line: 1, column: 1, offset: 0 },
+          end: { line: 1, column: 7, offset: 6 },
+          rowNumber: 1,
+        },
+      },
+      {
+        type: FieldDelimiter,
+        value: ",",
+        location: {
+          start: { line: 1, column: 7, offset: 6 },
+          end: { line: 1, column: 8, offset: 7 },
+          rowNumber: 1,
+        },
+      },
+      {
+        type: Field,
+        value: "field2",
+        location: {
+          start: { line: 1, column: 8, offset: 7 },
+          end: { line: 1, column: 14, offset: 13 },
+          rowNumber: 1,
+        },
+      },
       // --- Record Delimiter 1 (CRLF) ---
-      { type: RecordDelimiter, value: "\r\n", location: { start: { line: 1, column: 14, offset: 13 }, end: { line: 2, column: 1, offset: 15 }, rowNumber: 1, } }, 
+      {
+        type: RecordDelimiter,
+        value: "\r\n",
+        location: {
+          start: { line: 1, column: 14, offset: 13 },
+          end: { line: 2, column: 1, offset: 15 },
+          rowNumber: 1,
+        },
+      },
       // --- Row 2 (Field 3, Delimiter, Field 4) ---
-      { type: Field, value: "field3", location: { start: { line: 2, column: 1, offset: 15 }, end: { line: 2, column: 7, offset: 21 }, rowNumber: 2, } },
-      { type: FieldDelimiter, value: ",", location: { start: { line: 2, column: 7, offset: 21 }, end: { line: 2, column: 8, offset: 22 }, rowNumber: 2, } },
-      { type: Field, value: "field4", location: { start: { line: 2, column: 8, offset: 22 }, end: { line: 2, column: 14, offset: 28 }, rowNumber: 2, } },
+      {
+        type: Field,
+        value: "field3",
+        location: {
+          start: { line: 2, column: 1, offset: 15 },
+          end: { line: 2, column: 7, offset: 21 },
+          rowNumber: 2,
+        },
+      },
+      {
+        type: FieldDelimiter,
+        value: ",",
+        location: {
+          start: { line: 2, column: 7, offset: 21 },
+          end: { line: 2, column: 8, offset: 22 },
+          rowNumber: 2,
+        },
+      },
+      {
+        type: Field,
+        value: "field4",
+        location: {
+          start: { line: 2, column: 8, offset: 22 },
+          end: { line: 2, column: 14, offset: 28 },
+          rowNumber: 2,
+        },
+      },
       // --- Record Delimiter 2 (LF) ---
-      { type: RecordDelimiter, value: "\n", location: { start: { line: 2, column: 14, offset: 28 }, end: { line: 3, column: 1, offset: 29 }, rowNumber: 2, } }, 
+      {
+        type: RecordDelimiter,
+        value: "\n",
+        location: {
+          start: { line: 2, column: 14, offset: 28 },
+          end: { line: 3, column: 1, offset: 29 },
+          rowNumber: 2,
+        },
+      },
       // --- Row 3 (Field 5, Delimiter, Field 6) ---
-      { type: Field, value: "field5", location: { start: { line: 3, column: 1, offset: 29 }, end: { line: 3, column: 7, offset: 35 }, rowNumber: 3, } },
-      { type: FieldDelimiter, value: ",", location: { start: { line: 3, column: 7, offset: 35 }, end: { line: 3, column: 8, offset: 36 }, rowNumber: 3, } },
-      { type: Field, value: "field6", location: { start: { line: 3, column: 8, offset: 36 }, end: { line: 3, column: 14, offset: 42 }, rowNumber: 3, } },
+      {
+        type: Field,
+        value: "field5",
+        location: {
+          start: { line: 3, column: 1, offset: 29 },
+          end: { line: 3, column: 7, offset: 35 },
+          rowNumber: 3,
+        },
+      },
+      {
+        type: FieldDelimiter,
+        value: ",",
+        location: {
+          start: { line: 3, column: 7, offset: 35 },
+          end: { line: 3, column: 8, offset: 36 },
+          rowNumber: 3,
+        },
+      },
+      {
+        type: Field,
+        value: "field6",
+        location: {
+          start: { line: 3, column: 8, offset: 36 },
+          end: { line: 3, column: 14, offset: 42 },
+          rowNumber: 3,
+        },
+      },
     ]);
   });
 
