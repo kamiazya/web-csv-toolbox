@@ -46,13 +46,15 @@ describe("escapeField property-based tests", () => {
   it("should correctly escape internal quotation marks", () => {
     fc.assert(
       fc.property(fc.array(fc.string()), (row) => {
-        row.forEach((field) => {
+        for (const field of row) {
           const escaped = escapeField(field, { quote: true });
           if (field.includes('"')) {
             const inner = escaped.slice(1, -1); // remove outer quotes
-            expect(inner.includes('""')).toBe(true);
+            const originalCount = field.split('"').length - 1;
+            const doubledCount = (inner.match(/""/g) || []).length;
+            expect(doubledCount).toBe(originalCount);
           }
-        });
+        }
       })
     );
   });
