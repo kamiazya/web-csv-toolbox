@@ -106,7 +106,7 @@ describe("escapeField property-based tests", () => {
       { field: 'ab$cd', quotation: '$' },
     ];
 
-    cases.forEach(({ field, quotation }) => {
+    for (const { field, quotation } of cases) {
       const escaped = escapeField(field, { quote: true, quotation });
       expect(escaped.startsWith(quotation) && escaped.endsWith(quotation)).toBe(true);
       const inner = escaped.slice(quotation.length, -quotation.length);
@@ -114,6 +114,6 @@ describe("escapeField property-based tests", () => {
       if (field.includes(quotation)) {
         expect(inner.includes(quotation.repeat(2))).toBe(true);
       }
-    });
+    }
   });
 });
