@@ -3,19 +3,6 @@ import { describe, expect, test, it } from "vitest";
 import { escapeField } from "./escapeField.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 
-const LOCATION_SHAPE = {
-  start: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  end: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  rowNumber: expect.any(Number),
-};
 
 describe("escapeField function", () => {
   test("should escape quotation and special cases", () => {
