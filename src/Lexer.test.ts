@@ -301,4 +301,12 @@ describe("Lexer", () => {
       expect(error.name).toBe("TimeoutError");
     }
   });
+  test("should correctly handle multi-character field delimiters", () => {
+    lexer = new Lexer({ delimiter: "||" });
+
+    const tokens = lexer.lex("a||b||c");
+    const result = [...tokens].filter((t) => t.type === Field).map((t) => t.value);
+
+    expect(result).toStrictEqual(["a", "b", "c"]);
+  });
 });
