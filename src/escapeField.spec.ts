@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import { DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
 
 describe("escapeField function", () => {
@@ -33,7 +32,14 @@ describe("escapeField property-based tests", () => {
             const inner = escaped.slice(quotation.length, -quotation.length);
             const originalCount = field.split(quotation).length - 1;
             const escapedPattern = quotation.repeat(2);
-            const doubledCount = (inner.match(new RegExp(escapedPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+            const doubledCount = (
+              inner.match(
+                new RegExp(
+                  escapedPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "g",
+                ),
+              ) || []
+            ).length;
             expect(doubledCount).toBe(originalCount);
           }
         },
@@ -53,16 +59,22 @@ describe("escapeField property-based tests", () => {
 
   it("should correctly escape internal quotation marks", () => {
     fc.assert(
-      fc.property(
-        FC.text().filter((f) => f.includes('"')),
-        (field) => {
-          const escaped = escapeField(field, { quote: true });
-          const inner = escaped.slice(1, -1);
-          const originalCount = (field.match(/"/g) || []).length;
-          const doubledCount = (inner.match(/""/g) || []).length;
-          expect(doubledCount).toBe(originalCount);
-        },
-      ),
+      fc.property(FC.text(), FC.quotation(), (field, quotation) => {
+        if (!field.includes(quotation)) return; // skip if no quotation
+        const escaped = escapeField(field, { quote: true, quotation });
+        const inner = escaped.slice(quotation.length, -quotation.length);
+        const originalCount = field.split(quotation).length - 1;
+        const escapedPattern = quotation.repeat(2);
+        const doubledCount = (
+          inner.match(
+            new RegExp(
+              escapedPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+              "g",
+            ),
+          ) || []
+        ).length;
+        expect(doubledCount).toBe(originalCount);
+      }),
     );
   });
 
@@ -74,11 +86,8 @@ describe("escapeField property-based tests", () => {
         expect(escaped.endsWith(quotation)).toBe(true);
 
         if (field.includes(quotation)) {
-          expect(
-            escaped
-              .slice(quotation.length, -quotation.length)
-              .includes(quotation + quotation),
-          ).toBe(true);
+          const inner = escaped.slice(quotation.length, -quotation.length);
+          expect(inner.includes(quotation + quotation)).toBe(true);
         }
       }),
     );
@@ -86,35 +95,45 @@ describe("escapeField property-based tests", () => {
 
   it("should quote fields when containing custom delimiters", () => {
     fc.assert(
-      fc.property(FC.text(), FC.delimiter(), (field, delimiter) => {
-        const composed = `${field}${delimiter}${field}`;
-        const escaped = escapeField(composed, { delimiter });
-        expect(escaped.startsWith(DOUBLE_QUOTE)).toBe(true);
-        expect(escaped.endsWith(DOUBLE_QUOTE)).toBe(true);
-      }),
+      fc.property(
+        FC.text(),
+        FC.delimiter(),
+        FC.quotation(),
+        (field, delimiter, quotation) => {
+          const composed = `${field}${delimiter}${field}`;
+          const escaped = escapeField(composed, { delimiter, quotation });
+          expect(escaped.startsWith(quotation)).toBe(true);
+          expect(escaped.endsWith(quotation)).toBe(true);
+        },
+      ),
     );
   });
 
   it("should handle multi-character quotations and $ correctly", () => {
-    const cases = [
-      { field: "ccfield", quotation: "cc" },
-      { field: "$field$", quotation: "$" },
-      { field: "ab$cd", quotation: "$" },
-    ];
+    fc.assert(
+      fc.property(
+        FC.text(),
+        fc.constantFrom("cc", "$", "||"),
+        (field, quotation) => {
+          const escaped = escapeField(field, { quote: true, quotation });
+          expect(escaped.startsWith(quotation)).toBe(true);
+          expect(escaped.endsWith(quotation)).toBe(true);
 
-    for (const { field, quotation } of cases) {
-      const escaped = escapeField(field, { quote: true, quotation });
-      expect(escaped.startsWith(quotation) && escaped.endsWith(quotation)).toBe(
-        true,
-      );
-
-      if (field.includes(quotation)) {
-        expect(
-          escaped
-            .slice(quotation.length, -quotation.length)
-            .includes(quotation.repeat(2)),
-        ).toBe(true);
-      }
-    }
+          if (field.includes(quotation)) {
+            const inner = escaped.slice(quotation.length, -quotation.length);
+            const originalCount = field.split(quotation).length - 1;
+            const doubledCount = (
+              inner.match(
+                new RegExp(
+                  quotation.repeat(2).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+                  "g",
+                ),
+              ) || []
+            ).length;
+            expect(doubledCount).toBe(originalCount);
+          }
+        },
+      ),
+    );
   });
 });
