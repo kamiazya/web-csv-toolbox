@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
+import { DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
 
 describe("escapeField function", () => {
