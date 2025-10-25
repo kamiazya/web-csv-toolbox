@@ -1,5 +1,11 @@
 # web-csv-toolbox
 
+## 0.12.1
+
+### Patch Changes
+
+- [#542](https://github.com/kamiazya/web-csv-toolbox/pull/542) [`b317547`](https://github.com/kamiazya/web-csv-toolbox/commit/b317547d6764b326a27bccaf7719abab968317bd) Thanks [@kamiazya](https://github.com/kamiazya)! - Add GMO Security Program badge to README.md
+
 ## 0.12.0
 
 ### Minor Changes
