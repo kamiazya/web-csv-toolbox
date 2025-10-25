@@ -367,4 +367,98 @@ describe("parse function", () => {
         },
       ),
     ));
+
+  async function toArray(csv: string | ReadableStream<string>): Promise<any[]>;
+  async function toArray(
+    csv: Uint8Array | ArrayBuffer | ReadableStream<Uint8Array> | Response,
+  ): Promise<any[]>;
+  async function toArray(
+    csv: string | Uint8Array | ArrayBuffer | ReadableStream<any> | Response,
+  ): Promise<any[]> {
+    const records = [];
+    for await (const row of parse(csv as any)) {
+      records.push(row);
+    }
+    return records;
+  }
+
+  describe("Line Ending Compatibility (CRLF vs LF)", () => {
+    const expectedRecords = [
+      { name: "Alice", age: "42" },
+      { name: "Bob", age: "69" },
+      { name: "Charlie", age: "30" },
+    ];
+
+    it("should produce identical records for LF and CRLF line endings", async () => {
+      const csvLF = "name,age\nAlice,42\nBob,69\nCharlie,30";
+      const recordsLF = await toArray(csvLF);
+
+      const csvCRLF = "name,age\r\nAlice,42\r\nBob,69\r\nCharlie,30";
+      const recordsCRLF = await toArray(csvCRLF);
+
+      expect(recordsLF).toEqual(expectedRecords);
+      expect(recordsCRLF).toEqual(expectedRecords);
+      expect(recordsLF).toEqual(recordsCRLF);
+    });
+
+    it("should handle mixed CRLF and LF line endings gracefully", async () => {
+      const csvMixed = "name,age\r\nAlice,42\nBob,69\r\nCharlie,30";
+
+      const recordsMixed = await toArray(csvMixed);
+
+      expect(recordsMixed).toEqual(expectedRecords);
+    });
+
+    it("should preserve line endings (LF and CRLF) inside quoted fields", async () => {
+      const csv = `name,description\n"Alice","Line1\nLine2"\n"Bob","LineA\r\nLineB"`;
+
+      const expected = [
+        { name: "Alice", description: "Line1\nLine2" },
+        { name: "Bob", description: "LineA\r\nLineB" },
+      ];
+
+      const records = await toArray(csv);
+
+      expect(records).toEqual(expected);
+    });
+
+    it("should ignore a single trailing line ending (LF or CRLF) but handle double trailing EOL", async () => {
+      const expected = [{ name: "Alice", age: "42" }];
+      const expectedWithEmpty = [...expected, { name: "", age: "" }];
+
+      // Single trailing EOLs (should produce 1 record)
+      const csvWithoutTrailing = "name,age\nAlice,42";
+      expect(await toArray(csvWithoutTrailing)).toEqual(expected);
+
+      const csvWithTrailingLF = "name,age\nAlice,42\n";
+      expect(await toArray(csvWithTrailingLF)).toEqual(expected);
+
+      const csvWithTrailingCRLF = "name,age\nAlice,42\r\n";
+      expect(await toArray(csvWithTrailingCRLF)).toEqual(expected);
+
+      // Double trailing EOL combinations (should produce 2 records)
+
+      // 1. LF + LF
+      const csvWithDoubleTrailingLF = "name,age\nAlice,42\n\n";
+      expect(await toArray(csvWithDoubleTrailingLF)).toEqual(expectedWithEmpty);
+
+      // 2. CRLF + CRLF
+      const csvWithDoubleTrailingCRLF = "name,age\r\nAlice,42\r\n\r\n";
+      expect(await toArray(csvWithDoubleTrailingCRLF)).toEqual(
+        expectedWithEmpty,
+      );
+
+      // 3. LF + CRLF (Mixed)
+      const csvWithDoubleTrailingMixed1 = "name,age\nAlice,42\n\r\n";
+      expect(await toArray(csvWithDoubleTrailingMixed1)).toEqual(
+        expectedWithEmpty,
+      );
+
+      // 4. CRLF + LF (Mixed)
+      const csvWithDoubleTrailingMixed2 = "name,age\r\nAlice,42\r\n\n";
+      expect(await toArray(csvWithDoubleTrailingMixed2)).toEqual(
+        expectedWithEmpty,
+      );
+    });
+  });
 });
