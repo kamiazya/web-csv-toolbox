@@ -30,11 +30,11 @@ describe("escapeField property-based tests", () => {
           expect(escaped.endsWith(quotation)).toBe(true);
 
           if (field.includes(quotation)) {
-            expect(
-              escaped
-                .slice(quotation.length, -quotation.length)
-                .includes(quotation + quotation),
-            ).toBe(true);
+            const inner = escaped.slice(quotation.length, -quotation.length);
+            const originalCount = field.split(quotation).length - 1;
+            const escapedPattern = quotation.repeat(2);
+            const doubledCount = (inner.match(new RegExp(escapedPattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+            expect(doubledCount).toBe(originalCount);
           }
         },
       ),
