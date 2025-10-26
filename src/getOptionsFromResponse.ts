@@ -47,9 +47,15 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
     if (SUPPORTED_COMPRESSIONS.has(normalizedEncoding as CompressionFormat)) {
       decomposition = normalizedEncoding as CompressionFormat;
     } else if (normalizedEncoding) {
-      throw new TypeError(
-        `Unsupported content-encoding: "${contentEncoding}". Supported formats: ${Array.from(SUPPORTED_COMPRESSIONS).join(", ")}`,
-      );
+      // Unknown compression format
+      if (options.allowExperimentalCompressions) {
+        // Allow runtime to handle experimental/future formats
+        decomposition = normalizedEncoding as CompressionFormat;
+      } else {
+        throw new TypeError(
+          `Unsupported content-encoding: "${contentEncoding}". Supported formats: ${Array.from(SUPPORTED_COMPRESSIONS).join(", ")}. To use experimental formats, set allowExperimentalCompressions: true`,
+        );
+      }
     }
   }
 

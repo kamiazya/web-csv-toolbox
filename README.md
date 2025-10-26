@@ -376,12 +376,13 @@ console.log(result);
 
 ### Advanced Options (Binary-Specific) 🧬
 
-| Option          | Description                                       | Default | Notes                                                                                                                                                     |
-| --------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `charset`       | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `decompression` | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit).                       |
-| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
-| `fatal`         | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| Option                            | Description                                       | Default | Notes                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
+| `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
 
 ## Performance & Best Practices ⚡
 
@@ -549,6 +550,38 @@ try {
 ```
 
 **Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
+
+#### Using Experimental Compression Formats
+
+By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Default behavior: Only known formats
+const response = await fetch('data.csv.gz');
+await parse(response); // Works
+
+// ⚠️ Experimental: Allow future formats
+const response2 = await fetch('data.csv.br'); // Brotli compression
+try {
+  await parse(response2, { allowExperimentalCompressions: true });
+  // Works if runtime supports Brotli
+} catch (error) {
+  // Runtime will throw if format is unsupported
+  console.error('Runtime does not support this compression format');
+}
+```
+
+**When to use this:**
+- Your runtime supports a newer compression format (e.g., Brotli in modern browsers)
+- You want to use the format before this library explicitly supports it
+- You trust the compression format source
+
+**Cautions:**
+- Error messages will come from the runtime, not this library
+- No library-level validation for unknown formats
+- You must verify your runtime supports the format
 
 ## How to Contribute 💪
 

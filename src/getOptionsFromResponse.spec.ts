@@ -114,7 +114,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -129,7 +129,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -144,7 +144,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -264,6 +264,88 @@ describe("getOptionsFromResponse", () => {
       expect(actual).toEqual({
         charset: "utf-8",
       });
+    });
+
+    it("should throw error with guidance when unsupported format is used", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "br",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
+      );
+    });
+
+    it("should allow experimental compression format when option is enabled", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "br", // Brotli - not in known list
+          },
+        }),
+        { allowExperimentalCompressions: true },
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "br",
+        allowExperimentalCompressions: true,
+      });
+    });
+
+    it("should allow unknown future format when experimental option is enabled", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "zstd", // Future format
+          },
+        }),
+        { allowExperimentalCompressions: true },
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "zstd",
+        allowExperimentalCompressions: true,
+      });
+    });
+
+    it("should normalize experimental format to lowercase", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "BR", // Uppercase
+          },
+        }),
+        { allowExperimentalCompressions: true },
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "br", // Normalized to lowercase
+        allowExperimentalCompressions: true,
+      });
+    });
+
+    it("should still reject multiple encodings even with experimental option", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "br, gzip",
+            },
+          }),
+          { allowExperimentalCompressions: true },
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[TypeError: Multiple content-encodings are not supported: "br, gzip"]`,
+      );
     });
   });
 });
