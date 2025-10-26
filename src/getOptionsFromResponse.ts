@@ -36,9 +36,17 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   let decomposition: CompressionFormat | undefined;
 
   if (contentEncoding) {
-    if (SUPPORTED_COMPRESSIONS.has(contentEncoding as CompressionFormat)) {
-      decomposition = contentEncoding as CompressionFormat;
-    } else {
+    const normalizedEncoding = contentEncoding.trim().toLowerCase();
+
+    if (normalizedEncoding.includes(",")) {
+      throw new RangeError(
+        `Multiple content-encodings are not supported: "${contentEncoding}"`,
+      );
+    }
+
+    if (SUPPORTED_COMPRESSIONS.has(normalizedEncoding as CompressionFormat)) {
+      decomposition = normalizedEncoding as CompressionFormat;
+    } else if (normalizedEncoding) {
       throw new RangeError(
         `Unsupported content-encoding: "${contentEncoding}". Supported formats: ${Array.from(SUPPORTED_COMPRESSIONS).join(", ")}`,
       );

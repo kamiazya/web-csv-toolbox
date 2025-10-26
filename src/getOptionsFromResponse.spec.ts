@@ -147,5 +147,123 @@ describe("getOptionsFromResponse", () => {
         `[RangeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw]`,
       );
     });
+
+    it("should normalize uppercase compression format to lowercase", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "GZIP",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "gzip", // Normalized to lowercase
+      });
+    });
+
+    it("should normalize mixed-case compression format to lowercase", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "Gzip",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "gzip", // Normalized to lowercase
+      });
+    });
+
+    it("should trim whitespace from compression format", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "  gzip  ",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "gzip",
+      });
+    });
+
+    it("should throw error for multiple compression formats", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "gzip, deflate",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Multiple content-encodings are not supported: "gzip, deflate"]`,
+      );
+    });
+
+    it("should throw error for multiple formats with whitespace", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "gzip , deflate",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Multiple content-encodings are not supported: "gzip , deflate"]`,
+      );
+    });
+
+    it("should throw error for comma-separated list with unsupported format", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "gzip, br",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Multiple content-encodings are not supported: "gzip, br"]`,
+      );
+    });
+
+    it("should ignore empty Content-Encoding header", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+      });
+    });
+
+    it("should ignore whitespace-only Content-Encoding header", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "   ",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+      });
+    });
   });
 });
