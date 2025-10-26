@@ -126,7 +126,7 @@ jobs:
         with:
           name: web-csv-toolbox-wasm
           path: web-csv-toolbox-wasm
-      - run: pnpm vitest run --browser.instances[0].browser=${{ matrix.browsers }} --browser.headless
+      - run: pnpm vitest run --browser.name=${{ matrix.browsers }} --browser.headless
 
   # TODO: Consider alternatives to unstable macos browser testing.
   # test_macos_browser:
@@ -177,4 +177,4 @@ jobs:
         with:
           name: web-csv-toolbox-wasm
           path: web-csv-toolbox-wasm
-      - run: pnpm vitest run --browser.instances[0].browser=${{ matrix.browsers }} --browser.headless
+      - run: pnpm vitest run --browser.name=${{ matrix.browsers }} --browser.headless
