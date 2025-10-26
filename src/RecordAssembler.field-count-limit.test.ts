@@ -143,6 +143,53 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
   });
 
   describe("with custom field count limit", () => {
+    test("should allow exactly N fields when limit is N", () => {
+      const assembler = new RecordAssembler({ maxFieldCount: 10 });
+      const tokens: Token[] = [];
+
+      // Create exactly 10 fields (at the limit, should succeed)
+      for (let i = 0; i < 10; i++) {
+        tokens.push({
+          type: Field,
+          value: `field${i}`,
+          location: {
+            start: { line: 1, column: 1, offset: 0 },
+            end: { line: 1, column: 2, offset: 1 },
+            rowNumber: 1,
+          },
+        });
+        if (i < 9) {
+          // 9 delimiters between 10 fields
+          tokens.push({
+            type: FieldDelimiter,
+            value: ",",
+            location: {
+              start: { line: 1, column: 1, offset: 0 },
+              end: { line: 1, column: 2, offset: 1 },
+              rowNumber: 1,
+            },
+          });
+        }
+      }
+      tokens.push({
+        type: RecordDelimiter,
+        value: "\n",
+        location: {
+          start: { line: 1, column: 1, offset: 0 },
+          end: { line: 2, column: 1, offset: 1 },
+          rowNumber: 1,
+        },
+      });
+
+      // Should not throw - exactly at the limit
+      expect(() => [...assembler.assemble(tokens)]).not.toThrow();
+
+      // Verify the record was correctly assembled
+      const records = [...assembler.assemble(tokens)];
+      expect(records).toHaveLength(1);
+      expect(Object.keys(records[0] as object)).toHaveLength(10);
+    });
+
     test("should respect custom maxFieldCount option", () => {
       const assembler = new RecordAssembler({ maxFieldCount: 10 });
       const tokens: Token[] = [];
