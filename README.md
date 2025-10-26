@@ -229,8 +229,8 @@ const sensorData = `25.5,60,1024
 
 // Provide headers explicitly
 for await (const record of parse(sensorData, {
-  headers: ['temperature', 'humidity', 'pressure']
-})) {
+  header: ['temperature', 'humidity', 'pressure']
+}))
   console.log(`Temp: ${record.temperature}°C, Humidity: ${record.humidity}%`);
 }
 // Output:
