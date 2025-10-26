@@ -28,7 +28,10 @@ test("throws RangeError if binary size exceeds maxBinarySize", () => {
     parseBinaryToArraySync(largeData, {
       maxBinarySize: 500,
     }),
-  ).toThrowError(/Binary size \(1000 bytes\) exceeded maximum allowed size of 500 bytes/);
+  ).toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[RangeError: Binary size (1000 bytes) exceeded maximum allowed size of 500 bytes]`,
+  );
 });
 
 test("allows binary within maxBinarySize limit", () => {
@@ -56,10 +59,16 @@ test("throws RangeError for invalid maxBinarySize", () => {
     parseBinaryToArraySync(data, {
       maxBinarySize: -1,
     }),
-  ).toThrowError(/maxBinarySize must be a non-negative number or Number\.POSITIVE_INFINITY/);
+  ).toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[RangeError: maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY]`,
+  );
   expect(() =>
     parseBinaryToArraySync(data, {
       maxBinarySize: Number.NaN,
     }),
-  ).toThrowError(/maxBinarySize must be a non-negative number or Number\.POSITIVE_INFINITY/);
+  ).toThrowErrorMatchingInlineSnapshot(
+    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+    `[RangeError: maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY]`,
+  );
 });

@@ -31,10 +31,9 @@ export function convertBinaryToString(
   }
 
   // Check binary size
-  const binarySize = binary instanceof ArrayBuffer ? binary.byteLength : binary.byteLength;
-  if (Number.isFinite(maxBinarySize) && binarySize > maxBinarySize) {
+  if (Number.isFinite(maxBinarySize) && binary.byteLength > maxBinarySize) {
     throw new RangeError(
-      `Binary size (${binarySize} bytes) exceeded maximum allowed size of ${maxBinarySize} bytes`,
+      `Binary size (${binary.byteLength} bytes) exceeded maximum allowed size of ${maxBinarySize} bytes`,
     );
   }
 
