@@ -1,7 +1,7 @@
 import fc from "fast-check";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
 import { CRLF, LF } from "../constants.ts";
-import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
 
 export async function transform<I, O>(
   transformer: TransformStream<I, O>,
