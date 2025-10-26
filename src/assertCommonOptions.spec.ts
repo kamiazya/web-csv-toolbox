@@ -143,4 +143,14 @@ describe("function assertCommonOptions", () => {
       }),
     ).toThrow(RangeError);
   });
+
+  it("should accept Number.POSITIVE_INFINITY as maxBufferSize to disable limit", () => {
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: Number.POSITIVE_INFINITY,
+      }),
+    ).not.toThrow();
+  });
 });
