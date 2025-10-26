@@ -12,6 +12,12 @@ import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
+ * Default maximum buffer size in characters (UTF-16 code units).
+ * Approximately 10MB for ASCII text, but may vary for non-ASCII characters.
+ */
+export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
+
+/**
  * CSV Lexer.
  *
  * Lexer tokenizes CSV data into fields and records.
@@ -26,6 +32,7 @@ export class Lexer<
   #flush = false;
   #matcher: RegExp;
   #fieldDelimiterLength: number;
+  #maxBufferSize: number;
 
   #cursor: Position = {
     line: 1,
@@ -46,12 +53,14 @@ export class Lexer<
     const {
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
+      maxBufferSize = DEFAULT_MAX_BUFFER_SIZE,
       signal,
     } = options;
-    assertCommonOptions({ delimiter, quotation });
+    assertCommonOptions({ delimiter, quotation, maxBufferSize });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
     this.#fieldDelimiterLength = delimiter.length;
+    this.#maxBufferSize = maxBufferSize;
     const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
@@ -74,6 +83,7 @@ export class Lexer<
     }
     if (typeof chunk === "string" && chunk.length !== 0) {
       this.#buffer += chunk;
+      this.#checkBufferSize();
     }
 
     return this.#tokens();
@@ -104,6 +114,18 @@ export class Lexer<
     let token: Token | null;
     while ((token = this.#nextToken())) {
       yield token;
+    }
+  }
+
+  /**
+   * Checks if the buffer size exceeds the maximum allowed size.
+   * @throws {RangeError} If the buffer size exceeds the maximum.
+   */
+  #checkBufferSize(): void {
+    if (this.#buffer.length > this.#maxBufferSize) {
+      throw new RangeError(
+        `Buffer size (${this.#buffer.length} characters) exceeded maximum allowed size of ${this.#maxBufferSize} characters`,
+      );
     }
   }
 

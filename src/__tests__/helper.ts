@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
 import { CRLF, LF } from "../constants.ts";
 
@@ -201,10 +202,11 @@ export namespace FC {
       .record({
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
+        maxBufferSize: fc.constant(DEFAULT_MAX_BUFFER_SIZE),
       })
-      .filter(({ delimiter, quotation }) => {
+      .filter(({ delimiter, quotation, maxBufferSize }) => {
         try {
-          assertCommonOptions({ delimiter, quotation });
+          assertCommonOptions({ delimiter, quotation, maxBufferSize });
           return true;
         } catch {
           return false;

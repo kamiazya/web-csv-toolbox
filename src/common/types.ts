@@ -166,6 +166,20 @@ export interface CommonOptions<
    * @default '"'
    */
   quotation?: Quotation;
+  /**
+   * Maximum internal buffer size in characters.
+   *
+   * @remarks
+   * This option limits the size of the internal buffer used during lexing
+   * to prevent memory exhaustion attacks. The buffer size is measured in
+   * UTF-16 code units (JavaScript string length). When the buffer exceeds
+   * this limit, a `RangeError` will be thrown.
+   *
+   * Set to `Infinity` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
+   */
+  maxBufferSize?: number;
 }
 
 /**
@@ -278,6 +292,19 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default undefined
    */
   header?: Header;
+  /**
+   * Maximum number of fields allowed per record.
+   *
+   * @remarks
+   * This option limits the number of columns/fields in a CSV record
+   * to prevent memory exhaustion attacks. When a record exceeds this limit,
+   * a {@link FieldCountLimitError} will be thrown.
+   *
+   * Set to `Number.POSITIVE_INFINITY` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 100000
+   */
+  maxFieldCount?: number;
 }
 
 /**

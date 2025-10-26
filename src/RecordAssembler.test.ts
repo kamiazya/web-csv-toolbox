@@ -3,6 +3,38 @@ import { RecordAssembler } from "./RecordAssembler.js";
 import { Field } from "./common/constants";
 
 describe("RecordAssembler", () => {
+  describe("constructor validation", () => {
+    test("should throw RangeError if maxFieldCount is negative", () => {
+      expect(() => new RecordAssembler({ maxFieldCount: -1 })).toThrow(
+        RangeError,
+      );
+    });
+
+    test("should throw RangeError if maxFieldCount is zero", () => {
+      expect(() => new RecordAssembler({ maxFieldCount: 0 })).toThrow(
+        RangeError,
+      );
+    });
+
+    test("should throw RangeError if maxFieldCount is not an integer", () => {
+      expect(() => new RecordAssembler({ maxFieldCount: 1.5 })).toThrow(
+        RangeError,
+      );
+    });
+
+    test("should throw RangeError if maxFieldCount is NaN", () => {
+      expect(() => new RecordAssembler({ maxFieldCount: Number.NaN })).toThrow(
+        RangeError,
+      );
+    });
+
+    test("should accept Number.POSITIVE_INFINITY as maxFieldCount", () => {
+      expect(
+        () => new RecordAssembler({ maxFieldCount: Number.POSITIVE_INFINITY }),
+      ).not.toThrow();
+    });
+  });
+
   describe("when AbortSignal is provided", () => {
     let assembler: RecordAssembler<readonly string[]>;
     let controller: AbortController;

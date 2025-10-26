@@ -94,8 +94,11 @@ export function parseStringToArraySyncWASM<
   csv: string,
   options: CommonOptions<Delimiter, Quotation> = {},
 ): CSVRecord<Header>[] {
-  const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
-    options;
+  const {
+    delimiter = DEFAULT_DELIMITER,
+    quotation = DEFAULT_QUOTATION,
+    maxBufferSize = 10485760,
+  } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(
       "Invalid delimiter, must be a single character on WASM.",
@@ -104,7 +107,7 @@ export function parseStringToArraySyncWASM<
   if (quotation !== DOUBLE_QUOTE) {
     throw new RangeError("Invalid quotation, must be double quote on WASM.");
   }
-  assertCommonOptions({ delimiter, quotation });
+  assertCommonOptions({ delimiter, quotation, maxBufferSize });
   const demiliterCode = delimiter.charCodeAt(0);
   return JSON.parse(parseStringToArraySync(csv, demiliterCode));
 }

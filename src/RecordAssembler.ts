@@ -6,14 +6,31 @@ import type {
   Token,
 } from "./common/types.ts";
 
+/**
+ * Default maximum field count per record (100,000 fields).
+ */
+const DEFAULT_MAX_FIELD_COUNT = 100_000;
+
 export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #fieldIndex = 0;
   #row: string[] = [];
   #header: Header | undefined;
   #dirty = false;
   #signal?: AbortSignal;
+  #maxFieldCount: number;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
+    const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
+    // Validate maxFieldCount
+    if (
+      !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||
+      (Number.isFinite(mfc) && (mfc < 1 || !Number.isInteger(mfc)))
+    ) {
+      throw new RangeError(
+        "maxFieldCount must be a positive integer or Number.POSITIVE_INFINITY",
+      );
+    }
+    this.#maxFieldCount = mfc;
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
     }
@@ -31,6 +48,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
       switch (token.type) {
         case FieldDelimiter:
           this.#fieldIndex++;
+          this.#checkFieldCount();
           this.#dirty = true;
           break;
         case RecordDelimiter:
@@ -79,7 +97,20 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     }
   }
 
+  #checkFieldCount(): void {
+    if (this.#fieldIndex + 1 > this.#maxFieldCount) {
+      throw new RangeError(
+        `Field count (${this.#fieldIndex + 1}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
+      );
+    }
+  }
+
   #setHeader(header: Header) {
+    if (header.length > this.#maxFieldCount) {
+      throw new RangeError(
+        `Header field count (${header.length}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
+      );
+    }
     this.#header = header;
     if (this.#header.length === 0) {
       throw new ParseError("The header must not be empty.");
