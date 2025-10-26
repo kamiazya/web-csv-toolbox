@@ -1,5 +1,5 @@
 import { Lexer } from "./Lexer.ts";
-import type { CommonOptions, Token } from "./common/types.ts";
+import type { AbortSignalOptions, CommonOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
@@ -37,7 +37,7 @@ export class LexerTransformer<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token[]> {
   public readonly lexer: Lexer<Delimiter, Quotation>;
-  constructor(options: CommonOptions<Delimiter, Quotation> = {}) {
+  constructor(options: CommonOptions<Delimiter, Quotation> & AbortSignalOptions = {}) {
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {

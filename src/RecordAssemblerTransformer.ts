@@ -1,5 +1,6 @@
 import { RecordAssembler } from "./RecordAssembler.ts";
 import type {
+  AbortSignalOptions,
   CSVRecord,
   RecordAssemblerOptions,
   Token,
@@ -53,7 +54,7 @@ export class RecordAssemblerTransformer<
 > extends TransformStream<Token[], CSVRecord<Header>> {
   public readonly assembler: RecordAssembler<Header>;
 
-  constructor(options: RecordAssemblerOptions<Header> = {}) {
+  constructor(options: RecordAssemblerOptions<Header> & AbortSignalOptions = {}) {
     super({
       transform: (tokens, controller) => {
         try {
