@@ -462,16 +462,25 @@ for (const record of records) {
 #### 2. Enable AbortSignal for timeout protection
 
 ```js
-// Prevent runaway processing with timeout
-const signal = AbortSignal.timeout(30000); // 30 second timeout
+import { parse } from 'web-csv-toolbox';
+
+// Set up a timeout of 30 seconds (30000 milliseconds)
+const signal = AbortSignal.timeout(30000);
+
+const response = await fetch('https://example.com/large-data.csv');
 
 try {
-  for await (const record of parse(csv, { signal })) {
-    // Process records...
+  for await (const record of parse(response, { signal })) {
+    // Process each record
+    console.log(record);
   }
 } catch (error) {
-  if (error.name === 'AbortError') {
-    console.log('Processing timeout');
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    // Handle timeout
+    console.log('CSV processing was aborted due to timeout.');
+  } else {
+    // Handle other errors
+    console.error('An error occurred during CSV processing:', error);
   }
 }
 ```
