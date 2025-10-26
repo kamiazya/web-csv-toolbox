@@ -44,7 +44,7 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   try {
     const options_ = getOptionsFromResponse(response, options);
     if (response.body === null) {
-      throw new RangeError("Response body is null");
+      throw new TypeError("Response body is null");
     }
     return parseUint8ArrayStream(response.body, options_);
   } catch (error) {

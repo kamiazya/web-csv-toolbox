@@ -220,6 +220,36 @@ export interface BinaryOptions {
    * @default false
    */
   fatal?: boolean;
+  /**
+   * Allow experimental or future compression formats not explicitly supported by this library.
+   *
+   * @remarks
+   * When `true`, unknown compression formats from Content-Encoding headers will be passed
+   * to the runtime's DecompressionStream without validation. This allows using newer
+   * compression formats (like Brotli) if your runtime supports them, even before this
+   * library is updated to explicitly support them.
+   *
+   * When `false` (default), only known formats are allowed: gzip, deflate, deflate-raw.
+   *
+   * **Use with caution**: Enabling this bypasses library validation and relies entirely
+   * on runtime error handling. If the runtime doesn't support the format, you'll get
+   * a runtime error instead of a clear validation error from this library.
+   *
+   * @default false
+   *
+   * @example
+   * ```ts
+   * // Safe mode (default): Only known formats
+   * const response = await fetch('data.csv.gz');
+   * await parse(response); // ✓ Works
+   *
+   * // Experimental mode: Allow future formats
+   * const response = await fetch('data.csv.br'); // Brotli
+   * await parse(response, { allowExperimentalCompressions: true });
+   * // Works if runtime supports Brotli, otherwise throws runtime error
+   * ```
+   */
+  allowExperimentalCompressions?: boolean;
 }
 
 /**

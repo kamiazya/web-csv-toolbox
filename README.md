@@ -376,12 +376,13 @@ console.log(result);
 
 ### Advanced Options (Binary-Specific) 🧬
 
-| Option          | Description                                       | Default | Notes                                                                                                                                                     |
-| --------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `charset`       | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `decompression` | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit).                       |
-| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
-| `fatal`         | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| Option                            | Description                                       | Default | Notes                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
+| `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
 
 ## Performance & Best Practices ⚡
 
@@ -506,6 +507,81 @@ For production use with untrusted input, consider:
 - Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
 - Implementing file size limits at the application level
 - Validating parsed data before use
+
+#### Implementing Size Limits for Untrusted Sources
+
+When processing CSV files from untrusted sources (especially compressed files), you can implement size limits using a custom TransformStream:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Create a size-limiting TransformStream
+class SizeLimitStream extends TransformStream {
+  constructor(maxBytes) {
+    let bytesRead = 0;
+    super({
+      transform(chunk, controller) {
+        bytesRead += chunk.length;
+        if (bytesRead > maxBytes) {
+          controller.error(new Error(`Size limit exceeded: ${maxBytes} bytes`));
+        } else {
+          controller.enqueue(chunk);
+        }
+      }
+    });
+  }
+}
+
+// Example: Limit decompressed data to 10MB
+const response = await fetch('https://untrusted-source.com/data.csv.gz');
+const limitedStream = response.body
+  .pipeThrough(new DecompressionStream('gzip'))
+  .pipeThrough(new SizeLimitStream(10 * 1024 * 1024)); // 10MB limit
+
+try {
+  for await (const record of parse(limitedStream)) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error.message.includes('Size limit exceeded')) {
+    console.error('File too large - possible compression bomb attack');
+  }
+}
+```
+
+**Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
+
+#### Using Experimental Compression Formats
+
+By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Default behavior: Only known formats
+const response = await fetch('data.csv.gz');
+await parse(response); // Works
+
+// ⚠️ Experimental: Allow future formats
+const response2 = await fetch('data.csv.br'); // Brotli compression
+try {
+  await parse(response2, { allowExperimentalCompressions: true });
+  // Works if runtime supports Brotli
+} catch (error) {
+  // Runtime will throw if format is unsupported
+  console.error('Runtime does not support this compression format');
+}
+```
+
+**When to use this:**
+- Your runtime supports a newer compression format (e.g., Brotli in modern browsers)
+- You want to use the format before this library explicitly supports it
+- You trust the compression format source
+
+**Cautions:**
+- Error messages will come from the runtime, not this library
+- No library-level validation for unknown formats
+- You must verify your runtime supports the format
 
 ## How to Contribute 💪
 

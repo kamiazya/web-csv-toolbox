@@ -27,7 +27,7 @@ describe("parseResponseToStream", () => {
     expect(() =>
       parseResponseToStream(response),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[RangeError: Invalid mime type: "application/json"]`,
+      `[TypeError: Invalid mime type: "application/json"]`,
     );
   });
 
@@ -41,7 +41,7 @@ describe("parseResponseToStream", () => {
       parseResponseToStream(response),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[RangeError: Response body is null]`,
+      `[TypeError: Response body is null]`,
     );
   });
 
