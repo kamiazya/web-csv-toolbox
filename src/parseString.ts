@@ -16,6 +16,13 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * @returns Async iterable iterator of records.
  *
  * If you want array of records, use {@link parseString.toArray} function.
+ *
+ * @remarks
+ * **Performance Characteristics:**
+ * - **Memory usage**: O(1) - constant per record (streaming approach)
+ * - **Suitable for**: Files of any size
+ * - **Recommended for**: Large CSV strings (> 10MB) or memory-constrained environments
+ *
  * @example Parsing CSV files from strings
  *
  * ```ts
