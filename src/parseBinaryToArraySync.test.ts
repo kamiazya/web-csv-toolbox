@@ -28,12 +28,10 @@ test("throws RangeError if binary size exceeds maxBinarySize", () => {
     parseBinaryToArraySync(largeData, {
       maxBinarySize: 500,
     }),
-  ).toThrowError(RangeError);
-  expect(() =>
-    parseBinaryToArraySync(largeData, {
-      maxBinarySize: 500,
-    }),
-  ).toThrowError(/Binary size.*exceeded maximum allowed size/);
+  ).toThrow(expect.objectContaining({
+    name: "RangeError",
+    message: expect.stringMatching(/Binary size.*exceeded maximum allowed size/),
+  }));
 });
 
 test("allows binary within maxBinarySize limit", () => {
@@ -61,10 +59,16 @@ test("throws RangeError for invalid maxBinarySize", () => {
     parseBinaryToArraySync(data, {
       maxBinarySize: -1,
     }),
-  ).toThrowError(RangeError);
+  ).toThrow(expect.objectContaining({
+    name: "RangeError",
+    message: expect.stringMatching(/maxBinarySize/),
+  }));
   expect(() =>
     parseBinaryToArraySync(data, {
-      maxBinarySize: NaN,
+      maxBinarySize: Number.NaN,
     }),
-  ).toThrowError(RangeError);
+  ).toThrow(expect.objectContaining({
+    name: "RangeError",
+    message: expect.stringMatching(/maxBinarySize/),
+  }));
 });
