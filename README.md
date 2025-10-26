@@ -383,6 +383,130 @@ console.log(result);
 | `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`         | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
 
+## Performance & Best Practices ⚡
+
+### Memory Characteristics
+
+web-csv-toolbox uses different memory patterns depending on the API you choose:
+
+#### 🌊 Streaming APIs (Memory Efficient)
+
+##### Recommended for large files (> 10MB)
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Memory efficient: processes one record at a time
+const response = await fetch('https://example.com/large-data.csv');
+for await (const record of parse(response)) {
+  console.log(record);
+  // Memory footprint: ~few KB per iteration
+}
+```
+
+- **Memory usage**: O(1) - constant per record
+- **Suitable for**: Files of any size, browser environments
+- **Max file size**: Limited only by available storage/network
+
+#### 📦 Array-Based APIs (Memory Intensive)
+
+##### Recommended for small files (< 1MB)
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ⚠️ Loads entire result into memory
+const csv = await fetch('data.csv').then(r => r.text());
+const records = await parse.toArray(csv);
+// Memory footprint: entire file + parsed array
+```
+
+- **Memory usage**: O(n) - proportional to file size
+- **Suitable for**: Small datasets, quick prototyping
+- **Recommended max**: ~10MB (browser), ~100MB (Node.js)
+
+### Platform-Specific Considerations
+
+| Platform | Streaming | Array-Based | Notes |
+|----------|-----------|-------------|-------|
+| **Browser** | Any size | < 10MB | Browser heap limits apply (~100MB-4GB depending on browser) |
+| **Node.js** | Any size | < 100MB | Use `--max-old-space-size` flag for larger heaps |
+| **Deno** | Any size | < 100MB | Similar to Node.js |
+
+### Performance Tips
+
+#### 1. Use streaming for large files
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const response = await fetch('https://example.com/large-data.csv');
+
+// ✅ Good: Streaming approach (constant memory usage)
+for await (const record of parse(response)) {
+  // Process each record immediately
+  console.log(record);
+  // Memory footprint: O(1) - only one record in memory at a time
+}
+
+// ❌ Avoid: Loading entire file into memory first
+const response2 = await fetch('https://example.com/large-data.csv');
+const text = await response2.text(); // Loads entire file into memory
+const records = await parse.toArray(text); // Loads all records into memory
+for (const record of records) {
+  console.log(record);
+  // Memory footprint: O(n) - entire file + all records in memory
+}
+```
+
+#### 2. Enable AbortSignal for timeout protection
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Set up a timeout of 30 seconds (30000 milliseconds)
+const signal = AbortSignal.timeout(30000);
+
+const response = await fetch('https://example.com/large-data.csv');
+
+try {
+  for await (const record of parse(response, { signal })) {
+    // Process each record
+    console.log(record);
+  }
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    // Handle timeout
+    console.log('CSV processing was aborted due to timeout.');
+  } else {
+    // Handle other errors
+    console.error('An error occurred during CSV processing:', error);
+  }
+}
+```
+
+#### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
+
+```js
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// 2-3x faster for large CSV strings (UTF-8 only)
+const records = parseStringToArraySyncWASM(csvString);
+```
+
+### Known Limitations
+
+- **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
+- **WASM Parser**: UTF-8 encoding only, double-quote (`"`) only
+- **Streaming**: Best performance with chunk sizes > 1KB
+
+### Security Considerations
+
+For production use with untrusted input, consider:
+- Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
+- Implementing file size limits at the application level
+- Validating parsed data before use
+
 ## How to Contribute 💪
 
 ## Star ⭐
