@@ -31,10 +31,11 @@
     "./package.json": "./package.json"
   },
   "imports": {
-    "./loadWASM.js": {
-      "types": "./dist/loadWASM.d.ts",
-      "browser": "./dist/loadWASM.web.js",
-      "default": "./dist/loadWASM.js"
+    "#execution/worker/createWorker.js": {
+      "types": "./dist/execution/worker/createWorker.d.ts",
+      "node": "./dist/execution/worker/createWorker.js",
+      "browser": "./dist/execution/worker/createWorker.web.js",
+      "default": "./dist/execution/worker/createWorker.js"
     }
   },
   "files": [

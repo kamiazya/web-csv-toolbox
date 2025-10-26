@@ -6,6 +6,7 @@ import { parseStringToIterableIterator } from "./parseStringToIterableIterator.t
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
+import { routeStringParsing } from "./execution/router.ts";
 
 /**
  * Parse CSV string to records.
@@ -72,7 +73,13 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   try {
-    yield* parseStringToIterableIterator(csv, options);
+    // If execution strategies are specified, use the router
+    if (options?.execution && options.execution.length > 0) {
+      yield* await routeStringParsing(csv, options);
+    } else {
+      // Default: use existing implementation (backward compatible)
+      yield* parseStringToIterableIterator(csv, options);
+    }
   } catch (error) {
     commonParseErrorHandling(error);
   }

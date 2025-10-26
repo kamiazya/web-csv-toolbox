@@ -12,7 +12,10 @@
     ],
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "#execution/worker/createWorker.js": ["./src/execution/worker/createWorker.ts"]
+    }
   },
   "include": [
     "src/**/*"

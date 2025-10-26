@@ -4,6 +4,7 @@ import { parseBinaryToIterableIterator } from "./parseBinaryToIterableIterator.t
 import { parseBinaryToStream } from "./parseBinaryToStream.ts";
 import { convertIterableIteratorToAsync } from "./utils/convertIterableIteratorToAsync.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
+import { routeBinaryParsing } from "./execution/router.ts";
 
 /**
  * Parse a binary from an {@link !Uint8Array}.
@@ -31,7 +32,13 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 export function parseBinary<Header extends ReadonlyArray<string>>(
   bytes: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+): AsyncIterableIterator<CSVRecord<Header>> | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+  // If execution strategies are specified, use the router
+  if (options?.execution && options.execution.length > 0) {
+    return routeBinaryParsing(bytes, options);
+  }
+
+  // Default: use existing implementation (backward compatible)
   const iterator = parseBinaryToIterableIterator(bytes, options);
   return convertIterableIteratorToAsync(iterator);
 }

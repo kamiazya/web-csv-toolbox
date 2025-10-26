@@ -69,8 +69,11 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
   - 🔤 Charset specification for diverse encoding.
-- 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
-  - 📦 WebAssembly is used for high performance parsing.
+- 🚀 **Flexible Execution Strategies**: Choose how CSV parsing runs to optimize for your use case. (_Experimental_)
+  - 🧵 **Worker Threads**: Offload parsing to a background thread to keep the main thread responsive (non-blocking UI)
+  - ⚡ **WebAssembly**: Use high-performance WASM parsing for faster processing
+  - 🔄 **Composable**: Combine strategies (e.g., WASM in Worker) for maximum performance
+  - 🎯 **Smart Defaults**: Automatically uses the best strategy based on your environment
 - 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
 - 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
 
@@ -265,6 +268,133 @@ try {
 }
 ```
 
+### Execution Strategies 🎯 (_Experimental_)
+
+Choose how CSV parsing executes to optimize for your specific use case. The library supports multiple execution strategies that can be combined for maximum flexibility and performance.
+
+> ⚠️ **Experimental Feature**: Execution strategies are currently experimental. The API may change in future versions. Feedback and bug reports are welcome!
+
+#### Default (Main Thread)
+
+By default, CSV parsing runs on the main thread. This is suitable for small to medium files and provides the best compatibility.
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const csv = await fetch('data.csv').then(r => r.text());
+
+// Runs on main thread (default)
+for await (const record of parse(csv)) {
+  console.log(record);
+}
+```
+
+#### Worker Thread Strategy 🧵
+
+Offload CSV parsing to a background Worker thread to keep your UI responsive. Perfect for large files in browser environments.
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const csv = await fetch('large-data.csv').then(r => r.text());
+
+// Parse in Worker thread - main thread stays responsive
+for await (const record of parse(csv, { execution: ['worker'] })) {
+  console.log(record);
+  // UI remains interactive during parsing!
+}
+```
+
+**Benefits:**
+- ✅ Non-blocking: UI remains responsive during parsing
+- ✅ Works on all platforms: Browser (Web Workers), Node.js (Worker Threads), Deno
+- ✅ Automatic resource cleanup
+
+**Supported inputs:**
+- ✅ `string` - CSV text strings
+- ✅ `ReadableStream<string>` - Text streams (with Transferable Streams)
+- ✅ `Uint8Array` / `ArrayBuffer` - Binary data
+- ✅ `ReadableStream<Uint8Array>` - Binary streams (with Transferable Streams, auto-decoded in Worker)
+- ✅ `Response` - HTTP responses (binary stream decoded automatically in Worker)
+
+#### WebAssembly Strategy ⚡
+
+Use WebAssembly for high-performance parsing. Best for CPU-intensive workloads where speed is critical.
+
+```js
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+// Load WASM module once at startup
+await loadWASM();
+
+const csv = await fetch('data.csv').then(r => r.text());
+
+// Parse with WASM (2-3x faster for large files)
+for await (const record of parse(csv, { execution: ['wasm'] })) {
+  console.log(record);
+}
+```
+
+**Benefits:**
+- ✅ High performance: 2-3x faster than JavaScript implementation
+- ✅ Runs on main thread: No Worker overhead
+
+**Limitations:**
+- ⚠️ UTF-8 only: Does not support other character encodings
+- ⚠️ Double-quote only: Only `"` is supported as quotation character
+- ⚠️ No streaming: Must have complete CSV string in memory
+
+#### Combined Strategy: WASM in Worker 🚀
+
+Combine Worker and WASM strategies for the best of both worlds: high performance without blocking the main thread.
+
+```js
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+await loadWASM();
+
+const csv = await fetch('huge-data.csv').then(r => r.text());
+
+// Maximum performance + non-blocking UI
+for await (const record of parse(csv, { execution: ['worker', 'wasm'] })) {
+  console.log(record);
+}
+```
+
+**When to use:**
+- ✅ Very large CSV files (> 10MB)
+- ✅ Browser applications with interactive UI
+- ✅ Performance-critical applications
+- ✅ UTF-8 encoded data with standard CSV format
+
+#### Streaming with Workers
+
+For extremely large files, combine streaming with Worker threads:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const response = await fetch('massive-data.csv');
+const stream = response.body
+  .pipeThrough(new TextDecoderStream('utf-8'));
+
+// Stream processing in Worker - constant memory usage
+for await (const record of parse(stream, { execution: ['worker'] })) {
+  console.log(record);
+  // Memory footprint: O(1) per record
+  // UI: Fully responsive
+}
+```
+
+#### Strategy Comparison
+
+| Strategy | Performance | UI Blocking | Memory | Use Case |
+|----------|-------------|-------------|---------|----------|
+| Default (main) | Baseline | Yes | Low | Small files, simple use cases |
+| `['worker']` | Baseline | **No** | Low | Large files, interactive UIs |
+| `['wasm']` | **2-3x faster** | Yes | Low | High performance, UTF-8 only |
+| `['worker', 'wasm']` | **2-3x faster** | **No** | Low | Best overall for large files |
+
 ## Supported Runtimes 💻
 
 ### Works on Node.js
@@ -378,6 +508,8 @@ console.log(result);
 | ---------------- | ------------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
 | `delimiter`      | Character to separate fields          | `,`          |                                                                                    |
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
+| `execution`      | Execution strategies for parsing (_Experimental_) | `[]` (main thread) | Array of strategies: `['worker']`, `['wasm']`, or `['worker', 'wasm']`. See [Execution Strategies](#execution-strategies--experimental) |
+| `workerURL`      | Custom Worker script URL (_Experimental_) | bundled worker | Only used when `'worker'` is in `execution` array. Allows using custom Worker implementation |
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
@@ -470,7 +602,48 @@ for (const record of records) {
 }
 ```
 
-#### 2. Enable AbortSignal for timeout protection
+#### 2. Choose the right execution strategy
+
+Select an execution strategy based on your file size, environment, and performance requirements:
+
+```js
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+// Small files (< 1MB): Default is fine
+const smallCSV = await fetch('small.csv').then(r => r.text());
+for await (const record of parse(smallCSV)) {
+  console.log(record);
+}
+
+// Large files in browser (> 10MB): Use Worker to keep UI responsive
+const largeCSV = await fetch('large.csv').then(r => r.text());
+for await (const record of parse(largeCSV, { execution: ['worker'] })) {
+  console.log(record); // UI stays responsive!
+}
+
+// Performance-critical + UTF-8: Use WASM in Worker
+await loadWASM();
+const hugeCSV = await fetch('huge.csv').then(r => r.text());
+for await (const record of parse(hugeCSV, { execution: ['worker', 'wasm'] })) {
+  console.log(record); // Fast + non-blocking!
+}
+
+// Streaming for massive files: Combine with Worker
+const response = await fetch('massive.csv');
+const stream = response.body.pipeThrough(new TextDecoderStream());
+for await (const record of parse(stream, { execution: ['worker'] })) {
+  console.log(record); // Constant memory + non-blocking!
+}
+```
+
+**Quick Decision Guide:**
+- **File < 1MB**: Default (no `execution` option)
+- **File 1-10MB in browser**: `{ execution: ['worker'] }`
+- **File > 10MB, UTF-8**: `{ execution: ['worker', 'wasm'] }`
+- **File > 100MB**: Use streaming + `{ execution: ['worker'] }`
+- **Node.js/Deno**: Worker less critical, but still useful for large files
+
+#### 3. Enable AbortSignal for timeout protection
 
 ```js
 import { parse } from 'web-csv-toolbox';

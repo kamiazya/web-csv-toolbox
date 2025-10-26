@@ -331,6 +331,80 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
 }
 
 /**
+ * Execution strategy for CSV parsing.
+ *
+ * - `'worker'`: Execute in Worker thread (non-blocking, available on all platforms)
+ * - `'wasm'`: Execute using WebAssembly (high performance, UTF-8 only)
+ *
+ * @remarks
+ * Multiple strategies can be combined by specifying an array.
+ * The order matters: `['worker', 'wasm']` means "execute WASM inside Worker".
+ *
+ * @category Types
+ *
+ * @example Execute in Worker with WASM
+ * ```ts
+ * parse(csv, { execution: ['worker', 'wasm'] })
+ * ```
+ *
+ * @example Execute WASM in main thread
+ * ```ts
+ * parse(csv, { execution: ['wasm'] })
+ * ```
+ */
+export type ExecutionStrategy = "worker" | "wasm";
+
+/**
+ * Execution configuration for CSV parsing.
+ *
+ * @category Types
+ */
+export interface ExecutionOptions {
+  /**
+   * Execution strategy or combination of strategies.
+   *
+   * @default [] (main thread with default implementation)
+   *
+   * @remarks
+   * - Empty array or undefined: Execute in main thread (default)
+   * - Single strategy: `['worker']` or `['wasm']`
+   * - Combined strategies: `['worker', 'wasm']` executes WASM inside Worker
+   *
+   * @example Main thread (default)
+   * ```ts
+   * parse(csv)  // or parse(csv, { execution: [] })
+   * ```
+   *
+   * @example Worker thread
+   * ```ts
+   * parse(csv, { execution: ['worker'] })
+   * ```
+   *
+   * @example WASM in main thread
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { execution: ['wasm'] })
+   * ```
+   *
+   * @example WASM in Worker thread
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { execution: ['worker', 'wasm'] })
+   * ```
+   */
+  execution?: ExecutionStrategy[];
+
+  /**
+   * Custom Worker URL for 'worker' execution.
+   * If not provided, uses the bundled worker.
+   *
+   * @remarks
+   * Only used when 'worker' is in the execution array.
+   */
+  workerURL?: string | URL;
+}
+
+/**
  * Parse options for CSV string.
  * @category Types
  */
@@ -340,6 +414,7 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
+    ExecutionOptions,
     AbortSignalOptions {}
 
 /**

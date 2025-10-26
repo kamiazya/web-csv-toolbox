@@ -4,10 +4,20 @@ import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
 export default defineConfig(env => ({
+  resolve: {
+    alias: {
+      "#execution/worker/createWorker.js": "/src/execution/worker/createWorker.ts",
+    },
+  },
   build: {
     target: "esnext",
     lib: {
-      entry: ["src/web-csv-toolbox.ts", "src/loadWASM.web.ts"],
+      entry: [
+        "src/web-csv-toolbox.ts",
+        "src/loadWASM.web.ts",
+        "src/execution/worker/worker.ts",
+        "src/execution/worker/createWorker.web.ts",
+      ],
       name: "CSV",
       formats: ["es"],
       fileName: (format, entryName) => {
@@ -17,6 +27,11 @@ export default defineConfig(env => ({
     minify: "terser",
     sourcemap: true,
     rollupOptions: {
+      external: [
+        "node:worker_threads",
+        "node:url",
+        "node:path",
+      ],
       output: {
         inlineDynamicImports: false,
         preserveModules: true,

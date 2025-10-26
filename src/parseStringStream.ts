@@ -4,6 +4,7 @@ import { parseStringStreamToStream } from "./parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
+import { routeStreamParsing } from "./execution/router.ts";
 
 /**
  * Parse CSV string stream to records.
@@ -66,7 +67,13 @@ export function parseStringStream<const Header extends ReadonlyArray<string>>(
 export function parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+): AsyncIterableIterator<CSVRecord<Header>> | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+  // If execution strategies are specified, use the router
+  if (options?.execution && options.execution.length > 0) {
+    return routeStreamParsing(stream, options);
+  }
+
+  // Default: use existing implementation (backward compatible)
   const recordStream = parseStringStreamToStream(stream, options);
   return convertStreamToAsyncIterableIterator(recordStream);
 }
