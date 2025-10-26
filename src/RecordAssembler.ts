@@ -6,6 +6,11 @@ import type {
   Token,
 } from "./common/types.ts";
 
+/**
+ * Default maximum field count per record (100,000 fields).
+ */
+const DEFAULT_MAX_FIELD_COUNT = 100000;
+
 export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #fieldIndex = 0;
   #row: string[] = [];
@@ -15,7 +20,17 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #maxFieldCount: number;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
-    this.#maxFieldCount = options.maxFieldCount ?? 100000;
+    const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
+    // Validate maxFieldCount
+    if (
+      !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||
+      (Number.isFinite(mfc) && (mfc < 1 || !Number.isInteger(mfc)))
+    ) {
+      throw new RangeError(
+        "maxFieldCount must be a positive integer or Number.POSITIVE_INFINITY",
+      );
+    }
+    this.#maxFieldCount = mfc;
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
     }

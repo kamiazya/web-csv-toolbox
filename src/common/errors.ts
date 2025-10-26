@@ -58,11 +58,11 @@ export class BufferOverflowError extends Error {
   /**
    * The current buffer size in bytes.
    */
-  public currentSize?: number;
+  public readonly currentSize?: number;
   /**
    * The maximum buffer size in bytes.
    */
-  public maxSize?: number;
+  public readonly maxSize?: number;
 
   constructor(message?: string, options?: BufferOverflowErrorOptions) {
     super(message, { cause: options?.cause });
@@ -97,11 +97,11 @@ export class FieldCountLimitError extends Error {
   /**
    * The current field count.
    */
-  public currentCount?: number;
+  public readonly currentCount?: number;
   /**
    * The maximum field count.
    */
-  public maxCount?: number;
+  public readonly maxCount?: number;
 
   constructor(message?: string, options?: FieldCountLimitErrorOptions) {
     super(message, { cause: options?.cause });

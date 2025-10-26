@@ -63,4 +63,15 @@ export function assertCommonOptions<
       "delimiter must not be the same as quotation, use different characters",
     );
   }
+
+  // Validate maxBufferSize
+  const mbs = options.maxBufferSize;
+  if (
+    !(Number.isFinite(mbs) || mbs === Number.POSITIVE_INFINITY) ||
+    (Number.isFinite(mbs) && (mbs < 1 || !Number.isInteger(mbs)))
+  ) {
+    throw new RangeError(
+      "maxBufferSize must be a positive integer or Number.POSITIVE_INFINITY",
+    );
+  }
 }

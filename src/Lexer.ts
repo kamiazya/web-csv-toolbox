@@ -12,6 +12,11 @@ import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
+ * Default maximum buffer size in bytes (10MB).
+ */
+const DEFAULT_MAX_BUFFER_SIZE = 10485760;
+
+/**
  * CSV Lexer.
  *
  * Lexer tokenizes CSV data into fields and records.
@@ -47,7 +52,7 @@ export class Lexer<
     const {
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
-      maxBufferSize = 10485760, // 10MB default
+      maxBufferSize = DEFAULT_MAX_BUFFER_SIZE,
       signal,
     } = options;
     assertCommonOptions({ delimiter, quotation, maxBufferSize });
