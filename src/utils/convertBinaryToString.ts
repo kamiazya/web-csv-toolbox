@@ -22,7 +22,10 @@ export function convertBinaryToString(
 
   // Validate maxBinarySize
   if (
-    !(Number.isFinite(maxBinarySize) || maxBinarySize === Number.POSITIVE_INFINITY) ||
+    !(
+      Number.isFinite(maxBinarySize) ||
+      maxBinarySize === Number.POSITIVE_INFINITY
+    ) ||
     (Number.isFinite(maxBinarySize) && maxBinarySize < 0)
   ) {
     throw new RangeError(
