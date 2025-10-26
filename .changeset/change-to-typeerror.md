@@ -25,7 +25,7 @@ If you were catching `RangeError` from `getOptionsFromResponse()`, update to cat
   }
 ```
 
-**New feature: Experimental compression format support**
+### New feature: Experimental compression format support
 - Add `allowExperimentalCompressions` option to enable future/experimental compression formats
 - By default, only known formats are allowed: gzip, deflate, deflate-raw
 - When enabled, unknown formats are passed to runtime (e.g., Brotli if runtime supports it)
