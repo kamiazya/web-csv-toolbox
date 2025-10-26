@@ -28,13 +28,7 @@ jobs:
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: web-csv-toolbox-wasm
-          path: |
-            web-csv-toolbox-wasm/**/*
-            !web-csv-toolbox-wasm/src
-            !web-csv-toolbox-wasm/target
-            !web-csv-toolbox-wasm/Cargo.toml
-            !web-csv-toolbox-wasm/Cargo.lock
-            !web-csv-toolbox-wasm/.gitignore
+          path: web-csv-toolbox-wasm/pkg
       - name: Build documentation
         run: pnpm run doc
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
