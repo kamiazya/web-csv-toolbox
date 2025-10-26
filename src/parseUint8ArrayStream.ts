@@ -1,9 +1,8 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import { parseStringStream } from "./parseStringStream.ts";
+import { routeUint8ArrayStreamParsing } from "./execution/router.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
-import { routeUint8ArrayStreamParsing } from "./execution/router.ts";
 
 /**
  * Parse CSV to records.
@@ -42,7 +41,9 @@ import { routeUint8ArrayStreamParsing } from "./execution/router.ts";
 export function parseUint8ArrayStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+):
+  | AsyncIterableIterator<CSVRecord<Header>>
+  | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
   // If execution strategies are specified, use the router
   if (options?.execution && options.execution.length > 0) {
     return routeUint8ArrayStreamParsing(stream, options);

@@ -1,7 +1,4 @@
-import type {
-  CSVRecord,
-  ParseBinaryOptions,
-} from "../../common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
 import { parseBinaryToIterableIterator } from "../../parseBinaryToIterableIterator.ts";
 import { convertIterableIteratorToAsync } from "../../utils/convertIterableIteratorToAsync.ts";
 
