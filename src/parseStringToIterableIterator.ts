@@ -1,8 +1,8 @@
-import { Lexer } from "./Lexer.ts";
-import { RecordAssembler } from "./RecordAssembler.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { Lexer } from "./Lexer.ts";
+import { RecordAssembler } from "./RecordAssembler.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
 
 export function parseStringToIterableIterator<

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Lexer } from "./Lexer";
 import { Field } from "./common/constants";
+import { Lexer } from "./Lexer";
 
 describe("Lexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {

@@ -1,7 +1,7 @@
-import { LexerTransformer } from "./LexerTransformer.ts";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { LexerTransformer } from "./LexerTransformer.ts";
+import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import { pipeline } from "./utils/pipeline.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
 

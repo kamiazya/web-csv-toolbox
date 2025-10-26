@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { RecordAssembler } from "./RecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
 import { LF } from "./constants.ts";
+import { RecordAssembler } from "./RecordAssembler.ts";
 
 const LOCATION_SHAPE = {
   start: {

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { RecordAssembler } from "./RecordAssembler";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 import type { Token } from "./common/types";
+import { RecordAssembler } from "./RecordAssembler";
 
 describe("RecordAssembler - Field Count Limit Protection", () => {
   describe("with default field count limit (100000)", () => {

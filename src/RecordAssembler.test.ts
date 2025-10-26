@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { RecordAssembler } from "./RecordAssembler.js";
 import { Field } from "./common/constants";
+import { RecordAssembler } from "./RecordAssembler.js";
 
 describe("RecordAssembler", () => {
   describe("constructor validation", () => {

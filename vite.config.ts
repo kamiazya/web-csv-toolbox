@@ -1,4 +1,5 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
+import { webdriverio } from "@vitest/browser-webdriverio";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
@@ -49,7 +50,9 @@ export default defineConfig(env => ({
   test: {
     setupFiles: ["config/vitest.setup.ts"],
     browser: {
-      name: "chrome",
+      enabled: true,
+      provider: webdriverio(),
+      instances: [{ browser: "chrome" }],
     },
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage

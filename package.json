@@ -5,9 +5,9 @@
   "type": "module",
   "module": "dist/web-csv-toolbox.js",
   "types": "dist/web-csv-toolbox.d.ts",
-  "packageManager": "pnpm@9.3.0",
+  "packageManager": "pnpm@10.19.0",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.19.0"
   },
   "sideEffects": false,
   "exports": {
@@ -78,25 +78,26 @@
   },
   "homepage": "https://kamiazya.github.io/web-csv-toolbox/",
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "2.3.0",
     "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.29.4",
+    "@changesets/cli": "^2.29.7",
     "@codecov/vite-plugin": "^1.9.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/pluginutils": "^5.1.4",
-    "@vitest/browser": "^3.2.3",
-    "@vitest/coverage-istanbul": "^3.2.3",
+    "@rollup/pluginutils": "^5.3.0",
+    "@vitest/browser": "^4.0.3",
+    "@vitest/browser-webdriverio": "^4.0.3",
+    "@vitest/coverage-istanbul": "^4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
     "changesets-github-release": "^0.1.0",
-    "fast-check": "^4.1.1",
-    "terser": "^5.42.0",
-    "typedoc": "^0.28.5",
-    "typedoc-plugin-mdn-links": "^5.0.2",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.5",
+    "fast-check": "^4.3.0",
+    "terser": "^5.44.0",
+    "typedoc": "^0.28.14",
+    "typedoc-plugin-mdn-links": "^5.0.10",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.3",
+    "vitest": "^4.0.3",
     "wasm-pack": "^0.13.1",
-    "webdriverio": "^9.15.0"
+    "webdriverio": "^9.20.0"
   }
 }

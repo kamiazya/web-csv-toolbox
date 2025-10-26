@@ -1,9 +1,9 @@
-import { RecordAssembler } from "./RecordAssembler.ts";
 import type {
   CSVRecord,
   RecordAssemblerOptions,
   Token,
 } from "./common/types.ts";
+import { RecordAssembler } from "./RecordAssembler.ts";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.

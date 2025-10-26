@@ -23,7 +23,7 @@ jobs:
       - name: Coverage
         run: pnpm test:coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -38,8 +38,9 @@ jobs:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
+        uses: CodSpeedHQ/action@4348f634fa7309fe23aac9502e88b999ec90a164 # v4.3.1
         with:
+          mode: instrumentation
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
 
@@ -56,7 +57,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-    - run: pnpm test run
+    - run: pnpm vitest run
 
 
   test_deno:
@@ -94,7 +95,7 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm vitest run --browser.instances[0].browser=${{ matrix.browsers }} --browser.headless
 
   # TODO: Consider alternatives to unstable macos browser testing.
   # test_macos_browser:
@@ -138,4 +139,4 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - run: pnpm vitest run --browser.instances[0].browser=${{ matrix.browsers }} --browser.headless
