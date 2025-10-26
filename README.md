@@ -28,6 +28,8 @@ A CSV Toolbox utilizing Web Standard APIs.
 [![test: Vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&style=flat)](https://vitest.dev/)
 [![build: Vite](https://img.shields.io/badge/build%20with-Vite-646CFF?logo=vite&style=flat)](https://rollupjs.org/)
 
+<a href="https://flatt.tech/oss/gmo/trampoline" target="_blank"><img src="https://flatt.tech/assets/images/badges/gmo-oss.svg" height="24px" alt="GMO OSS support"/></a>
+
 </div>
 
 ---
@@ -82,29 +84,9 @@ $ pnpm add web-csv-toolbox
 
 ### From CDN (unpkg.com) 🌐
 
-#### UMD Style 🔄
-
-```html
-<script src="https://unpkg.com/web-csv-toolbox"></script>
-<script>
-const csv = `name,age
-Alice,42
-Bob,69`;
-
-(async function () {
-  for await (const record of CSV.parse(csv)) {
-    console.log(record);
-  }
-})();
-</script>
-```
-
-
-#### ESModule Style 📦
-
 ```html
 <script type="module">
-import { parse } from 'https://unpkg.com/web-csv-toolbox?module';
+import { parse } from 'https://unpkg.com/web-csv-toolbox';
 
 const csv = `name,age
 Alice,42
@@ -283,7 +265,8 @@ try {
 | Versions | Status |
 | -------- | ------ |
 | 20.x     | ✅     |
-| 18.x     | ✅     |
+| 22.x     | ✅     |
+| 24.x     | ✅     |
 
 
 ### Works on Browser

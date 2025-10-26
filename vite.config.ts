@@ -9,10 +9,9 @@ export default defineConfig(env => ({
     lib: {
       entry: ["src/web-csv-toolbox.ts", "src/loadWASM.web.ts"],
       name: "CSV",
-      formats: ["es", "cjs"],
+      formats: ["es"],
       fileName: (format, entryName) => {
-        const ext = format === "cjs" ? "cjs" : "js";
-        return `${format}/${entryName}.${ext}`;
+        return `${entryName}.js`;
       },
     },
     minify: "terser",
@@ -37,7 +36,7 @@ export default defineConfig(env => ({
     }),
     dts({
       insertTypesEntry: true,
-      outDir: "dist/types",
+      outDir: "dist",
       exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
       copyDtsFiles: true,
     }),

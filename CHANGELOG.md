@@ -1,5 +1,65 @@
 # web-csv-toolbox
 
+## 0.12.0
+
+### Minor Changes
+
+- [#533](https://github.com/kamiazya/web-csv-toolbox/pull/533) [`b221fc7`](https://github.com/kamiazya/web-csv-toolbox/commit/b221fc714faa4b33d33a3349982a1608d8a19b2f) Thanks [@kamiazya](https://github.com/kamiazya)! - Migrate to ESM-only distribution
+
+  This release removes CommonJS (CJS) and UMD build outputs, distributing only ES modules (ESM). All build artifacts are now placed directly in the `dist/` directory for a simpler and cleaner structure.
+
+  ### Breaking Changes
+
+  - **Removed CommonJS support**: The package no longer provides `.cjs` files. Node.js projects must use ES modules.
+  - **Removed UMD bundle**: The UMD build (`dist/web-csv-toolbox.umd.js`) has been removed. For CDN usage, use ESM via `<script type="module">`.
+  - **Changed distribution structure**: Build outputs moved from `dist/es/`, `dist/cjs/`, and `dist/types/` to `dist/` root directory.
+  - **Removed `build:browser` command**: The separate UMD build step is no longer needed.
+
+  ### Migration Guide
+
+  **For Node.js users:**
+
+  - Ensure your project uses `"type": "module"` in `package.json`, or use `.mjs` file extensions
+  - Update any CommonJS `require()` calls to ESM `import` statements
+  - Node.js 20.x or later is required (already the minimum supported version)
+
+  **For CDN users:**
+  Before:
+
+  ```html
+  <script src="https://unpkg.com/web-csv-toolbox"></script>
+  ```
+
+  After:
+
+  ```html
+  <script type="module">
+    import { parse } from "https://unpkg.com/web-csv-toolbox";
+  </script>
+  ```
+
+  **For bundler users:**
+  No changes required - modern bundlers handle ESM correctly.
+
+  ### Benefits
+
+  - Simpler build configuration and faster build times
+  - Smaller package size
+  - Cleaner distribution structure
+  - Alignment with modern JavaScript ecosystem standards
+
+- [#476](https://github.com/kamiazya/web-csv-toolbox/pull/476) [`ae54611`](https://github.com/kamiazya/web-csv-toolbox/commit/ae54611c2b5801dc7027e1c7d2d89cca51e6dd5f) Thanks [@kamiazya](https://github.com/kamiazya)! - Drop support Node.js v18 and Add test on Node.js v24
+
+### Patch Changes
+
+- [#535](https://github.com/kamiazya/web-csv-toolbox/pull/535) [`009c762`](https://github.com/kamiazya/web-csv-toolbox/commit/009c762a8c080242913ba7bf698f66c645d5eff8) Thanks [@egoitz-ehu](https://github.com/egoitz-ehu)! - Close issue #524
+
+- [#532](https://github.com/kamiazya/web-csv-toolbox/pull/532) [`fc4fc57`](https://github.com/kamiazya/web-csv-toolbox/commit/fc4fc577fe49e68164909f314c7d5ec6b4e82a46) Thanks [@sshekhar563](https://github.com/sshekhar563)! - fix(docs): correct typo 'Lexter' → 'Lexer' in Lexer.ts JSDoc
+
+- [#529](https://github.com/kamiazya/web-csv-toolbox/pull/529) [`76df785`](https://github.com/kamiazya/web-csv-toolbox/commit/76df7852502cd365d12f63500bbbb1fb45f3485c) Thanks [@kamiazya](https://github.com/kamiazya)! - Migrate npm package publishing to OIDC trusted publishing for enhanced security
+
+- [#531](https://github.com/kamiazya/web-csv-toolbox/pull/531) [`a273b9d`](https://github.com/kamiazya/web-csv-toolbox/commit/a273b9da8477ad58f50239be69229ab3bf519551) Thanks [@VaishnaviOnPC](https://github.com/VaishnaviOnPC)! - fix: correct typo in escapeField.ts comment ('ASSTPTED' → 'ASSERTED')
+
 ## 0.11.2
 
 ### Patch Changes
