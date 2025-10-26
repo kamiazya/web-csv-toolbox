@@ -300,7 +300,7 @@ describe("Lexer", () => {
       assert(error instanceof DOMException);
       expect(error.name).toBe("TimeoutError");
     }
-  });
+   });
   test("should correctly handle multi-character field delimiters", () => {
     lexer = new Lexer({ delimiter: "||" });
 
@@ -309,4 +309,36 @@ describe("Lexer", () => {
 
     expect(result).toStrictEqual(["a", "b", "c"]);
   });
+test("should handle quoted fields with multi-character delimiters", () => {
+  lexer = new Lexer({ delimiter: "||" });
+
+  const tokens = lexer.lex('"a"||"b"');
+  const result = [...tokens].filter((t) => t.type === Field).map((t) => t.value);
+
+  expect(result).toStrictEqual(["a", "b"]);
+ });
+test("should handle quoted fields that include the delimiter", () => {
+  lexer = new Lexer({ delimiter: "||" });
+
+  const tokens = lexer.lex('"a||b"||c');
+  const result = [...tokens].filter((t) => t.type === Field).map((t) => t.value);
+
+  expect(result).toStrictEqual(["a||b", "c"]);
+ });
+test("should handle empty fields with multi-character delimiters", () => {
+  lexer = new Lexer({ delimiter: "||" });
+
+  const tokens = lexer.lex("a||||c");
+  const result = [...tokens].filter((t) => t.type === Field).map((t) => t.value);
+
+  expect(result).toStrictEqual(["a", "", "c"]);
+ });
+test("should handle quoted fields with line breaks and multi-character delimiters", () => {
+  lexer = new Lexer({ delimiter: "||" });
+
+  const tokens = lexer.lex('"a\nb"||c');
+  const result = [...tokens].filter((t) => t.type === Field).map((t) => t.value);
+
+  expect(result).toStrictEqual(["a\nb", "c"]);
+ });
 });
