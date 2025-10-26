@@ -251,7 +251,7 @@ describe("Lexer", () => {
       });
     });
 
-    test("should thorw DOMException named AbortError if the signal is aborted", () => {
+  test("should thorw DOMException named AbortError if the signal is aborted", () => {
       controller.abort();
       try {
         [...lexer.lex('"Hello"')];
@@ -262,7 +262,7 @@ describe("Lexer", () => {
       }
     });
 
-    test("should throw custom error if the signal is aborted with custom reason", () => {
+  test("should throw custom error if the signal is aborted with custom reason", () => {
       class MyCustomError extends Error {
         constructor(message: string) {
           super(message);
@@ -300,8 +300,8 @@ describe("Lexer", () => {
       assert(error instanceof DOMException);
       expect(error.name).toBe("TimeoutError");
     }
-   });
-   test("should correctly handle multi-character field delimiters", () => {
+  });
+  test("should correctly handle multi-character field delimiters", () => {
     lexer = new Lexer({ delimiter: "||" });
     const tokens = lexer.lex("a||b||c");
     const result = [...tokens]
