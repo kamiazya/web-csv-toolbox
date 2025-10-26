@@ -210,6 +210,19 @@ export interface BinaryOptions {
    */
   charset?: string;
   /**
+   * Maximum binary size in bytes for ArrayBuffer/Uint8Array inputs.
+   *
+   * @remarks
+   * This option limits the size of ArrayBuffer or Uint8Array inputs
+   * to prevent memory exhaustion attacks. When the binary size exceeds
+   * this limit, a `RangeError` will be thrown.
+   *
+   * Set to `Number.POSITIVE_INFINITY` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 100 * 1024 * 1024 (100MB)
+   */
+  maxBinarySize?: number;
+  /**
    * If the binary has a BOM, you can specify whether to ignore it.
    *
    * @remarks

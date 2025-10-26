@@ -59,6 +59,8 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🚨 Throws `RangeError` when buffer exceeds the limit.
   - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
   - ⚠️ Throws `RangeError` when field count exceeds the limit.
+  - 💾 Configurable maximum binary size (default: 100MB bytes) for ArrayBuffer/Uint8Array inputs.
+  - 🛑 Throws `RangeError` when binary size exceeds the limit.
 - 🎨 **Flexible Source Support**
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
@@ -386,6 +388,7 @@ console.log(result);
 | Option                            | Description                                       | Default | Notes                                                                                                                                                     |
 | --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
@@ -512,7 +515,10 @@ const records = parseStringToArraySyncWASM(csvString);
 
 For production use with untrusted input, consider:
 - Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
-- Implementing file size limits at the application level
+- Using `maxBinarySize` option to limit ArrayBuffer/Uint8Array inputs (default: 100MB bytes)
+- Using `maxBufferSize` option to limit internal buffer size (default: 10M characters)
+- Using `maxFieldCount` option to limit fields per record (default: 100,000)
+- Implementing additional file size limits at the application level
 - Validating parsed data before use
 
 #### Implementing Size Limits for Untrusted Sources
