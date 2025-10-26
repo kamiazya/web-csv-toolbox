@@ -32,4 +32,3 @@ export class ParseError extends SyntaxError {
     this.position = options?.position;
   }
 }
-

@@ -90,9 +90,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
         },
       });
 
-      expect(() => [...assembler.assemble(tokens)]).toThrow(
-        RangeError,
-      );
+      expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
     });
 
     test("should throw RangeError with proper error details", () => {
@@ -136,9 +134,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
         expect.fail("Should have thrown RangeError");
       } catch (error) {
         expect(error).toBeInstanceOf(RangeError);
-        expect((error as RangeError).message).toContain(
-          "Field count",
-        );
+        expect((error as RangeError).message).toContain("Field count");
         expect((error as RangeError).message).toContain(
           "exceeded maximum allowed count",
         );
@@ -184,9 +180,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
         },
       });
 
-      expect(() => [...assembler.assemble(tokens)]).toThrow(
-        RangeError,
-      );
+      expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
     });
 
     test("should allow Number.POSITIVE_INFINITY as maxFieldCount to disable limit", () => {
@@ -229,9 +223,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
       });
 
       // This should not throw, but will take time and memory
-      expect(() => [...assembler.assemble(tokens)]).not.toThrow(
-        RangeError,
-      );
+      expect(() => [...assembler.assemble(tokens)]).not.toThrow(RangeError);
     });
   });
 
@@ -280,9 +272,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
         }
       }
 
-      expect(() => [...assembler.assemble(tokens)]).toThrow(
-        RangeError,
-      );
+      expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
     });
 
     test("should properly handle CSV within field count limits", () => {

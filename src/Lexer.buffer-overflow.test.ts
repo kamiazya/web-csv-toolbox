@@ -29,9 +29,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
         expect.fail("Should have thrown RangeError");
       } catch (error) {
         expect(error).toBeInstanceOf(RangeError);
-        expect((error as RangeError).message).toContain(
-          "Buffer size",
-        );
+        expect((error as RangeError).message).toContain("Buffer size");
         expect((error as RangeError).message).toContain(
           "exceeded maximum allowed size",
         );
@@ -53,9 +51,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
       // Attack vector: unclosed quoted field that accumulates in buffer
       const unclosedQuote = `"${"a".repeat(11 * 1024 * 1024)}`;
 
-      expect(() => [...lexer.lex(unclosedQuote, true)]).toThrow(
-        RangeError,
-      );
+      expect(() => [...lexer.lex(unclosedQuote, true)]).toThrow(RangeError);
     });
   });
 
@@ -85,9 +81,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
       expect(() => [...lexer.lex("a".repeat(50), true)]).not.toThrow();
 
       // Second chunk exceeds limit
-      expect(() => [...lexer.lex("a".repeat(60), true)]).toThrow(
-        RangeError,
-      );
+      expect(() => [...lexer.lex("a".repeat(60), true)]).toThrow(RangeError);
     });
 
     test("should not check buffer size when chunk is empty", () => {
