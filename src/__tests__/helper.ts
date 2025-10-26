@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
 import { CRLF, LF } from "../constants.ts";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
 
 export async function transform<I, O>(
   transformer: TransformStream<I, O>,
@@ -201,7 +202,7 @@ export namespace FC {
       .record({
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
-        maxBufferSize: fc.constant(10 * 1024 * 1024),
+        maxBufferSize: fc.constant(DEFAULT_MAX_BUFFER_SIZE),
       })
       .filter(({ delimiter, quotation, maxBufferSize }) => {
         try {

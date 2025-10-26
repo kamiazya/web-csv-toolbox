@@ -15,7 +15,7 @@ import { escapeRegExp } from "./utils/escapeRegExp.ts";
  * Default maximum buffer size in characters (UTF-16 code units).
  * Approximately 10MB for ASCII text, but may vary for non-ASCII characters.
  */
-const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
+export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
 /**
  * CSV Lexer.
