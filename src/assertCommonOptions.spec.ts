@@ -10,6 +10,7 @@ describe("function assertCommonOptions", () => {
       assertCommonOptions({
         quotation: "",
         delimiter: DOUBLE_QUOTE,
+        maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -22,6 +23,7 @@ describe("function assertCommonOptions", () => {
       assertCommonOptions({
         quotation: COMMA,
         delimiter: "",
+        maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -37,7 +39,11 @@ describe("function assertCommonOptions", () => {
         ),
         (value) => {
           expect(() =>
-            assertCommonOptions({ quotation: value, delimiter: value }),
+            assertCommonOptions({
+              quotation: value,
+              delimiter: value,
+              maxBufferSize: 1024,
+            }),
           ).toThrowErrorMatchingInlineSnapshot(
             // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
             `[RangeError: delimiter must not be the same as quotation, use different characters]`,
@@ -53,6 +59,7 @@ describe("function assertCommonOptions", () => {
         assertCommonOptions({
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
+          maxBufferSize: 1024,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -64,6 +71,7 @@ describe("function assertCommonOptions", () => {
         assertCommonOptions({
           quotation: COMMA,
           delimiter: delimiter,
+          maxBufferSize: 1024,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -77,6 +85,7 @@ describe("function assertCommonOptions", () => {
       assertCommonOptions({
         quotation: 1 as unknown as string,
         delimiter: DOUBLE_QUOTE,
+        maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -89,10 +98,49 @@ describe("function assertCommonOptions", () => {
       assertCommonOptions({
         quotation: COMMA,
         delimiter: 1 as unknown as string,
+        maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[TypeError: delimiter must be a string]`,
     );
+  });
+
+  it("should throw an error if maxBufferSize is invalid", () => {
+    // Test negative value
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: -1,
+      }),
+    ).toThrow(RangeError);
+
+    // Test zero
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 0,
+      }),
+    ).toThrow(RangeError);
+
+    // Test non-integer
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1.5,
+      }),
+    ).toThrow(RangeError);
+
+    // Test NaN
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: Number.NaN,
+      }),
+    ).toThrow(RangeError);
   });
 });
