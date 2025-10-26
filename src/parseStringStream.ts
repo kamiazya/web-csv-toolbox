@@ -64,18 +64,20 @@ export function parseStringStream<const Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
-export function parseStringStream<Header extends ReadonlyArray<string>>(
+export async function* parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   // If execution strategies are specified, use the router
   if (options?.execution && options.execution.length > 0) {
-    return routeStreamParsing(stream, options);
+    const result = await routeStreamParsing(stream, options);
+    yield* result;
+    return;
   }
 
   // Default: use existing implementation (backward compatible)
   const recordStream = parseStringStreamToStream(stream, options);
-  return convertStreamToAsyncIterableIterator(recordStream);
+  yield* convertStreamToAsyncIterableIterator(recordStream);
 }
 
 export declare namespace parseStringStream {

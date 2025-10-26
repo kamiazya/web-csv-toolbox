@@ -29,18 +29,20 @@ import { routeBinaryParsing } from "./execution/router.ts";
  * }
  * ```
  */
-export function parseBinary<Header extends ReadonlyArray<string>>(
+export async function* parseBinary<Header extends ReadonlyArray<string>>(
   bytes: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> | Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   // If execution strategies are specified, use the router
   if (options?.execution && options.execution.length > 0) {
-    return routeBinaryParsing(bytes, options);
+    const result = await routeBinaryParsing(bytes, options);
+    yield* result;
+    return;
   }
 
   // Default: use existing implementation (backward compatible)
   const iterator = parseBinaryToIterableIterator(bytes, options);
-  return convertIterableIteratorToAsync(iterator);
+  yield* convertIterableIteratorToAsync(iterator);
 }
 
 export declare namespace parseBinary {
