@@ -1,5 +1,5 @@
 import { FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { ParseError } from "./common/errors.ts";
+import { FieldCountLimitError, ParseError } from "./common/errors.ts";
 import type {
   CSVRecord,
   RecordAssemblerOptions,
@@ -12,8 +12,10 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #header: Header | undefined;
   #dirty = false;
   #signal?: AbortSignal;
+  #maxFieldCount: number;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
+    this.#maxFieldCount = options.maxFieldCount ?? 100000;
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
     }
@@ -31,6 +33,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
       switch (token.type) {
         case FieldDelimiter:
           this.#fieldIndex++;
+          this.#checkFieldCount();
           this.#dirty = true;
           break;
         case RecordDelimiter:
@@ -79,7 +82,28 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
     }
   }
 
+  #checkFieldCount(): void {
+    if (this.#fieldIndex >= this.#maxFieldCount) {
+      throw new FieldCountLimitError(
+        `Field count exceeded maximum allowed count of ${this.#maxFieldCount}`,
+        {
+          currentCount: this.#fieldIndex + 1,
+          maxCount: this.#maxFieldCount,
+        },
+      );
+    }
+  }
+
   #setHeader(header: Header) {
+    if (header.length > this.#maxFieldCount) {
+      throw new FieldCountLimitError(
+        `Header field count (${header.length}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
+        {
+          currentCount: header.length,
+          maxCount: this.#maxFieldCount,
+        },
+      );
+    }
     this.#header = header;
     if (this.#header.length === 0) {
       throw new ParseError("The header must not be empty.");

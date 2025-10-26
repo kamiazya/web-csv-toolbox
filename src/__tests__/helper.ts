@@ -201,10 +201,11 @@ export namespace FC {
       .record({
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
+        maxBufferSize: fc.constant(10485760),
       })
-      .filter(({ delimiter, quotation }) => {
+      .filter(({ delimiter, quotation, maxBufferSize }) => {
         try {
-          assertCommonOptions({ delimiter, quotation });
+          assertCommonOptions({ delimiter, quotation, maxBufferSize });
           return true;
         } catch {
           return false;

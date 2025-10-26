@@ -1,6 +1,6 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { ParseError } from "./common/errors.ts";
+import { BufferOverflowError, ParseError } from "./common/errors.ts";
 import type {
   AbortSignalOptions,
   CommonOptions,
@@ -26,6 +26,7 @@ export class Lexer<
   #flush = false;
   #matcher: RegExp;
   #fieldDelimiterLength: number;
+  #maxBufferSize: number;
 
   #cursor: Position = {
     line: 1,
@@ -46,12 +47,14 @@ export class Lexer<
     const {
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
+      maxBufferSize = 10485760, // 10MB default
       signal,
     } = options;
-    assertCommonOptions({ delimiter, quotation });
+    assertCommonOptions({ delimiter, quotation, maxBufferSize });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
     this.#fieldDelimiterLength = delimiter.length;
+    this.#maxBufferSize = maxBufferSize;
     const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
@@ -74,6 +77,7 @@ export class Lexer<
     }
     if (typeof chunk === "string" && chunk.length !== 0) {
       this.#buffer += chunk;
+      this.#checkBufferSize();
     }
 
     return this.#tokens();
@@ -104,6 +108,22 @@ export class Lexer<
     let token: Token | null;
     while ((token = this.#nextToken())) {
       yield token;
+    }
+  }
+
+  /**
+   * Checks if the buffer size exceeds the maximum allowed size.
+   * @throws {BufferOverflowError} If the buffer size exceeds the maximum.
+   */
+  #checkBufferSize(): void {
+    if (this.#buffer.length > this.#maxBufferSize) {
+      throw new BufferOverflowError(
+        `Buffer size exceeded maximum allowed size of ${this.#maxBufferSize} bytes`,
+        {
+          currentSize: this.#buffer.length,
+          maxSize: this.#maxBufferSize,
+        },
+      );
     }
   }
 
