@@ -391,7 +391,7 @@ web-csv-toolbox uses different memory patterns depending on the API you choose:
 
 #### 🌊 Streaming APIs (Memory Efficient)
 
-**Recommended for large files (> 10MB)**
+##### Recommended for large files (> 10MB)
 
 ```js
 import { parse } from 'web-csv-toolbox';
@@ -410,7 +410,7 @@ for await (const record of parse(response)) {
 
 #### 📦 Array-Based APIs (Memory Intensive)
 
-**Recommended for small files (< 1MB)**
+##### Recommended for small files (< 1MB)
 
 ```js
 import { parse } from 'web-csv-toolbox';
