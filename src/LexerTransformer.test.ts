@@ -7,7 +7,7 @@ import {
   vi,
 } from "vitest";
 import { LexerTransformer } from "./LexerTransformer.ts";
-import { transform } from "./__tests__/helper.ts";
+import { transform, waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
@@ -104,13 +104,6 @@ describe("LexerTransformer", () => {
   });
 
   test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
-    function waitAbort(signal: AbortSignal) {
-      return new Promise<void>((resolve) => {
-        signal.addEventListener("abort", () => {
-          resolve();
-        });
-      });
-    }
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
     const transformer = new LexerTransformer({ signal });

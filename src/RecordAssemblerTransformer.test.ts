@@ -1,11 +1,7 @@
-import {
-  beforeEach,
-  describe as describe_,
-  expect,
-  test,
-} from "vitest";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { beforeEach, describe as describe_, expect, test } from "vitest";
 import { LexerTransformer } from "./LexerTransformer.ts";
+import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
 
@@ -68,7 +64,9 @@ describe("RecordAssemblerTransformer", () => {
       try {
         await stream
           .pipeThrough(new LexerTransformer({ signal: controller.signal }))
-          .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }))
+          .pipeThrough(
+            new RecordAssemblerTransformer({ signal: controller.signal }),
+          )
           .pipeTo(new WritableStream());
         expect.fail("Should have thrown AbortError");
       } catch (error) {
@@ -79,13 +77,6 @@ describe("RecordAssemblerTransformer", () => {
   });
 
   test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
-    function waitAbort(signal: AbortSignal) {
-      return new Promise<void>((resolve) => {
-        signal.addEventListener("abort", () => {
-          resolve();
-        });
-      });
-    }
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
 

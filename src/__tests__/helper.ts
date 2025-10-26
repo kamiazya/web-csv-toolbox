@@ -35,6 +35,28 @@ export async function transform<I, O>(
     );
   return rows;
 }
+
+/**
+ * Wait for an AbortSignal to be aborted.
+ * This handles the race condition where the signal might already be aborted
+ * before the event listener is registered.
+ *
+ * @param signal - The AbortSignal to wait for
+ * @returns A promise that resolves when the signal is aborted
+ */
+export function waitAbort(signal: AbortSignal): Promise<void> {
+  // Check if already aborted to avoid race condition
+  if (signal.aborted) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    signal.addEventListener("abort", () => {
+      resolve();
+    });
+  });
+}
+
 export namespace FC {
   function _excludeFilter(excludes: string[]) {
     return (v: string) => {
