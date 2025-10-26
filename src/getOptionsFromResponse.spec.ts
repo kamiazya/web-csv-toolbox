@@ -56,4 +56,96 @@ describe("getOptionsFromResponse", () => {
       `[RangeError: Invalid mime type: "application/json"]`,
     );
   });
+
+  describe("Content-Encoding validation", () => {
+    it("should accept 'gzip' compression format", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "gzip",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "gzip",
+      });
+    });
+
+    it("should accept 'deflate' compression format", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "deflate",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "deflate",
+      });
+    });
+
+    it("should accept 'deflate-raw' compression format", () => {
+      const actual = getOptionsFromResponse(
+        new Response("", {
+          headers: {
+            "content-type": "text/csv",
+            "content-encoding": "deflate-raw",
+          },
+        }),
+      );
+      expect(actual).toEqual({
+        charset: "utf-8",
+        decomposition: "deflate-raw",
+      });
+    });
+
+    it("should throw error for unsupported compression format", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "br", // Brotli is not supported yet
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw]`,
+      );
+    });
+
+    it("should throw error for invalid compression format", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "unknown",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw]`,
+      );
+    });
+
+    it("should throw error for malicious compression format", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "gzip2",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[RangeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw]`,
+      );
+    });
+  });
 });

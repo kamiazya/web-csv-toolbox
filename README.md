@@ -507,6 +507,49 @@ For production use with untrusted input, consider:
 - Implementing file size limits at the application level
 - Validating parsed data before use
 
+#### Implementing Size Limits for Untrusted Sources
+
+When processing CSV files from untrusted sources (especially compressed files), you can implement size limits using a custom TransformStream:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Create a size-limiting TransformStream
+class SizeLimitStream extends TransformStream {
+  constructor(maxBytes) {
+    let bytesRead = 0;
+    super({
+      transform(chunk, controller) {
+        bytesRead += chunk.length;
+        if (bytesRead > maxBytes) {
+          controller.error(new Error(`Size limit exceeded: ${maxBytes} bytes`));
+        } else {
+          controller.enqueue(chunk);
+        }
+      }
+    });
+  }
+}
+
+// Example: Limit decompressed data to 10MB
+const response = await fetch('https://untrusted-source.com/data.csv.gz');
+const limitedStream = response.body
+  .pipeThrough(new DecompressionStream('gzip'))
+  .pipeThrough(new SizeLimitStream(10 * 1024 * 1024)); // 10MB limit
+
+try {
+  for await (const record of parse(limitedStream)) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error.message.includes('Size limit exceeded')) {
+    console.error('File too large - possible compression bomb attack');
+  }
+}
+```
+
+**Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
+
 ## How to Contribute 💪
 
 ## Star ⭐
