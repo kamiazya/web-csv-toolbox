@@ -9,7 +9,7 @@ import type {
 /**
  * Default maximum field count per record (100,000 fields).
  */
-const DEFAULT_MAX_FIELD_COUNT = 100000;
+const DEFAULT_MAX_FIELD_COUNT = 100_000;
 
 export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #fieldIndex = 0;
@@ -98,7 +98,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   }
 
   #checkFieldCount(): void {
-    if (this.#fieldIndex >= this.#maxFieldCount) {
+    if (this.#fieldIndex + 1 > this.#maxFieldCount) {
       throw new RangeError(
         `Field count (${this.#fieldIndex + 1}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
       );
