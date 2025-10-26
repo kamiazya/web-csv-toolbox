@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { Lexer } from "./Lexer";
 import { Field } from "./common/constants";
-import { BufferOverflowError } from "./common/errors";
 
 describe("Lexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10MB)", () => {
@@ -15,32 +14,31 @@ describe("Lexer - Buffer Overflow Protection", () => {
       expect(() => [...lexer.lex(data)]).not.toThrow();
     });
 
-    test("should throw BufferOverflowError when buffer exceeds 10MB", () => {
+    test("should throw RangeError when buffer exceeds 10MB", () => {
       // Create a large chunk that exceeds 10MB
       const largeChunk = "a".repeat(11 * 1024 * 1024); // 11MB
 
-      expect(() => [...lexer.lex(largeChunk)]).toThrow(BufferOverflowError);
+      expect(() => [...lexer.lex(largeChunk)]).toThrow(RangeError);
     });
 
-    test("should throw BufferOverflowError with proper error details", () => {
+    test("should throw RangeError with proper error details", () => {
       const largeChunk = "a".repeat(11 * 1024 * 1024); // 11MB
 
       try {
         [...lexer.lex(largeChunk)];
-        expect.fail("Should have thrown BufferOverflowError");
+        expect.fail("Should have thrown RangeError");
       } catch (error) {
-        expect(error).toBeInstanceOf(BufferOverflowError);
-        expect((error as BufferOverflowError).currentSize).toBeGreaterThan(
-          10 * 1024 * 1024,
+        expect(error).toBeInstanceOf(RangeError);
+        expect((error as RangeError).message).toContain(
+          "Buffer size",
         );
-        expect((error as BufferOverflowError).maxSize).toBe(10 * 1024 * 1024);
-        expect((error as BufferOverflowError).message).toContain(
-          "Buffer size exceeded maximum allowed size",
+        expect((error as RangeError).message).toContain(
+          "exceeded maximum allowed size",
         );
       }
     });
 
-    test("should throw BufferOverflowError on incremental buffering attack", () => {
+    test("should throw RangeError on incremental buffering attack", () => {
       // Simulate streaming attack with many small chunks
       const smallChunk = "a".repeat(1024 * 1024); // 1MB per chunk
 
@@ -48,15 +46,15 @@ describe("Lexer - Buffer Overflow Protection", () => {
         for (let i = 0; i < 12; i++) {
           [...lexer.lex(smallChunk, true)]; // buffering = true
         }
-      }).toThrow(BufferOverflowError);
+      }).toThrow(RangeError);
     });
 
-    test("should throw BufferOverflowError on unclosed quoted field", () => {
+    test("should throw RangeError on unclosed quoted field", () => {
       // Attack vector: unclosed quoted field that accumulates in buffer
       const unclosedQuote = `"${"a".repeat(11 * 1024 * 1024)}`;
 
       expect(() => [...lexer.lex(unclosedQuote, true)]).toThrow(
-        BufferOverflowError,
+        RangeError,
       );
     });
   });
@@ -66,7 +64,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
       const lexer = new Lexer({ maxBufferSize: 1024 }); // 1KB limit
       const largeChunk = "a".repeat(2048); // 2KB
 
-      expect(() => [...lexer.lex(largeChunk)]).toThrow(BufferOverflowError);
+      expect(() => [...lexer.lex(largeChunk)]).toThrow(RangeError);
     });
 
     test("should allow Infinity as maxBufferSize to disable limit", () => {
@@ -75,7 +73,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
 
       // This should not throw, but may take some time and memory
       // We'll just verify it doesn't throw immediately
-      expect(() => [...lexer.lex(largeChunk)]).not.toThrow(BufferOverflowError);
+      expect(() => [...lexer.lex(largeChunk)]).not.toThrow(RangeError);
     });
   });
 
@@ -88,7 +86,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
 
       // Second chunk exceeds limit
       expect(() => [...lexer.lex("a".repeat(60), true)]).toThrow(
-        BufferOverflowError,
+        RangeError,
       );
     });
 
@@ -111,7 +109,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
       // Malformed CSV that doesn't match any token pattern
       const malformedData = "x".repeat(2 * 1024 * 1024); // 2MB of invalid data
 
-      expect(() => [...lexer.lex(malformedData)]).toThrow(BufferOverflowError);
+      expect(() => [...lexer.lex(malformedData)]).toThrow(RangeError);
     });
 
     test("should prevent DoS via streaming incomplete quoted fields", () => {
@@ -124,7 +122,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
             i === 0 ? `"${"data".repeat(1024 * 30)}` : "data".repeat(1024 * 30);
           [...lexer.lex(chunk, true)];
         }
-      }).toThrow(BufferOverflowError);
+      }).toThrow(RangeError);
     });
 
     test("should prevent infinite loop with escaped quotes in long field", () => {
@@ -135,7 +133,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
         // This simulates the do-while loop scenario mentioned in the security report
         const chunk = `"${'""'.repeat(150 * 1024)}`;
         [...lexer.lex(chunk, true)];
-      }).toThrow(BufferOverflowError);
+      }).toThrow(RangeError);
     });
 
     test("should handle streaming with escaped quotes that eventually exceeds buffer", () => {
@@ -148,7 +146,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
             i === 0 ? `"${'""'.repeat(30 * 1024)}` : '""'.repeat(30 * 1024);
           [...lexer.lex(chunk, true)];
         }
-      }).toThrow(BufferOverflowError);
+      }).toThrow(RangeError);
     });
 
     test("should properly parse valid quoted field with many escaped quotes within limit", () => {

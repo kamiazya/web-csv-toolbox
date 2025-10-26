@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { RecordAssembler } from "./RecordAssembler";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
-import { FieldCountLimitError } from "./common/errors";
 import type { Token } from "./common/types";
 
 describe("RecordAssembler - Field Count Limit Protection", () => {
@@ -54,7 +53,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
       expect(() => [...assembler.assemble(tokens)]).not.toThrow();
     });
 
-    test("should throw FieldCountLimitError when field count exceeds limit during header parsing", () => {
+    test("should throw RangeError when field count exceeds limit during header parsing", () => {
       const tokens: Token[] = [];
       const maxFields = 100001;
 
@@ -92,11 +91,11 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
       });
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(
-        FieldCountLimitError,
+        RangeError,
       );
     });
 
-    test("should throw FieldCountLimitError with proper error details", () => {
+    test("should throw RangeError with proper error details", () => {
       const tokens: Token[] = [];
       const maxFields = 100001;
 
@@ -134,12 +133,13 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
 
       try {
         [...assembler.assemble(tokens)];
-        expect.fail("Should have thrown FieldCountLimitError");
+        expect.fail("Should have thrown RangeError");
       } catch (error) {
-        expect(error).toBeInstanceOf(FieldCountLimitError);
-        expect((error as FieldCountLimitError).currentCount).toBe(maxFields);
-        expect((error as FieldCountLimitError).maxCount).toBe(100000);
-        expect((error as FieldCountLimitError).message).toContain(
+        expect(error).toBeInstanceOf(RangeError);
+        expect((error as RangeError).message).toContain(
+          "Field count",
+        );
+        expect((error as RangeError).message).toContain(
           "exceeded maximum allowed count",
         );
       }
@@ -185,7 +185,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
       });
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(
-        FieldCountLimitError,
+        RangeError,
       );
     });
 
@@ -230,17 +230,17 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
 
       // This should not throw, but will take time and memory
       expect(() => [...assembler.assemble(tokens)]).not.toThrow(
-        FieldCountLimitError,
+        RangeError,
       );
     });
   });
 
   describe("header validation with field count limit", () => {
-    test("should throw FieldCountLimitError when provided header exceeds limit", () => {
+    test("should throw RangeError when provided header exceeds limit", () => {
       const largeHeader = Array.from({ length: 100001 }, (_, i) => `field${i}`);
 
       expect(() => new RecordAssembler({ header: largeHeader })).toThrow(
-        FieldCountLimitError,
+        RangeError,
       );
     });
 
@@ -281,7 +281,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
       }
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(
-        FieldCountLimitError,
+        RangeError,
       );
     });
 

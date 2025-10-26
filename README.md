@@ -56,9 +56,9 @@ A CSV Toolbox utilizing Web Standard APIs.
   - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
 - 🛡️ **Memory Safety Protection**: Built-in limits prevent memory exhaustion attacks.
   - 🔒 Configurable maximum buffer size (default: 10MB) to prevent DoS attacks via unbounded input.
-  - 🚨 Throws `BufferOverflowError` when buffer exceeds the limit.
+  - 🚨 Throws `RangeError` when buffer exceeds the limit.
   - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
-  - ⚠️ Throws `FieldCountLimitError` when field count exceeds the limit.
+  - ⚠️ Throws `RangeError` when field count exceeds the limit.
 - 🎨 **Flexible Source Support**
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.

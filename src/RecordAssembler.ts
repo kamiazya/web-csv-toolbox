@@ -1,5 +1,5 @@
 import { FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { FieldCountLimitError, ParseError } from "./common/errors.ts";
+import { ParseError } from "./common/errors.ts";
 import type {
   CSVRecord,
   RecordAssemblerOptions,
@@ -99,24 +99,16 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
 
   #checkFieldCount(): void {
     if (this.#fieldIndex >= this.#maxFieldCount) {
-      throw new FieldCountLimitError(
-        `Field count exceeded maximum allowed count of ${this.#maxFieldCount}`,
-        {
-          currentCount: this.#fieldIndex + 1,
-          maxCount: this.#maxFieldCount,
-        },
+      throw new RangeError(
+        `Field count (${this.#fieldIndex + 1}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
       );
     }
   }
 
   #setHeader(header: Header) {
     if (header.length > this.#maxFieldCount) {
-      throw new FieldCountLimitError(
+      throw new RangeError(
         `Header field count (${header.length}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
-        {
-          currentCount: header.length,
-          maxCount: this.#maxFieldCount,
-        },
       );
     }
     this.#header = header;

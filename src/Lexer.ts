@@ -1,6 +1,6 @@
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
-import { BufferOverflowError, ParseError } from "./common/errors.ts";
+import { ParseError } from "./common/errors.ts";
 import type {
   AbortSignalOptions,
   CommonOptions,
@@ -118,16 +118,12 @@ export class Lexer<
 
   /**
    * Checks if the buffer size exceeds the maximum allowed size.
-   * @throws {BufferOverflowError} If the buffer size exceeds the maximum.
+   * @throws {RangeError} If the buffer size exceeds the maximum.
    */
   #checkBufferSize(): void {
     if (this.#buffer.length > this.#maxBufferSize) {
-      throw new BufferOverflowError(
-        `Buffer size exceeded maximum allowed size of ${this.#maxBufferSize} bytes`,
-        {
-          currentSize: this.#buffer.length,
-          maxSize: this.#maxBufferSize,
-        },
+      throw new RangeError(
+        `Buffer size (${this.#buffer.length} bytes) exceeded maximum allowed size of ${this.#maxBufferSize} bytes`,
       );
     }
   }
