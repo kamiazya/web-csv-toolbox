@@ -251,7 +251,7 @@ describe("Lexer", () => {
       });
     });
 
-  test("should thorw DOMException named AbortError if the signal is aborted", () => {
+   test("should thorw DOMException named AbortError if the signal is aborted", () => {
       controller.abort();
       try {
         [...lexer.lex('"Hello"')];
@@ -262,7 +262,7 @@ describe("Lexer", () => {
       }
     });
 
-  test("should throw custom error if the signal is aborted with custom reason", () => {
+   test("should throw custom error if the signal is aborted with custom reason", () => {
       class MyCustomError extends Error {
         constructor(message: string) {
           super(message);
