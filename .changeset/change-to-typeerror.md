@@ -4,11 +4,11 @@ web-csv-toolbox: minor
 
 **BREAKING CHANGE**: Change error types from RangeError to TypeError for consistency with Web Standards
 
-- Change all `RangeError` to `TypeError` in `getOptionsFromResponse()`
-- This affects error handling for:
-  - Invalid MIME type (e.g., `application/json` instead of `text/csv`)
-  - Unsupported content-encoding (e.g., `br`, `unknown`)
-  - Multiple content-encodings (e.g., `gzip, deflate`)
+- Change all `RangeError` to `TypeError` for consistency
+- This affects error handling in:
+  - `getOptionsFromResponse()`: Invalid MIME type, unsupported/multiple content-encodings
+  - `parseResponse()`: Null response body
+  - `parseResponseToStream()`: Null response body
 - Aligns with Web Standard APIs behavior (DecompressionStream throws TypeError)
 - Improves consistency for error handling with `catch (error instanceof TypeError)`
 
