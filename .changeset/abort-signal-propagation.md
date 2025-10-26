@@ -11,6 +11,15 @@ This release fixes a security vulnerability where AbortSignal was not properly p
 - Fixed `LexerTransformer` to accept and propagate `AbortSignal` to internal `Lexer` instance
 - Fixed `RecordAssemblerTransformer` to properly propagate `AbortSignal` to internal `RecordAssembler` instance
 - Added comprehensive tests for AbortSignal propagation in Transform Stream components
+- Added `waitAbort` helper function to handle race conditions in AbortSignal tests
+- Improved constructor initialization order in both Transformer classes for better code clarity
+
+**Code Quality Improvements:**
+
+- Added `LexerTransformerOptions` type definition for better type consistency across Transformer classes
+- Refactored constructors to initialize local variables before `super()` calls, improving code readability
+- Removed redundant type intersections in `RecordAssemblerTransformer`
+- Eliminated code duplication by moving test helpers to shared location
 
 **Security Impact:**
 
