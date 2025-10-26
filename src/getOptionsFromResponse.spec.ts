@@ -53,7 +53,7 @@ describe("getOptionsFromResponse", () => {
         }),
       ),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[RangeError: Invalid mime type: "application/json"]`,
+      `[TypeError: Invalid mime type: "application/json"]`,
     );
   });
 
@@ -114,7 +114,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw]`,
       );
     });
 
@@ -129,7 +129,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw]`,
       );
     });
 
@@ -144,7 +144,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw]`,
+        `[TypeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw]`,
       );
     });
 
@@ -204,7 +204,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Multiple content-encodings are not supported: "gzip, deflate"]`,
+        `[TypeError: Multiple content-encodings are not supported: "gzip, deflate"]`,
       );
     });
 
@@ -219,7 +219,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Multiple content-encodings are not supported: "gzip , deflate"]`,
+        `[TypeError: Multiple content-encodings are not supported: "gzip , deflate"]`,
       );
     });
 
@@ -234,7 +234,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[RangeError: Multiple content-encodings are not supported: "gzip, br"]`,
+        `[TypeError: Multiple content-encodings are not supported: "gzip, br"]`,
       );
     });
 
