@@ -55,7 +55,7 @@ A CSV Toolbox utilizing Web Standard APIs.
   - ✋ Integrate with [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController) to manually cancel operations as needed.
   - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
 - 🛡️ **Memory Safety Protection**: Built-in limits prevent memory exhaustion attacks.
-  - 🔒 Configurable maximum buffer size (default: 10MB) to prevent DoS attacks via unbounded input.
+  - 🔒 Configurable maximum buffer size (default: 10M characters) to prevent DoS attacks via unbounded input.
   - 🚨 Throws `RangeError` when buffer exceeds the limit.
   - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
   - ⚠️ Throws `RangeError` when field count exceeds the limit.
@@ -376,7 +376,7 @@ console.log(result);
 | ---------------- | ------------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
 | `delimiter`      | Character to separate fields          | `,`          |                                                                                    |
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
-| `maxBufferSize`  | Maximum internal buffer size (bytes)  | `10485760`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |

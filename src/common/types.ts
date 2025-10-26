@@ -167,16 +167,17 @@ export interface CommonOptions<
    */
   quotation?: Quotation;
   /**
-   * Maximum internal buffer size in bytes.
+   * Maximum internal buffer size in characters.
    *
    * @remarks
    * This option limits the size of the internal buffer used during lexing
-   * to prevent memory exhaustion attacks. When the buffer exceeds this limit,
-   * a {@link BufferOverflowError} will be thrown.
+   * to prevent memory exhaustion attacks. The buffer size is measured in
+   * UTF-16 code units (JavaScript string length). When the buffer exceeds
+   * this limit, a `RangeError` will be thrown.
    *
    * Set to `Infinity` to disable the limit (not recommended for untrusted input).
    *
-   * @default 10485760 (10MB)
+   * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
 }

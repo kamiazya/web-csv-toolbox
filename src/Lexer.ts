@@ -12,9 +12,10 @@ import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
 
 /**
- * Default maximum buffer size in bytes (10MB).
+ * Default maximum buffer size in characters (UTF-16 code units).
+ * Approximately 10MB for ASCII text, but may vary for non-ASCII characters.
  */
-const DEFAULT_MAX_BUFFER_SIZE = 10485760;
+const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
 /**
  * CSV Lexer.
@@ -123,7 +124,7 @@ export class Lexer<
   #checkBufferSize(): void {
     if (this.#buffer.length > this.#maxBufferSize) {
       throw new RangeError(
-        `Buffer size (${this.#buffer.length} bytes) exceeded maximum allowed size of ${this.#maxBufferSize} bytes`,
+        `Buffer size (${this.#buffer.length} characters) exceeded maximum allowed size of ${this.#maxBufferSize} characters`,
       );
     }
   }

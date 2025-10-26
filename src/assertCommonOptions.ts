@@ -71,7 +71,7 @@ export function assertCommonOptions<
     (Number.isFinite(mbs) && (mbs < 1 || !Number.isInteger(mbs)))
   ) {
     throw new RangeError(
-      "maxBufferSize must be a positive integer or Number.POSITIVE_INFINITY",
+      "maxBufferSize must be a positive integer (in characters) or Number.POSITIVE_INFINITY",
     );
   }
 }
