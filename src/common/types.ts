@@ -267,6 +267,16 @@ export interface BinaryOptions {
 }
 
 /**
+ * Lexer Transformer Options for CSV.
+ * @category Types
+ */
+export interface LexerTransformerOptions<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
+    AbortSignalOptions {}
+
+/**
  * Record Assembler Options for CSV.
  * @category Types
  *

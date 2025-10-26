@@ -3,10 +3,11 @@ import {
   describe as describe_,
   expect,
   it as it_,
+  test,
   vi,
 } from "vitest";
 import { LexerTransformer } from "./LexerTransformer.ts";
-import { transform } from "./__tests__/helper.ts";
+import { transform, waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
@@ -60,5 +61,59 @@ describe("LexerTransformer", () => {
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[Error: test]`,
     );
+  });
+
+  describe("when AbortSignal is provided", () => {
+    let controller: AbortController;
+
+    beforeEach(() => {
+      controller = new AbortController();
+    });
+
+    test("should throw DOMException named AbortError if the signal is aborted", async () => {
+      const transformer = new LexerTransformer({ signal: controller.signal });
+      controller.abort();
+
+      try {
+        await transform(transformer, ["field1,field2\nvalue1,value2"]);
+        expect.fail("Should have thrown AbortError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(DOMException);
+        expect((error as DOMException).name).toBe("AbortError");
+      }
+    });
+
+    test("should throw custom error if the signal is aborted with custom reason", async () => {
+      class MyCustomError extends Error {
+        constructor(message: string) {
+          super(message);
+          this.name = "MyCustomError";
+        }
+      }
+      const transformer = new LexerTransformer({ signal: controller.signal });
+      controller.abort(new MyCustomError("Custom abort reason"));
+
+      try {
+        await transform(transformer, ["field1,field2\nvalue1,value2"]);
+        expect.fail("Should have thrown MyCustomError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(MyCustomError);
+        expect((error as MyCustomError).message).toBe("Custom abort reason");
+      }
+    });
+  });
+
+  test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
+    const signal = AbortSignal.timeout(0);
+    await waitAbort(signal);
+    const transformer = new LexerTransformer({ signal });
+
+    try {
+      await transform(transformer, ["field1,field2\nvalue1,value2"]);
+      expect.fail("Should have thrown TimeoutError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DOMException);
+      expect((error as DOMException).name).toBe("TimeoutError");
+    }
   });
 });
