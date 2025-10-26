@@ -162,7 +162,6 @@ export namespace FC {
     return text({
       ...constraints,
       minLength: 1,
-      maxLength: 1,
       kindExcludes: ["string16bits", "unicode"],
     })
       .filter(_excludeFilter([...CRLF]))
