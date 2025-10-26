@@ -438,14 +438,25 @@ const records = await parse.toArray(csv);
 #### 1. Use streaming for large files
 
 ```js
-// ✅ Good: Streaming approach
+import { parse } from 'web-csv-toolbox';
+
+const response = await fetch('https://example.com/large-data.csv');
+
+// ✅ Good: Streaming approach (constant memory usage)
 for await (const record of parse(response)) {
-  await processRecord(record);
+  // Process each record immediately
+  console.log(record);
+  // Memory footprint: O(1) - only one record in memory at a time
 }
 
 // ❌ Avoid: Loading entire file into memory first
-const text = await response.text();
-const records = await parse.toArray(text);
+const response2 = await fetch('https://example.com/large-data.csv');
+const text = await response2.text(); // Loads entire file into memory
+const records = await parse.toArray(text); // Loads all records into memory
+for (const record of records) {
+  console.log(record);
+  // Memory footprint: O(n) - entire file + all records in memory
+}
 ```
 
 #### 2. Enable AbortSignal for timeout protection
