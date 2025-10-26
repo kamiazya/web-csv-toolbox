@@ -287,8 +287,8 @@ describe("Lexer", () => {
         signal.addEventListener("abort", () => {
           resolve();
         });
-   });
-       }
+      });
+    }
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
 
@@ -296,10 +296,10 @@ describe("Lexer", () => {
     try {
       [...lexer.lex('"Hello"')];
       expect.unreachable();
-      } catch (error) {
+    } catch (error) {
       assert(error instanceof DOMException);
       expect(error.name).toBe("TimeoutError");
-      }
+    }
   });
   test("should correctly handle multi-character field delimiters", () => {
     lexer = new Lexer({ delimiter: "||" });
