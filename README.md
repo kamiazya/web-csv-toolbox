@@ -220,12 +220,12 @@ const sensorData = `25.5,60,1024
 for await (const record of parse(sensorData, {
   header: ['temperature', 'humidity', 'pressure']
 })) {
-  console.log(`Temp: ${record.temperature}°C, Humidity: ${record.humidity}%`);
+  console.log(`Temp: ${record.temperature}°C, Humidity: ${record.humidity}%, Pressure: ${record.pressure} hPa`);
 }
 // Output:
-// Temp: 25.5°C, Humidity: 60%
-// Temp: 26.1°C, Humidity: 58%
-// Temp: 24.8°C, Humidity: 62%
+// Temp: 25.5°C, Humidity: 60%, Pressure: 1024 hPa
+// Temp: 26.1°C, Humidity: 58%, Pressure: 1018 hPa
+// Temp: 24.8°C, Humidity: 62%, Pressure: 1022 hPa
 ```
 
 ### `AbortSignal` / `AbortController` Support
