@@ -37,7 +37,7 @@ export async function routeUint8ArrayStreamParsing<
   // Worker with binary streaming
   if (useWorker) {
     const { parseUint8ArrayStreamInWorker } = await import(
-      "./worker/parseUint8ArrayStreamInWorker.ts"
+      "#execution/worker/parseUint8ArrayStreamInWorker.js"
     );
     return parseUint8ArrayStreamInWorker(stream, options);
   }
@@ -78,7 +78,7 @@ export async function routeStringParsing<Header extends ReadonlyArray<string>>(
   // Case 1: Worker + WASM
   if (useWorker && useWASM) {
     const { parseStringInWorkerWASM } = await import(
-      "./worker/parseStringInWorker.ts"
+      "#execution/worker/parseStringInWorker.js"
     );
     return parseStringInWorkerWASM(csv, options);
   }
@@ -86,7 +86,7 @@ export async function routeStringParsing<Header extends ReadonlyArray<string>>(
   // Case 2: Worker only
   if (useWorker) {
     const { parseStringInWorker } = await import(
-      "./worker/parseStringInWorker.ts"
+      "#execution/worker/parseStringInWorker.js"
     );
     return parseStringInWorker(csv, options);
   }
@@ -133,7 +133,7 @@ export async function routeStreamParsing<Header extends ReadonlyArray<string>>(
   // Worker with streaming
   if (useWorker) {
     const { parseStreamInWorker } = await import(
-      "./worker/parseStreamInWorker.ts"
+      "#execution/worker/parseStreamInWorker.js"
     );
     return parseStreamInWorker(stream, options);
   }
@@ -162,7 +162,7 @@ export async function routeBinaryParsing<Header extends ReadonlyArray<string>>(
   // Worker + WASM for binary
   if (useWorker && useWASM) {
     const { parseBinaryInWorkerWASM } = await import(
-      "./worker/parseBinaryInWorker.ts"
+      "#execution/worker/parseBinaryInWorker.js"
     );
     return parseBinaryInWorkerWASM(binary, options);
   }
@@ -170,7 +170,7 @@ export async function routeBinaryParsing<Header extends ReadonlyArray<string>>(
   // Worker only
   if (useWorker) {
     const { parseBinaryInWorker } = await import(
-      "./worker/parseBinaryInWorker.ts"
+      "#execution/worker/parseBinaryInWorker.js"
     );
     return parseBinaryInWorker(binary, options);
   }

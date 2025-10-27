@@ -1,7 +1,7 @@
 /**
  * Terminate all worker instances.
  *
- * This function terminates all worker instances created by the parsing functions.
+ * This function terminates the singleton worker instance created by the parsing functions.
  * Call this when you're done using worker execution to clean up resources and
  * allow the process to exit cleanly.
  *
@@ -19,24 +19,9 @@
  * ```
  */
 export async function terminateWorkers(): Promise<void> {
-  // Dynamically import and terminate each worker type
-  // This avoids loading worker modules if they haven't been used
-
-  // Note: We use dynamic imports to avoid loading modules that haven't been used
-  // The imports will fail silently if the modules haven't been loaded yet
-
-  await Promise.all([
-    import("./execution/worker/parseStringInWorker.ts")
-      .then((m) => m.terminateWorker())
-      .catch(() => {}),
-    import("./execution/worker/parseBinaryInWorker.ts")
-      .then((m) => m.terminateWorker())
-      .catch(() => {}),
-    import("./execution/worker/parseStreamInWorker.ts")
-      .then((m) => m.terminateWorker())
-      .catch(() => {}),
-    import("./execution/worker/parseUint8ArrayStreamInWorker.ts")
-      .then((m) => m.terminateWorker())
-      .catch(() => {}),
-  ]);
+  // Terminate the singleton worker managed by WorkerManager
+  const { terminateWorker } = await import(
+    "./execution/worker/helpers/WorkerManager.ts"
+  );
+  terminateWorker();
 }
