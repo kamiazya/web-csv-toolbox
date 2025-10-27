@@ -17,13 +17,18 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-  const worker = await getOrCreateWorker(options?.workerURL);
-  const id = requestId++;
+  // Use WorkerPool if provided, otherwise use module-level singleton
+  const worker = options?.workerPool
+    ? await options.workerPool.getWorker(options.workerURL)
+    : await getOrCreateWorker(options?.workerURL);
+  const id = options?.workerPool
+    ? options.workerPool.getNextRequestId()
+    : requestId++;
 
   const records = await new Promise<CSVRecord<Header>[]>((resolve, reject) => {
     const handler = (event: MessageEvent) => {
       if (event.data.id === id) {
-        removeListener(worker, "message", handler);
+        cleanup();
         if (event.data.error) {
           reject(new Error(event.data.error));
         } else {
@@ -33,19 +38,55 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
     };
 
     const errorHandler = (error: ErrorEvent) => {
-      removeListener(worker, "error", errorHandler);
+      cleanup();
       reject(error);
+    };
+
+    const abortHandler = () => {
+      cleanup();
+      worker.postMessage({ id, type: "abort" });
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    const cleanup = () => {
+      removeListener(worker, "message", handler);
+      removeListener(worker, "error", errorHandler);
+      if (options?.signal) {
+        options.signal.removeEventListener("abort", abortHandler);
+      }
     };
 
     addListener(worker, "message", handler);
     addListener(worker, "error", errorHandler);
-    worker.postMessage({
-      id,
-      type: "parseString",
-      data: csv,
-      options,
-      useWASM: false,
-    });
+
+    // Wire abort signal if present
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        cleanup();
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      options.signal.addEventListener("abort", abortHandler);
+    }
+
+    // Remove signal from options before sending (not serializable)
+    const serializableOptions = options ? { ...options } : undefined;
+    if (serializableOptions) {
+      delete serializableOptions.signal;
+    }
+
+    try {
+      worker.postMessage({
+        id,
+        type: "parseString",
+        data: csv,
+        options: serializableOptions,
+        useWASM: false,
+      });
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
   });
 
   // Convert array to async iterator
@@ -70,13 +111,18 @@ export async function parseStringInWorkerWASM<
   csv: string,
   options?: ParseOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-  const worker = await getOrCreateWorker(options?.workerURL);
-  const id = requestId++;
+  // Use WorkerPool if provided, otherwise use module-level singleton
+  const worker = options?.workerPool
+    ? await options.workerPool.getWorker(options.workerURL)
+    : await getOrCreateWorker(options?.workerURL);
+  const id = options?.workerPool
+    ? options.workerPool.getNextRequestId()
+    : requestId++;
 
   const records = await new Promise<CSVRecord<Header>[]>((resolve, reject) => {
     const handler = (event: MessageEvent) => {
       if (event.data.id === id) {
-        removeListener(worker, "message", handler);
+        cleanup();
         if (event.data.error) {
           reject(new Error(event.data.error));
         } else {
@@ -86,19 +132,55 @@ export async function parseStringInWorkerWASM<
     };
 
     const errorHandler = (error: ErrorEvent) => {
-      removeListener(worker, "error", errorHandler);
+      cleanup();
       reject(error);
+    };
+
+    const abortHandler = () => {
+      cleanup();
+      worker.postMessage({ id, type: "abort" });
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    const cleanup = () => {
+      removeListener(worker, "message", handler);
+      removeListener(worker, "error", errorHandler);
+      if (options?.signal) {
+        options.signal.removeEventListener("abort", abortHandler);
+      }
     };
 
     addListener(worker, "message", handler);
     addListener(worker, "error", errorHandler);
-    worker.postMessage({
-      id,
-      type: "parseString",
-      data: csv,
-      options,
-      useWASM: true,
-    });
+
+    // Wire abort signal if present
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        cleanup();
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      options.signal.addEventListener("abort", abortHandler);
+    }
+
+    // Remove signal from options before sending (not serializable)
+    const serializableOptions = options ? { ...options } : undefined;
+    if (serializableOptions) {
+      delete serializableOptions.signal;
+    }
+
+    try {
+      worker.postMessage({
+        id,
+        type: "parseString",
+        data: csv,
+        options: serializableOptions,
+        useWASM: true,
+      });
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
   });
 
   return (async function* () {

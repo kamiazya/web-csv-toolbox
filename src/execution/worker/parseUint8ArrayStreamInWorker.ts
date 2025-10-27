@@ -24,8 +24,13 @@ export async function parseUint8ArrayStreamInWorker<
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-  const worker = await getOrCreateWorker(options?.workerURL);
-  const id = requestId++;
+    // Use WorkerPool if provided, otherwise use module-level singleton
+  const worker = options?.workerPool
+    ? await options.workerPool.getWorker(options.workerURL)
+    : await getOrCreateWorker(options?.workerURL);
+  const id = options?.workerPool
+    ? options.workerPool.getNextRequestId()
+    : requestId++;
 
   // Check if we're in a browser environment that supports Transferable Streams
   const supportsTransferableStreams = typeof window !== "undefined" && "ReadableStream" in window;
@@ -36,7 +41,7 @@ export async function parseUint8ArrayStreamInWorker<
       (resolve, reject) => {
         const handler = (event: MessageEvent) => {
           if (event.data.id === id) {
-            removeListener(worker, "message", handler);
+            cleanup();
             if (event.data.error) {
               reject(new Error(event.data.error));
             } else {
@@ -46,23 +51,58 @@ export async function parseUint8ArrayStreamInWorker<
         };
 
         const errorHandler = (error: ErrorEvent) => {
-          removeListener(worker, "error", errorHandler);
+          cleanup();
           reject(error);
+        };
+
+        const abortHandler = () => {
+          cleanup();
+          worker.postMessage({ id, type: "abort" });
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+
+        const cleanup = () => {
+          removeListener(worker, "message", handler);
+          removeListener(worker, "error", errorHandler);
+          if (options?.signal) {
+            options.signal.removeEventListener("abort", abortHandler);
+          }
         };
 
         addListener(worker, "message", handler);
         addListener(worker, "error", errorHandler);
 
+        // Wire abort signal if present
+        if (options?.signal) {
+          if (options.signal.aborted) {
+            cleanup();
+            reject(new DOMException("Aborted", "AbortError"));
+            return;
+          }
+          options.signal.addEventListener("abort", abortHandler);
+        }
+
+        // Remove signal from options before sending (not serializable)
+        const serializableOptions = options ? { ...options } : undefined;
+        if (serializableOptions) {
+          delete serializableOptions.signal;
+        }
+
         // Transfer stream to worker (zero-copy)
-        worker.postMessage(
-          {
-            id,
-            type: "parseUint8ArrayStream",
-            data: stream,
-            options,
-          },
-          [stream],
-        );
+        try {
+          worker.postMessage(
+            {
+              id,
+              type: "parseUint8ArrayStream",
+              data: stream,
+              options: serializableOptions,
+            },
+            [stream],
+          );
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
       },
     );
 
@@ -97,7 +137,7 @@ export async function parseUint8ArrayStreamInWorker<
     const records = await new Promise<CSVRecord<Header>[]>((resolve, reject) => {
       const handler = (event: MessageEvent) => {
         if (event.data.id === id) {
-          removeListener(worker, "message", handler);
+          cleanup();
           if (event.data.error) {
             reject(new Error(event.data.error));
           } else {
@@ -107,20 +147,55 @@ export async function parseUint8ArrayStreamInWorker<
       };
 
       const errorHandler = (error: ErrorEvent) => {
-        removeListener(worker, "error", errorHandler);
+        cleanup();
         reject(error);
+      };
+
+      const abortHandler = () => {
+        cleanup();
+        worker.postMessage({ id, type: "abort" });
+        reject(new DOMException("Aborted", "AbortError"));
+      };
+
+      const cleanup = () => {
+        removeListener(worker, "message", handler);
+        removeListener(worker, "error", errorHandler);
+        if (options?.signal) {
+          options.signal.removeEventListener("abort", abortHandler);
+        }
       };
 
       addListener(worker, "message", handler);
       addListener(worker, "error", errorHandler);
 
-      worker.postMessage({
-        id,
-        type: "parseBinary",
-        data: combined,
-        options,
-        useWASM: false,
-      });
+      // Wire abort signal if present
+      if (options?.signal) {
+        if (options.signal.aborted) {
+          cleanup();
+          reject(new DOMException("Aborted", "AbortError"));
+          return;
+        }
+        options.signal.addEventListener("abort", abortHandler);
+      }
+
+      // Remove signal from options before sending (not serializable)
+      const serializableOptions = options ? { ...options } : undefined;
+      if (serializableOptions) {
+        delete serializableOptions.signal;
+      }
+
+      try {
+        worker.postMessage({
+          id,
+          type: "parseBinary",
+          data: combined,
+          options: serializableOptions,
+          useWASM: false,
+        });
+      } catch (error) {
+        cleanup();
+        reject(error);
+      }
     });
 
     // Convert array to async iterator

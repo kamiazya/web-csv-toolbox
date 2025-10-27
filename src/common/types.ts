@@ -402,6 +402,37 @@ export interface ExecutionOptions {
    * Only used when 'worker' is in the execution array.
    */
   workerURL?: string | URL;
+
+  /**
+   * Worker pool for managing worker lifecycle.
+   *
+   * @remarks
+   * When provided, the parsing function will use this pool's worker instance
+   * instead of creating/reusing a module-level singleton worker.
+   *
+   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup:
+   *
+   * @example Using WorkerPool with automatic cleanup
+   * ```ts
+   * import { WorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * async function processCSV(csv: string) {
+   *   using pool = new WorkerPool();
+   *
+   *   const records = [];
+   *   for await (const record of parseString(csv, {
+   *     execution: ['worker'],
+   *     workerPool: pool
+   *   })) {
+   *     records.push(record);
+   *   }
+   *
+   *   return records;
+   *   // Worker is automatically terminated when leaving this scope
+   * }
+   * ```
+   */
+  workerPool?: import("../WorkerPool.ts").WorkerPool;
 }
 
 /**

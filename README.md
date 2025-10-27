@@ -386,6 +386,113 @@ for await (const record of parse(stream, { execution: ['worker'] })) {
 }
 ```
 
+#### Worker Lifecycle Management 🔄
+
+By default, the library manages a shared Worker instance automatically. For more control over Worker lifecycle, you can use `WorkerPool`:
+
+```js
+import { WorkerPool, parseString } from 'web-csv-toolbox';
+
+// Automatic cleanup with 'using' syntax (recommended)
+async function processCSV(csv) {
+  using pool = new WorkerPool();
+
+  const records = [];
+  for await (const record of parseString(csv, {
+    execution: ['worker'],
+    workerPool: pool
+  })) {
+    records.push(record);
+  }
+
+  return records;
+  // Worker automatically terminates when leaving this scope
+}
+```
+
+**Benefits of WorkerPool:**
+- ✅ **Explicit lifecycle**: Worker terminates when you want it to
+- ✅ **Automatic cleanup**: Use `using` syntax for automatic disposal
+- ✅ **Resource control**: Manage multiple workers independently
+- ✅ **Scoped processing**: Perfect for handling multiple CSV files in sequence
+
+**Processing multiple files with the same worker:**
+
+```js
+import { WorkerPool, parseString } from 'web-csv-toolbox';
+
+async function processMultipleCSVs(csvFiles) {
+  using pool = new WorkerPool();
+
+  const allResults = [];
+  for (const csv of csvFiles) {
+    const records = [];
+    for await (const record of parseString(csv, {
+      execution: ['worker'],
+      workerPool: pool
+    })) {
+      records.push(record);
+    }
+    allResults.push(records);
+  }
+
+  return allResults;
+  // Single worker handles all files, then terminates automatically
+}
+```
+
+**Manual cleanup (if not using `using` syntax):**
+
+```js
+import { WorkerPool, parseString } from 'web-csv-toolbox';
+
+const pool = new WorkerPool();
+
+try {
+  const records = [];
+  for await (const record of parseString(csv, {
+    execution: ['worker'],
+    workerPool: pool
+  })) {
+    records.push(record);
+  }
+} finally {
+  pool[Symbol.dispose](); // Manual cleanup
+}
+```
+
+**Environment-specific cleanup hooks:**
+
+For long-running applications, you may want to clean up workers on specific events:
+
+```js
+// Browser: Clean up on page unload
+import { WorkerPool } from 'web-csv-toolbox';
+
+const pool = new WorkerPool();
+
+window.addEventListener('beforeunload', () => {
+  pool[Symbol.dispose]();
+});
+```
+
+```js
+// Node.js: Clean up on process signals
+import { WorkerPool } from 'web-csv-toolbox';
+
+const pool = new WorkerPool();
+
+process.on('SIGINT', () => {
+  pool[Symbol.dispose]();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  pool[Symbol.dispose]();
+  process.exit(0);
+});
+```
+
 #### Strategy Comparison
 
 | Strategy | Performance | UI Blocking | Memory | Use Case |
@@ -510,6 +617,7 @@ console.log(result);
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
 | `execution`      | Execution strategies for parsing (_Experimental_) | `[]` (main thread) | Array of strategies: `['worker']`, `['wasm']`, or `['worker', 'wasm']`. See [Execution Strategies](#execution-strategies--experimental) |
 | `workerURL`      | Custom Worker script URL (_Experimental_) | bundled worker | Only used when `'worker'` is in `execution` array. Allows using custom Worker implementation |
+| `workerPool`     | WorkerPool instance for lifecycle management (_Experimental_) | shared singleton | Provides explicit control over Worker lifecycle. See [Worker Lifecycle Management](#worker-lifecycle-management--experimental) |
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
