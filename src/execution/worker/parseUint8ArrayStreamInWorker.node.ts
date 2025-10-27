@@ -1,5 +1,5 @@
 import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
-import { getNextRequestId, getWorker } from "./helpers/WorkerManager.ts";
+import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 import { collectUint8ArrayStream } from "./utils/streamCollector.node.ts";
@@ -19,21 +19,18 @@ export async function* parseUint8ArrayStreamInWorker<
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const worker = options?.workerPool
-    ? await options.workerPool.getWorker(options.workerURL)
-    : await getWorker(options?.workerURL);
-  const id = options?.workerPool
-    ? options.workerPool.getNextRequestId()
-    : getNextRequestId();
-
   // Node.js: Collect stream into Uint8Array first
   const combined = await collectUint8ArrayStream(stream, options?.signal);
 
-  // Send as binary data instead of stream
+  using session = await WorkerSession.create({
+    workerPool: options?.workerPool,
+    workerURL: options?.workerURL,
+  });
+
   const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    worker,
+    session.getWorker(),
     {
-      id,
+      id: session.getNextRequestId(),
       type: "parseBinary",
       data: combined,
       options: serializeOptions(options),
@@ -42,8 +39,5 @@ export async function* parseUint8ArrayStreamInWorker<
     options,
   );
 
-  // Yield each record directly
-  for (const record of records) {
-    yield record;
-  }
+  yield* records;
 }

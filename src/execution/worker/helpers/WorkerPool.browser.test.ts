@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WorkerPool } from "./WorkerPool.ts";
-import { parseString } from "./parseString.ts";
+import { parseString } from "../../../parseString.ts";
 
 /**
  * WorkerPool tests
@@ -155,5 +155,113 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
       expect(records).toHaveLength(1);
       // Pool disposed here
     }
+  });
+
+  describe("Multiple Workers", () => {
+    it("should create multiple workers when maxWorkers > 1", async () => {
+      using pool = new WorkerPool({ maxWorkers: 3 });
+
+      const worker1 = await pool.getWorker();
+      const worker2 = await pool.getWorker();
+      const worker3 = await pool.getWorker();
+
+      expect(pool.size).toBe(3);
+      expect(worker1).toBeDefined();
+      expect(worker2).toBeDefined();
+      expect(worker3).toBeDefined();
+
+      // All workers should be different instances
+      expect(worker1).not.toBe(worker2);
+      expect(worker2).not.toBe(worker3);
+      expect(worker1).not.toBe(worker3);
+    });
+
+    it("should use round-robin load balancing", async () => {
+      using pool = new WorkerPool({ maxWorkers: 2 });
+
+      // Create 2 workers
+      const worker1 = await pool.getWorker();
+      const worker2 = await pool.getWorker();
+
+      expect(pool.size).toBe(2);
+
+      // Third request should return worker1 (round-robin)
+      const worker3 = await pool.getWorker();
+      expect(worker3).toBe(worker1);
+
+      // Fourth request should return worker2
+      const worker4 = await pool.getWorker();
+      expect(worker4).toBe(worker2);
+
+      // Fifth request should return worker1 again
+      const worker5 = await pool.getWorker();
+      expect(worker5).toBe(worker1);
+    });
+
+    it("should process multiple CSVs in parallel with multiple workers", async () => {
+      using pool = new WorkerPool({ maxWorkers: 4 });
+
+      const csvFiles = [
+        "a,b\n1,2\n3,4",
+        "x,y\n5,6\n7,8",
+        "p,q\n9,10\n11,12",
+        "m,n\n13,14\n15,16",
+      ];
+
+      const results = await Promise.all(
+        csvFiles.map(async (csv) => {
+          const records = [];
+          for await (const record of parseString(csv, {
+            execution: ["worker"],
+            workerPool: pool,
+          })) {
+            records.push(record);
+          }
+          return records;
+        })
+      );
+
+      // All 4 workers should have been created
+      expect(pool.size).toBe(4);
+
+      // Verify all results
+      expect(results[0]).toEqual([{ a: "1", b: "2" }, { a: "3", b: "4" }]);
+      expect(results[1]).toEqual([{ x: "5", y: "6" }, { x: "7", y: "8" }]);
+      expect(results[2]).toEqual([{ p: "9", q: "10" }, { p: "11", q: "12" }]);
+      expect(results[3]).toEqual([{ m: "13", n: "14" }, { m: "15", n: "16" }]);
+    });
+
+    it("should throw error when maxWorkers < 1", () => {
+      expect(() => new WorkerPool({ maxWorkers: 0 })).toThrow("maxWorkers must be at least 1");
+      expect(() => new WorkerPool({ maxWorkers: -1 })).toThrow("maxWorkers must be at least 1");
+    });
+
+    it("should terminate all workers on disposal", async () => {
+      const pool = new WorkerPool({ maxWorkers: 3 });
+
+      // Create all 3 workers
+      await pool.getWorker();
+      await pool.getWorker();
+      await pool.getWorker();
+
+      expect(pool.size).toBe(3);
+
+      // Dispose pool
+      pool[Symbol.dispose]();
+
+      // Size should be reset to 0
+      expect(pool.size).toBe(0);
+    });
+
+    it("should default to single worker when maxWorkers not specified", async () => {
+      using pool = new WorkerPool();
+
+      const worker1 = await pool.getWorker();
+      const worker2 = await pool.getWorker();
+
+      // Should be the same worker (singleton behavior)
+      expect(worker1).toBe(worker2);
+      expect(pool.size).toBe(1);
+    });
   });
 });

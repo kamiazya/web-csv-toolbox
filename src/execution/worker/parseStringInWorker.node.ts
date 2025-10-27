@@ -1,5 +1,5 @@
 import type { CSVRecord, ParseOptions } from "../../common/types.ts";
-import { getNextRequestId, getWorker } from "./helpers/WorkerManager.ts";
+import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 
@@ -15,18 +15,15 @@ export async function* parseStringInWorker<Header extends ReadonlyArray<string>>
   csv: string,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  // Use WorkerPool if provided, otherwise use module-level singleton
-  const worker = options?.workerPool
-    ? await options.workerPool.getWorker(options.workerURL)
-    : await getWorker(options?.workerURL);
-  const id = options?.workerPool
-    ? options.workerPool.getNextRequestId()
-    : getNextRequestId();
+  using session = await WorkerSession.create({
+    workerPool: options?.workerPool,
+    workerURL: options?.workerURL,
+  });
 
   const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    worker,
+    session.getWorker(),
     {
-      id,
+      id: session.getNextRequestId(),
       type: "parseString",
       data: csv,
       options: serializeOptions(options),
@@ -35,10 +32,7 @@ export async function* parseStringInWorker<Header extends ReadonlyArray<string>>
     options,
   );
 
-  // Yield each record directly
-  for (const record of records) {
-    yield record;
-  }
+  yield* records;
 }
 
 /**
@@ -52,17 +46,15 @@ export async function* parseStringInWorkerWASM<
   csv: string,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const worker = options?.workerPool
-    ? await options.workerPool.getWorker(options.workerURL)
-    : await getWorker(options?.workerURL);
-  const id = options?.workerPool
-    ? options.workerPool.getNextRequestId()
-    : getNextRequestId();
+  using session = await WorkerSession.create({
+    workerPool: options?.workerPool,
+    workerURL: options?.workerURL,
+  });
 
   const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    worker,
+    session.getWorker(),
     {
-      id,
+      id: session.getNextRequestId(),
       type: "parseString",
       data: csv,
       options: serializeOptions(options),
@@ -71,7 +63,5 @@ export async function* parseStringInWorkerWASM<
     options,
   );
 
-  for (const record of records) {
-    yield record;
-  }
+  yield* records;
 }

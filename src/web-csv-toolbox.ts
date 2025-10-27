@@ -12,4 +12,5 @@ export * from "./parseStringToArraySyncWASM.ts";
 export * from "./parseUint8ArrayStream.ts";
 export * from "./RecordAssemblerTransformer.ts";
 export * from "./terminateWorkers.ts";
-export * from "./WorkerPool.ts";
+export * from "./execution/worker/helpers/WorkerPool.ts";
+export * from "./execution/worker/helpers/WorkerSession.ts";

@@ -1,6 +1,6 @@
 import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
-import { getNextRequestId, getWorker } from "./helpers/WorkerManager.ts";
+import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 
@@ -17,20 +17,18 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const worker = options?.workerPool
-    ? await options.workerPool.getWorker(options.workerURL)
-    : await getWorker(options?.workerURL);
-  const id = options?.workerPool
-    ? options.workerPool.getNextRequestId()
-    : getNextRequestId();
+  using session = await WorkerSession.create({
+    workerPool: options?.workerPool,
+    workerURL: options?.workerURL,
+  });
 
   // Browser: Use Transferable Streams (zero-copy)
   const recordStream = await sendWorkerMessage<
     ReadableStream<CSVRecord<Header>>
   >(
-    worker,
+    session.getWorker(),
     {
-      id,
+      id: session.getNextRequestId(),
       type: "parseStream",
       data: stream,
       options: serializeOptions(options),

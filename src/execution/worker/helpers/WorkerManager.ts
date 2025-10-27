@@ -1,53 +1,49 @@
-import { createWorker } from "#execution/worker/createWorker.js";
+import { WorkerPool } from "./WorkerPool.ts";
 
 /**
- * Singleton worker instance manager.
+ * Global default worker pool (single worker for backward compatibility).
  * Provides centralized worker lifecycle management.
+ *
+ * Users can use WorkerPool directly for multiple workers.
  *
  * @internal
  */
-let workerInstance: Worker | null = null;
-let requestId = 0;
+const defaultPool = new WorkerPool({ maxWorkers: 1 });
 
 /**
- * Get or create a worker instance.
- * If WorkerPool is provided in options, use it instead of singleton.
+ * Get or create a worker instance from the default pool.
+ * If WorkerPool is provided in options, use it instead of default pool.
  *
  * @internal
  */
 export async function getWorker(workerURL?: string | URL): Promise<Worker> {
-  if (!workerInstance) {
-    workerInstance = await createWorker(workerURL);
-  }
-  return workerInstance;
+  return defaultPool.getWorker(workerURL);
 }
 
 /**
- * Get next request ID for message tracking.
+ * Get next request ID for message tracking from the default pool.
  *
  * @internal
  */
 export function getNextRequestId(): number {
-  return requestId++;
+  return defaultPool.getNextRequestId();
 }
 
 /**
- * Terminate the singleton worker instance.
+ * Terminate the default worker pool.
  *
  * @internal
  */
 export function terminateWorker(): void {
-  if (workerInstance) {
-    workerInstance.terminate();
-    workerInstance = null;
-  }
+  defaultPool[Symbol.dispose]();
 }
 
 /**
- * Reset request ID counter (mainly for testing).
+ * Get the current size of the default pool.
+ * This is mainly for testing purposes.
  *
  * @internal
  */
-export function resetRequestId(): void {
-  requestId = 0;
+export function getPoolSize(): number {
+  return defaultPool.size;
 }

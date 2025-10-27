@@ -1,5 +1,5 @@
 import type { CSVRecord, ParseOptions } from "../../common/types.ts";
-import { getNextRequestId, getWorker } from "./helpers/WorkerManager.ts";
+import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 import { collectStringStream } from "./utils/streamCollector.node.ts";
@@ -20,21 +20,18 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const worker = options?.workerPool
-    ? await options.workerPool.getWorker(options.workerURL)
-    : await getWorker(options?.workerURL);
-  const id = options?.workerPool
-    ? options.workerPool.getNextRequestId()
-    : getNextRequestId();
-
   // Node.js: Collect stream into string first
   const csvString = await collectStringStream(stream, options?.signal);
 
-  // Send as string data instead of stream
+  using session = await WorkerSession.create({
+    workerPool: options?.workerPool,
+    workerURL: options?.workerURL,
+  });
+
   const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    worker,
+    session.getWorker(),
     {
-      id,
+      id: session.getNextRequestId(),
       type: "parseString",
       data: csvString,
       options: serializeOptions(options),
@@ -43,8 +40,5 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
     options,
   );
 
-  // Yield each record directly
-  for (const record of records) {
-    yield record;
-  }
+  yield* records;
 }
