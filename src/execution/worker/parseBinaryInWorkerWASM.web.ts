@@ -1,19 +1,18 @@
-import type { CSVRecord, ParseOptions } from "../../common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
 import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 
 /**
- * Parse CSV string in Worker thread (Node.js).
+ * Parse CSV binary in Worker thread using WASM (Browser/Deno).
  *
  * @internal
- * @param csv CSV string to parse
- * @param options Parsing options
- * @returns Async iterable iterator of records
  */
-export async function* parseStringInWorker<Header extends ReadonlyArray<string>>(
-  csv: string,
-  options?: ParseOptions<Header>,
+export async function* parseBinaryInWorkerWASM<
+  Header extends ReadonlyArray<string>,
+>(
+  binary: Uint8Array | ArrayBuffer,
+  options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   using session = await WorkerSession.create({
     workerPool: options?.workerPool,
@@ -24,10 +23,10 @@ export async function* parseStringInWorker<Header extends ReadonlyArray<string>>
     session.getWorker(),
     {
       id: session.getNextRequestId(),
-      type: "parseString",
-      data: csv,
+      type: "parseBinary",
+      data: binary,
       options: serializeOptions(options),
-      useWASM: false,
+      useWASM: true,
     },
     options,
   );

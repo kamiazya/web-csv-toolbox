@@ -10,7 +10,9 @@ export default defineConfig(({ command }) => ({
       // Aliases for testing only - production uses package.json "imports"
       "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
       "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
+      "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.web.ts",
       "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
+      "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.web.ts",
       "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
       "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
       // Note: In tests (Node.js environment), use node version
@@ -29,8 +31,12 @@ export default defineConfig(({ command }) => ({
         "src/execution/worker/helpers/createWorker.node.ts",
         "src/execution/worker/parseStringInWorker.web.ts",
         "src/execution/worker/parseStringInWorker.node.ts",
+        "src/execution/worker/parseStringInWorkerWASM.web.ts",
+        "src/execution/worker/parseStringInWorkerWASM.node.ts",
         "src/execution/worker/parseBinaryInWorker.web.ts",
         "src/execution/worker/parseBinaryInWorker.node.ts",
+        "src/execution/worker/parseBinaryInWorkerWASM.web.ts",
+        "src/execution/worker/parseBinaryInWorkerWASM.node.ts",
         "src/execution/worker/parseStreamInWorker.web.ts",
         "src/execution/worker/parseStreamInWorker.node.ts",
         "src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
@@ -101,7 +107,9 @@ export default defineConfig(({ command }) => ({
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
             "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
+            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.node.ts",
             "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
+            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.node.ts",
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
@@ -124,7 +132,9 @@ export default defineConfig(({ command }) => ({
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
             "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
+            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.web.ts",
             "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
+            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.web.ts",
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
@@ -145,7 +155,9 @@ export default defineConfig(({ command }) => ({
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
             "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
+            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.node.ts",
             "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
+            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.node.ts",
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",

@@ -34,34 +34,3 @@ export async function* parseStringInWorker<Header extends ReadonlyArray<string>>
 
   yield* records;
 }
-
-/**
- * Parse CSV string in Worker thread using WASM (Browser/Deno).
- *
- * @internal
- */
-export async function* parseStringInWorkerWASM<
-  Header extends ReadonlyArray<string>,
->(
-  csv: string,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create({
-    workerPool: options?.workerPool,
-    workerURL: options?.workerURL,
-  });
-
-  const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    session.getWorker(),
-    {
-      id: session.getNextRequestId(),
-      type: "parseString",
-      data: csv,
-      options: serializeOptions(options),
-      useWASM: true,
-    },
-    options,
-  );
-
-  yield* records;
-}

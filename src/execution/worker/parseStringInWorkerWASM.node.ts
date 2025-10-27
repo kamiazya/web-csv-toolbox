@@ -4,14 +4,13 @@ import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
 
 /**
- * Parse CSV string in Worker thread (Node.js).
+ * Parse CSV string in Worker thread using WASM (Node.js).
  *
  * @internal
- * @param csv CSV string to parse
- * @param options Parsing options
- * @returns Async iterable iterator of records
  */
-export async function* parseStringInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseStringInWorkerWASM<
+  Header extends ReadonlyArray<string>,
+>(
   csv: string,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
@@ -27,7 +26,7 @@ export async function* parseStringInWorker<Header extends ReadonlyArray<string>>
       type: "parseString",
       data: csv,
       options: serializeOptions(options),
-      useWASM: false,
+      useWASM: true,
     },
     options,
   );

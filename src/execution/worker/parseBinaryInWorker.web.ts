@@ -31,34 +31,3 @@ export async function* parseBinaryInWorker<Header extends ReadonlyArray<string>>
 
   yield* records;
 }
-
-/**
- * Parse CSV binary in Worker thread using WASM (Browser/Deno).
- *
- * @internal
- */
-export async function* parseBinaryInWorkerWASM<
-  Header extends ReadonlyArray<string>,
->(
-  binary: Uint8Array | ArrayBuffer,
-  options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create({
-    workerPool: options?.workerPool,
-    workerURL: options?.workerURL,
-  });
-
-  const records = await sendWorkerMessage<CSVRecord<Header>[]>(
-    session.getWorker(),
-    {
-      id: session.getNextRequestId(),
-      type: "parseBinary",
-      data: binary,
-      options: serializeOptions(options),
-      useWASM: true,
-    },
-    options,
-  );
-
-  yield* records;
-}

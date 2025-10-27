@@ -49,11 +49,23 @@
       "browser": "./dist/execution/worker/parseStringInWorker.web.js",
       "default": "./dist/execution/worker/parseStringInWorker.web.js"
     },
+    "#execution/worker/parseStringInWorkerWASM.js": {
+      "types": "./dist/execution/worker/parseStringInWorkerWASM.d.ts",
+      "node": "./dist/execution/worker/parseStringInWorkerWASM.node.js",
+      "browser": "./dist/execution/worker/parseStringInWorkerWASM.web.js",
+      "default": "./dist/execution/worker/parseStringInWorkerWASM.web.js"
+    },
     "#execution/worker/parseBinaryInWorker.js": {
       "types": "./dist/execution/worker/parseBinaryInWorker.d.ts",
       "node": "./dist/execution/worker/parseBinaryInWorker.node.js",
       "browser": "./dist/execution/worker/parseBinaryInWorker.web.js",
       "default": "./dist/execution/worker/parseBinaryInWorker.web.js"
+    },
+    "#execution/worker/parseBinaryInWorkerWASM.js": {
+      "types": "./dist/execution/worker/parseBinaryInWorkerWASM.d.ts",
+      "node": "./dist/execution/worker/parseBinaryInWorkerWASM.node.js",
+      "browser": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js",
+      "default": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js"
     },
     "#execution/worker/parseStreamInWorker.js": {
       "types": "./dist/execution/worker/parseStreamInWorker.d.ts",

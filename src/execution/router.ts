@@ -79,7 +79,7 @@ export async function* routeStringParsing<Header extends ReadonlyArray<string>>(
   // Case 1: Worker + WASM
   if (useWorker && useWASM) {
     const { parseStringInWorkerWASM } = await import(
-      "#execution/worker/parseStringInWorker.js"
+      "#execution/worker/parseStringInWorkerWASM.js"
     );
     yield* parseStringInWorkerWASM(csv, options);
     return;
@@ -167,7 +167,7 @@ export async function* routeBinaryParsing<Header extends ReadonlyArray<string>>(
   // Worker + WASM for binary
   if (useWorker && useWASM) {
     const { parseBinaryInWorkerWASM } = await import(
-      "#execution/worker/parseBinaryInWorker.js"
+      "#execution/worker/parseBinaryInWorkerWASM.js"
     );
     yield* parseBinaryInWorkerWASM(binary, options);
     return;

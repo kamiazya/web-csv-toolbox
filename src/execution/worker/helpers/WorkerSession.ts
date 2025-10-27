@@ -1,4 +1,4 @@
-import type { WorkerOptions } from "./common/types.ts";
+import type { WorkerOptions } from "../../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
 
 /**
