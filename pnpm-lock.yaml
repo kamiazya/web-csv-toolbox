@@ -40,7 +40,7 @@ importers:
         version: 0.1.0
       fast-check:
         specifier: ^4.1.1
-        version: 4.1.1
+        version: 4.3.0
       terser:
         specifier: ^5.42.0
         version: 5.42.0
@@ -1655,8 +1655,8 @@ packages:
     engines: {node: '>= 10.17.0'}
     hasBin: true
 
-  fast-check@4.1.1:
-    resolution: {integrity: sha512-8+yQYeNYqBfWem0Nmm7BUnh27wm+qwGvI0xln60c8RPM5rVekxZf/Ildng2GNBfjaG6utIebFmVBPlNtZlBLxg==}
+  fast-check@4.3.0:
+    resolution: {integrity: sha512-JVw/DJSxVKl8uhCb7GrwanT9VWsCIdBkK3WpP37B/Au4pyaspriSjtrY2ApbSFwTg3ViPfniT13n75PhzE7VEQ==}
     engines: {node: '>=12.17.0'}
 
   fast-deep-equal@2.0.1:
@@ -4697,7 +4697,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fast-check@4.1.1:
+  fast-check@4.3.0:
     dependencies:
       pure-rand: 7.0.1
 
