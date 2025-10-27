@@ -8,7 +8,7 @@ export default defineConfig(({ command }) => ({
   resolve: {
     alias: {
       // Aliases for testing only - production uses package.json "imports"
-      "#execution/worker/createWorker.js": "/src/execution/worker/createWorker.web.ts",
+      "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
       // Note: In tests (Node.js environment), use node version
       // In production, package.json "imports" handles browser/node resolution
       "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
@@ -20,9 +20,9 @@ export default defineConfig(({ command }) => ({
       entry: [
         "src/web-csv-toolbox.ts",
         "src/loadWASM.web.ts",
-        "src/execution/worker/worker.ts",
-        "src/execution/worker/createWorker.web.ts",
-        "src/execution/worker/createWorker.node.ts",
+        "src/execution/worker/helpers/worker.ts",
+        "src/execution/worker/helpers/createWorker.web.ts",
+        "src/execution/worker/helpers/createWorker.node.ts",
         "src/getOptionsFromResponse.constants.web.ts",
         "src/getOptionsFromResponse.constants.node.ts",
       ],
@@ -87,7 +87,7 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/createWorker.node.ts",
+            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
           },
         },
@@ -106,7 +106,7 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/createWorker.web.ts",
+            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
           },
         },
@@ -123,7 +123,7 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/createWorker.node.ts",
+            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
           },
         },

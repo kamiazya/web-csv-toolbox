@@ -32,10 +32,10 @@
   },
   "imports": {
     "#execution/worker/createWorker.js": {
-      "types": "./dist/execution/worker/createWorker.d.ts",
-      "node": "./dist/execution/worker/createWorker.node.js",
-      "browser": "./dist/execution/worker/createWorker.web.js",
-      "default": "./dist/execution/worker/createWorker.web.js"
+      "types": "./dist/execution/worker/helpers/createWorker.d.ts",
+      "node": "./dist/execution/worker/helpers/createWorker.node.js",
+      "browser": "./dist/execution/worker/helpers/createWorker.web.js",
+      "default": "./dist/execution/worker/helpers/createWorker.web.js"
     },
     "#getOptionsFromResponse.constants.js": {
       "types": "./dist/getOptionsFromResponse.constants.d.ts",

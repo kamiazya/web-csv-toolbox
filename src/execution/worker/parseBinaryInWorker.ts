@@ -1,6 +1,6 @@
 import { createWorker } from "#execution/worker/createWorker.js";
 import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
-import { addListener, removeListener } from "./workerUtils.ts";
+import { addListener, removeListener } from "./utils/workerUtils.ts";
 
 let workerInstance: Worker | null = null;
 let requestId = 0;

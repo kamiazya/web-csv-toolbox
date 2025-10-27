@@ -1,7 +1,7 @@
 import { createWorker } from "#execution/worker/createWorker.js";
 import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
-import { addListener, removeListener } from "./workerUtils.ts";
+import { addListener, removeListener } from "./utils/workerUtils.ts";
 
 let workerInstance: Worker | null = null;
 let requestId = 0;

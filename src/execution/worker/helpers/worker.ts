@@ -12,7 +12,7 @@ import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../common/types.ts";
+} from "../../../common/types.ts";
 
 /**
  * Message types for Worker communication.
@@ -82,28 +82,28 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
           // Dynamic import WASM implementation
           try {
             const { parseStringToArraySyncWASM } = await import(
-              "../../parseStringToArraySyncWASM.ts"
+              "../../../parseStringToArraySyncWASM.ts"
             );
             result = parseStringToArraySyncWASM(data, options);
           } catch (error) {
             // Fall back to regular parser if WASM is not available
             const { parseStringToArraySync } = await import(
-              "../../parseStringToArraySync.ts"
+              "../../../parseStringToArraySync.ts"
             );
             result = parseStringToArraySync(data, options);
           }
         } else {
           // Use regular synchronous parser
           const { parseStringToArraySync } = await import(
-            "../../parseStringToArraySync.ts"
+            "../../../parseStringToArraySync.ts"
           );
           result = parseStringToArraySync(data, options);
         }
       } else if (type === "parseStream" && data instanceof ReadableStream) {
         // Stream processing (WASM not supported for streams)
-        const { LexerTransformer } = await import("../../LexerTransformer.ts");
+        const { LexerTransformer } = await import("../../../LexerTransformer.ts");
         const { RecordAssemblerTransformer } = await import(
-          "../../RecordAssemblerTransformer.ts"
+          "../../../RecordAssemblerTransformer.ts"
         );
 
         result = (data as ReadableStream<string>)
@@ -114,9 +114,9 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
         data instanceof ReadableStream
       ) {
         // Binary stream processing
-        const { LexerTransformer } = await import("../../LexerTransformer.ts");
+        const { LexerTransformer } = await import("../../../LexerTransformer.ts");
         const { RecordAssemblerTransformer } = await import(
-          "../../RecordAssemblerTransformer.ts"
+          "../../../RecordAssemblerTransformer.ts"
         );
 
         const binaryOptions = options as ParseBinaryOptions<readonly string[]>;
@@ -202,20 +202,20 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
               );
             }
             const { parseStringToArraySyncWASM } = await import(
-              "../../parseStringToArraySyncWASM.ts"
+              "../../../parseStringToArraySyncWASM.ts"
             );
             result = parseStringToArraySyncWASM(decoded, options);
           } catch (error) {
             // Fall back to regular parser if WASM is not available
             const { parseBinaryToArraySync } = await import(
-              "../../parseBinaryToArraySync.ts"
+              "../../../parseBinaryToArraySync.ts"
             );
             result = parseBinaryToArraySync(binary, options);
           }
         } else {
           // Use regular binary parser
           const { parseBinaryToArraySync } = await import(
-            "../../parseBinaryToArraySync.ts"
+            "../../../parseBinaryToArraySync.ts"
           );
           result = parseBinaryToArraySync(binary, options);
         }
