@@ -20,6 +20,17 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * This function uses WebAssembly to parse CSV string.
  * Before calling this function, you must call {@link loadWASM} function.
  *
+ * **Performance Characteristics:**
+ * - **Speed**: 2-3x faster than JavaScript parser for large CSV strings
+ * - **Memory usage**: O(n) - proportional to file size (loads entire result into memory)
+ * - **Suitable for**: CPU-intensive workloads, large CSV strings on server-side
+ * - **Recommended max**: ~100MB (Node.js/Deno)
+ *
+ * **Limitations:**
+ * - Only supports UTF-8 string (not UTF-16)
+ * - Only supports double quote (`"`) as quotation character
+ * - Only supports single character as delimiter
+ *
  * This function only supports UTF-8 string.
  * If you pass a string that is not UTF-8, like UTF-16, it throws an error.
  * This function only supports double quote as quotation.
@@ -83,8 +94,11 @@ export function parseStringToArraySyncWASM<
   csv: string,
   options: CommonOptions<Delimiter, Quotation> = {},
 ): CSVRecord<Header>[] {
-  const { delimiter = DEFAULT_DELIMITER, quotation = DEFAULT_QUOTATION } =
-    options;
+  const {
+    delimiter = DEFAULT_DELIMITER,
+    quotation = DEFAULT_QUOTATION,
+    maxBufferSize = 10485760,
+  } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(
       "Invalid delimiter, must be a single character on WASM.",
@@ -93,7 +107,7 @@ export function parseStringToArraySyncWASM<
   if (quotation !== DOUBLE_QUOTE) {
     throw new RangeError("Invalid quotation, must be double quote on WASM.");
   }
-  assertCommonOptions({ delimiter, quotation });
+  assertCommonOptions({ delimiter, quotation, maxBufferSize });
   const demiliterCode = delimiter.charCodeAt(0);
   return JSON.parse(parseStringToArraySync(csv, demiliterCode));
 }

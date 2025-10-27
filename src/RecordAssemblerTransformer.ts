@@ -54,10 +54,11 @@ export class RecordAssemblerTransformer<
   public readonly assembler: RecordAssembler<Header>;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
+    const assembler = new RecordAssembler(options);
     super({
       transform: (tokens, controller) => {
         try {
-          for (const token of this.assembler.assemble(tokens, false)) {
+          for (const token of assembler.assemble(tokens, false)) {
             controller.enqueue(token);
           }
         } catch (error) {
@@ -66,7 +67,7 @@ export class RecordAssemblerTransformer<
       },
       flush: (controller) => {
         try {
-          for (const token of this.assembler.flush()) {
+          for (const token of assembler.flush()) {
             controller.enqueue(token);
           }
         } catch (error) {
@@ -74,6 +75,6 @@ export class RecordAssemblerTransformer<
         }
       },
     });
-    this.assembler = new RecordAssembler(options);
+    this.assembler = assembler;
   }
 }

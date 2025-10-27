@@ -1,5 +1,5 @@
 import { Lexer } from "./Lexer.ts";
-import type { CommonOptions, Token } from "./common/types.ts";
+import type { LexerTransformerOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
@@ -37,12 +37,13 @@ export class LexerTransformer<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token[]> {
   public readonly lexer: Lexer<Delimiter, Quotation>;
-  constructor(options: CommonOptions<Delimiter, Quotation> = {}) {
+  constructor(options: LexerTransformerOptions<Delimiter, Quotation> = {}) {
+    const lexer = new Lexer(options);
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {
           try {
-            controller.enqueue([...this.lexer.lex(chunk, true)]);
+            controller.enqueue([...lexer.lex(chunk, true)]);
           } catch (error) {
             controller.error(error);
           }
@@ -50,12 +51,12 @@ export class LexerTransformer<
       },
       flush: (controller) => {
         try {
-          controller.enqueue(this.lexer.flush());
+          controller.enqueue(lexer.flush());
         } catch (error) {
           controller.error(error);
         }
       },
     });
-    this.lexer = new Lexer(options);
+    this.lexer = lexer;
   }
 }

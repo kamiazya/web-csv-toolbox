@@ -44,6 +44,14 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * | {@link !ReadableStream}<{@link !Uint8Array}> | {@link parseUint8ArrayStream} | {@link ParseBinaryOptions} |
  * | {@link !Response}                            | {@link parseResponse}         | {@link ParseBinaryOptions} |
  *
+ * **Performance Characteristics:**
+ * - **Memory usage**: O(1) - constant per record (streaming approach)
+ * - **Suitable for**: Files of any size, browser and server environments
+ * - **Recommended for**: Large files (> 10MB) or memory-constrained environments
+ *
+ * This function processes CSV data as an async iterable iterator, yielding one record at a time.
+ * Memory footprint remains constant regardless of file size, making it ideal for large datasets.
+ *
  * @example Parsing CSV files from strings
  *
  * ```ts
@@ -214,6 +222,15 @@ export declare namespace parse {
    * Parse CSV string to array of records,
    * ideal for smaller data sets.
    *
+   * @remarks
+   * **Performance Characteristics:**
+   * - **Memory usage**: O(n) - proportional to file size (loads entire result into memory)
+   * - **Suitable for**: Small datasets, quick prototyping
+   * - **Recommended max**: ~10MB (browser), ~100MB (Node.js/Deno)
+   *
+   * This function collects all records into an array before returning.
+   * For large files, consider using the streaming {@link parse} function instead.
+   *
    * @example Parse a CSV as array of records
    *
    * ```ts
@@ -234,8 +251,17 @@ export declare namespace parse {
     options?: ParseOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
   /**
-   * Parse CSV string to array of records,
+   * Parse CSV binary to array of records,
    * ideal for smaller data sets.
+   *
+   * @remarks
+   * **Performance Characteristics:**
+   * - **Memory usage**: O(n) - proportional to file size (loads entire result into memory)
+   * - **Suitable for**: Small datasets, quick prototyping
+   * - **Recommended max**: ~10MB (browser), ~100MB (Node.js/Deno)
+   *
+   * This function collects all records into an array before returning.
+   * For large files, consider using the streaming {@link parse} function instead.
    *
    * @example Parse a CSV as array of records
    *

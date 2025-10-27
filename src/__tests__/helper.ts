@@ -1,4 +1,5 @@
 import fc from "fast-check";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
 import { CRLF, LF } from "../constants.ts";
 
@@ -34,6 +35,28 @@ export async function transform<I, O>(
     );
   return rows;
 }
+
+/**
+ * Wait for an AbortSignal to be aborted.
+ * This handles the race condition where the signal might already be aborted
+ * before the event listener is registered.
+ *
+ * @param signal - The AbortSignal to wait for
+ * @returns A promise that resolves when the signal is aborted
+ */
+export function waitAbort(signal: AbortSignal): Promise<void> {
+  // Check if already aborted to avoid race condition
+  if (signal.aborted) {
+    return Promise.resolve();
+  }
+
+  return new Promise<void>((resolve) => {
+    signal.addEventListener("abort", () => {
+      resolve();
+    });
+  });
+}
+
 export namespace FC {
   function _excludeFilter(excludes: string[]) {
     return (v: string) => {
@@ -201,10 +224,11 @@ export namespace FC {
       .record({
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
+        maxBufferSize: fc.constant(DEFAULT_MAX_BUFFER_SIZE),
       })
-      .filter(({ delimiter, quotation }) => {
+      .filter(({ delimiter, quotation, maxBufferSize }) => {
         try {
-          assertCommonOptions({ delimiter, quotation });
+          assertCommonOptions({ delimiter, quotation, maxBufferSize });
           return true;
         } catch {
           return false;

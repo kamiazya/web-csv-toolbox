@@ -166,6 +166,20 @@ export interface CommonOptions<
    * @default '"'
    */
   quotation?: Quotation;
+  /**
+   * Maximum internal buffer size in characters.
+   *
+   * @remarks
+   * This option limits the size of the internal buffer used during lexing
+   * to prevent memory exhaustion attacks. The buffer size is measured in
+   * UTF-16 code units (JavaScript string length). When the buffer exceeds
+   * this limit, a `RangeError` will be thrown.
+   *
+   * Set to `Infinity` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
+   */
+  maxBufferSize?: number;
 }
 
 /**
@@ -196,6 +210,19 @@ export interface BinaryOptions {
    */
   charset?: string;
   /**
+   * Maximum binary size in bytes for ArrayBuffer/Uint8Array inputs.
+   *
+   * @remarks
+   * This option limits the size of ArrayBuffer or Uint8Array inputs
+   * to prevent memory exhaustion attacks. When the binary size exceeds
+   * this limit, a `RangeError` will be thrown.
+   *
+   * Set to `Number.POSITIVE_INFINITY` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 100 * 1024 * 1024 (100MB)
+   */
+  maxBinarySize?: number;
+  /**
    * If the binary has a BOM, you can specify whether to ignore it.
    *
    * @remarks
@@ -220,7 +247,47 @@ export interface BinaryOptions {
    * @default false
    */
   fatal?: boolean;
+  /**
+   * Allow experimental or future compression formats not explicitly supported by this library.
+   *
+   * @remarks
+   * When `true`, unknown compression formats from Content-Encoding headers will be passed
+   * to the runtime's DecompressionStream without validation. This allows using newer
+   * compression formats (like Brotli) if your runtime supports them, even before this
+   * library is updated to explicitly support them.
+   *
+   * When `false` (default), only known formats are allowed: gzip, deflate, deflate-raw.
+   *
+   * **Use with caution**: Enabling this bypasses library validation and relies entirely
+   * on runtime error handling. If the runtime doesn't support the format, you'll get
+   * a runtime error instead of a clear validation error from this library.
+   *
+   * @default false
+   *
+   * @example
+   * ```ts
+   * // Safe mode (default): Only known formats
+   * const response = await fetch('data.csv.gz');
+   * await parse(response); // ✓ Works
+   *
+   * // Experimental mode: Allow future formats
+   * const response = await fetch('data.csv.br'); // Brotli
+   * await parse(response, { allowExperimentalCompressions: true });
+   * // Works if runtime supports Brotli, otherwise throws runtime error
+   * ```
+   */
+  allowExperimentalCompressions?: boolean;
 }
+
+/**
+ * Lexer Transformer Options for CSV.
+ * @category Types
+ */
+export interface LexerTransformerOptions<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
+    AbortSignalOptions {}
 
 /**
  * Record Assembler Options for CSV.
@@ -248,6 +315,19 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default undefined
    */
   header?: Header;
+  /**
+   * Maximum number of fields allowed per record.
+   *
+   * @remarks
+   * This option limits the number of columns/fields in a CSV record
+   * to prevent memory exhaustion attacks. When a record exceeds this limit,
+   * a {@link FieldCountLimitError} will be thrown.
+   *
+   * Set to `Number.POSITIVE_INFINITY` to disable the limit (not recommended for untrusted input).
+   *
+   * @default 100000
+   */
+  maxFieldCount?: number;
 }
 
 /**

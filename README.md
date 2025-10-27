@@ -28,6 +28,8 @@ A CSV Toolbox utilizing Web Standard APIs.
 [![test: Vitest](https://img.shields.io/badge/tested%20with-Vitest-6E9F18?logo=vitest&style=flat)](https://vitest.dev/)
 [![build: Vite](https://img.shields.io/badge/build%20with-Vite-646CFF?logo=vite&style=flat)](https://rollupjs.org/)
 
+<a href="https://flatt.tech/oss/gmo/trampoline" target="_blank"><img src="https://flatt.tech/assets/images/badges/gmo-oss.svg" height="24px" alt="GMO OSS support"/></a>
+
 </div>
 
 ---
@@ -52,6 +54,13 @@ A CSV Toolbox utilizing Web Standard APIs.
 - 🛑 **AbortSignal and Timeout Support**: Ensure your CSV processing is cancellable, including support for automatic timeouts.
   - ✋ Integrate with [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController) to manually cancel operations as needed.
   - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
+- 🛡️ **Memory Safety Protection**: Built-in limits prevent memory exhaustion attacks.
+  - 🔒 Configurable maximum buffer size (default: 10M characters) to prevent DoS attacks via unbounded input.
+  - 🚨 Throws `RangeError` when buffer exceeds the limit.
+  - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
+  - ⚠️ Throws `RangeError` when field count exceeds the limit.
+  - 💾 Configurable maximum binary size (default: 100MB bytes) for ArrayBuffer/Uint8Array inputs.
+  - 🛑 Throws `RangeError` when binary size exceeds the limit.
 - 🎨 **Flexible Source Support**
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
@@ -82,29 +91,9 @@ $ pnpm add web-csv-toolbox
 
 ### From CDN (unpkg.com) 🌐
 
-#### UMD Style 🔄
-
-```html
-<script src="https://unpkg.com/web-csv-toolbox"></script>
-<script>
-const csv = `name,age
-Alice,42
-Bob,69`;
-
-(async function () {
-  for await (const record of CSV.parse(csv)) {
-    console.log(record);
-  }
-})();
-</script>
-```
-
-
-#### ESModule Style 📦
-
 ```html
 <script type="module">
-import { parse } from 'https://unpkg.com/web-csv-toolbox?module';
+import { parse } from 'https://unpkg.com/web-csv-toolbox';
 
 const csv = `name,age
 Alice,42
@@ -307,7 +296,8 @@ try {
 | Versions | Status |
 | -------- | ------ |
 | 20.x     | ✅     |
-| 18.x     | ✅     |
+| 22.x     | ✅     |
+| 24.x     | ✅     |
 
 
 ### Works on Browser
@@ -408,21 +398,227 @@ console.log(result);
 
 ### Common Options ⚙️
 
-| Option      | Description                           | Default     | Notes                                             |
-| ----------- | ------------------------------------- | ----------- | ------------------------------------------------- |
-| `delimiter` | Character to separate fields          | `,`         |                                                   |
-| `quotation` | Character used for quoting fields     | `"`         |                                                   |
-| `headers`   | Custom headers for the parsed records | First row   | If not provided, the first row is used as headers |
-| `signal`    | AbortSignal to cancel processing      | `undefined` | Allows aborting of long-running operations        |
+| Option           | Description                           | Default      | Notes                                                                              |
+| ---------------- | ------------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `delimiter`      | Character to separate fields          | `,`          |                                                                                    |
+| `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
+| `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
+| `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
+| `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
 
 ### Advanced Options (Binary-Specific) 🧬
 
-| Option          | Description                                       | Default | Notes                                                                                                                                                     |
-| --------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `charset`       | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `decompression` | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit).                       |
-| `ignoreBOM`     | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
-| `fatal`         | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| Option                            | Description                                       | Default | Notes                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
+| `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
+
+## Performance & Best Practices ⚡
+
+### Memory Characteristics
+
+web-csv-toolbox uses different memory patterns depending on the API you choose:
+
+#### 🌊 Streaming APIs (Memory Efficient)
+
+##### Recommended for large files (> 10MB)
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Memory efficient: processes one record at a time
+const response = await fetch('https://example.com/large-data.csv');
+for await (const record of parse(response)) {
+  console.log(record);
+  // Memory footprint: ~few KB per iteration
+}
+```
+
+- **Memory usage**: O(1) - constant per record
+- **Suitable for**: Files of any size, browser environments
+- **Max file size**: Limited only by available storage/network
+
+#### 📦 Array-Based APIs (Memory Intensive)
+
+##### Recommended for small files (< 1MB)
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ⚠️ Loads entire result into memory
+const csv = await fetch('data.csv').then(r => r.text());
+const records = await parse.toArray(csv);
+// Memory footprint: entire file + parsed array
+```
+
+- **Memory usage**: O(n) - proportional to file size
+- **Suitable for**: Small datasets, quick prototyping
+- **Recommended max**: ~10MB (browser), ~100MB (Node.js)
+
+### Platform-Specific Considerations
+
+| Platform | Streaming | Array-Based | Notes |
+|----------|-----------|-------------|-------|
+| **Browser** | Any size | < 10MB | Browser heap limits apply (~100MB-4GB depending on browser) |
+| **Node.js** | Any size | < 100MB | Use `--max-old-space-size` flag for larger heaps |
+| **Deno** | Any size | < 100MB | Similar to Node.js |
+
+### Performance Tips
+
+#### 1. Use streaming for large files
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+const response = await fetch('https://example.com/large-data.csv');
+
+// ✅ Good: Streaming approach (constant memory usage)
+for await (const record of parse(response)) {
+  // Process each record immediately
+  console.log(record);
+  // Memory footprint: O(1) - only one record in memory at a time
+}
+
+// ❌ Avoid: Loading entire file into memory first
+const response2 = await fetch('https://example.com/large-data.csv');
+const text = await response2.text(); // Loads entire file into memory
+const records = await parse.toArray(text); // Loads all records into memory
+for (const record of records) {
+  console.log(record);
+  // Memory footprint: O(n) - entire file + all records in memory
+}
+```
+
+#### 2. Enable AbortSignal for timeout protection
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Set up a timeout of 30 seconds (30000 milliseconds)
+const signal = AbortSignal.timeout(30000);
+
+const response = await fetch('https://example.com/large-data.csv');
+
+try {
+  for await (const record of parse(response, { signal })) {
+    // Process each record
+    console.log(record);
+  }
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    // Handle timeout
+    console.log('CSV processing was aborted due to timeout.');
+  } else {
+    // Handle other errors
+    console.error('An error occurred during CSV processing:', error);
+  }
+}
+```
+
+#### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
+
+```js
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// 2-3x faster for large CSV strings (UTF-8 only)
+const records = parseStringToArraySyncWASM(csvString);
+```
+
+### Known Limitations
+
+- **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
+- **WASM Parser**: UTF-8 encoding only, double-quote (`"`) only
+- **Streaming**: Best performance with chunk sizes > 1KB
+
+### Security Considerations
+
+For production use with untrusted input, consider:
+- Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
+- Using `maxBinarySize` option to limit ArrayBuffer/Uint8Array inputs (default: 100MB bytes)
+- Using `maxBufferSize` option to limit internal buffer size (default: 10M characters)
+- Using `maxFieldCount` option to limit fields per record (default: 100,000)
+- Implementing additional file size limits at the application level
+- Validating parsed data before use
+
+#### Implementing Size Limits for Untrusted Sources
+
+When processing CSV files from untrusted sources (especially compressed files), you can implement size limits using a custom TransformStream:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Create a size-limiting TransformStream
+class SizeLimitStream extends TransformStream {
+  constructor(maxBytes) {
+    let bytesRead = 0;
+    super({
+      transform(chunk, controller) {
+        bytesRead += chunk.length;
+        if (bytesRead > maxBytes) {
+          controller.error(new Error(`Size limit exceeded: ${maxBytes} bytes`));
+        } else {
+          controller.enqueue(chunk);
+        }
+      }
+    });
+  }
+}
+
+// Example: Limit decompressed data to 10MB
+const response = await fetch('https://untrusted-source.com/data.csv.gz');
+const limitedStream = response.body
+  .pipeThrough(new DecompressionStream('gzip'))
+  .pipeThrough(new SizeLimitStream(10 * 1024 * 1024)); // 10MB limit
+
+try {
+  for await (const record of parse(limitedStream)) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error.message.includes('Size limit exceeded')) {
+    console.error('File too large - possible compression bomb attack');
+  }
+}
+```
+
+**Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
+
+#### Using Experimental Compression Formats
+
+By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Default behavior: Only known formats
+const response = await fetch('data.csv.gz');
+await parse(response); // Works
+
+// ⚠️ Experimental: Allow future formats
+const response2 = await fetch('data.csv.br'); // Brotli compression
+try {
+  await parse(response2, { allowExperimentalCompressions: true });
+  // Works if runtime supports Brotli
+} catch (error) {
+  // Runtime will throw if format is unsupported
+  console.error('Runtime does not support this compression format');
+}
+```
+
+**When to use this:**
+- Your runtime supports a newer compression format (e.g., Brotli in modern browsers)
+- You want to use the format before this library explicitly supports it
+- You trust the compression format source
+
+**Cautions:**
+- Error messages will come from the runtime, not this library
+- No library-level validation for unknown formats
+- You must verify your runtime supports the format
 
 ## How to Contribute 💪
 
