@@ -340,7 +340,14 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
-    AbortSignalOptions {}
+    AbortSignalOptions {
+  /**
+   * When true, completely empty lines (with only delimiters or whitespace)
+   * will be skipped during parsing.
+   * Defaults to false for backward compatibility.
+   */
+  skipEmptyLines?: boolean;
+}
 
 /**
  * Parse options for CSV binary.

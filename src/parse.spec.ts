@@ -367,4 +367,53 @@ describe("parse function", () => {
         },
       ),
     ));
+
+  it("should handle skipEmptyLines option correctly", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const header = ["name", "age"];
+          const csv = "name,age\nAlice,30\n\nBob,40";
+          const csvWithTrailingEmpty = "name,age\nAlice,30\n\nBob,40\n";
+          return { header, csv, csvWithTrailingEmpty };
+        }),
+        async ({ header, csv, csvWithTrailingEmpty }) => {
+          // Case 1: skipEmptyLines = true
+          const expectedSkipped = [
+            { name: "Alice", age: "30" },
+            { name: "Bob", age: "40" },
+          ];
+          const resultSkipped: any[] = [];
+          for await (const row of parse(csv, { skipEmptyLines: true })) {
+            resultSkipped.push(row);
+          }
+          expect(resultSkipped).toEqual(expectedSkipped);
+
+          // Case 2: skipEmptyLines = false (default)
+          const expectedNotSkipped = [
+            { name: "Alice", age: "30" },
+            { name: "", age: "" },
+            { name: "Bob", age: "40" },
+          ];
+          const resultNotSkipped: any[] = [];
+          for await (const row of parse(csvWithTrailingEmpty, {
+            skipEmptyLines: false,
+          })) {
+            resultNotSkipped.push(row);
+          }
+          expect(resultNotSkipped).toEqual(expectedNotSkipped);
+        },
+      ),
+      {
+        examples: [
+          [
+            {
+              header: ["name", "age"],
+              csv: "name,age\nAlice,30\n\nBob,40",
+              csvWithTrailingEmpty: "name,age\nAlice,30\n\nBob,40\n",
+            },
+          ],
+        ],
+      },
+    ));
 });

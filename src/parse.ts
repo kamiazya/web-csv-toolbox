@@ -193,27 +193,26 @@ export function parse<const Header extends ReadonlyArray<string>>(
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parse<const Header extends ReadonlyArray<string>>(
   csv: CSV,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header> & { skipEmptyLines?: boolean },
 ): AsyncIterableIterator<CSVRecord<Header>> {
+  const opts = { ...options, skipEmptyLines: options?.skipEmptyLines ?? false };
+
   if (typeof csv === "string") {
-    yield* parseString(csv, options);
+    yield* parseString(csv, opts);
   } else if (csv instanceof Uint8Array || csv instanceof ArrayBuffer) {
-    yield* parseBinary(csv, options);
+    yield* parseBinary(csv, opts);
   } else if (csv instanceof ReadableStream) {
     const [branch1, branch2] = csv.tee();
     const reader1 = branch1.getReader();
     const { value: firstChunk } = await reader1.read();
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
-      yield* parseStringStream(branch2 as ReadableStream<string>, options);
+      yield* parseStringStream(branch2 as ReadableStream<string>, opts);
     } else if (firstChunk instanceof Uint8Array) {
-      yield* parseUint8ArrayStream(
-        branch2 as ReadableStream<Uint8Array>,
-        options,
-      );
+      yield* parseUint8ArrayStream(branch2 as ReadableStream<Uint8Array>, opts);
     }
   } else if (csv instanceof Response) {
-    yield* parseResponse(csv, options);
+    yield* parseResponse(csv, opts);
   }
 }
 
