@@ -8,10 +8,10 @@ import { serializeOptions } from "./utils/serializeOptions.ts";
  *
  * @internal
  */
-export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseBinaryInWorker<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -31,11 +31,9 @@ export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
     options,
   );
 
-  return (async function* () {
-    for (const record of records) {
-      yield record;
-    }
-  })();
+  for (const record of records) {
+    yield record;
+  }
 }
 
 /**
@@ -43,12 +41,12 @@ export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
  *
  * @internal
  */
-export async function parseBinaryInWorkerWASM<
+export async function* parseBinaryInWorkerWASM<
   Header extends ReadonlyArray<string>,
 >(
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -68,9 +66,7 @@ export async function parseBinaryInWorkerWASM<
     options,
   );
 
-  return (async function* () {
-    for (const record of records) {
-      yield record;
-    }
-  })();
+  for (const record of records) {
+    yield record;
+  }
 }

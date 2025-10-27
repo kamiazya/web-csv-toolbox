@@ -13,12 +13,12 @@ import { collectUint8ArrayStream } from "./utils/streamCollector.node.ts";
  *
  * @internal
  */
-export async function parseUint8ArrayStreamInWorker<
+export async function* parseUint8ArrayStreamInWorker<
   Header extends ReadonlyArray<string>,
 >(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -42,10 +42,8 @@ export async function parseUint8ArrayStreamInWorker<
     options,
   );
 
-  // Convert array to async iterator
-  return (async function* () {
-    for (const record of records) {
-      yield record;
-    }
-  })();
+  // Yield each record directly
+  for (const record of records) {
+    yield record;
+  }
 }

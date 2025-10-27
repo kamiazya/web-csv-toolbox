@@ -13,10 +13,10 @@ import { serializeOptions } from "./utils/serializeOptions.ts";
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -39,5 +39,5 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
     [stream], // Transfer stream
   );
 
-  return convertStreamToAsyncIterableIterator(recordStream);
+  yield* convertStreamToAsyncIterableIterator(recordStream);
 }

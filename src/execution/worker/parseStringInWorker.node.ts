@@ -11,10 +11,10 @@ import { serializeOptions } from "./utils/serializeOptions.ts";
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseStringInWorker<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   // Use WorkerPool if provided, otherwise use module-level singleton
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
@@ -35,12 +35,10 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
     options,
   );
 
-  // Convert array to async iterator
-  return (async function* () {
-    for (const record of records) {
-      yield record;
-    }
-  })();
+  // Yield each record directly
+  for (const record of records) {
+    yield record;
+  }
 }
 
 /**
@@ -48,12 +46,12 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
  *
  * @internal
  */
-export async function parseStringInWorkerWASM<
+export async function* parseStringInWorkerWASM<
   Header extends ReadonlyArray<string>,
 >(
   csv: string,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -73,9 +71,7 @@ export async function parseStringInWorkerWASM<
     options,
   );
 
-  return (async function* () {
-    for (const record of records) {
-      yield record;
-    }
-  })();
+  for (const record of records) {
+    yield record;
+  }
 }

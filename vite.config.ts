@@ -9,6 +9,10 @@ export default defineConfig(({ command }) => ({
     alias: {
       // Aliases for testing only - production uses package.json "imports"
       "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
+      "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
+      "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
+      "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
+      "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
       // Note: In tests (Node.js environment), use node version
       // In production, package.json "imports" handles browser/node resolution
       "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
@@ -96,6 +100,10 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
+            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
+            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
+            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
+            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
           },
         },
@@ -115,6 +123,10 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
+            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
+            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
+            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
+            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
           },
         },
@@ -132,6 +144,10 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
+            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
+            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
+            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
+            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
           },
         },

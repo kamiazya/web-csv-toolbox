@@ -10,12 +10,12 @@ import { serializeOptions } from "./utils/serializeOptions.ts";
  *
  * @internal
  */
-export async function parseUint8ArrayStreamInWorker<
+export async function* parseUint8ArrayStreamInWorker<
   Header extends ReadonlyArray<string>,
 >(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getWorker(options?.workerURL);
@@ -38,5 +38,5 @@ export async function parseUint8ArrayStreamInWorker<
     [stream], // Transfer stream
   );
 
-  return convertStreamToAsyncIterableIterator(recordStream);
+  yield* convertStreamToAsyncIterableIterator(recordStream);
 }

@@ -16,12 +16,12 @@ import type {
  * WASM does not support streaming yet.
  * Throws an error if WASM is specified in execution array.
  */
-export async function routeUint8ArrayStreamParsing<
+export async function* routeUint8ArrayStreamParsing<
   Header extends ReadonlyArray<string>,
 >(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const execution = options?.execution ?? [];
   const useWorker = execution.includes("worker");
   const useWASM = execution.includes("wasm");
@@ -39,14 +39,15 @@ export async function routeUint8ArrayStreamParsing<
     const { parseUint8ArrayStreamInWorker } = await import(
       "#execution/worker/parseUint8ArrayStreamInWorker.js"
     );
-    return parseUint8ArrayStreamInWorker(stream, options);
+    yield* parseUint8ArrayStreamInWorker(stream, options);
+    return;
   }
 
   // Default: main thread streaming
   const { parseUint8ArrayStreamInMain } = await import(
     "./main/parseUint8ArrayStreamInMain.ts"
   );
-  return parseUint8ArrayStreamInMain(stream, options);
+  yield* parseUint8ArrayStreamInMain(stream, options);
 }
 
 /**
@@ -67,10 +68,10 @@ export async function routeUint8ArrayStreamParsing<
  * - `['wasm']`: Main thread with WASM implementation
  * - `['worker', 'wasm']`: Worker thread with WASM implementation
  */
-export async function routeStringParsing<Header extends ReadonlyArray<string>>(
+export async function* routeStringParsing<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const execution = options?.execution ?? [];
   const useWorker = execution.includes("worker");
   const useWASM = execution.includes("wasm");
@@ -80,7 +81,8 @@ export async function routeStringParsing<Header extends ReadonlyArray<string>>(
     const { parseStringInWorkerWASM } = await import(
       "#execution/worker/parseStringInWorker.js"
     );
-    return parseStringInWorkerWASM(csv, options);
+    yield* parseStringInWorkerWASM(csv, options);
+    return;
   }
 
   // Case 2: Worker only
@@ -88,18 +90,20 @@ export async function routeStringParsing<Header extends ReadonlyArray<string>>(
     const { parseStringInWorker } = await import(
       "#execution/worker/parseStringInWorker.js"
     );
-    return parseStringInWorker(csv, options);
+    yield* parseStringInWorker(csv, options);
+    return;
   }
 
   // Case 3: WASM only (main thread)
   if (useWASM) {
     const { parseStringInWASM } = await import("./wasm/parseStringInWASM.ts");
-    return parseStringInWASM(csv, options);
+    yield* parseStringInWASM(csv, options);
+    return;
   }
 
   // Case 4: Default (main thread, no WASM)
   const { parseStringInMain } = await import("./main/parseStringInMain.ts");
-  return parseStringInMain(csv, options);
+  yield* parseStringInMain(csv, options);
 }
 
 /**
@@ -114,10 +118,10 @@ export async function routeStringParsing<Header extends ReadonlyArray<string>>(
  * WASM does not support streaming yet.
  * Throws an error if WASM is specified in execution array.
  */
-export async function routeStreamParsing<Header extends ReadonlyArray<string>>(
+export async function* routeStreamParsing<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const execution = options?.execution ?? [];
   const useWorker = execution.includes("worker");
   const useWASM = execution.includes("wasm");
@@ -135,12 +139,13 @@ export async function routeStreamParsing<Header extends ReadonlyArray<string>>(
     const { parseStreamInWorker } = await import(
       "#execution/worker/parseStreamInWorker.js"
     );
-    return parseStreamInWorker(stream, options);
+    yield* parseStreamInWorker(stream, options);
+    return;
   }
 
   // Default: main thread streaming
   const { parseStreamInMain } = await import("./main/parseStreamInMain.ts");
-  return parseStreamInMain(stream, options);
+  yield* parseStreamInMain(stream, options);
 }
 
 /**
@@ -151,10 +156,10 @@ export async function routeStreamParsing<Header extends ReadonlyArray<string>>(
  * @param options Parsing options (including execution strategies)
  * @returns Async iterable iterator of records
  */
-export async function routeBinaryParsing<Header extends ReadonlyArray<string>>(
+export async function* routeBinaryParsing<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   const execution = options?.execution ?? [];
   const useWorker = execution.includes("worker");
   const useWASM = execution.includes("wasm");
@@ -164,7 +169,8 @@ export async function routeBinaryParsing<Header extends ReadonlyArray<string>>(
     const { parseBinaryInWorkerWASM } = await import(
       "#execution/worker/parseBinaryInWorker.js"
     );
-    return parseBinaryInWorkerWASM(binary, options);
+    yield* parseBinaryInWorkerWASM(binary, options);
+    return;
   }
 
   // Worker only
@@ -172,16 +178,18 @@ export async function routeBinaryParsing<Header extends ReadonlyArray<string>>(
     const { parseBinaryInWorker } = await import(
       "#execution/worker/parseBinaryInWorker.js"
     );
-    return parseBinaryInWorker(binary, options);
+    yield* parseBinaryInWorker(binary, options);
+    return;
   }
 
   // WASM only (main thread)
   if (useWASM) {
     const { parseBinaryInWASM } = await import("./wasm/parseBinaryInWASM.ts");
-    return parseBinaryInWASM(binary, options);
+    yield* parseBinaryInWASM(binary, options);
+    return;
   }
 
   // Default
   const { parseBinaryInMain } = await import("./main/parseBinaryInMain.ts");
-  return parseBinaryInMain(binary, options);
+  yield* parseBinaryInMain(binary, options);
 }
