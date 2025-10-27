@@ -224,8 +224,8 @@ for await (const record of parse(sensorData, {
 }
 // Output:
 // Temp: 25.5°C, Humidity: 60%, Pressure: 1024 hPa
-// Temp: 26.1°C, Humidity: 58%, Pressure: 1018 hPa
-// Temp: 24.8°C, Humidity: 62%, Pressure: 1022 hPa
+// Temp: 26.1°C, Humidity: 58%, Pressure: 1020 hPa
+// Temp: 24.8°C, Humidity: 62%, Pressure: 1025 hPa
 ```
 
 ### `AbortSignal` / `AbortController` Support
