@@ -1,12 +1,12 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { routeStringParsing } from "./execution/router.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
-import { routeStringParsing } from "./execution/router.ts";
 
 /**
  * Parse CSV string to records.

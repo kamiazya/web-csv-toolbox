@@ -1,5 +1,9 @@
 import { assertType, expectTypeOf } from "vitest";
-import type { ExecutionStrategy, ExecutionOptions, ParseOptions } from "../common/types.ts";
+import type {
+  ExecutionOptions,
+  ExecutionStrategy,
+  ParseOptions,
+} from "../common/types.ts";
 
 // ExecutionStrategy type tests
 expectTypeOf<ExecutionStrategy>().toEqualTypeOf<"worker" | "wasm">();
@@ -24,8 +28,14 @@ const options1: ParseOptions = { execution: [] };
 const options2: ParseOptions = { execution: ["worker"] };
 const options3: ParseOptions = { execution: ["wasm"] };
 const options4: ParseOptions = { execution: ["worker", "wasm"] };
-const options5: ParseOptions = { execution: ["worker"], workerURL: "/custom-worker.js" };
-const options6: ParseOptions = { execution: ["worker"], workerURL: new URL("/worker.js", "https://example.com") };
+const options5: ParseOptions = {
+  execution: ["worker"],
+  workerURL: "/custom-worker.js",
+};
+const options6: ParseOptions = {
+  execution: ["worker"],
+  workerURL: new URL("/worker.js", "https://example.com"),
+};
 
 assertType<ParseOptions>(options1);
 assertType<ParseOptions>(options2);

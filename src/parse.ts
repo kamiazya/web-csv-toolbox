@@ -212,7 +212,10 @@ export async function* parse<const Header extends ReadonlyArray<string>>(
     const { value: firstChunk } = await reader1.read();
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
-      const iterator = parseStringStream(branch2 as ReadableStream<string>, options);
+      const iterator = parseStringStream(
+        branch2 as ReadableStream<string>,
+        options,
+      );
       // Check if it's a Promise
       if (iterator instanceof Promise) {
         yield* await iterator;

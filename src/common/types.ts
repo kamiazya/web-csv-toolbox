@@ -248,15 +248,34 @@ export interface BinaryOptions {
    */
   fatal?: boolean;
   /**
-   * Allow experimental or future compression formats not explicitly supported by this library.
+   * Allow experimental or non-standard compression formats not explicitly supported by this library.
    *
    * @remarks
-   * When `true`, unknown compression formats from Content-Encoding headers will be passed
-   * to the runtime's DecompressionStream without validation. This allows using newer
-   * compression formats (like Brotli) if your runtime supports them, even before this
-   * library is updated to explicitly support them.
+   * When `true`, compression formats from Content-Encoding headers that are not in the
+   * default supported list will be passed to the runtime's DecompressionStream without
+   * validation. This allows using compression formats that may not be universally supported
+   * across all browsers.
    *
-   * When `false` (default), only known formats are allowed: gzip, deflate, deflate-raw.
+   * ### Default Supported Formats (cross-browser compatible)
+   *
+   * When `false` (default), only universally supported formats are allowed:
+   * - **Node.js**: `gzip`, `deflate`, `br` (Brotli)
+   * - **Browsers**: `gzip`, `deflate`
+   *
+   * ### Experimental Formats (require this flag)
+   *
+   * Some compression formats are only supported in specific environments:
+   * - **`deflate-raw`**: Supported in Chromium-based browsers (Chrome, Edge) but may not work
+   *   in Firefox or Safari
+   * - **`br` (Brotli)**: Future browser support may vary
+   * - Other formats: Depends on runtime implementation
+   *
+   * ### Browser Compatibility Notes
+   *
+   * If you enable this option and use `deflate-raw`:
+   * - ✅ Works in Chrome, Edge (Chromium-based)
+   * - ❌ May fail in Firefox, Safari
+   * - Consider implementing fallback logic or detecting browser support at runtime
    *
    * **Use with caution**: Enabling this bypasses library validation and relies entirely
    * on runtime error handling. If the runtime doesn't support the format, you'll get
@@ -266,14 +285,21 @@ export interface BinaryOptions {
    *
    * @example
    * ```ts
-   * // Safe mode (default): Only known formats
+   * // Safe mode (default): Only universally supported formats
    * const response = await fetch('data.csv.gz');
-   * await parse(response); // ✓ Works
+   * await parse(response); // ✓ Works in all browsers
    *
-   * // Experimental mode: Allow future formats
-   * const response = await fetch('data.csv.br'); // Brotli
+   * // Experimental mode: Allow deflate-raw (Chromium-only)
+   * const response = await fetch('data.csv'); // Content-Encoding: deflate-raw
    * await parse(response, { allowExperimentalCompressions: true });
-   * // Works if runtime supports Brotli, otherwise throws runtime error
+   * // ✓ Works in Chrome/Edge
+   * // ✗ May fail in Firefox/Safari
+   *
+   * // Browser-aware usage
+   * const isChromium = navigator.userAgent.includes('Chrome');
+   * await parse(response, {
+   *   allowExperimentalCompressions: isChromium
+   * });
    * ```
    */
   allowExperimentalCompressions?: boolean;

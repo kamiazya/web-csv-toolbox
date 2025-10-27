@@ -1,10 +1,10 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { routeStreamParsing } from "./execution/router.ts";
 import { parseStringStreamToStream } from "./parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
-import { routeStreamParsing } from "./execution/router.ts";
 
 /**
  * Parse CSV string stream to records.

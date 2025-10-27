@@ -5,9 +5,7 @@
  * @param workerURL Custom worker URL or undefined to use bundled worker
  * @returns Worker instance
  */
-export async function createWorker(
-  workerURL?: string | URL,
-): Promise<Worker> {
+export async function createWorker(workerURL?: string | URL): Promise<Worker> {
   // Dynamic import for Node.js Worker and URL utilities
   // @ts-ignore: node:worker_threads is only available in Node.js
   const { Worker } = await import("node:worker_threads");

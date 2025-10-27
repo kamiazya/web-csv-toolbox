@@ -629,10 +629,10 @@ console.log(result);
 | --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
 | `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). **Browser**: `gzip`, `deflate`. **Node.js**: `gzip`, `deflate`, `br` (Brotli). For experimental formats like `deflate-raw`, see `allowExperimentalCompressions`. |
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
-| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
+| `allowExperimentalCompressions`   | Allow experimental/non-standard compression formats | `false` | When enabled, passes unknown compression formats to runtime. Required for `deflate-raw` in browsers. Use cautiously - see [Compression Compatibility](#compression-format-compatibility) below. |
 
 ## Performance & Best Practices ⚡
 
@@ -845,37 +845,114 @@ try {
 
 **Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
 
-#### Using Experimental Compression Formats
+### Compression Format Compatibility
 
-By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+The library supports different compression formats depending on the runtime environment to ensure cross-platform compatibility and reliability.
+
+#### Default Supported Formats
+
+| Format | Browser | Node.js | Included by Default |
+|--------|---------|---------|---------------------|
+| `gzip` | ✅ All browsers | ✅ All versions | ✅ Yes |
+| `deflate` | ✅ All browsers | ✅ All versions | ✅ Yes |
+| `br` (Brotli) | ❌ Not included | ✅ Node.js only | ✅ Yes (Node.js) |
+| `deflate-raw` | ⚠️ Chrome/Edge only | ❌ Not included | ❌ No (experimental) |
+
+#### Browser-Specific Considerations
+
+**Standard formats (gzip, deflate)** work across all modern browsers:
 
 ```js
 import { parse } from 'web-csv-toolbox';
 
-// ✅ Default behavior: Only known formats
-const response = await fetch('data.csv.gz');
-await parse(response); // Works
+// ✅ Works in all browsers
+const response = await fetch('data.csv.gz'); // or .deflate
+for await (const record of parse(response)) {
+  console.log(record);
+}
+```
 
-// ⚠️ Experimental: Allow future formats
-const response2 = await fetch('data.csv.br'); // Brotli compression
+**deflate-raw** is only supported in Chromium-based browsers (Chrome, Edge) and requires the experimental flag:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ⚠️ Only works in Chrome/Edge - will fail in Firefox/Safari
+const response = await fetch('data.csv'); // Content-Encoding: deflate-raw
+try {
+  for await (const record of parse(response, {
+    allowExperimentalCompressions: true
+  })) {
+    console.log(record);
+  }
+} catch (error) {
+  console.error('Browser does not support deflate-raw');
+}
+```
+
+**Browser detection example:**
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Detect Chromium-based browsers
+const isChromium = /Chrome|Chromium|Edge/.test(navigator.userAgent);
+
+const response = await fetch('data.csv');
+for await (const record of parse(response, {
+  allowExperimentalCompressions: isChromium
+})) {
+  console.log(record);
+}
+```
+
+#### Node.js-Specific Features
+
+Node.js supports additional compression formats out of the box:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Brotli works in Node.js (not browsers)
+const response = await fetch('data.csv.br');
+for await (const record of parse(response)) {
+  console.log(record);
+}
+```
+
+#### Using Experimental Compression Formats
+
+The `allowExperimentalCompressions` option allows using compression formats not in the default supported list:
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// ✅ Default behavior: Only cross-platform formats
+const response = await fetch('data.csv.gz');
+await parse(response); // Works everywhere
+
+// ⚠️ Experimental: Allow platform-specific formats
+const response2 = await fetch('data.csv'); // Content-Encoding: deflate-raw
 try {
   await parse(response2, { allowExperimentalCompressions: true });
-  // Works if runtime supports Brotli
+  // Works in Chrome/Edge, fails in Firefox/Safari
 } catch (error) {
-  // Runtime will throw if format is unsupported
   console.error('Runtime does not support this compression format');
 }
 ```
 
 **When to use this:**
-- Your runtime supports a newer compression format (e.g., Brotli in modern browsers)
-- You want to use the format before this library explicitly supports it
-- You trust the compression format source
+- You need `deflate-raw` in Chromium-based browsers
+- You're using a newer compression format your runtime supports
+- You control the deployment environment (e.g., Chrome-only internal tools)
 
 **Cautions:**
-- Error messages will come from the runtime, not this library
-- No library-level validation for unknown formats
-- You must verify your runtime supports the format
+- ❌ Error messages come from the runtime, not the library
+- ❌ No library-level validation for unknown formats
+- ❌ May break cross-browser compatibility
+- ✅ Verify your target runtime supports the format before deploying
+
+**Recommendation:** For maximum compatibility, use `gzip` or `deflate` compression in browsers.
 
 ## How to Contribute 💪
 

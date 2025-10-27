@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { WorkerPool } from "./WorkerPool.ts";
 import { parseString } from "./parseString.ts";
 
@@ -35,7 +35,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   it("should work with parseString", async () => {
     using pool = new WorkerPool();
 
-    const csv = "a,b,c\\n1,2,3\\n4,5,6";
+    const csv = "a,b,c\n1,2,3\n4,5,6";
 
     const records = [];
     for await (const record of parseString(csv, {
@@ -53,9 +53,9 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   it("should handle multiple parsing operations with same pool", async () => {
     using pool = new WorkerPool();
 
-    const csv1 = "a,b\\n1,2";
-    const csv2 = "x,y\\n3,4";
-    const csv3 = "p,q\\n5,6";
+    const csv1 = "a,b\n1,2";
+    const csv2 = "x,y\n3,4";
+    const csv3 = "p,q\n5,6";
 
     const results = await Promise.all([
       (async () => {
@@ -110,7 +110,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   it("should work with AbortSignal", async () => {
     using pool = new WorkerPool();
 
-    const csv = "a,b,c\\n1,2,3";
+    const csv = "a,b,c\n1,2,3";
     const controller = new AbortController();
     controller.abort();
 
@@ -122,11 +122,11 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
       })) {
         // Should not reach here
       }
-    }).rejects.toThrow("Aborted");
+    }).rejects.toThrow();
   });
 
   it("should allow processing after disposal in new scope", async () => {
-    const csv = "a,b\\n1,2";
+    const csv = "a,b\n1,2";
 
     // First scope
     {

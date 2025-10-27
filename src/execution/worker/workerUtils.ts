@@ -3,8 +3,10 @@
  * @internal
  */
 
+type EventHandler = (event: any) => void;
+
 // Store mapping of original handlers to normalized handlers for Node.js
-const handlerMap = new WeakMap<any, Map<Function, Function>>();
+const handlerMap = new WeakMap<object, Map<EventHandler, EventHandler>>();
 
 /**
  * Add event listener to worker (compatible with both Web Workers and Node.js Worker Threads)
@@ -12,7 +14,7 @@ const handlerMap = new WeakMap<any, Map<Function, Function>>();
 export function addListener(
   worker: Worker,
   event: "message" | "error",
-  handler: (event: any) => void,
+  handler: EventHandler,
 ): void {
   if ("addEventListener" in worker) {
     // Web Workers API (browser, Deno)
@@ -21,9 +23,8 @@ export function addListener(
     // Node.js Worker Threads API
     // In Node.js, message data is passed directly, not wrapped in event.data
     // We need to normalize it to match the Web Workers API
-    const normalizedHandler = event === "message"
-      ? (data: any) => handler({ data })
-      : handler;
+    const normalizedHandler =
+      event === "message" ? (data: any) => handler({ data }) : handler;
 
     // Store the mapping so we can remove it later
     if (!handlerMap.has(worker)) {
@@ -42,7 +43,7 @@ export function addListener(
 export function removeListener(
   worker: Worker,
   event: "message" | "error",
-  handler: (event: any) => void,
+  handler: EventHandler,
 ): void {
   if ("removeEventListener" in worker) {
     // Web Workers API (browser, Deno)

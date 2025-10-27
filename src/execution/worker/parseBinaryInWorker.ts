@@ -1,8 +1,5 @@
-import type {
-  CSVRecord,
-  ParseBinaryOptions,
-} from "../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
+import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
 import { addListener, removeListener } from "./workerUtils.ts";
 
 let workerInstance: Worker | null = null;
@@ -20,7 +17,7 @@ export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-    // Use WorkerPool if provided, otherwise use module-level singleton
+  // Use WorkerPool if provided, otherwise use module-level singleton
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getOrCreateWorker(options?.workerURL);
@@ -47,7 +44,11 @@ export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
 
     const abortHandler = () => {
       cleanup();
-      worker.postMessage({ id, type: "abort" });
+      try {
+        worker.postMessage({ id, type: "abort" });
+      } catch {
+        // Ignore errors if worker is already terminated
+      }
       reject(new DOMException("Aborted", "AbortError"));
     };
 
@@ -72,11 +73,13 @@ export async function parseBinaryInWorker<Header extends ReadonlyArray<string>>(
       options.signal.addEventListener("abort", abortHandler);
     }
 
-    // Remove signal from options before sending (not serializable)
-    const serializableOptions = options ? { ...options } : undefined;
-    if (serializableOptions) {
-      delete serializableOptions.signal;
-    }
+    // Extract non-serializable fields before sending to worker
+    const {
+      signal: _signal,
+      workerPool: _workerPool,
+      workerURL: _workerURL,
+      ...serializableOptions
+    } = options ?? {};
 
     // Transfer binary data if it's ArrayBuffer
     const transferList =
@@ -120,7 +123,7 @@ export async function parseBinaryInWorkerWASM<
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-    // Use WorkerPool if provided, otherwise use module-level singleton
+  // Use WorkerPool if provided, otherwise use module-level singleton
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getOrCreateWorker(options?.workerURL);
@@ -147,7 +150,11 @@ export async function parseBinaryInWorkerWASM<
 
     const abortHandler = () => {
       cleanup();
-      worker.postMessage({ id, type: "abort" });
+      try {
+        worker.postMessage({ id, type: "abort" });
+      } catch {
+        // Ignore errors if worker is already terminated
+      }
       reject(new DOMException("Aborted", "AbortError"));
     };
 
@@ -172,11 +179,13 @@ export async function parseBinaryInWorkerWASM<
       options.signal.addEventListener("abort", abortHandler);
     }
 
-    // Remove signal from options before sending (not serializable)
-    const serializableOptions = options ? { ...options } : undefined;
-    if (serializableOptions) {
-      delete serializableOptions.signal;
-    }
+    // Extract non-serializable fields before sending to worker
+    const {
+      signal: _signal,
+      workerPool: _workerPool,
+      workerURL: _workerURL,
+      ...serializableOptions
+    } = options ?? {};
 
     const transferList =
       binary instanceof ArrayBuffer ? [binary] : [binary.buffer];

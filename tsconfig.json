@@ -14,7 +14,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "#execution/worker/createWorker.js": ["./src/execution/worker/createWorker.ts"]
+      "#execution/worker/createWorker.js": ["./src/execution/worker/createWorker.node.ts"],
+      "#getOptionsFromResponse.constants.js": ["./src/getOptionsFromResponse.constants.web.ts"]
     }
   },
   "include": [

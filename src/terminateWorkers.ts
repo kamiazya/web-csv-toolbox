@@ -15,20 +15,28 @@
  * }
  *
  * // Terminate workers when done
- * terminateWorkers();
+ * await terminateWorkers();
  * ```
  */
-export function terminateWorkers(): void {
+export async function terminateWorkers(): Promise<void> {
   // Dynamically import and terminate each worker type
   // This avoids loading worker modules if they haven't been used
 
   // Note: We use dynamic imports to avoid loading modules that haven't been used
   // The imports will fail silently if the modules haven't been loaded yet
 
-  Promise.all([
-    import('./execution/worker/parseStringInWorker.ts').then(m => m.terminateWorker()).catch(() => {}),
-    import('./execution/worker/parseBinaryInWorker.ts').then(m => m.terminateWorker()).catch(() => {}),
-    import('./execution/worker/parseStreamInWorker.ts').then(m => m.terminateWorker()).catch(() => {}),
-    import('./execution/worker/parseUint8ArrayStreamInWorker.ts').then(m => m.terminateWorker()).catch(() => {}),
+  await Promise.all([
+    import("./execution/worker/parseStringInWorker.ts")
+      .then((m) => m.terminateWorker())
+      .catch(() => {}),
+    import("./execution/worker/parseBinaryInWorker.ts")
+      .then((m) => m.terminateWorker())
+      .catch(() => {}),
+    import("./execution/worker/parseStreamInWorker.ts")
+      .then((m) => m.terminateWorker())
+      .catch(() => {}),
+    import("./execution/worker/parseUint8ArrayStreamInWorker.ts")
+      .then((m) => m.terminateWorker())
+      .catch(() => {}),
   ]);
 }

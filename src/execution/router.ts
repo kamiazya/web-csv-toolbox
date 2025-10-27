@@ -1,7 +1,7 @@
 import type {
   CSVRecord,
-  ParseOptions,
   ParseBinaryOptions,
+  ParseOptions,
 } from "../common/types.ts";
 
 /**

@@ -38,7 +38,9 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  * }
  * ```
  */
-export async function* parseUint8ArrayStream<Header extends ReadonlyArray<string>>(
+export async function* parseUint8ArrayStream<
+  Header extends ReadonlyArray<string>,
+>(
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {

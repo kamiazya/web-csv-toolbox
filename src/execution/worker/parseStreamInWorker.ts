@@ -1,7 +1,7 @@
-import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
-import { addListener, removeListener } from "./workerUtils.ts";
+import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
+import { addListener, removeListener } from "./workerUtils.ts";
 
 let workerInstance: Worker | null = null;
 let requestId = 0;
@@ -22,7 +22,7 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
-    // Use WorkerPool if provided, otherwise use module-level singleton
+  // Use WorkerPool if provided, otherwise use module-level singleton
   const worker = options?.workerPool
     ? await options.workerPool.getWorker(options.workerURL)
     : await getOrCreateWorker(options?.workerURL);
@@ -31,7 +31,8 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
     : requestId++;
 
   // Check if we're in a browser environment that supports Transferable Streams
-  const supportsTransferableStreams = typeof window !== "undefined" && "ReadableStream" in window;
+  const supportsTransferableStreams =
+    typeof window !== "undefined" && "ReadableStream" in window;
 
   if (supportsTransferableStreams) {
     // Browser: Use Transferable Streams (zero-copy)
@@ -55,7 +56,11 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
 
         const abortHandler = () => {
           cleanup();
-          worker.postMessage({ id, type: "abort" });
+          try {
+            worker.postMessage({ id, type: "abort" });
+          } catch {
+            // Ignore errors if worker is already terminated
+          }
           reject(new DOMException("Aborted", "AbortError"));
         };
 
@@ -80,11 +85,13 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
           options.signal.addEventListener("abort", abortHandler);
         }
 
-        // Remove signal from options before sending (not serializable)
-        const serializableOptions = options ? { ...options } : undefined;
-        if (serializableOptions) {
-          delete serializableOptions.signal;
-        }
+        // Extract non-serializable fields before sending to worker
+        const {
+          signal: _signal,
+          workerPool: _workerPool,
+          workerURL: _workerURL,
+          ...serializableOptions
+        } = options ?? {};
 
         // Transfer stream to worker (zero-copy)
         try {
@@ -105,95 +112,124 @@ export async function parseStreamInWorker<Header extends ReadonlyArray<string>>(
     );
 
     return convertStreamToAsyncIterableIterator(recordStream);
-  } else {
-    // Node.js: Collect stream into string, then send to worker
-    const chunks: string[] = [];
-    const reader = stream.getReader();
+  }
+  // Node.js: Collect stream into string, then send to worker
+  const chunks: string[] = [];
+  const reader = stream.getReader();
+
+  // AbortSignal handler for cancelling the stream
+  const abortHandler = () => {
+    void reader.cancel().catch(() => {
+      // Ignore errors during cancellation
+    });
+  };
+
+  try {
+    // Check if already aborted before starting
+    if (options?.signal?.aborted) {
+      reader.releaseLock();
+      throw new DOMException("Aborted", "AbortError");
+    }
+
+    // Register abort listener
+    if (options?.signal) {
+      options.signal.addEventListener("abort", abortHandler);
+    }
 
     try {
       while (true) {
+        // Check abort status before reading
+        if (options?.signal?.aborted) {
+          throw new DOMException("Aborted", "AbortError");
+        }
+
         const { done, value } = await reader.read();
         if (done) break;
         chunks.push(value);
       }
     } finally {
-      reader.releaseLock();
+      // Clean up abort listener
+      if (options?.signal) {
+        options.signal.removeEventListener("abort", abortHandler);
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const csvString = chunks.join("");
+
+  // Send as string data instead of stream
+  const records = await new Promise<CSVRecord<Header>[]>((resolve, reject) => {
+    const handler = (event: MessageEvent) => {
+      if (event.data.id === id) {
+        cleanup();
+        if (event.data.error) {
+          reject(new Error(event.data.error));
+        } else {
+          resolve(event.data.result);
+        }
+      }
+    };
+
+    const errorHandler = (error: ErrorEvent) => {
+      cleanup();
+      reject(error);
+    };
+
+    const abortHandler = () => {
+      cleanup();
+      worker.postMessage({ id, type: "abort" });
+      reject(new DOMException("Aborted", "AbortError"));
+    };
+
+    const cleanup = () => {
+      removeListener(worker, "message", handler);
+      removeListener(worker, "error", errorHandler);
+      if (options?.signal) {
+        options.signal.removeEventListener("abort", abortHandler);
+      }
+    };
+
+    addListener(worker, "message", handler);
+    addListener(worker, "error", errorHandler);
+
+    // Wire abort signal if present
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        cleanup();
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      options.signal.addEventListener("abort", abortHandler);
     }
 
-    const csvString = chunks.join("");
+    // Remove signal from options before sending (not serializable)
+    const serializableOptions = options ? { ...options } : undefined;
+    if (serializableOptions) {
+      serializableOptions.signal = undefined;
+    }
 
-    // Send as string data instead of stream
-    const records = await new Promise<CSVRecord<Header>[]>((resolve, reject) => {
-      const handler = (event: MessageEvent) => {
-        if (event.data.id === id) {
-          cleanup();
-          if (event.data.error) {
-            reject(new Error(event.data.error));
-          } else {
-            resolve(event.data.result);
-          }
-        }
-      };
+    try {
+      worker.postMessage({
+        id,
+        type: "parseString",
+        data: csvString,
+        options: serializableOptions,
+        useWASM: false,
+      });
+    } catch (error) {
+      cleanup();
+      reject(error);
+    }
+  });
 
-      const errorHandler = (error: ErrorEvent) => {
-        cleanup();
-        reject(error);
-      };
-
-      const abortHandler = () => {
-        cleanup();
-        worker.postMessage({ id, type: "abort" });
-        reject(new DOMException("Aborted", "AbortError"));
-      };
-
-      const cleanup = () => {
-        removeListener(worker, "message", handler);
-        removeListener(worker, "error", errorHandler);
-        if (options?.signal) {
-          options.signal.removeEventListener("abort", abortHandler);
-        }
-      };
-
-      addListener(worker, "message", handler);
-      addListener(worker, "error", errorHandler);
-
-      // Wire abort signal if present
-      if (options?.signal) {
-        if (options.signal.aborted) {
-          cleanup();
-          reject(new DOMException("Aborted", "AbortError"));
-          return;
-        }
-        options.signal.addEventListener("abort", abortHandler);
-      }
-
-      // Remove signal from options before sending (not serializable)
-      const serializableOptions = options ? { ...options } : undefined;
-      if (serializableOptions) {
-        delete serializableOptions.signal;
-      }
-
-      try {
-        worker.postMessage({
-          id,
-          type: "parseString",
-          data: csvString,
-          options: serializableOptions,
-          useWASM: false,
-        });
-      } catch (error) {
-        cleanup();
-        reject(error);
-      }
-    });
-
-    // Convert array to async iterator
-    return (async function* () {
-      for (const record of records) {
-        yield record;
-      }
-    })();
-  }
+  // Convert array to async iterator
+  return (async function* () {
+    for (const record of records) {
+      yield record;
+    }
+  })();
 }
 
 async function getOrCreateWorker(workerURL?: string | URL): Promise<Worker> {

@@ -1,10 +1,10 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import { routeBinaryParsing } from "./execution/router.ts";
 import { parseBinaryToArraySync } from "./parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "./parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "./parseBinaryToStream.ts";
 import { convertIterableIteratorToAsync } from "./utils/convertIterableIteratorToAsync.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
-import { routeBinaryParsing } from "./execution/router.ts";
 
 /**
  * Parse a binary from an {@link !Uint8Array}.

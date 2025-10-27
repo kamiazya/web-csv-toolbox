@@ -1,5 +1,5 @@
-import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
+import type { CSVRecord, ParseOptions } from "../../common/types.ts";
 import { addListener, removeListener } from "./workerUtils.ts";
 
 let workerInstance: Worker | null = null;
@@ -44,7 +44,11 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
 
     const abortHandler = () => {
       cleanup();
-      worker.postMessage({ id, type: "abort" });
+      try {
+        worker.postMessage({ id, type: "abort" });
+      } catch {
+        // Ignore errors if worker is already terminated
+      }
       reject(new DOMException("Aborted", "AbortError"));
     };
 
@@ -69,11 +73,13 @@ export async function parseStringInWorker<Header extends ReadonlyArray<string>>(
       options.signal.addEventListener("abort", abortHandler);
     }
 
-    // Remove signal from options before sending (not serializable)
-    const serializableOptions = options ? { ...options } : undefined;
-    if (serializableOptions) {
-      delete serializableOptions.signal;
-    }
+    // Extract non-serializable fields before sending to worker
+    const {
+      signal: _signal,
+      workerPool: _workerPool,
+      workerURL: _workerURL,
+      ...serializableOptions
+    } = options ?? {};
 
     try {
       worker.postMessage({
@@ -138,7 +144,11 @@ export async function parseStringInWorkerWASM<
 
     const abortHandler = () => {
       cleanup();
-      worker.postMessage({ id, type: "abort" });
+      try {
+        worker.postMessage({ id, type: "abort" });
+      } catch {
+        // Ignore errors if worker is already terminated
+      }
       reject(new DOMException("Aborted", "AbortError"));
     };
 
@@ -163,11 +173,13 @@ export async function parseStringInWorkerWASM<
       options.signal.addEventListener("abort", abortHandler);
     }
 
-    // Remove signal from options before sending (not serializable)
-    const serializableOptions = options ? { ...options } : undefined;
-    if (serializableOptions) {
-      delete serializableOptions.signal;
-    }
+    // Extract non-serializable fields before sending to worker
+    const {
+      signal: _signal,
+      workerPool: _workerPool,
+      workerURL: _workerURL,
+      ...serializableOptions
+    } = options ?? {};
 
     try {
       worker.postMessage({

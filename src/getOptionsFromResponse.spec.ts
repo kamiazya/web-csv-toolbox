@@ -88,7 +88,22 @@ describe("getOptionsFromResponse", () => {
       });
     });
 
-    it("should accept 'deflate-raw' compression format", () => {
+    it("should reject 'deflate-raw' without experimental flag (browser default)", () => {
+      expect(() =>
+        getOptionsFromResponse(
+          new Response("", {
+            headers: {
+              "content-type": "text/csv",
+              "content-encoding": "deflate-raw",
+            },
+          }),
+        ),
+      ).toThrowErrorMatchingInlineSnapshot(
+        `[TypeError: Unsupported content-encoding: "deflate-raw". Supported formats: gzip, deflate. To use experimental formats, set allowExperimentalCompressions: true]`,
+      );
+    });
+
+    it("should accept 'deflate-raw' with experimental flag", () => {
       const actual = getOptionsFromResponse(
         new Response("", {
           headers: {
@@ -96,10 +111,12 @@ describe("getOptionsFromResponse", () => {
             "content-encoding": "deflate-raw",
           },
         }),
+        { allowExperimentalCompressions: true },
       );
       expect(actual).toEqual({
         charset: "utf-8",
         decomposition: "deflate-raw",
+        allowExperimentalCompressions: true,
       });
     });
 
@@ -114,7 +131,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
+        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -129,7 +146,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
+        `[TypeError: Unsupported content-encoding: "unknown". Supported formats: gzip, deflate. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -144,7 +161,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
+        `[TypeError: Unsupported content-encoding: "gzip2". Supported formats: gzip, deflate. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 
@@ -277,7 +294,7 @@ describe("getOptionsFromResponse", () => {
           }),
         ),
       ).toThrowErrorMatchingInlineSnapshot(
-        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate, deflate-raw. To use experimental formats, set allowExperimentalCompressions: true]`,
+        `[TypeError: Unsupported content-encoding: "br". Supported formats: gzip, deflate. To use experimental formats, set allowExperimentalCompressions: true]`,
       );
     });
 

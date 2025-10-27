@@ -33,9 +33,15 @@
   "imports": {
     "#execution/worker/createWorker.js": {
       "types": "./dist/execution/worker/createWorker.d.ts",
-      "node": "./dist/execution/worker/createWorker.js",
+      "node": "./dist/execution/worker/createWorker.node.js",
       "browser": "./dist/execution/worker/createWorker.web.js",
-      "default": "./dist/execution/worker/createWorker.js"
+      "default": "./dist/execution/worker/createWorker.web.js"
+    },
+    "#getOptionsFromResponse.constants.js": {
+      "types": "./dist/getOptionsFromResponse.constants.d.ts",
+      "node": "./dist/getOptionsFromResponse.constants.node.js",
+      "browser": "./dist/getOptionsFromResponse.constants.web.js",
+      "default": "./dist/getOptionsFromResponse.constants.web.js"
     }
   },
   "files": [
@@ -85,8 +91,8 @@
     "@codecov/vite-plugin": "^1.9.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.4",
-    "@vitest/browser": "^3.2.3",
-    "@vitest/coverage-istanbul": "^3.2.3",
+    "@vitest/browser-webdriverio": "^4.0.3",
+    "@vitest/coverage-istanbul": "4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^4.1.1",
@@ -94,10 +100,10 @@
     "typedoc": "^0.28.5",
     "typedoc-plugin-mdn-links": "^5.0.2",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5",
+    "vite": "^7.1.12",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.3",
+    "vitest": "4.0.3",
     "wasm-pack": "^0.13.1",
-    "webdriverio": "^9.15.0"
+    "webdriverio": "^9.20.0"
   }
 }

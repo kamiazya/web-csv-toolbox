@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseString } from "../parseString.ts";
 import type { CSVRecord } from "../common/types.ts";
+import { parseString } from "../parseString.ts";
 
 describe("Execution Router", () => {
   const csvData = `name,age
