@@ -22,10 +22,7 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
     workerURL: options?.workerURL,
   });
 
-  // Browser: Use Transferable Streams (zero-copy)
-  const recordStream = await sendWorkerMessage<
-    ReadableStream<CSVRecord<Header>>
-  >(
+  yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),
     {
       id: session.getNextRequestId(),
@@ -36,6 +33,4 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
     options,
     [stream], // Transfer stream
   );
-
-  yield* convertStreamToAsyncIterableIterator(recordStream);
 }

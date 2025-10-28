@@ -16,7 +16,7 @@ describe("WorkerSession", () => {
       using session = await WorkerSession.create();
 
       const csv = "a,b,c\n1,2,3\n4,5,6";
-      const records = await sendWorkerMessage<Array<{ a: string; b: string; c: string }>>(
+      const recordsIterator = sendWorkerMessage<{ a: string; b: string; c: string }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),
@@ -28,6 +28,11 @@ describe("WorkerSession", () => {
         {},
       );
 
+      const records = [];
+      for await (const record of recordsIterator) {
+        records.push(record);
+      }
+
       expect(records).toEqual([
         { a: "1", b: "2", c: "3" },
         { a: "4", b: "5", c: "6" },
@@ -38,7 +43,7 @@ describe("WorkerSession", () => {
       using session = await WorkerSession.create();
 
       const csv1 = "a,b\n1,2";
-      const records1 = await sendWorkerMessage<Array<{ a: string; b: string }>>(
+      const recordsIterator1 = sendWorkerMessage<{ a: string; b: string }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),
@@ -50,8 +55,13 @@ describe("WorkerSession", () => {
         {},
       );
 
+      const records1 = [];
+      for await (const record of recordsIterator1) {
+        records1.push(record);
+      }
+
       const csv2 = "x,y\n3,4";
-      const records2 = await sendWorkerMessage<Array<{ x: string; y: string }>>(
+      const recordsIterator2 = sendWorkerMessage<{ x: string; y: string }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),
@@ -62,6 +72,11 @@ describe("WorkerSession", () => {
         },
         {},
       );
+
+      const records2 = [];
+      for await (const record of recordsIterator2) {
+        records2.push(record);
+      }
 
       expect(records1).toEqual([{ a: "1", b: "2" }]);
       expect(records2).toEqual([{ x: "3", y: "4" }]);
@@ -95,7 +110,7 @@ describe("WorkerSession", () => {
       using session = await WorkerSession.create({ workerPool: pool });
 
       const csv = "a,b,c\n1,2,3";
-      const records = await sendWorkerMessage<Array<{ a: string; b: string; c: string }>>(
+      const recordsIterator = sendWorkerMessage<{ a: string; b: string; c: string }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),
@@ -106,6 +121,11 @@ describe("WorkerSession", () => {
         },
         {},
       );
+
+      const records = [];
+      for await (const record of recordsIterator) {
+        records.push(record);
+      }
 
       expect(records).toEqual([{ a: "1", b: "2", c: "3" }]);
     });

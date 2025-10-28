@@ -19,7 +19,7 @@ export async function* parseStringInWorkerWASM<
     workerURL: options?.workerURL,
   });
 
-  const records = await sendWorkerMessage<CSVRecord<Header>[]>(
+  yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),
     {
       id: session.getNextRequestId(),
@@ -30,6 +30,4 @@ export async function* parseStringInWorkerWASM<
     },
     options,
   );
-
-  yield* records;
 }

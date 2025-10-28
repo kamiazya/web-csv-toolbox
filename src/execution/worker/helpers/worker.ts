@@ -39,6 +39,13 @@ interface ParseResponse {
   error?: string;
 }
 
+interface ParseStreamResponse {
+  id: number;
+  type: "record" | "done" | "error";
+  record?: CSVRecord<readonly string[]>;
+  error?: string;
+}
+
 /**
  * Get the worker context (self for Web Workers, parentPort for Node.js Worker Threads)
  * @internal
@@ -60,6 +67,37 @@ const getWorkerContext = async () => {
 const workerContextPromise = getWorkerContext();
 
 /**
+ * Helper to stream records incrementally to avoid memory issues.
+ * @internal
+ */
+const streamRecordsToMain = async (
+  workerContext: any,
+  id: number,
+  records: AsyncIterableIterator<CSVRecord<readonly string[]>> | Iterable<CSVRecord<readonly string[]>>,
+) => {
+  try {
+    for await (const record of records) {
+      const response: ParseStreamResponse = {
+        id,
+        type: "record",
+        record,
+      };
+      workerContext.postMessage(response);
+    }
+    // Send done signal
+    const doneResponse: ParseStreamResponse = { id, type: "done" };
+    workerContext.postMessage(doneResponse);
+  } catch (error) {
+    const errorResponse: ParseStreamResponse = {
+      id,
+      type: "error",
+      error: error instanceof Error ? error.message : String(error),
+    };
+    workerContext.postMessage(errorResponse);
+  }
+};
+
+/**
  * Worker message handler for CSV parsing.
  * Handles different parsing strategies (regular, WASM, streaming).
  *
@@ -73,10 +111,6 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
       : (event as MessageEvent<ParseRequest>).data;
 
     try {
-      let result:
-        | CSVRecord<readonly string[]>[]
-        | ReadableStream<CSVRecord<readonly string[]>>;
-
       if (type === "parseString" && typeof data === "string") {
         if (useWASM) {
           // Dynamic import WASM implementation
@@ -84,20 +118,23 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
             const { parseStringToArraySyncWASM } = await import(
               "../../../parseStringToArraySyncWASM.ts"
             );
-            result = parseStringToArraySyncWASM(data, options);
+            await streamRecordsToMain(workerContext, id, parseStringToArraySyncWASM(data, options));
+            return;
           } catch (error) {
             // Fall back to regular parser if WASM is not available
-            const { parseStringToArraySync } = await import(
-              "../../../parseStringToArraySync.ts"
+            const { parseStringToIterableIterator } = await import(
+              "../../../parseStringToIterableIterator.ts"
             );
-            result = parseStringToArraySync(data, options);
+            await streamRecordsToMain(workerContext, id, parseStringToIterableIterator(data, options));
+            return;
           }
         } else {
-          // Use regular synchronous parser
-          const { parseStringToArraySync } = await import(
-            "../../../parseStringToArraySync.ts"
+          // Use regular parser with iterator
+          const { parseStringToIterableIterator } = await import(
+            "../../../parseStringToIterableIterator.ts"
           );
-          result = parseStringToArraySync(data, options);
+          await streamRecordsToMain(workerContext, id, parseStringToIterableIterator(data, options));
+          return;
         }
       } else if (type === "parseStream" && data instanceof ReadableStream) {
         // Stream processing (WASM not supported for streams)
@@ -105,10 +142,21 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
         const { RecordAssemblerTransformer } = await import(
           "../../../RecordAssemblerTransformer.ts"
         );
+        const { convertStreamToAsyncIterableIterator } = await import(
+          "../../../utils/convertStreamToAsyncIterableIterator.ts"
+        );
 
-        result = (data as ReadableStream<string>)
+        const resultStream = (data as ReadableStream<string>)
           .pipeThrough(new LexerTransformer(options))
           .pipeThrough(new RecordAssemblerTransformer(options));
+
+        // Convert stream to async iterable and stream records incrementally
+        await streamRecordsToMain(
+          workerContext,
+          id,
+          convertStreamToAsyncIterableIterator(resultStream),
+        );
+        return;
       } else if (
         type === "parseUint8ArrayStream" &&
         data instanceof ReadableStream
@@ -155,9 +203,21 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
               }) as unknown as TransformStream<Uint8Array, string>,
             );
 
-        result = textStream
+        const { convertStreamToAsyncIterableIterator } = await import(
+          "../../../utils/convertStreamToAsyncIterableIterator.ts"
+        );
+
+        const resultStream = textStream
           .pipeThrough(new LexerTransformer(options))
           .pipeThrough(new RecordAssemblerTransformer(options));
+
+        // Convert stream to async iterable and stream records incrementally
+        await streamRecordsToMain(
+          workerContext,
+          id,
+          convertStreamToAsyncIterableIterator(resultStream),
+        );
+        return;
       } else if (type === "parseBinary") {
         const binary = data as Uint8Array | ArrayBuffer;
 
@@ -204,42 +264,35 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
             const { parseStringToArraySyncWASM } = await import(
               "../../../parseStringToArraySyncWASM.ts"
             );
-            result = parseStringToArraySyncWASM(decoded, options);
+            await streamRecordsToMain(workerContext, id, parseStringToArraySyncWASM(decoded, options));
+            return;
           } catch (error) {
             // Fall back to regular parser if WASM is not available
-            const { parseBinaryToArraySync } = await import(
-              "../../../parseBinaryToArraySync.ts"
+            const { parseBinaryToIterableIterator } = await import(
+              "../../../parseBinaryToIterableIterator.ts"
             );
-            result = parseBinaryToArraySync(binary, options);
+            await streamRecordsToMain(workerContext, id, parseBinaryToIterableIterator(binary, options));
+            return;
           }
         } else {
-          // Use regular binary parser
-          const { parseBinaryToArraySync } = await import(
-            "../../../parseBinaryToArraySync.ts"
+          // Use regular binary parser with iterator
+          const { parseBinaryToIterableIterator } = await import(
+            "../../../parseBinaryToIterableIterator.ts"
           );
-          result = parseBinaryToArraySync(binary, options);
+          await streamRecordsToMain(workerContext, id, parseBinaryToIterableIterator(binary, options));
+          return;
         }
       } else {
         throw new Error(`Unsupported parse type: ${type}`);
       }
-
-      const response: ParseResponse = { id, result };
-
-      // Transfer stream if applicable (zero-copy)
-      if (result instanceof ReadableStream) {
-        // @ts-ignore
-        workerContext.postMessage(response, { transfer: [result] });
-      } else {
-        // @ts-ignore
-        workerContext.postMessage(response);
-      }
     } catch (error) {
-      const response: ParseResponse = {
+      const errorResponse: ParseStreamResponse = {
         id,
+        type: "error",
         error: error instanceof Error ? error.message : String(error),
       };
       // @ts-ignore
-      workerContext.postMessage(response);
+      workerContext.postMessage(errorResponse);
     }
   };
 };
