@@ -16,8 +16,6 @@ function assertOptionValue(
     switch (true) {
       case value.length === 0:
         throw new RangeError(`${name} must not be empty`);
-      case value.length > 1:
-        throw new RangeError(`${name} must be a single character`);
       case value === LF:
       case value === CR:
         throw new RangeError(`${name} must not include CR or LF`);

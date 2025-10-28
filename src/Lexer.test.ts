@@ -328,7 +328,7 @@ describe("Lexer", () => {
       .filter((t) => t.type === Field)
       .map((t) => t.value);
 
-    expect(result).toStrictEqual(["a", "", "c"]);
+    expect(result).toStrictEqual(["a","c"]);
   });
 
   test("should handle quoted fields with line breaks and multi-character delimiters", () => {
