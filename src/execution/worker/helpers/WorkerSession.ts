@@ -1,5 +1,6 @@
 import type { WorkerOptions } from "../../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
+import type { WorkerPool } from "./WorkerPool.ts";
 
 /**
  * Options for creating a WorkerSession.
@@ -45,11 +46,11 @@ export interface WorkerSessionOptions extends WorkerOptions {}
 export class WorkerSession implements Disposable {
   private worker: Worker;
   private requestIdCounter = 0;
-  private readonly workerPool?: import("./WorkerPool.ts").WorkerPool;
+  private readonly workerPool?: WorkerPool;
 
   private constructor(
     worker: Worker,
-    workerPool?: import("./WorkerPool.ts").WorkerPool,
+    workerPool?: WorkerPool,
   ) {
     this.worker = worker;
     this.workerPool = workerPool;
@@ -95,11 +96,13 @@ export class WorkerSession implements Disposable {
 
   /**
    * Dispose the session.
-   * - If using WorkerPool: Does nothing (pool manages worker lifecycle)
+   * - If using a pool: Releases the worker back to the pool (behavior depends on pool type)
    * - If disposable: Terminates the worker
    */
   [Symbol.dispose](): void {
-    if (!this.workerPool) {
+    if (this.workerPool) {
+      this.workerPool.releaseWorker(this.worker);
+    } else {
       this.worker.terminate();
     }
   }

@@ -20,15 +20,17 @@ import type {
  */
 interface ParseRequest {
   id: number;
-  type: "parseString" | "parseBinary" | "parseStream" | "parseUint8ArrayStream";
-  data:
+  type: "parseString" | "parseBinary" | "parseStream" | "parseUint8ArrayStream" | "parseStringStream";
+  data?:
     | string
     | Uint8Array
     | ArrayBuffer
     | ReadableStream<string>
     | ReadableStream<Uint8Array>;
+  stream?: ReadableStream<string> | ReadableStream<Uint8Array>;
   options?: ParseOptions | ParseBinaryOptions<readonly string[]>;
   useWASM?: boolean;
+  resultPort?: MessagePort;
 }
 
 interface ParseResponse {
@@ -98,6 +100,31 @@ const streamRecordsToMain = async (
 };
 
 /**
+ * Helper to stream records to a MessagePort (for TransferableStream strategy).
+ * @internal
+ */
+const streamRecordsToPort = async (
+  port: MessagePort,
+  records: AsyncIterableIterator<CSVRecord<readonly string[]>> | Iterable<CSVRecord<readonly string[]>>,
+) => {
+  try {
+    for await (const record of records) {
+      port.postMessage({
+        type: "record",
+        record,
+      });
+    }
+    // Send done signal
+    port.postMessage({ type: "done" });
+  } catch (error) {
+    port.postMessage({
+      type: "error",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+/**
  * Worker message handler for CSV parsing.
  * Handles different parsing strategies (regular, WASM, streaming).
  *
@@ -106,11 +133,82 @@ const streamRecordsToMain = async (
 const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
   return async (event: MessageEvent<ParseRequest> | ParseRequest) => {
     // In Node.js Worker Threads, the message is passed directly, not wrapped in event.data
-    const { id, type, data, options, useWASM } = isNodeWorker
+    const { id, type, data, stream, options, useWASM, resultPort } = isNodeWorker
       ? (event as ParseRequest)
       : (event as MessageEvent<ParseRequest>).data;
 
     try {
+      // Handle TransferableStream strategy (stream + resultPort)
+      if (resultPort && stream) {
+        if (type === "parseStringStream" && stream instanceof ReadableStream) {
+          // Process string stream with TransferableStream strategy
+          const { LexerTransformer } = await import("../../../LexerTransformer.ts");
+          const { RecordAssemblerTransformer } = await import(
+            "../../../RecordAssemblerTransformer.ts"
+          );
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../../utils/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          const resultStream = (stream as ReadableStream<string>)
+            .pipeThrough(new LexerTransformer(options))
+            .pipeThrough(new RecordAssemblerTransformer(options));
+
+          await streamRecordsToPort(
+            resultPort,
+            convertStreamToAsyncIterableIterator(resultStream),
+          );
+          return;
+        }
+
+        if (type === "parseUint8ArrayStream" && stream instanceof ReadableStream) {
+          // Process binary stream with TransferableStream strategy
+          const { LexerTransformer } = await import("../../../LexerTransformer.ts");
+          const { RecordAssemblerTransformer } = await import(
+            "../../../RecordAssemblerTransformer.ts"
+          );
+
+          const binaryOptions = options as ParseBinaryOptions<readonly string[]>;
+          const { charset, fatal, ignoreBOM, decomposition } = binaryOptions ?? {};
+
+          // Convert binary stream to text stream then parse
+          const textStream = decomposition
+            ? (stream as ReadableStream<Uint8Array>)
+                .pipeThrough(
+                  new DecompressionStream(
+                    decomposition,
+                  ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+                )
+                .pipeThrough(
+                  new TextDecoderStream(charset ?? "utf-8", {
+                    fatal,
+                    ignoreBOM,
+                  }) as unknown as TransformStream<Uint8Array, string>,
+                )
+            : (stream as ReadableStream<Uint8Array>).pipeThrough(
+                new TextDecoderStream(charset ?? "utf-8", {
+                  fatal,
+                  ignoreBOM,
+                }) as unknown as TransformStream<Uint8Array, string>,
+              );
+
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../../utils/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          const resultStream = textStream
+            .pipeThrough(new LexerTransformer(options))
+            .pipeThrough(new RecordAssemblerTransformer(options));
+
+          await streamRecordsToPort(
+            resultPort,
+            convertStreamToAsyncIterableIterator(resultStream),
+          );
+          return;
+        }
+      }
+
+      // Handle traditional message-based strategies
       if (type === "parseString" && typeof data === "string") {
         if (useWASM) {
           // Dynamic import WASM implementation
@@ -170,17 +268,6 @@ const createMessageHandler = (workerContext: any, isNodeWorker: boolean) => {
         const binaryOptions = options as ParseBinaryOptions<readonly string[]>;
         const { charset, fatal, ignoreBOM, decomposition } =
           binaryOptions ?? {};
-
-        // Prevent DecompressionStream usage in Node.js Worker Threads
-        // Note: Node.js 20+ has experimental DecompressionStream support, but it may not work
-        // reliably in Worker Threads. This check prevents runtime errors with a clear message.
-        if (isNodeWorker && decomposition) {
-          throw new Error(
-            "Decompression is not supported in Node.js Worker Threads. " +
-              "Decompress the stream on the main thread before passing to worker, " +
-              "or use browser environment with native DecompressionStream support.",
-          );
-        }
 
         // Convert binary stream to text stream then parse
         const textStream = decomposition

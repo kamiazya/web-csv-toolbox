@@ -1,19 +1,19 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
+import type { EngineConfig } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseStringStream } from "./parseStringStream.ts";
 import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";
 
 // Test each execution strategy (WASM doesn't support streaming)
 describe("parseStringStream with execution strategies", () => {
-  const strategies: Array<{ name: string; execution: ExecutionStrategy[] }> = [
-    { name: "main thread (default)", execution: [] },
-    { name: "worker", execution: ["worker"] },
+  const strategies: Array<{ name: string; engine?: EngineConfig }> = [
+    { name: "main thread (default)", engine: undefined },
+    { name: "worker", engine: { worker: true } },
   ];
 
-  for (const { name, execution } of strategies) {
+  for (const { name, engine } of strategies) {
     it(`should parse CSV with ${name}`, () =>
       fc.assert(
         fc.asyncProperty(
@@ -44,7 +44,7 @@ describe("parseStringStream with execution strategies", () => {
           }),
           async ({ data, csv }) => {
             let i = 0;
-            const result = parseStringStream(csv, { execution });
+            const result = parseStringStream(csv, { engine });
             const iterator = result instanceof Promise ? await result : result;
             for await (const row of iterator) {
               expect(data[i++]).toEqual(row);
@@ -80,11 +80,11 @@ describe("parseStringStream with execution strategies", () => {
         async ({ csv }) => {
           // Parse with all execution strategies
           const results = await Promise.all(
-            strategies.map(async ({ execution }) => {
+            strategies.map(async ({ engine }) => {
               const records = [];
               const result = parseStringStream(
                 new SingleValueReadableStream(csv),
-                { execution },
+                { engine },
               );
               const iterator =
                 result instanceof Promise ? await result : result;
@@ -104,22 +104,19 @@ describe("parseStringStream with execution strategies", () => {
       ),
     ));
 
-  // Test that WASM execution throws an error for streams
-  it("should throw error when using WASM with streams", async () => {
-    try {
-      const result = parseStringStream(
-        new SingleValueReadableStream("a,b\n1,2"),
-        { execution: ["wasm"] },
-      );
-      const iterator = result instanceof Promise ? await result : result;
-      for await (const _ of iterator) {
-        // Do nothing
-      }
-      throw new Error("Should have thrown an error");
-    } catch (error: any) {
-      expect(error.message).toMatch(
-        /WASM execution does not support streaming/,
-      );
+  // Test that WASM with streams falls back to main thread execution
+  it("should work with WASM by falling back to main thread for streams", async () => {
+    // WASM doesn't support streams, so it automatically falls back to main thread
+    const result = parseStringStream(
+      new SingleValueReadableStream("a,b\n1,2"),
+      { engine: { wasm: true } },
+    );
+    const iterator = result instanceof Promise ? await result : result;
+    const records = [];
+    for await (const record of iterator) {
+      records.push(record);
     }
+    expect(records).toHaveLength(1);
+    expect(records[0]).toEqual({ a: "1", b: "2" });
   });
 });

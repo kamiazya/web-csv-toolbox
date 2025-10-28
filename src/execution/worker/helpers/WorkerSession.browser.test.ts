@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WorkerSession } from "./WorkerSession.ts";
-import { WorkerPool } from "./WorkerPool.ts";
+import { ReusableWorkerPool as WorkerPool } from "./ReusableWorkerPool.ts";
 import { sendWorkerMessage } from "../utils/messageHandler.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
 

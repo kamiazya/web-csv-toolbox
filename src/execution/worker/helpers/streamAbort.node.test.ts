@@ -49,7 +49,7 @@ describe.skipIf(typeof Worker === "undefined")(
         await expect(async () => {
           const records = [];
           for await (const record of parseUint8ArrayStream(slowStream, {
-            execution: ["worker"],
+            engine: { worker: true },
             signal: controller.signal,
           })) {
             records.push(record);
@@ -72,7 +72,7 @@ describe.skipIf(typeof Worker === "undefined")(
         await expect(async () => {
           const records = [];
           for await (const record of parseUint8ArrayStream(stream, {
-            execution: ["worker"],
+            engine: { worker: true },
             signal: controller.signal,
           })) {
             records.push(record);
@@ -94,7 +94,7 @@ describe.skipIf(typeof Worker === "undefined")(
 
         const records = [];
         for await (const record of parseUint8ArrayStream(stream, {
-          execution: ["worker"],
+          engine: { worker: true },
           signal: controller.signal,
         })) {
           records.push(record);
@@ -137,7 +137,7 @@ describe.skipIf(typeof Worker === "undefined")(
         await expect(async () => {
           const records = [];
           for await (const record of parseStringStream(slowStream, {
-            execution: ["worker"],
+            engine: { worker: true },
             signal: controller.signal,
           })) {
             records.push(record);
@@ -159,7 +159,7 @@ describe.skipIf(typeof Worker === "undefined")(
         await expect(async () => {
           const records = [];
           for await (const record of parseStringStream(stream, {
-            execution: ["worker"],
+            engine: { worker: true },
             signal: controller.signal,
           })) {
             records.push(record);
@@ -180,7 +180,7 @@ describe.skipIf(typeof Worker === "undefined")(
 
         const records = [];
         for await (const record of parseStringStream(stream, {
-          execution: ["worker"],
+          engine: { worker: true },
           signal: controller.signal,
         })) {
           records.push(record);
@@ -207,7 +207,7 @@ describe.skipIf(typeof Worker === "undefined")(
         try {
           const records = [];
           for await (const record of parseUint8ArrayStream(stream, {
-            execution: ["worker"],
+            engine: { worker: true },
             signal: controller.signal,
           })) {
             records.push(record);

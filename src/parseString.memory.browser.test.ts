@@ -19,7 +19,7 @@ describe.skipIf(typeof window === "undefined")(
       for (let i = 0; i < iterations; i++) {
         const records = [];
         for await (const record of parseString(csv, {
-          execution: ["worker"],
+          engine: { worker: true },
         })) {
           records.push(record);
         }
@@ -42,7 +42,7 @@ describe.skipIf(typeof window === "undefined")(
 
       const records = [];
       for await (const record of parseString(largeCSV, {
-        execution: ["worker"],
+        engine: { worker: true },
       })) {
         records.push(record);
       }
@@ -68,7 +68,7 @@ describe.skipIf(typeof window === "undefined")(
       // This should throw an error
       await expect(async () => {
         for await (const _ of parseString(invalidCSV, {
-          execution: ["worker"],
+          engine: { worker: true },
         })) {
           // noop
         }
@@ -78,7 +78,7 @@ describe.skipIf(typeof window === "undefined")(
       const validCSV = "a,b,c\n1,2,3";
       const records = [];
       for await (const record of parseString(validCSV, {
-        execution: ["worker"],
+        engine: { worker: true },
       })) {
         records.push(record);
       }
@@ -97,7 +97,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv1, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -106,7 +106,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv2, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -115,7 +115,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv3, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }

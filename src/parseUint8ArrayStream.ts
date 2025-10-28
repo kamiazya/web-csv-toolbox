@@ -1,5 +1,8 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import { routeUint8ArrayStreamParsing } from "./execution/router.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
+import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -40,20 +43,39 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  */
 export async function* parseUint8ArrayStream<
   Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
 >(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  // If execution strategies are specified, use the router
-  if (options?.execution && options.execution.length > 0) {
-    const result = await routeUint8ArrayStreamParsing(stream, options);
-    yield* result;
-    return;
-  }
+  // Parse engine configuration
+  const engineConfig = new InternalEngineConfig(options?.engine);
 
-  // Default: use existing implementation (backward compatible)
-  const recordStream = parseUint8ArrayStreamToStream(stream, options);
-  yield* convertStreamToAsyncIterableIterator(recordStream);
+  // Note: Worker execution with ReadableStream requires TransferableStream support
+  // which is not available in Safari. For now, always use main thread execution.
+  // TODO: Implement stream-transfer strategy for browsers that support it
+  if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
+    // Worker execution with stream-transfer strategy
+    const session = engineConfig.workerPool
+      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      : null;
+
+    try {
+      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+        stream,
+        options,
+        session,
+        engineConfig,
+      );
+    } finally {
+      session?.[Symbol.dispose]();
+    }
+  } else {
+    // Main thread execution (default for streams)
+    const recordStream = parseUint8ArrayStreamToStream(stream, options);
+    yield* convertStreamToAsyncIterableIterator(recordStream);
+  }
 }
 
 export declare namespace parseUint8ArrayStream {

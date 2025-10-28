@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
@@ -27,9 +28,13 @@ import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
  * // [{ name: "Alice", age: "30" }]
  * ```
  */
-export function parseBinaryToArraySync<Header extends ReadonlyArray<string>>(
+export function parseBinaryToArraySync<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   binary: Uint8Array | ArrayBuffer,
-  options: ParseBinaryOptions<Header> = {},
+  options: ParseBinaryOptions<Header, Delimiter, Quotation> = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): CSVRecord<Header>[] {
   try {
     const csv = convertBinaryToString(binary, options);

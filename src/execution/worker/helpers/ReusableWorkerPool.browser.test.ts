@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { WorkerPool } from "./WorkerPool.ts";
+import { ReusableWorkerPool } from "./ReusableWorkerPool.ts";
 import { parseString } from "../../../parseString.ts";
 
 /**
- * WorkerPool tests
+ * ReusableWorkerPool tests
  *
- * These tests verify that WorkerPool properly manages worker lifecycle
+ * These tests verify that ReusableWorkerPool properly manages worker lifecycle
  * and integrates with parsing functions.
  */
-describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
+describe.skipIf(typeof window === "undefined")("ReusableWorkerPool", () => {
   it("should create and dispose worker", async () => {
-    const pool = new WorkerPool();
+    const pool = new ReusableWorkerPool();
     const worker = await pool.getWorker();
 
     expect(worker).toBeDefined();
@@ -22,8 +22,37 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     expect(true).toBe(true);
   });
 
+  it("should terminate workers using terminate() method", async () => {
+    const pool = new ReusableWorkerPool();
+    const worker = await pool.getWorker();
+
+    expect(worker).toBeDefined();
+    expect(pool.size).toBe(1);
+
+    // Terminate using the public method
+    pool.terminate();
+
+    // After termination, pool should be empty
+    expect(pool.size).toBe(0);
+  });
+
+  it("should be compatible with Symbol.dispose and terminate()", async () => {
+    const pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+    // Create some workers
+    await pool.getWorker();
+    await pool.getWorker();
+
+    expect(pool.size).toBe(2);
+
+    // Symbol.dispose should call terminate internally
+    pool[Symbol.dispose]();
+
+    expect(pool.size).toBe(0);
+  });
+
   it("should reuse the same worker instance", async () => {
-    using pool = new WorkerPool();
+    using pool = new ReusableWorkerPool();
 
     const worker1 = await pool.getWorker();
     const worker2 = await pool.getWorker();
@@ -33,14 +62,13 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   });
 
   it("should work with parseString", async () => {
-    using pool = new WorkerPool();
+    using pool = new ReusableWorkerPool();
 
     const csv = "a,b,c\n1,2,3\n4,5,6";
 
     const records = [];
     for await (const record of parseString(csv, {
-      execution: ["worker"],
-      workerPool: pool,
+      engine: { worker: true, workerPool: pool },
     })) {
       records.push(record);
     }
@@ -51,7 +79,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   });
 
   it("should handle multiple parsing operations with same pool", async () => {
-    using pool = new WorkerPool();
+    using pool = new ReusableWorkerPool();
 
     const csv1 = "a,b\n1,2";
     const csv2 = "x,y\n3,4";
@@ -61,8 +89,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
       (async () => {
         const records = [];
         for await (const record of parseString(csv1, {
-          execution: ["worker"],
-          workerPool: pool,
+          engine: { worker: true, workerPool: pool },
         })) {
           records.push(record);
         }
@@ -71,8 +98,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
       (async () => {
         const records = [];
         for await (const record of parseString(csv2, {
-          execution: ["worker"],
-          workerPool: pool,
+          engine: { worker: true, workerPool: pool },
         })) {
           records.push(record);
         }
@@ -81,8 +107,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
       (async () => {
         const records = [];
         for await (const record of parseString(csv3, {
-          execution: ["worker"],
-          workerPool: pool,
+          engine: { worker: true, workerPool: pool },
         })) {
           records.push(record);
         }
@@ -96,7 +121,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   });
 
   it("should generate unique request IDs", () => {
-    using pool = new WorkerPool();
+    using pool = new ReusableWorkerPool();
 
     const id1 = pool.getNextRequestId();
     const id2 = pool.getNextRequestId();
@@ -108,7 +133,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
   });
 
   it("should work with AbortSignal", async () => {
-    using pool = new WorkerPool();
+    using pool = new ReusableWorkerPool();
 
     const csv = "a,b,c\n1,2,3";
     const controller = new AbortController();
@@ -116,8 +141,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
 
     await expect(async () => {
       for await (const _ of parseString(csv, {
-        execution: ["worker"],
-        workerPool: pool,
+        engine: { worker: true, workerPool: pool },
         signal: controller.signal,
       })) {
         // Should not reach here
@@ -130,11 +154,10 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
 
     // First scope
     {
-      using pool = new WorkerPool();
+      using pool = new ReusableWorkerPool();
       const records = [];
       for await (const record of parseString(csv, {
-        execution: ["worker"],
-        workerPool: pool,
+        engine: { worker: true, workerPool: pool },
       })) {
         records.push(record);
       }
@@ -144,11 +167,10 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
 
     // Second scope with new pool
     {
-      using pool = new WorkerPool();
+      using pool = new ReusableWorkerPool();
       const records = [];
       for await (const record of parseString(csv, {
-        execution: ["worker"],
-        workerPool: pool,
+        engine: { worker: true, workerPool: pool },
       })) {
         records.push(record);
       }
@@ -157,9 +179,53 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     }
   });
 
+  describe("isFull()", () => {
+    it("should return false when pool is not full", () => {
+      using pool = new ReusableWorkerPool({ maxWorkers: 3 });
+      expect(pool.isFull()).toBe(false);
+    });
+
+    it("should return true when pool reaches maximum capacity", async () => {
+      using pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+      expect(pool.isFull()).toBe(false);
+
+      await pool.getWorker();
+      expect(pool.isFull()).toBe(false);
+
+      await pool.getWorker();
+      expect(pool.isFull()).toBe(true);
+    });
+
+    it("should return false after terminating workers", async () => {
+      const pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+      await pool.getWorker();
+      await pool.getWorker();
+      expect(pool.isFull()).toBe(true);
+
+      pool.terminate();
+      expect(pool.isFull()).toBe(false);
+    });
+
+    it("should account for pending worker creations", async () => {
+      using pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+      // Start creating workers concurrently
+      const promise1 = pool.getWorker();
+      const promise2 = pool.getWorker();
+
+      // Pool should be considered full even before workers are created
+      expect(pool.isFull()).toBe(true);
+
+      await Promise.all([promise1, promise2]);
+      expect(pool.isFull()).toBe(true);
+    });
+  });
+
   describe("Multiple Workers", () => {
     it("should create multiple workers when maxWorkers > 1", async () => {
-      using pool = new WorkerPool({ maxWorkers: 3 });
+      using pool = new ReusableWorkerPool({ maxWorkers: 3 });
 
       const worker1 = await pool.getWorker();
       const worker2 = await pool.getWorker();
@@ -177,7 +243,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     });
 
     it("should use round-robin load balancing", async () => {
-      using pool = new WorkerPool({ maxWorkers: 2 });
+      using pool = new ReusableWorkerPool({ maxWorkers: 2 });
 
       // Create 2 workers
       const worker1 = await pool.getWorker();
@@ -199,7 +265,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     });
 
     it("should process multiple CSVs in parallel with multiple workers", async () => {
-      using pool = new WorkerPool({ maxWorkers: 4 });
+      using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
       const csvFiles = [
         "a,b\n1,2\n3,4",
@@ -212,8 +278,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
         csvFiles.map(async (csv) => {
           const records = [];
           for await (const record of parseString(csv, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -232,12 +297,12 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     });
 
     it("should throw error when maxWorkers < 1", () => {
-      expect(() => new WorkerPool({ maxWorkers: 0 })).toThrow("maxWorkers must be at least 1");
-      expect(() => new WorkerPool({ maxWorkers: -1 })).toThrow("maxWorkers must be at least 1");
+      expect(() => new ReusableWorkerPool({ maxWorkers: 0 })).toThrow("maxWorkers must be at least 1");
+      expect(() => new ReusableWorkerPool({ maxWorkers: -1 })).toThrow("maxWorkers must be at least 1");
     });
 
     it("should terminate all workers on disposal", async () => {
-      const pool = new WorkerPool({ maxWorkers: 3 });
+      const pool = new ReusableWorkerPool({ maxWorkers: 3 });
 
       // Create all 3 workers
       await pool.getWorker();
@@ -254,7 +319,7 @@ describe.skipIf(typeof window === "undefined")("WorkerPool", () => {
     });
 
     it("should default to single worker when maxWorkers not specified", async () => {
-      using pool = new WorkerPool();
+      using pool = new ReusableWorkerPool();
 
       const worker1 = await pool.getWorker();
       const worker2 = await pool.getWorker();

@@ -8,11 +8,13 @@ This release introduces experimental worker thread execution support, enabling C
 
 **New Features:**
 
-- Added `execution` option to all parsing functions (`parseString`, `parseBinary`, `parseStringStream`, `parseUint8ArrayStream`, `parseResponse`)
-- Support for `execution: ["worker"]` to run parsing in a Web Worker (browser) or Worker Thread (Node.js)
+- Added `engine` configuration object to all parsing functions (`parseString`, `parseBinary`, `parseStringStream`, `parseUint8ArrayStream`, `parseResponse`)
+- Support for `engine: { worker: true }` to run parsing in a Web Worker (browser) or Worker Thread (Node.js)
+- Support for `engine: { wasm: true }` to use WebAssembly for high-performance parsing
+- Support for `engine: { worker: true, wasm: true }` to combine both strategies
 - Cross-platform worker support for browsers, Node.js (20+), and Deno
-- Automatic fallback: uses Transferable Streams in browsers for zero-copy, collects streams in Node.js
-- Concurrent request handling: single worker instance can process multiple CSV parsing requests
+- Automatic worker strategy selection: Transferable Streams (Chrome/Firefox/Edge) or Message Streaming (Safari/fallback)
+- Concurrent request handling: WorkerPool manages multiple CSV parsing requests efficiently
 
 **Implementation Details:**
 
@@ -37,16 +39,20 @@ for await (const record of parseString(csv)) {
 }
 
 // Parse in worker thread (experimental)
-for await (const record of parseString(csv, { execution: ['worker'] })) {
+for await (const record of parseString(csv, { engine: { worker: true } })) {
+  console.log(record);
+}
+
+// Parse with WASM (experimental)
+for await (const record of parseString(csv, { engine: { wasm: true } })) {
+  console.log(record);
+}
+
+// Parse with both Worker and WASM (experimental)
+for await (const record of parseString(csv, { engine: { worker: true, wasm: true } })) {
   console.log(record);
 }
 ```
-
-**Supported Platforms:**
-
-- ✅ Browsers with Web Workers support
-- ✅ Node.js 20.x and later (Worker Threads)
-- ✅ Deno with Web Workers support
 
 **Performance Considerations:**
 
@@ -57,19 +63,11 @@ for await (const record of parseString(csv, { execution: ['worker'] })) {
   - Processing multiple CSVs concurrently
 - For small CSV files (<100 rows), main thread execution is typically faster
 
-**Testing:**
-
-- Comprehensive test coverage for all execution strategies
-- Property-based tests verify identical results across execution modes
-- Error handling and memory management tests
-- Concurrent execution tests
-- Performance benchmarks comparing main vs worker execution
-
 **Known Limitations:**
 
-- Worker execution is experimental and subject to change
-- WASM execution in worker (`execution: ["worker", "wasm"]`) is not yet fully supported
-- Node.js Worker Threads do not support Transferable Streams (uses message passing instead)
+- Engine configuration is experimental and subject to change
+- Safari does not support Transferable Streams (automatically falls back to Message Streaming)
+- WASM only supports UTF-8 encoding and double-quote (`"`) as quotation character
 
 **Breaking Changes:**
 
@@ -77,19 +75,35 @@ None. This is a backward-compatible addition. Existing code continues to work wi
 
 **Migration Guide:**
 
-No migration required. To use worker execution, simply add the `execution` option:
+No migration required. To use worker execution, simply add the `engine` option:
 
 ```typescript
 // Before (still works)
 parseString(csv)
 
 // After (with worker)
-parseString(csv, { execution: ['worker'] })
+parseString(csv, { engine: { worker: true } })
+
+// With WASM
+parseString(csv, { engine: { wasm: true } })
+
+// With both
+parseString(csv, { engine: { worker: true, wasm: true } })
 ```
 
-**Future Plans:**
+**Security Considerations:**
 
-- Stabilize worker execution API based on feedback
-- Add support for custom worker URLs
-- Implement worker pooling for better performance
-- Enable WASM execution in worker threads
+- **Resource Protection**: When deploying applications that accept user-uploaded CSV files, it is strongly recommended to use `WorkerPool` with a limited `maxWorkers` setting to prevent resource exhaustion attacks
+- Malicious users could attempt to overwhelm the application by uploading multiple large CSV files simultaneously
+- Setting a reasonable `maxWorkers` limit (e.g., 2-4) helps protect against such attacks while maintaining good performance
+- Example secure configuration:
+  ```typescript
+  // Recommended: Limit concurrent workers to protect against attacks
+  using pool = new WorkerPool({ maxWorkers: 4 });
+
+  for await (const record of parseString(userUploadedCSV, {
+    engine: { worker: true, workerPool: pool }
+  })) {
+    // Process records safely
+  }
+  ```

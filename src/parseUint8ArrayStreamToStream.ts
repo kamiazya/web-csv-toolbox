@@ -1,11 +1,16 @@
 import { LexerTransformer } from "./LexerTransformer.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { pipeline } from "./utils/pipeline.ts";
 
-export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
+export function parseUint8ArrayStreamToStream<
+  Header extends readonly string[],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): ReadableStream<CSVRecord<Header>> {
   const { charset, fatal, ignoreBOM, decomposition } = options ?? {};
   return decomposition

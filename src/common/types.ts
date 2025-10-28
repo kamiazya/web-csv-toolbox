@@ -357,52 +357,90 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
 }
 
 /**
- * Execution strategy for CSV parsing.
- *
- * - `'worker'`: Execute in Worker thread (non-blocking, available on all platforms)
- * - `'wasm'`: Execute using WebAssembly (high performance, UTF-8 only)
- *
- * @remarks
- * Multiple strategies can be combined by specifying an array.
- * The order matters: `['worker', 'wasm']` means "execute WASM inside Worker".
+ * Worker communication strategy.
  *
  * @category Types
- *
- * @example Execute in Worker with WASM
- * ```ts
- * parse(csv, { execution: ['worker', 'wasm'] })
- * ```
- *
- * @example Execute WASM in main thread
- * ```ts
- * parse(csv, { execution: ['wasm'] })
- * ```
  */
-export type ExecutionStrategy = "worker" | "wasm";
+export type WorkerStrategy = "message-streaming" | "stream-transfer";
 
 /**
- * Worker-related options.
+ * Engine fallback information.
+ *
+ * Provided when the requested engine configuration fails and falls back to a safer configuration.
  *
  * @category Types
  */
-export interface WorkerOptions {
+export interface EngineFallbackInfo {
   /**
-   * Custom Worker URL for 'worker' execution.
+   * Original requested configuration.
+   */
+  requestedConfig: EngineConfig;
+
+  /**
+   * Actual configuration after fallback.
+   */
+  actualConfig: EngineConfig;
+
+  /**
+   * Reason for fallback.
+   */
+  reason: string;
+
+  /**
+   * Original error if any.
+   */
+  error?: Error;
+}
+
+/**
+ * Engine configuration for CSV parsing.
+ *
+ * All parsing engine settings are unified in this interface.
+ *
+ * @category Types
+ */
+export interface EngineConfig {
+  /**
+   * Execute in Worker thread.
+   *
+   * @default false
+   *
+   * @example Worker execution
+   * ```ts
+   * parse(csv, { engine: { worker: true } })
+   * ```
+   */
+  worker?: boolean;
+
+  /**
+   * Custom Worker URL.
+   * Only applicable when `worker: true`.
+   *
    * If not provided, uses the bundled worker.
    *
    * @remarks
-   * Only used when 'worker' is in the execution array.
+   * The custom worker must implement the same message protocol as the bundled worker.
+   *
+   * @example Custom worker
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerURL: new URL('./custom-worker.js', import.meta.url)
+   *   }
+   * })
+   * ```
    */
   workerURL?: string | URL;
 
   /**
    * Worker pool for managing worker lifecycle.
+   * Only applicable when `worker: true`.
    *
-   * @remarks
    * When provided, the parsing function will use this pool's worker instance
    * instead of creating/reusing a module-level singleton worker.
    *
-   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup:
+   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup.
    *
    * @example Using WorkerPool with automatic cleanup
    * ```ts
@@ -413,8 +451,7 @@ export interface WorkerOptions {
    *
    *   const records = [];
    *   for await (const record of parseString(csv, {
-   *     execution: ['worker'],
-   *     workerPool: pool
+   *     engine: { worker: true, workerPool: pool }
    *   })) {
    *     records.push(record);
    *   }
@@ -423,49 +460,180 @@ export interface WorkerOptions {
    *   // Worker is automatically terminated when leaving this scope
    * }
    * ```
+   *
+   * @example Multiple operations with same pool
+   * ```ts
+   * using pool = new WorkerPool();
+   *
+   * await parseString(csv1, { engine: { worker: true, workerPool: pool } });
+   * await parseString(csv2, { engine: { worker: true, workerPool: pool } });
+   * // Worker is reused for both operations
+   * ```
    */
   workerPool?: import("../execution/worker/helpers/WorkerPool.ts").WorkerPool;
+
+  /**
+   * Use WASM implementation.
+   *
+   * Requires prior initialization with {@link loadWASM}.
+   *
+   * @default false
+   *
+   * @example Main thread + WASM
+   * ```ts
+   * import { loadWASM, parse } from 'web-csv-toolbox';
+   *
+   * await loadWASM();
+   * parse(csv, { engine: { wasm: true } })
+   * ```
+   *
+   * @example Worker + WASM
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { engine: { worker: true, wasm: true } })
+   * ```
+   */
+  wasm?: boolean;
+
+  /**
+   * Worker communication strategy.
+   * Only applicable when `worker: true`.
+   *
+   * - `"message-streaming"` (default): Message-based streaming
+   *   - ✅ All browsers including Safari
+   *   - ✅ Stable and reliable
+   *   - Records are sent one-by-one via postMessage
+   *
+   * - `"stream-transfer"`: TransferableStreams
+   *   - ✅ Chrome 87+, Firefox 103+, Edge 87+
+   *   - ❌ Safari (not supported, will fallback unless strict mode)
+   *   - ⚡ Zero-copy transfer, more efficient
+   *   - Uses ReadableStream transfer
+   *
+   * @default "message-streaming"
+   *
+   * @see https://caniuse.com/mdn-api_readablestream_transferable
+   *
+   * @example Message streaming (default, safe)
+   * ```ts
+   * parse(csv, { engine: { worker: true } })
+   * // or explicitly
+   * parse(csv, { engine: { worker: true, workerStrategy: "message-streaming" } })
+   * ```
+   *
+   * @example Stream transfer (Chrome/Firefox/Edge, auto-fallback on Safari)
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer",
+   *     onFallback: (info) => {
+   *       console.warn(`Fallback to message-streaming: ${info.reason}`);
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  workerStrategy?: WorkerStrategy;
+
+  /**
+   * Strict mode: disable automatic fallback.
+   * Only applicable when `workerStrategy: "stream-transfer"`.
+   *
+   * When enabled:
+   * - Throws error immediately if stream transfer fails
+   * - Does not fallback to message-streaming
+   * - `onFallback` is never called
+   *
+   * When disabled (default):
+   * - Automatically falls back to message-streaming on failure
+   * - Calls `onFallback` if provided
+   *
+   * @default false
+   *
+   * @example Strict mode (Chrome/Firefox/Edge only)
+   * ```ts
+   * try {
+   *   parse(csv, {
+   *     engine: {
+   *       worker: true,
+   *       workerStrategy: "stream-transfer",
+   *       strict: true
+   *     }
+   *   })
+   * } catch (error) {
+   *   // Safari will throw error here
+   *   console.error('Stream transfer not supported:', error);
+   * }
+   * ```
+   */
+  strict?: boolean;
+
+  /**
+   * Callback when engine configuration fallback occurs.
+   *
+   * Called when the requested configuration fails and falls back to a safer configuration.
+   * Not called if `strict: true` (throws error instead).
+   *
+   * Common fallback scenario:
+   * - `workerStrategy: "stream-transfer"` → `"message-streaming"` (Safari)
+   *
+   * @example Track fallback in analytics
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer",
+   *     onFallback: (info) => {
+   *       console.warn(`Fallback occurred: ${info.reason}`);
+   *       analytics.track('engine-fallback', {
+   *         reason: info.reason,
+   *         userAgent: navigator.userAgent
+   *       });
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  onFallback?: (info: EngineFallbackInfo) => void;
 }
 
 /**
- * Execution configuration for CSV parsing.
+ * Engine configuration options.
  *
  * @category Types
  */
-export interface ExecutionOptions extends WorkerOptions {
+export interface EngineOptions {
   /**
-   * Execution strategy or combination of strategies.
+   * Engine configuration for CSV parsing.
    *
-   * @default [] (main thread with default implementation)
-   *
-   * @remarks
-   * - Empty array or undefined: Execute in main thread (default)
-   * - Single strategy: `['worker']` or `['wasm']`
-   * - Combined strategies: `['worker', 'wasm']` executes WASM inside Worker
-   *
-   * @example Main thread (default)
+   * @example Default (main thread)
    * ```ts
-   * parse(csv)  // or parse(csv, { execution: [] })
+   * parse(csv)
    * ```
    *
-   * @example Worker thread
+   * @example Worker
    * ```ts
-   * parse(csv, { execution: ['worker'] })
+   * parse(csv, { engine: { worker: true } })
    * ```
    *
-   * @example WASM in main thread
+   * @example Worker + WASM
    * ```ts
    * await loadWASM();
-   * parse(csv, { execution: ['wasm'] })
+   * parse(csv, { engine: { worker: true, wasm: true } })
    * ```
    *
-   * @example WASM in Worker thread
+   * @example Worker + Stream transfer
    * ```ts
-   * await loadWASM();
-   * parse(csv, { execution: ['worker', 'wasm'] })
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer"
+   *   }
+   * })
    * ```
    */
-  execution?: ExecutionStrategy[];
+  engine?: EngineConfig;
 }
 
 /**
@@ -478,15 +646,18 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
-    ExecutionOptions,
+    EngineOptions,
     AbortSignalOptions {}
 
 /**
  * Parse options for CSV binary.
  * @category Types
  */
-export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
-  extends ParseOptions<Header>,
+export interface ParseBinaryOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends ParseOptions<Header, Delimiter, Quotation>,
     BinaryOptions {}
 
 /**

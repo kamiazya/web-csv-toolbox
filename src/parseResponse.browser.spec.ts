@@ -1,19 +1,19 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
+import type { EngineConfig } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseResponse } from "./parseResponse.ts";
 import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";
 
 // Test each execution strategy (WASM doesn't support streaming)
 describe("parseResponse with execution strategies", () => {
-  const strategies: Array<{ name: string; execution: ExecutionStrategy[] }> = [
-    { name: "main thread (default)", execution: [] },
-    { name: "worker", execution: ["worker"] },
+  const strategies: Array<{ name: string; engine?: EngineConfig }> = [
+    { name: "main thread (default)", engine: undefined },
+    { name: "worker", engine: { worker: true } },
   ];
 
-  for (const { name, execution } of strategies) {
+  for (const { name, engine } of strategies) {
     it(`should parse CSV with ${name}`, () =>
       fc.assert(
         fc.asyncProperty(
@@ -68,7 +68,7 @@ describe("parseResponse with execution strategies", () => {
           async ({ data, response }) => {
             let i = 0;
             // parseResponse returns AsyncIterableIterator directly, not Promise<AsyncIterableIterator>
-            for await (const row of parseResponse(response, { execution })) {
+            for await (const row of parseResponse(response, { engine })) {
               expect(data[i++]).toStrictEqual(row);
             }
           },
@@ -156,7 +156,7 @@ describe("parseResponse with execution strategies", () => {
           },
         },
       );
-      for await (const _ of parseResponse(response, { execution: ["wasm"] })) {
+      for await (const _ of parseResponse(response, { engine: { wasm: true } })) {
         // Do nothing
       }
       throw new Error("Should have thrown an error");

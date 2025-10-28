@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseString } from "../../../parseString.ts";
-import { WorkerPool } from "./WorkerPool.ts";
+import { ReusableWorkerPool as WorkerPool } from "./ReusableWorkerPool.ts";
 
 /**
  * Test to verify WorkerPool with maxWorkers=1 behaves the same as WorkerManager
@@ -22,8 +22,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv1, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -32,8 +31,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv2, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -42,8 +40,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv3, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -100,8 +97,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv1, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -110,8 +106,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv2, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }
@@ -120,8 +115,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv3, {
-            execution: ["worker"],
-            workerPool: pool,
+            engine: { worker: true, workerPool: pool },
           })) {
             records.push(record);
           }

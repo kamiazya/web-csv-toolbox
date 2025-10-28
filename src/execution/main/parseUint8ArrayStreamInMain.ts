@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { parseUint8ArrayStreamToStream } from "../../parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
 
@@ -13,9 +14,11 @@ import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamT
  */
 export function parseUint8ArrayStreamInMain<
   Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 >(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing stream implementation
   const recordStream = parseUint8ArrayStreamToStream(stream, options);

@@ -37,7 +37,6 @@ export async function* sendWorkerMessage<T>(
   options?: ParseOptions<any> | ParseBinaryOptions<any>,
   transfer?: Transferable[],
 ): AsyncIterableIterator<T> {
-  const records: T[] = [];
   let resolveNext: ((value: IteratorResult<T>) => void) | null = null;
   let done = false;
   let error: Error | null = null;
@@ -46,15 +45,10 @@ export async function* sendWorkerMessage<T>(
     const data = event.data as StreamResponse;
     if (data.id === message.id) {
       if (data.type === "record" && data.record !== undefined) {
-        records.push(data.record);
-        // If someone is waiting, give them a record immediately
         if (resolveNext) {
           const resolve = resolveNext;
           resolveNext = null;
-          const record = records.shift();
-          if (record !== undefined) {
-            resolve({ value: record, done: false });
-          }
+          resolve({ value: data.record as T, done: false });
         }
       } else if (data.type === "done") {
         done = true;
@@ -137,28 +131,24 @@ export async function* sendWorkerMessage<T>(
 
   // Yield records as they arrive
   try {
-    while (!done || records.length > 0) {
+    while (!done) {
       if (error) {
         throw error;
       }
-      if (records.length > 0) {
-        yield records.shift()!;
-      } else if (!done) {
-        // Wait for next record
-        const result = await new Promise<IteratorResult<T>>((resolve) => {
-          resolveNext = resolve;
-        });
-        if (error) {
-          throw error;
-        }
-        // If we got a record, yield it
-        if (!result.done && result.value !== undefined) {
-          yield result.value;
-        }
-        // If the promise resolved but with done=true and no more records, exit
-        if (result.done && records.length === 0) {
-          break;
-        }
+      // Wait for next record
+      const result = await new Promise<IteratorResult<T>>((resolve) => {
+        resolveNext = resolve;
+      });
+      if (error) {
+        throw error;
+      }
+      // If we got a record, yield it
+      if (!result.done && result.value !== undefined) {
+        yield result.value;
+      }
+      // If done, exit
+      if (result.done) {
+        break;
       }
     }
   } finally {

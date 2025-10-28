@@ -19,7 +19,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv1, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -28,7 +28,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv2, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -37,7 +37,7 @@ describe.skipIf(typeof window === "undefined")(
         (async () => {
           const records = [];
           for await (const record of parseString(csv3, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }

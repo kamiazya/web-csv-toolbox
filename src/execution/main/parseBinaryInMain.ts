@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { parseBinaryToIterableIterator } from "../../parseBinaryToIterableIterator.ts";
 import { convertIterableIteratorToAsync } from "../../utils/convertIterableIteratorToAsync.ts";
 
@@ -11,9 +12,13 @@ import { convertIterableIteratorToAsync } from "../../utils/convertIterableItera
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export function parseBinaryInMain<Header extends ReadonlyArray<string>>(
+export function parseBinaryInMain<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
   binary: Uint8Array | ArrayBuffer,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing binary parsing implementation
   const iterator = parseBinaryToIterableIterator(binary, options);

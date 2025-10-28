@@ -230,17 +230,17 @@ describe("parseString.toStream function", () => {
 describe("parseString with execution strategies", () => {
   // Note: WASM tests may fail if WASM module is not properly initialized in test environment
   // Worker tests are skipped in Node.js environment and only run in browser tests
-  const strategies: Array<{ name: string; execution: ExecutionStrategy[] }> = [
-    { name: "main thread (default)", execution: [] },
-    { name: "worker", execution: ["worker"] },
+  const strategies: Array<{ name: string; engine?: EngineConfig }> = [
+    { name: "main thread (default)", engine: undefined },
+    { name: "worker", engine: { worker: true } },
   ];
 
   // TODO: Enable WASM tests when WASM module initialization is fixed in test environment
-  // { name: "wasm", execution: ["wasm"] },
-  // { name: "worker + wasm", execution: ["worker", "wasm"] },
+  // { name: "wasm", engine: { wasm: true } },
+  // { name: "worker + wasm", engine: { worker: true, wasm: true } },
 
-  for (const { name, execution } of strategies) {
-    it.skipIf(execution.includes("worker") && typeof window === "undefined")(
+  for (const { name, engine } of strategies) {
+    it.skipIf(engine?.worker && typeof window === "undefined")(
       `should parse CSV with ${name}`,
       () =>
         fc.assert(
@@ -272,7 +272,7 @@ describe("parseString with execution strategies", () => {
             }),
             async ({ data, csv }) => {
               let i = 0;
-              for await (const record of parseString(csv, { execution })) {
+              for await (const record of parseString(csv, { engine })) {
                 expect(data[i++]).toEqual(record);
               }
             },
@@ -286,7 +286,7 @@ describe("parseString with execution strategies", () => {
     "should handle errors properly in worker execution",
     async () => {
       await expect(async () => {
-        for await (const _ of parseString('a\na"', { execution: ["worker"] })) {
+        for await (const _ of parseString('a\na"', { engine: { worker: true } })) {
           // Do nothing.
         }
       }).rejects.toThrow();
@@ -298,7 +298,7 @@ describe("parseString with execution strategies", () => {
     async () => {
       await expect(async () => {
         for await (const _ of parseString("", {
-          execution: ["worker"],
+          engine: { worker: true },
           delimiter: "" as string,
         })) {
           // Do nothing.
@@ -367,7 +367,7 @@ describe("parseString with execution strategies", () => {
         (async () => {
           const records = [];
           for await (const record of parseString(csv1, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -376,7 +376,7 @@ describe("parseString with execution strategies", () => {
         (async () => {
           const records = [];
           for await (const record of parseString(csv2, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }
@@ -385,7 +385,7 @@ describe("parseString with execution strategies", () => {
         (async () => {
           const records = [];
           for await (const record of parseString(csv3, {
-            execution: ["worker"],
+            engine: { worker: true },
           })) {
             records.push(record);
           }

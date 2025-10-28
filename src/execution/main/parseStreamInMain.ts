@@ -1,4 +1,5 @@
 import type { CSVRecord, ParseOptions } from "../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { parseStringStreamToStream } from "../../parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
 
@@ -11,9 +12,13 @@ import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamT
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export function parseStreamInMain<Header extends ReadonlyArray<string>>(
+export function parseStreamInMain<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
+  options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing stream implementation
   const recordStream = parseStringStreamToStream(stream, options);

@@ -1,14 +1,14 @@
-import { WorkerPool } from "./WorkerPool.ts";
+import { TransientWorkerPool } from "./TransientWorkerPool.ts";
 
 /**
- * Global default worker pool (single worker for backward compatibility).
- * Provides centralized worker lifecycle management.
+ * Global default worker pool using transient workers.
+ * Workers are automatically terminated after each job to prevent process hanging.
  *
- * Users can use WorkerPool directly for multiple workers.
+ * Users can use ReusableWorkerPool directly for persistent worker pools.
  *
  * @internal
  */
-const defaultPool = new WorkerPool({ maxWorkers: 1 });
+const defaultPool = new TransientWorkerPool();
 
 /**
  * Get or create a worker instance from the default pool.
@@ -30,12 +30,13 @@ export function getNextRequestId(): number {
 }
 
 /**
- * Terminate the default worker pool.
+ * Release a worker back to the default pool.
+ * For the default transient pool, this terminates the worker.
  *
  * @internal
  */
-export function terminateWorker(): void {
-  defaultPool[Symbol.dispose]();
+export function releaseWorker(worker: Worker): void {
+  defaultPool.releaseWorker(worker);
 }
 
 /**

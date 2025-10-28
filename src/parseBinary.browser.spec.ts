@@ -1,23 +1,23 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
+import type { EngineConfig } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseBinary } from "./parseBinary.ts";
 
 // Test each execution strategy
 describe("parseBinary with execution strategies", () => {
   // Note: WASM tests may fail if WASM module is not properly initialized in test environment
-  const strategies: Array<{ name: string; execution: ExecutionStrategy[] }> = [
-    { name: "main thread (default)", execution: [] },
-    { name: "worker", execution: ["worker"] },
+  const strategies: Array<{ name: string; engine?: EngineConfig }> = [
+    { name: "main thread (default)", engine: undefined },
+    { name: "worker", engine: { worker: true } },
   ];
 
   // TODO: Enable WASM tests when WASM module initialization is fixed in test environment
-  // { name: "wasm", execution: ["wasm"] },
-  // { name: "worker + wasm", execution: ["worker", "wasm"] },
+  // { name: "wasm", engine: { wasm: true } },
+  // { name: "worker + wasm", engine: { worker: true, wasm: true } },
 
-  for (const { name, execution } of strategies) {
+  for (const { name, engine } of strategies) {
     it(`should parse CSV with ${name}`, () =>
       fc.assert(
         fc.asyncProperty(
@@ -62,7 +62,7 @@ describe("parseBinary with execution strategies", () => {
           }),
           async ({ data, csv }) => {
             let i = 0;
-            for await (const row of parseBinary(csv, { execution })) {
+            for await (const row of parseBinary(csv, { engine })) {
               expect(data[i++]).toStrictEqual(row);
             }
           },
@@ -110,11 +110,11 @@ describe("parseBinary with execution strategies", () => {
           // Parse with each execution strategy sequentially to avoid detached ArrayBuffer issues
           // Note: Using Promise.all would cause ArrayBuffer transfer conflicts in workers
           const results = [];
-          for (const { execution } of strategies) {
+          for (const { engine } of strategies) {
             const records = [];
             // Create a deep copy of the ArrayBuffer for each strategy
             const csvCopy = csv.slice();
-            for await (const record of parseBinary(csvCopy, { execution })) {
+            for await (const record of parseBinary(csvCopy, { engine })) {
               records.push(record);
             }
             results.push(records);

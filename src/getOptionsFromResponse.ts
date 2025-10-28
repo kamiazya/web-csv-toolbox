@@ -1,4 +1,5 @@
 import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import type { ParseBinaryOptions } from "./common/types.ts";
 import { parseMime } from "./utils/parseMime.ts";
 
@@ -10,10 +11,14 @@ import { parseMime } from "./utils/parseMime.ts";
  * @returns The options extracted from the response.
  * @throws {TypeError} - The content type is not supported or the content-encoding is invalid.
  */
-export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
+export function getOptionsFromResponse<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   response: Response,
-  options: ParseBinaryOptions<Header> = {},
-): ParseBinaryOptions<Header> {
+  options: ParseBinaryOptions<Header, Delimiter, Quotation> = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+): ParseBinaryOptions<Header, Delimiter, Quotation> {
   const { headers } = response;
   const contentType = headers.get("content-type") ?? "text/csv";
   const mime = parseMime(contentType);

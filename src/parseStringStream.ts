@@ -1,6 +1,8 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
-import { routeStreamParsing } from "./execution/router.ts";
+import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
+import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
 import { parseStringStreamToStream } from "./parseStringStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -15,6 +17,32 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * @returns Async iterable iterator of records.
  *
  * If you want array of records, use {@link parseStringStream.toArray} function.
+ *
+ * @remarks
+ * **Stream Execution Strategies:**
+ *
+ * For streams, the engine configuration supports two worker strategies:
+ * - **stream-transfer** (recommended): Zero-copy stream transfer to worker
+ *   - Supported on Chrome, Firefox, Edge
+ *   - Automatically falls back to message-streaming on Safari
+ * - **message-streaming**: Records sent via postMessage
+ *   - Works on all browsers including Safari
+ *   - Slightly higher overhead but more compatible
+ *
+ * By default, streams use main thread execution. To use workers with streams:
+ * ```ts
+ * import { parseStringStream, EnginePresets } from 'web-csv-toolbox';
+ *
+ * // Use worker with automatic stream-transfer (falls back if not supported)
+ * for await (const record of parseStringStream(stream, {
+ *   engine: EnginePresets.workerStreamTransfer()
+ * })) {
+ *   console.log(record);
+ * }
+ * ```
+ *
+ * Note: WASM execution is not supported for streams. If you specify
+ * `engine: { wasm: true }` with a stream, it will fall back to main thread.
  *
  * @example Parsing CSV files from strings
  *
@@ -32,12 +60,28 @@ import type { PickCSVHeader } from "./utils/types.ts";
  *   },
  * });
  *
- * for await (const record of parseStringStream(csv)) {
+ * for await (const record of parseStringStream(stream)) {
  *   console.log(record);
  * }
  * // Prints:
  * // { name: 'Alice', age: '42' }
  * // { name: 'Bob', age: '69' }
+ * ```
+ *
+ * @example Using worker with stream transfer for large files
+ * ```ts
+ * import { parseStringStream } from 'web-csv-toolbox';
+ *
+ * const response = await fetch('large-file.csv');
+ * const stream = response.body
+ *   .pipeThrough(new TextDecoderStream());
+ *
+ * // Use worker with stream-transfer strategy
+ * for await (const record of parseStringStream(stream, {
+ *   engine: { worker: true, workerStrategy: 'stream-transfer' }
+ * })) {
+ *   console.log(record);
+ * }
  * ```
  */
 export function parseStringStream<
@@ -68,16 +112,33 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
   stream: ReadableStream<string>,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  // If execution strategies are specified, use the router
-  if (options?.execution && options.execution.length > 0) {
-    const result = await routeStreamParsing(stream, options);
-    yield* result;
-    return;
-  }
+  // Parse engine configuration
+  const engineConfig = new InternalEngineConfig(options?.engine);
 
-  // Default: use existing implementation (backward compatible)
-  const recordStream = parseStringStreamToStream(stream, options);
-  yield* convertStreamToAsyncIterableIterator(recordStream);
+  // Note: Worker execution with ReadableStream requires TransferableStream support
+  // which is not available in Safari. For now, always use main thread execution.
+  // TODO: Implement stream-transfer strategy for browsers that support it
+  if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
+    // Worker execution with stream-transfer strategy
+    const session = engineConfig.workerPool
+      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      : null;
+
+    try {
+      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+        stream,
+        options,
+        session,
+        engineConfig,
+      );
+    } finally {
+      session?.[Symbol.dispose]();
+    }
+  } else {
+    // Main thread execution (default for streams)
+    const recordStream = parseStringStreamToStream(stream, options);
+    yield* convertStreamToAsyncIterableIterator(recordStream);
+  }
 }
 
 export declare namespace parseStringStream {
