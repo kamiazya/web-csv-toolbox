@@ -162,26 +162,26 @@ export class Lexer<
       return token;
     }
 
-// Check for Delimiter
-if (this.#buffer.startsWith(this.#delimiter)) {
-  const start: Position = { ...this.#cursor };
+    // Check for Delimiter
+    if (this.#buffer.startsWith(this.#delimiter)) {
+      const start: Position = { ...this.#cursor };
 
-  // Consume the delimiter
-  this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength);
-  this.#cursor.column += this.#fieldDelimiterLength;
-  this.#cursor.offset += this.#fieldDelimiterLength;
+      // Consume the delimiter
+      this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength);
+      this.#cursor.column += this.#fieldDelimiterLength;
+      this.#cursor.offset += this.#fieldDelimiterLength;
 
-  // Always return delimiter token – empty field detection happens later in parser
-  return {
-    type: FieldDelimiter,
-    value: this.#delimiter,
-    location: {
-      start,
-      end: { ...this.#cursor },
-      rowNumber: this.#rowNumber,
-    },
-  };
-}
+      // Always return delimiter token – empty field detection happens later in parser
+      return {
+        type: FieldDelimiter,
+        value: this.#delimiter,
+        location: {
+          start,
+          end: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+        },
+      };
+    }
 
     // Check for Quoted String
     if (this.#buffer.startsWith(this.#quotation)) {
@@ -207,7 +207,7 @@ if (this.#buffer.startsWith(this.#delimiter)) {
        */
       let value = "";
       let offset = this.#quotation.length; // Skip the opening quote
-      let column = this.#quotation.length + 1;// Skip the opening quote
+      let column = this.#quotation.length + 1; // Skip the opening quote
       let line = 0;
 
       // Define variables
