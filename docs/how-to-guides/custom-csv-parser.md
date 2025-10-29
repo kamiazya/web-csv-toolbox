@@ -118,7 +118,7 @@ for (const record of parsePSV('name|age\r\nAlice|30\r\n')) {
 
 ## Custom Headers
 
-### Skip Header Row
+### Use Custom Header
 
 ```typescript
 import { Lexer, RecordAssembler } from 'web-csv-toolbox';
@@ -127,22 +127,22 @@ function parseWithCustomHeader(csv: string, header: string[]) {
   const lexer = new Lexer();
   const tokens = lexer.lex(csv);
 
-  // Pre-define header (skips first row)
+  // Pre-define header (all rows treated as data)
   const assembler = new RecordAssembler({ header });
   const records = assembler.assemble(tokens);
 
   return records;
 }
 
-// Usage (CSV has header, but we use custom field names)
+// Usage: CSV without header row - use custom field names
 for (const record of parseWithCustomHeader(
-  'first_name,last_name\r\nAlice,Smith\r\n',
+  'Alice,Smith\r\nBob,Johnson\r\n',
   ['firstName', 'lastName']
 )) {
   console.log(record);
 }
-// { firstName: 'first_name', lastName: 'last_name' } // First data row (header ignored)
 // { firstName: 'Alice', lastName: 'Smith' }
+// { firstName: 'Bob', lastName: 'Johnson' }
 ```
 
 ---

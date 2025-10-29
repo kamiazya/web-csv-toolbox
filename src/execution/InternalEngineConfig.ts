@@ -1,7 +1,7 @@
 import type {
   EngineConfig,
   EngineFallbackInfo,
-  WorkerStrategy,
+  WorkerCommunicationStrategy,
 } from "../common/types.ts";
 import type { WorkerPool } from "./worker/helpers/WorkerPool.ts";
 
@@ -40,6 +40,23 @@ export class InternalEngineConfig {
 
     this.applyDefaults();
     this.validate();
+  }
+
+  /**
+   * Private constructor for cloning.
+   */
+  private static fromBitmask(
+    bitmask: number,
+    workerURL?: string | URL,
+    workerPool?: WorkerPool,
+    onFallback?: (info: EngineFallbackInfo) => void,
+  ): InternalEngineConfig {
+    const instance = Object.create(InternalEngineConfig.prototype);
+    instance.bitmask = bitmask;
+    (instance as { workerURL?: string | URL }).workerURL = workerURL;
+    (instance as { workerPool?: WorkerPool }).workerPool = workerPool;
+    (instance as { onFallback?: (info: EngineFallbackInfo) => void }).onFallback = onFallback;
+    return instance;
   }
 
   private parse(config: EngineConfig): void {
@@ -147,9 +164,9 @@ export class InternalEngineConfig {
   }
 
   /**
-   * Get worker strategy.
+   * Get worker communication strategy.
    */
-  getWorkerStrategy(): WorkerStrategy | undefined {
+  getWorkerStrategy(): WorkerCommunicationStrategy | undefined {
     if (this.hasStreamTransfer()) {
       return "stream-transfer";
     }
@@ -165,24 +182,25 @@ export class InternalEngineConfig {
    * Converts stream-transfer to message-streaming and disables strict mode.
    */
   createFallbackConfig(): InternalEngineConfig {
-    const fallbackConfig = new InternalEngineConfig();
-    fallbackConfig.bitmask = this.bitmask;
-    (fallbackConfig as any).workerURL = this.workerURL;
-    (fallbackConfig as any).workerPool = this.workerPool;
-    (fallbackConfig as any).onFallback = this.onFallback;
+    let fallbackBitmask = this.bitmask;
 
     // Stream transfer -> message streaming
-    if (fallbackConfig.hasStreamTransfer()) {
-      fallbackConfig.removeFlag(EngineFlags.STREAM_TRANSFER);
-      fallbackConfig.addFlag(EngineFlags.MESSAGE_STREAMING);
+    if ((fallbackBitmask & EngineFlags.STREAM_TRANSFER) !== 0) {
+      fallbackBitmask &= ~EngineFlags.STREAM_TRANSFER;
+      fallbackBitmask |= EngineFlags.MESSAGE_STREAMING;
     }
 
     // Disable strict mode
-    if (fallbackConfig.hasStrict()) {
-      fallbackConfig.removeFlag(EngineFlags.STRICT);
+    if ((fallbackBitmask & EngineFlags.STRICT) !== 0) {
+      fallbackBitmask &= ~EngineFlags.STRICT;
     }
 
-    return fallbackConfig;
+    return InternalEngineConfig.fromBitmask(
+      fallbackBitmask,
+      this.workerURL,
+      this.workerPool,
+      this.onFallback,
+    );
   }
 
   /**

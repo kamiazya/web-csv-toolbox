@@ -113,13 +113,15 @@ for await (const record of parseBinary(shiftJISData, {
 
 ##### `decomposition`
 
-**Type:** `'gzip' | 'deflate' | 'gzip, deflate'`
+**Type:** `'gzip' | 'deflate' | 'deflate-raw'` (and `'br'` if supported by browser)
 
 **Default:** `undefined` (no decompression)
 
-Decompression algorithm to apply before parsing.
+Single decompression algorithm to apply before parsing. Accepts one compression format supported by the platform's `DecompressionStream` API.
 
-**Example:**
+**Note:** For data compressed with multiple algorithms (e.g., Content-Encoding: `gzip, deflate`), you must chain `DecompressionStream` instances manually. This option only accepts a single algorithm.
+
+**Example (single compression):**
 ```typescript
 import { parseBinary } from 'web-csv-toolbox';
 
@@ -132,7 +134,30 @@ for await (const record of parseBinary(gzippedData, {
 }
 ```
 
-**Note:** Requires platform support for `DecompressionStream` API.
+**Example (multiple compressions - manual chaining):**
+```typescript
+import { parseUint8ArrayStream } from 'web-csv-toolbox';
+
+// Data compressed with both gzip and deflate (applied in that order)
+const doubleCompressedData = new Uint8Array([...]);
+const stream = new ReadableStream({
+  start(controller) {
+    controller.enqueue(doubleCompressedData);
+    controller.close();
+  }
+});
+
+// Decompress in reverse order: first deflate, then gzip
+const decompressed = stream
+  .pipeThrough(new DecompressionStream('deflate'))
+  .pipeThrough(new DecompressionStream('gzip'));
+
+for await (const record of parseUint8ArrayStream(decompressed)) {
+  console.log(record);
+}
+```
+
+**Platform support:** Requires `DecompressionStream` API. See [MDN Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility).
 
 ---
 

@@ -9,10 +9,9 @@ describe.skip("parseBinaryInWASM", () => {
     it("should parse Uint8Array CSV", async () => {
       const csv = "name,age\nAlice,30\nBob,25";
       const binary = encoder.encode(csv);
-      const iterator = await parseBinaryInWASM(binary);
       const records: CSVRecord<["name", "age"]>[] = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(binary)) {
         records.push(record as CSVRecord<["name", "age"]>);
       }
 
@@ -25,10 +24,9 @@ describe.skip("parseBinaryInWASM", () => {
     it("should handle empty Uint8Array CSV", async () => {
       const csv = "name,age";
       const binary = encoder.encode(csv);
-      const iterator = await parseBinaryInWASM(binary);
       const records = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(binary)) {
         records.push(record);
       }
 
@@ -40,10 +38,9 @@ describe.skip("parseBinaryInWASM", () => {
     it("should parse ArrayBuffer CSV", async () => {
       const csv = "name,age\nAlice,30";
       const buffer = encoder.encode(csv).buffer;
-      const iterator = await parseBinaryInWASM(buffer);
       const records: CSVRecord<["name", "age"]>[] = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(buffer)) {
         records.push(record as CSVRecord<["name", "age"]>);
       }
 
@@ -55,12 +52,11 @@ describe.skip("parseBinaryInWASM", () => {
     it("should respect delimiter option", async () => {
       const csv = "name;age\nAlice;30";
       const binary = encoder.encode(csv);
-      const iterator = await parseBinaryInWASM(binary, {
-        delimiter: ";",
-      });
       const records = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(binary, {
+        delimiter: ";",
+      })) {
         records.push(record);
       }
 
@@ -70,12 +66,11 @@ describe.skip("parseBinaryInWASM", () => {
     it("should respect charset option (utf-8 default)", async () => {
       const csv = "name,age\nAlice,30";
       const binary = encoder.encode(csv);
-      const iterator = await parseBinaryInWASM(binary, {
-        charset: "utf-8",
-      });
       const records = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(binary, {
+        charset: "utf-8",
+      })) {
         records.push(record);
       }
 
@@ -85,12 +80,11 @@ describe.skip("parseBinaryInWASM", () => {
     it("should use provided header", async () => {
       const csv = "Alice,30\nBob,25";
       const binary = encoder.encode(csv);
-      const iterator = await parseBinaryInWASM(binary, {
-        header: ["name", "age"],
-      });
       const records: CSVRecord<["name", "age"]>[] = [];
 
-      for await (const record of iterator) {
+      for await (const record of parseBinaryInWASM(binary, {
+        header: ["name", "age"],
+      })) {
         records.push(record as CSVRecord<["name", "age"]>);
       }
 
@@ -101,24 +95,20 @@ describe.skip("parseBinaryInWASM", () => {
     });
   });
 
-  it("should return async iterable iterator wrapped in Promise", async () => {
+  it("should return async iterable iterator", async () => {
     const csv = "name,age\nAlice,30";
     const binary = encoder.encode(csv);
     const result = parseBinaryInWASM(binary);
 
-    expect(result).toBeInstanceOf(Promise);
-
-    const iterator = await result;
-    expect(typeof iterator[Symbol.asyncIterator]).toBe("function");
+    expect(typeof result[Symbol.asyncIterator]).toBe("function");
   });
 
   it("should handle quoted values", async () => {
     const csv = 'name,value\n"Alice","test value"';
     const binary = encoder.encode(csv);
-    const iterator = await parseBinaryInWASM(binary);
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseBinaryInWASM(binary)) {
       records.push(record);
     }
 
@@ -132,11 +122,9 @@ describe.skip("parseBinaryInWASM", () => {
     }
     const csv = rows.join("\n");
     const binary = encoder.encode(csv);
-
-    const iterator = await parseBinaryInWASM(binary);
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseBinaryInWASM(binary)) {
       records.push(record);
     }
 

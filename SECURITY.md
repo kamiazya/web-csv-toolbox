@@ -2,9 +2,9 @@
 
 ## Reporting Security Vulnerabilities
 
-If you discover a security vulnerability in web-csv-toolbox, please report it privately:
+If you discover a security vulnerability in web-csv-toolbox, please report it privately through GitHub Security Advisories:
 
-**Email:** [security contact to be added]
+**👉 [Report a Vulnerability](https://github.com/kamiazya/web-csv-toolbox/security/advisories/new)**
 
 **Please include:**
 - Description of the vulnerability
@@ -12,9 +12,9 @@ If you discover a security vulnerability in web-csv-toolbox, please report it pr
 - Potential impact
 - Suggested fix (if any)
 
-**Response time:**
-- We aim to respond within 48 hours
-- Security patches will be prioritized
+**Response:**
+- Security reports will be reviewed and addressed on a best-effort basis
+- Critical vulnerabilities will be prioritized
 
 ## Supported Versions
 
@@ -190,12 +190,12 @@ if (pool.isFull()) {
 
 We follow responsible disclosure:
 
-1. **Report received** → Private acknowledgment (48h)
+1. **Report received** → Private acknowledgment
 2. **Vulnerability confirmed** → Private discussion of fix
 3. **Patch developed** → Testing and validation
 4. **Patch released** → Public disclosure with credit
 
-**Public disclosure timeline:** 90 days after patch release, or earlier by mutual agreement.
+Security fixes will be addressed on a best-effort basis as this is a personal open-source project.
 
 ## Security Updates
 
@@ -213,5 +213,3 @@ We credit security researchers who responsibly disclose vulnerabilities (with pe
 ## Contact
 
 For general security questions (non-vulnerability): Open a [GitHub Discussion](https://github.com/kamiazya/web-csv-toolbox/discussions)
-
-For security vulnerabilities: [Contact privately via email]

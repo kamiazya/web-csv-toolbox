@@ -15,10 +15,10 @@ import { parseStringToArraySyncWASM } from "../../parseStringToArraySyncWASM.ts"
  * - Only supports UTF-8 encoding
  * - Only supports double-quote (") as quotation character
  */
-export async function parseBinaryInWASM<Header extends ReadonlyArray<string>>(
+export function parseBinaryInWASM<Header extends ReadonlyArray<string>>(
   binary: Uint8Array | ArrayBuffer,
   options?: ParseBinaryOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   // Convert binary to string
   const decoder = new TextDecoder(options?.charset ?? "utf-8");
   const csv = decoder.decode(binary);

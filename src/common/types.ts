@@ -359,9 +359,11 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
 /**
  * Worker communication strategy.
  *
+ * Defines how data is communicated between the main thread and worker threads.
+ *
  * @category Types
  */
-export type WorkerStrategy = "message-streaming" | "stream-transfer";
+export type WorkerCommunicationStrategy = "message-streaming" | "stream-transfer";
 
 /**
  * Engine fallback information.
@@ -534,7 +536,7 @@ export interface EngineConfig {
    * })
    * ```
    */
-  workerStrategy?: WorkerStrategy;
+  workerStrategy?: WorkerCommunicationStrategy;
 
   /**
    * Strict mode: disable automatic fallback.

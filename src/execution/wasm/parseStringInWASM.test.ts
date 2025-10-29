@@ -5,10 +5,9 @@ import type { CSVRecord } from "../../common/types.ts";
 describe.skip("parseStringInWASM", () => {
   it("should parse simple CSV string", async () => {
     const csv = "name,age\nAlice,30\nBob,25";
-    const iterator = await parseStringInWASM(csv);
     const records: CSVRecord<["name", "age"]>[] = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv)) {
       records.push(record as CSVRecord<["name", "age"]>);
     }
 
@@ -20,10 +19,9 @@ describe.skip("parseStringInWASM", () => {
 
   it("should handle empty CSV", async () => {
     const csv = "name,age";
-    const iterator = await parseStringInWASM(csv);
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv)) {
       records.push(record);
     }
 
@@ -32,10 +30,9 @@ describe.skip("parseStringInWASM", () => {
 
   it("should respect delimiter option", async () => {
     const csv = "name;age\nAlice;30";
-    const iterator = await parseStringInWASM(csv, { delimiter: ";" });
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv, { delimiter: ";" })) {
       records.push(record);
     }
 
@@ -44,12 +41,11 @@ describe.skip("parseStringInWASM", () => {
 
   it("should use provided header", async () => {
     const csv = "Alice,30\nBob,25";
-    const iterator = await parseStringInWASM(csv, {
-      header: ["name", "age"],
-    });
     const records: CSVRecord<["name", "age"]>[] = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv, {
+      header: ["name", "age"],
+    })) {
       records.push(record as CSVRecord<["name", "age"]>);
     }
 
@@ -59,22 +55,18 @@ describe.skip("parseStringInWASM", () => {
     ]);
   });
 
-  it("should return async iterable iterator wrapped in Promise", async () => {
+  it("should return async iterable iterator", async () => {
     const csv = "name,age\nAlice,30";
     const result = parseStringInWASM(csv);
 
-    expect(result).toBeInstanceOf(Promise);
-
-    const iterator = await result;
-    expect(typeof iterator[Symbol.asyncIterator]).toBe("function");
+    expect(typeof result[Symbol.asyncIterator]).toBe("function");
   });
 
   it("should handle quoted values with default quotation", async () => {
     const csv = 'name,value\n"Alice","test value"';
-    const iterator = await parseStringInWASM(csv);
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv)) {
       records.push(record);
     }
 
@@ -87,11 +79,9 @@ describe.skip("parseStringInWASM", () => {
       rows.push(`Person${i},${20 + i}`);
     }
     const csv = rows.join("\n");
-
-    const iterator = await parseStringInWASM(csv);
     const records = [];
 
-    for await (const record of iterator) {
+    for await (const record of parseStringInWASM(csv)) {
       records.push(record);
     }
 

@@ -15,10 +15,10 @@ import { parseStringToArraySyncWASM } from "../../parseStringToArraySyncWASM.ts"
  * - Only supports double-quote (") as quotation character
  * - Synchronous operation (no streaming)
  */
-export async function parseStringInWASM<Header extends ReadonlyArray<string>>(
+export function parseStringInWASM<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
-): Promise<AsyncIterableIterator<CSVRecord<Header>>> {
+): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing WASM implementation
   const records = parseStringToArraySyncWASM(csv, options);
 
