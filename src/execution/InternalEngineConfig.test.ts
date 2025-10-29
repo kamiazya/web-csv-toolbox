@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { InternalEngineConfig, EngineFlags } from "./InternalEngineConfig.ts";
 import type { EngineConfig } from "../common/types.ts";
+import { EngineFlags, InternalEngineConfig } from "./InternalEngineConfig.ts";
 
 describe("InternalEngineConfig", () => {
   describe("Constructor and parsing", () => {
