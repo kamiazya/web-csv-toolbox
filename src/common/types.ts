@@ -364,8 +364,8 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
  * @category Types
  */
 export type WorkerCommunicationStrategy =
-	| "message-streaming"
-	| "stream-transfer";
+  | "message-streaming"
+  | "stream-transfer";
 
 /**
  * Engine fallback information.

@@ -297,7 +297,7 @@ describe("EnginePresets", () => {
 
       expect(config.workerURL).toBeInstanceOf(URL);
       expect(config.workerURL?.toString()).toBe(
-        "https://example.com/workers/csv-parser.js"
+        "https://example.com/workers/csv-parser.js",
       );
     });
 
@@ -310,8 +310,16 @@ describe("EnginePresets", () => {
 
       // Simulate fallback
       config.onFallback?.({
-        requestedConfig: { worker: true, wasm: true, workerStrategy: "stream-transfer" },
-        actualConfig: { worker: true, wasm: true, workerStrategy: "message-streaming" },
+        requestedConfig: {
+          worker: true,
+          wasm: true,
+          workerStrategy: "stream-transfer",
+        },
+        actualConfig: {
+          worker: true,
+          wasm: true,
+          workerStrategy: "message-streaming",
+        },
         reason: "Transferable streams not supported",
       });
 

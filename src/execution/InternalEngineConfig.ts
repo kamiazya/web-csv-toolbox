@@ -55,7 +55,9 @@ export class InternalEngineConfig {
     instance.bitmask = bitmask;
     (instance as { workerURL?: string | URL }).workerURL = workerURL;
     (instance as { workerPool?: WorkerPool }).workerPool = workerPool;
-    (instance as { onFallback?: (info: EngineFallbackInfo) => void }).onFallback = onFallback;
+    (
+      instance as { onFallback?: (info: EngineFallbackInfo) => void }
+    ).onFallback = onFallback;
     return instance;
   }
 
