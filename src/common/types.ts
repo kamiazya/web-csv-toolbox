@@ -334,7 +334,8 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * will be skipped during parsing.
    *
    * @remarks
-   * Moved from {@link ParseOptions} for a more appropriate design placement.
+   * @remarks
+   * Placed in {@link RecordAssemblerOptions} for appropriate design separation.
    * Defaults to false for backward compatibility.
    *
    * @default false
