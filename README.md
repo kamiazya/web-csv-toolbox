@@ -111,6 +111,30 @@ for await (const record of parse(csv, {
 }
 ```
 
+### Working with Headerless CSV Files
+
+Some CSV files don't include a header row. You can provide custom headers manually:
+
+```typescript
+import { parse } from 'web-csv-toolbox';
+
+// Example: Sensor data without headers
+const sensorData = `25.5,60,1024
+26.1,58,1020
+24.8,62,1025`;
+
+// Provide headers explicitly
+for await (const record of parse(sensorData, {
+  header: ['temperature', 'humidity', 'pressure']
+})) {
+  console.log(`Temp: ${record.temperature}°C, Humidity: ${record.humidity}%, Pressure: ${record.pressure} hPa`);
+}
+// Output:
+// Temp: 25.5°C, Humidity: 60%, Pressure: 1024 hPa
+// Temp: 26.1°C, Humidity: 58%, Pressure: 1020 hPa
+// Temp: 24.8°C, Humidity: 62%, Pressure: 1025 hPa
+```
+
 ## Documentation 📖
 
 Our documentation follows the [Diátaxis framework](https://diataxis.fr/) to help you find what you need:
