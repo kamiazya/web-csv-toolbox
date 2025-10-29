@@ -56,10 +56,7 @@ export class WorkerSession implements Disposable {
   private requestIdCounter = 0;
   private readonly workerPool?: WorkerPool;
 
-  private constructor(
-    worker: Worker,
-    workerPool?: WorkerPool,
-  ) {
+  private constructor(worker: Worker, workerPool?: WorkerPool) {
     this.worker = worker;
     this.workerPool = workerPool;
   }
