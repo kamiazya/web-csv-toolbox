@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import type {
+  ParseBinaryOptions,
+  ParseOptions,
+} from "../../../common/types.ts";
 import { serializeOptions } from "./serializeOptions.ts";
-import type { ParseOptions, ParseBinaryOptions } from "../../../common/types.ts";
 
 describe("serializeOptions", () => {
   describe("Basic serialization", () => {

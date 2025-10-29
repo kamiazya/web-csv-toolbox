@@ -73,11 +73,10 @@ export class WorkerSession implements Disposable {
       // Use worker from pool
       worker = await options.workerPool.getWorker(options.workerURL);
       return new WorkerSession(worker, options.workerPool);
-    } else {
-      // Create disposable worker
-      worker = await createWorker(options?.workerURL);
-      return new WorkerSession(worker);
     }
+    // Create disposable worker
+    worker = await createWorker(options?.workerURL);
+    return new WorkerSession(worker);
   }
 
   /**
