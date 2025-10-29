@@ -59,17 +59,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
           if (this.#header === undefined) {
             this.#setHeader(this.#row as unknown as Header);
           } else {
-            const isEmptyLine =
-              this.#row.length === 0 ||
-              this.#row.every((field) => field.trim() === "");
-
-            if (this.#skipEmptyLines && isEmptyLine) {
-              this.#fieldIndex = 0;
-              this.#row = new Array(this.#header?.length).fill("");
-              this.#dirty = false;
-              continue;
-            }
-
+            if (this.#skipEmptyLines && !this.#dirty) continue;
             if (this.#dirty) {
               yield Object.fromEntries(
                 this.#header.map((header, index) => [
