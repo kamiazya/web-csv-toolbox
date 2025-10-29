@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseStreamInMain } from "./parseStreamInMain.ts";
 import type { CSVRecord } from "../../common/types.ts";
+import { parseStreamInMain } from "./parseStreamInMain.ts";
 
 // Helper to create ReadableStream from string
 function createStringStream(str: string): ReadableStream<string> {

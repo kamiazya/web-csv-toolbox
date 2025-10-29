@@ -3,11 +3,11 @@ import type {
   ParseBinaryOptions,
   CSVBinary,
 } from "../../../common/types.ts";
-import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
-import { sendWorkerMessage } from "../utils/messageHandler.ts";
-import { WorkerSession } from "../helpers/WorkerSession.ts";
+import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
+import { WorkerSession } from "../helpers/WorkerSession.ts";
+import { sendWorkerMessage } from "../utils/messageHandler.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
 
 /**

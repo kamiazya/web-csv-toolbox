@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseBinaryInWASM } from "./parseBinaryInWASM.ts";
 import type { CSVRecord } from "../../common/types.ts";
+import { parseBinaryInWASM } from "./parseBinaryInWASM.ts";
 
 describe.skip("parseBinaryInWASM", () => {
   const encoder = new TextEncoder();

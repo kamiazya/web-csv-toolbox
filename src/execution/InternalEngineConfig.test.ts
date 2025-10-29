@@ -150,7 +150,9 @@ describe("InternalEngineConfig", () => {
     it("should set correct bitmask for worker", () => {
       const config = new InternalEngineConfig({ worker: true });
       // Worker (1) + MessageStreaming (8) = 9
-      expect(config.getBitmask()).toBe(EngineFlags.WORKER | EngineFlags.MESSAGE_STREAMING);
+      expect(config.getBitmask()).toBe(
+        EngineFlags.WORKER | EngineFlags.MESSAGE_STREAMING,
+      );
     });
 
     it("should set correct bitmask for wasm", () => {

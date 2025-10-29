@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseStringInWASM } from "./parseStringInWASM.ts";
 import type { CSVRecord } from "../../common/types.ts";
+import { parseStringInWASM } from "./parseStringInWASM.ts";
 
 describe.skip("parseStringInWASM", () => {
   it("should parse simple CSV string", async () => {
