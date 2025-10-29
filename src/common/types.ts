@@ -328,6 +328,18 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default 100000
    */
   maxFieldCount?: number;
+
+  /**
+   * When true, completely empty lines (with only delimiters or whitespace)
+   * will be skipped during parsing.
+   *
+   * @remarks
+   * Moved from {@link ParseOptions} for a more appropriate design placement.
+   * Defaults to false for backward compatibility.
+   *
+   * @default false
+   */
+  skipEmptyLines?: boolean;
 }
 
 /**
@@ -340,14 +352,7 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     RecordAssemblerOptions<Header>,
-    AbortSignalOptions {
-  /**
-   * When true, completely empty lines (with only delimiters or whitespace)
-   * will be skipped during parsing.
-   * Defaults to false for backward compatibility.
-   */
-  skipEmptyLines?: boolean;
-}
+    AbortSignalOptions {}
 
 /**
  * Parse options for CSV binary.

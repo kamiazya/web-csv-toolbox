@@ -193,7 +193,7 @@ export function parse<const Header extends ReadonlyArray<string>>(
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parse<const Header extends ReadonlyArray<string>>(
   csv: CSV,
-  options?: ParseBinaryOptions<Header> & { skipEmptyLines?: boolean },
+  options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   const opts = { ...options, skipEmptyLines: options?.skipEmptyLines ?? false };
 
