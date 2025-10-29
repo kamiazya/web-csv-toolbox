@@ -121,7 +121,10 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
   if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
     // Worker execution with stream-transfer strategy
     const session = engineConfig.workerPool
-      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      ? await WorkerSession.create({
+          workerPool: engineConfig.workerPool,
+          workerURL: engineConfig.workerURL,
+        })
       : null;
 
     try {
