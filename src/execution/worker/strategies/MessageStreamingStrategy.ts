@@ -1,9 +1,12 @@
 import type {
-  ParseOptions,
-  ParseBinaryOptions,
   CSVBinary,
+  ParseBinaryOptions,
+  ParseOptions,
 } from "../../../common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
 import { WorkerSession } from "../helpers/WorkerSession.ts";
@@ -46,34 +49,34 @@ export class MessageStreamingStrategy implements WorkerStrategy {
       const worker = workerSession.getWorker();
       const id = workerSession.getNextRequestId();
 
-    // Determine message type based on input
-    let type: string;
-    let data: string | CSVBinary;
-    let transfer: Transferable[] | undefined;
+      // Determine message type based on input
+      let type: string;
+      let data: string | CSVBinary;
+      let transfer: Transferable[] | undefined;
 
-    if (typeof input === "string") {
-      type = "parseString";
-      data = input;
-    } else if (input instanceof ReadableStream) {
-      // Message-streaming strategy does not support ReadableStream
-      // ReadableStream cannot be cloned via postMessage without transferring
-      // This should fallback to main thread or use stream-transfer strategy
-      throw new Error(
-        "Message-streaming strategy does not support ReadableStream. " +
-        "Use stream-transfer strategy or process in main thread."
-      );
-    } else if (input instanceof Uint8Array || input instanceof ArrayBuffer) {
-      type = "parseBinary";
-      data = input;
-      // Transfer binary data for efficiency
-      if (input instanceof Uint8Array) {
-        transfer = [input.buffer];
+      if (typeof input === "string") {
+        type = "parseString";
+        data = input;
+      } else if (input instanceof ReadableStream) {
+        // Message-streaming strategy does not support ReadableStream
+        // ReadableStream cannot be cloned via postMessage without transferring
+        // This should fallback to main thread or use stream-transfer strategy
+        throw new Error(
+          "Message-streaming strategy does not support ReadableStream. " +
+            "Use stream-transfer strategy or process in main thread.",
+        );
+      } else if (input instanceof Uint8Array || input instanceof ArrayBuffer) {
+        type = "parseBinary";
+        data = input;
+        // Transfer binary data for efficiency
+        if (input instanceof Uint8Array) {
+          transfer = [input.buffer];
+        } else {
+          transfer = [input];
+        }
       } else {
-        transfer = [input];
+        throw new Error(`Unsupported input type: ${typeof input}`);
       }
-    } else {
-      throw new Error(`Unsupported input type: ${typeof input}`);
-    }
 
       // Send message and yield results
       yield* sendWorkerMessage<T>(

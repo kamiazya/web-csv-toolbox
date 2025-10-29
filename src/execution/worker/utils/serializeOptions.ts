@@ -1,5 +1,11 @@
-import type { ParseBinaryOptions, ParseOptions } from "../../../common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "../../../constants.ts";
+import type {
+  ParseBinaryOptions,
+  ParseOptions,
+} from "../../../common/types.ts";
 
 /**
  * Extract serializable options by removing non-serializable fields.
