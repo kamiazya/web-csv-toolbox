@@ -1,12 +1,15 @@
 import type {
-  ParseOptions,
-  ParseBinaryOptions,
   CSVBinary,
+  ParseBinaryOptions,
+  ParseOptions,
 } from "../../../common/types.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
-import { WorkerSession } from "../helpers/WorkerSession.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
+import { WorkerSession } from "../helpers/WorkerSession.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
 
 /**
@@ -19,7 +22,7 @@ import { serializeOptions } from "../utils/serializeOptions.ts";
  * @internal
  */
 export class TransferableStreamStrategy implements WorkerStrategy {
-  readonly name = 'stream-transfer';
+  readonly name = "stream-transfer";
 
   async *execute<
     T,

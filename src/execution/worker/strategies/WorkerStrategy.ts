@@ -1,11 +1,14 @@
 import type {
-  ParseOptions,
-  ParseBinaryOptions,
   CSVBinary,
+  ParseBinaryOptions,
+  ParseOptions,
 } from "../../../common/types.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerSession } from "../helpers/WorkerSession.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 
 /**
  * Worker strategy interface.

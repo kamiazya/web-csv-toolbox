@@ -1,12 +1,15 @@
 import type {
-  ParseOptions,
-  ParseBinaryOptions,
   CSVBinary,
+  ParseBinaryOptions,
+  ParseOptions,
 } from "../../../common/types.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerSession } from "../helpers/WorkerSession.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 import { MessageStreamingStrategy } from "./MessageStreamingStrategy.ts";
 import { TransferableStreamStrategy } from "./TransferableStreamStrategy.ts";
 
@@ -59,15 +62,15 @@ export class WorkerStrategySelector {
   ): AsyncIterableIterator<T> {
     // Determine which strategy to use
     const requestedStrategy = engineConfig.hasStreamTransfer()
-      ? 'stream-transfer'
-      : 'message-streaming';
+      ? "stream-transfer"
+      : "message-streaming";
 
     const strategy = this.strategies.get(requestedStrategy);
 
     if (!strategy) {
       // If stream-transfer is not available, fallback to message-streaming
-      if (requestedStrategy === 'stream-transfer') {
-        const fallbackStrategy = this.strategies.get('message-streaming');
+      if (requestedStrategy === "stream-transfer") {
+        const fallbackStrategy = this.strategies.get("message-streaming");
         if (fallbackStrategy) {
           // Notify about fallback
           if (engineConfig.onFallback) {
@@ -75,12 +78,17 @@ export class WorkerStrategySelector {
             engineConfig.onFallback({
               requestedConfig: engineConfig.toConfig(),
               actualConfig: fallbackConfig.toConfig(),
-              reason: 'TransferableStream strategy not available',
+              reason: "TransferableStream strategy not available",
               error: undefined,
             });
           }
 
-          yield* fallbackStrategy.execute(input, options, session, engineConfig);
+          yield* fallbackStrategy.execute(
+            input,
+            options,
+            session,
+            engineConfig,
+          );
           return;
         }
       }
@@ -99,8 +107,8 @@ export class WorkerStrategySelector {
       }
 
       // Auto-fallback to message-streaming
-      if (requestedStrategy === 'stream-transfer') {
-        const fallbackStrategy = this.strategies.get('message-streaming');
+      if (requestedStrategy === "stream-transfer") {
+        const fallbackStrategy = this.strategies.get("message-streaming");
         if (fallbackStrategy) {
           // Notify about fallback
           const fallbackConfig = engineConfig.createFallbackConfig();
@@ -114,7 +122,12 @@ export class WorkerStrategySelector {
           }
 
           // Execute with fallback strategy
-          yield* fallbackStrategy.execute(input, options, session, fallbackConfig);
+          yield* fallbackStrategy.execute(
+            input,
+            options,
+            session,
+            fallbackConfig,
+          );
           return;
         }
       }
