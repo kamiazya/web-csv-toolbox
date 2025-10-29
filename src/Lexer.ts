@@ -103,14 +103,6 @@ export class Lexer<
    * @yields Tokens from the buffered CSV data.
    */
   *#tokens(): Generator<Token> {
-    if (this.#flush) {
-      // Trim the last CRLF or LF
-      if (this.#buffer.endsWith(CRLF)) {
-        this.#buffer = this.#buffer.slice(0, -2 /* -CRLF.length */);
-      } else if (this.#buffer.endsWith(LF)) {
-        this.#buffer = this.#buffer.slice(0, -1 /* -LF.length */);
-      }
-    }
     let token: Token | null;
     while ((token = this.#nextToken())) {
       yield token;
@@ -186,8 +178,10 @@ export class Lexer<
 
     // Check for Delimiter
     if (this.#buffer.startsWith(this.#delimiter)) {
-      this.#buffer = this.#buffer.slice(1);
+      // FIX: Slice the buffer by the full delimiter length
+      this.#buffer = this.#buffer.slice(this.#fieldDelimiterLength);
       const start: Position = { ...this.#cursor };
+      // FIX: Advance the column/offset by the full delimiter length
       this.#cursor.column += this.#fieldDelimiterLength;
       this.#cursor.offset += this.#fieldDelimiterLength;
       return {
@@ -303,8 +297,8 @@ export class Lexer<
     // Check for Unquoted String
     const match = this.#matcher.exec(this.#buffer);
     if (match) {
-      // If we're flushing and the match doesn't consume the entire buffer,
-      // then return null
+      // When buffering (not flushing) and the match fully consumes the buffer,
+      // defer emission to wait for the next chunk (field may be followed by delimiter/quote)
       if (this.#flush === false && match[0].length === this.#buffer.length) {
         return null;
       }
