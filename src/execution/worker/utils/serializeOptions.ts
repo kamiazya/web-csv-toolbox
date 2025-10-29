@@ -1,23 +1,31 @@
 import type { ParseBinaryOptions, ParseOptions } from "../../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 
 /**
  * Extract serializable options by removing non-serializable fields.
- * Removes: signal, workerPool, workerURL, engine (contains non-serializable objects)
+ * Removes: signal, engine, workerPool, workerURL (contains non-serializable objects)
  *
  * @internal
  */
-export function serializeOptions<Header extends ReadonlyArray<string>>(
-  options?: ParseOptions<Header> | ParseBinaryOptions<Header>,
-): Omit<typeof options, "signal" | "workerPool" | "workerURL" | "engine"> | undefined {
+export function serializeOptions<
+  Header extends ReadonlyArray<string> = readonly string[],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
+  options?:
+    | ParseOptions<Header, Delimiter, Quotation>
+    | ParseBinaryOptions<Header, Delimiter, Quotation>,
+): Omit<typeof options, "signal" | "engine" | "workerPool" | "workerURL"> | undefined {
   if (!options) return undefined;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const {
     signal: _signal,
+    engine: _engine,
     workerPool: _workerPool,
     workerURL: _workerURL,
-    engine: _engine,
     ...serializableOptions
-  } = options;
+  } = options as any;
 
   return serializableOptions;
 }

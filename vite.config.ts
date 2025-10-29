@@ -26,7 +26,8 @@ export default defineConfig(({ command }) => ({
       entry: [
         "src/web-csv-toolbox.ts",
         "src/loadWASM.web.ts",
-        "src/execution/worker/helpers/worker.ts",
+        "src/execution/worker/helpers/worker.web.ts",
+        "src/execution/worker/helpers/worker.node.ts",
         "src/execution/worker/helpers/createWorker.web.ts",
         "src/execution/worker/helpers/createWorker.node.ts",
         "src/execution/worker/parseStringInWorker.web.ts",

@@ -1,4 +1,9 @@
-import type { CSVRecord, ParseOptions } from "../../common/types.ts";
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
@@ -16,16 +21,20 @@ import { collectStringStream } from "./utils/streamCollector.node.ts";
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseStreamInWorker<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
+  options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Node.js: Collect stream into string first
   const csvString = await collectStringStream(stream, options?.signal);
 
   using session = await WorkerSession.create({
-    workerPool: options?.workerPool,
-    workerURL: options?.workerURL,
+    workerPool: options?.engine?.workerPool,
+    workerURL: options?.engine?.workerURL,
   });
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
@@ -37,6 +46,6 @@ export async function* parseStreamInWorker<Header extends ReadonlyArray<string>>
       options: serializeOptions(options),
       useWASM: false,
     },
-    options,
+    options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
   );
 }

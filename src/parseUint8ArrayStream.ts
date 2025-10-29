@@ -1,8 +1,12 @@
-import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "./common/types.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -36,7 +40,7 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  *   },
  * });
  *
- * for await (const record of parseUint8ArrayStream(csv)) {
+ * for await (const record of parseUint8ArrayStream(stream)) {
  *   console.log(record);
  * }
  * ```
@@ -58,13 +62,19 @@ export async function* parseUint8ArrayStream<
   if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
     // Worker execution with stream-transfer strategy
     const session = engineConfig.workerPool
-      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      ? await WorkerSession.create({
+          workerPool: engineConfig.workerPool,
+          workerURL: engineConfig.workerURL,
+        })
       : null;
 
     try {
       yield* executeWithWorkerStrategy<CSVRecord<Header>>(
         stream,
-        options,
+        options as
+          | ParseOptions<Header>
+          | ParseBinaryOptions<Header>
+          | undefined,
         session,
         engineConfig,
       );
@@ -140,7 +150,7 @@ export declare namespace parseUint8ArrayStream {
   export function toStream<Header extends ReadonlyArray<string>>(
     stream: ReadableStream<Uint8Array>,
     options?: ParseBinaryOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>[]>;
+  ): ReadableStream<CSVRecord<Header>>;
 }
 Object.defineProperties(parseUint8ArrayStream, {
   toArray: {

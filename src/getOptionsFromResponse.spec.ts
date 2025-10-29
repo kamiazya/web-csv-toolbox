@@ -28,7 +28,7 @@ describe("getOptionsFromResponse", () => {
     });
   });
 
-  it("should return options with custom charset and decomposition", () => {
+  it("should return options with custom charset and decompression", () => {
     const actual = getOptionsFromResponse(
       new Response("", {
         headers: {
@@ -39,7 +39,7 @@ describe("getOptionsFromResponse", () => {
     );
     expect(actual).toEqual({
       charset: "utf-16",
-      decomposition: "gzip",
+      decompression: "gzip",
     });
   });
 
@@ -69,7 +69,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "gzip",
+        decompression: "gzip",
       });
     });
 
@@ -84,7 +84,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "deflate",
+        decompression: "deflate",
       });
     });
 
@@ -115,7 +115,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "deflate-raw",
+        decompression: "deflate-raw",
         allowExperimentalCompressions: true,
       });
     });
@@ -176,7 +176,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "gzip", // Normalized to lowercase
+        decompression: "gzip", // Normalized to lowercase
       });
     });
 
@@ -191,7 +191,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "gzip", // Normalized to lowercase
+        decompression: "gzip", // Normalized to lowercase
       });
     });
 
@@ -206,7 +206,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "gzip",
+        decompression: "gzip",
       });
     });
 
@@ -310,7 +310,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "br",
+        decompression: "br",
         allowExperimentalCompressions: true,
       });
     });
@@ -327,7 +327,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "zstd",
+        decompression: "zstd",
         allowExperimentalCompressions: true,
       });
     });
@@ -344,7 +344,7 @@ describe("getOptionsFromResponse", () => {
       );
       expect(actual).toEqual({
         charset: "utf-8",
-        decomposition: "br", // Normalized to lowercase
+        decompression: "br", // Normalized to lowercase
         allowExperimentalCompressions: true,
       });
     });

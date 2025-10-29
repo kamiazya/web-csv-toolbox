@@ -1,7 +1,12 @@
-import type { ParseOptions, ParseBinaryOptions } from "../../../common/types.ts";
+import type {
+  ParseOptions,
+  ParseBinaryOptions,
+  CSVBinary,
+} from "../../../common/types.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerSession } from "../helpers/WorkerSession.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 import { MessageStreamingStrategy } from "./MessageStreamingStrategy.ts";
 import { TransferableStreamStrategy } from "./TransferableStreamStrategy.ts";
 
@@ -38,9 +43,17 @@ export class WorkerStrategySelector {
    * @param engineConfig - Engine configuration
    * @returns Async iterable iterator of parsed records
    */
-  async *execute<T>(
-    input: any,
-    options: ParseOptions<any> | ParseBinaryOptions<any> | undefined,
+  async *execute<
+    T,
+    Header extends ReadonlyArray<string> = readonly string[],
+    Delimiter extends string = DEFAULT_DELIMITER,
+    Quotation extends string = DEFAULT_QUOTATION,
+  >(
+    input: string | CSVBinary | ReadableStream<string>,
+    options:
+      | ParseOptions<Header, Delimiter, Quotation>
+      | ParseBinaryOptions<Header, Delimiter, Quotation>
+      | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
   ): AsyncIterableIterator<T> {
@@ -90,8 +103,8 @@ export class WorkerStrategySelector {
         const fallbackStrategy = this.strategies.get('message-streaming');
         if (fallbackStrategy) {
           // Notify about fallback
+          const fallbackConfig = engineConfig.createFallbackConfig();
           if (engineConfig.onFallback) {
-            const fallbackConfig = engineConfig.createFallbackConfig();
             engineConfig.onFallback({
               requestedConfig: engineConfig.toConfig(),
               actualConfig: fallbackConfig.toConfig(),
@@ -120,9 +133,17 @@ const globalSelector = new WorkerStrategySelector();
  *
  * @internal
  */
-export function executeWithWorkerStrategy<T>(
-  input: any,
-  options: ParseOptions<any> | ParseBinaryOptions<any> | undefined,
+export function executeWithWorkerStrategy<
+  T,
+  Header extends ReadonlyArray<string> = readonly string[],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
+  input: string | CSVBinary | ReadableStream<string>,
+  options:
+    | ParseOptions<Header, Delimiter, Quotation>
+    | ParseBinaryOptions<Header, Delimiter, Quotation>
+    | undefined,
   session: WorkerSession | null,
   engineConfig: InternalEngineConfig,
 ): AsyncIterableIterator<T> {

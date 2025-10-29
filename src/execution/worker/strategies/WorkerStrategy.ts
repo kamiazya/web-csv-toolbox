@@ -1,6 +1,11 @@
-import type { ParseOptions, ParseBinaryOptions } from "../../../common/types.ts";
+import type {
+  ParseOptions,
+  ParseBinaryOptions,
+  CSVBinary,
+} from "../../../common/types.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerSession } from "../helpers/WorkerSession.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 
 /**
  * Worker strategy interface.
@@ -24,9 +29,16 @@ export interface WorkerStrategy<T = any> {
    * @param engineConfig - Engine configuration
    * @returns Async iterable iterator of parsed records
    */
-  execute(
-    input: any,
-    options: ParseOptions<any> | ParseBinaryOptions<any> | undefined,
+  execute<
+    Header extends ReadonlyArray<string> = readonly string[],
+    Delimiter extends string = DEFAULT_DELIMITER,
+    Quotation extends string = DEFAULT_QUOTATION,
+  >(
+    input: string | CSVBinary | ReadableStream<string>,
+    options:
+      | ParseOptions<Header, Delimiter, Quotation>
+      | ParseBinaryOptions<Header, Delimiter, Quotation>
+      | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
   ): AsyncIterableIterator<T>;

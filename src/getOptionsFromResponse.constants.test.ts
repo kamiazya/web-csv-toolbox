@@ -66,7 +66,7 @@ describe("getOptionsFromResponse with environment-specific compressions", () => 
       });
 
       const options = getOptionsFromResponse(response);
-      expect(options.decomposition).toBe(format);
+      expect(options.decompression).toBe(format);
     }
   });
 
@@ -86,6 +86,6 @@ describe("getOptionsFromResponse with environment-specific compressions", () => 
       allowExperimentalCompressions: true,
     });
 
-    expect(options.decomposition).toBe("brotli");
+    expect(options.decompression).toBe("brotli");
   });
 });

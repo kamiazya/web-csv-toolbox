@@ -241,12 +241,12 @@ See [Automatic Fallback Behavior](../explanation/execution-strategies.md#automat
 **DecompressionStream:**
 - ✅ Fully supported in Node.js LTS Worker Threads
 - Can decompress gzip, deflate, and deflate-raw formats
-- Works seamlessly with the `decomposition` option in worker mode
+- Works seamlessly with the `decompression` option in worker mode
 
 ```typescript
 // ✅ Supported - decompress in worker thread
 parseUint8ArrayStream(compressedStream, {
-  decomposition: 'gzip',
+  decompression: 'gzip',
   engine: { worker: true }
 });
 ```

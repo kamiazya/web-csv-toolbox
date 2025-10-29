@@ -21,6 +21,9 @@ export function parseUint8ArrayStreamInMain<
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing stream implementation
-  const recordStream = parseUint8ArrayStreamToStream(stream, options);
+  const recordStream = parseUint8ArrayStreamToStream<Header>(
+    stream,
+    options as ParseBinaryOptions<Header> | undefined,
+  );
   return convertStreamToAsyncIterableIterator(recordStream);
 }

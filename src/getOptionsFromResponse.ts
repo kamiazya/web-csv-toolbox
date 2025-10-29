@@ -27,7 +27,7 @@ export function getOptionsFromResponse<
   }
 
   const contentEncoding = headers.get("content-encoding");
-  let decomposition: CompressionFormat | undefined;
+  let decompression: CompressionFormat | undefined;
 
   if (contentEncoding) {
     const normalizedEncoding = contentEncoding.trim().toLowerCase();
@@ -39,12 +39,12 @@ export function getOptionsFromResponse<
     }
 
     if (SUPPORTED_COMPRESSIONS.has(normalizedEncoding as CompressionFormat)) {
-      decomposition = normalizedEncoding as CompressionFormat;
+      decompression = normalizedEncoding as CompressionFormat;
     } else if (normalizedEncoding) {
       // Unknown compression format
       if (options.allowExperimentalCompressions) {
         // Allow runtime to handle experimental/future formats
-        decomposition = normalizedEncoding as CompressionFormat;
+        decompression = normalizedEncoding as CompressionFormat;
       } else {
         throw new TypeError(
           `Unsupported content-encoding: "${contentEncoding}". Supported formats: ${Array.from(SUPPORTED_COMPRESSIONS).join(", ")}. To use experimental formats, set allowExperimentalCompressions: true`,
@@ -57,7 +57,7 @@ export function getOptionsFromResponse<
   // TODO: Support header=present and header=absent
   // const header = mime.parameters.header ?? "present";
   return {
-    decomposition,
+    decompression,
     charset,
     ...options,
   };

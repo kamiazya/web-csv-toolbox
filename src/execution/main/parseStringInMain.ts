@@ -21,6 +21,9 @@ export function parseStringInMain<
   options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing synchronous implementation
-  const iterator = parseStringToIterableIterator(csv, options);
+  const iterator = parseStringToIterableIterator<Header>(
+    csv,
+    options as ParseOptions<Header> | undefined,
+  );
   return convertIterableIteratorToAsync(iterator);
 }

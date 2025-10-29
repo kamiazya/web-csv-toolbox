@@ -1,4 +1,5 @@
-import type { CSVRecord, ParseBinaryOptions } from "../../common/types.ts";
+import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";
@@ -8,13 +9,17 @@ import { serializeOptions } from "./utils/serializeOptions.ts";
  *
  * @internal
  */
-export async function* parseBinaryInWorker<Header extends ReadonlyArray<string>>(
+export async function* parseBinaryInWorker<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
   binary: Uint8Array | ArrayBuffer,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   using session = await WorkerSession.create({
-    workerPool: options?.workerPool,
-    workerURL: options?.workerURL,
+    workerPool: options?.engine?.workerPool,
+    workerURL: options?.engine?.workerURL,
   });
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
@@ -26,6 +31,6 @@ export async function* parseBinaryInWorker<Header extends ReadonlyArray<string>>
       options: serializeOptions(options),
       useWASM: false,
     },
-    options,
+    options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
   );
 }

@@ -60,7 +60,7 @@ Parsing options including binary-specific settings.
 interface ParseBinaryOptions<Header> extends ParseOptions<Header> {
   // Binary-specific options
   charset?: string;              // Default: 'utf-8'
-  decomposition?: 'gzip' | 'deflate' | 'gzip, deflate';
+  decompression?: 'gzip' | 'deflate' | 'gzip, deflate';
   ignoreBOM?: boolean;           // Default: false
 
   // Common parsing options
@@ -111,7 +111,7 @@ for await (const record of parseBinary(shiftJISData, {
 
 ---
 
-##### `decomposition`
+##### `decompression`
 
 **Type:** `'gzip' | 'deflate' | 'deflate-raw'` (and `'br'` if supported by browser)
 
@@ -128,7 +128,7 @@ import { parseBinary } from 'web-csv-toolbox';
 // Parse gzip-compressed CSV
 const gzippedData = new Uint8Array([...]);
 for await (const record of parseBinary(gzippedData, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }
@@ -254,7 +254,7 @@ const response = await fetch('data.csv.gz');
 const compressedData = new Uint8Array(await response.arrayBuffer());
 
 for await (const record of parseBinary(compressedData, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }

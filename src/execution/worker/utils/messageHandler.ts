@@ -1,5 +1,8 @@
 import type { ParseBinaryOptions, ParseOptions } from "../../../common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 import { addListener, removeListener } from "./workerUtils.ts";
+
+import type { CSVBinary } from "../../../common/types.ts";
 
 /**
  * Message to send to worker.
@@ -9,8 +12,8 @@ import { addListener, removeListener } from "./workerUtils.ts";
 export interface WorkerMessage {
   id: number;
   type: string;
-  data: any;
-  options?: any;
+  data: string | CSVBinary | ReadableStream<string>;
+  options?: Record<string, unknown>;
   useWASM?: boolean;
 }
 
@@ -18,10 +21,10 @@ export interface WorkerMessage {
  * Stream response from worker.
  * @internal
  */
-interface StreamResponse {
+interface StreamResponse<T = unknown> {
   id: number;
   type: "record" | "done" | "error";
-  record?: any;
+  record?: T;
   error?: string;
 }
 
@@ -31,10 +34,17 @@ interface StreamResponse {
  *
  * @internal
  */
-export async function* sendWorkerMessage<T>(
+export async function* sendWorkerMessage<
+  T,
+  Header extends ReadonlyArray<string> = readonly string[],
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
   worker: Worker,
   message: WorkerMessage,
-  options?: ParseOptions<any> | ParseBinaryOptions<any>,
+  options?:
+    | ParseOptions<Header, Delimiter, Quotation>
+    | ParseBinaryOptions<Header, Delimiter, Quotation>,
   transfer?: Transferable[],
 ): AsyncIterableIterator<T> {
   let resolveNext: ((value: IteratorResult<T>) => void) | null = null;
@@ -42,20 +52,20 @@ export async function* sendWorkerMessage<T>(
   let error: Error | null = null;
 
   const handler = (event: MessageEvent) => {
-    const data = event.data as StreamResponse;
+    const data = event.data as StreamResponse<T>;
     if (data.id === message.id) {
       if (data.type === "record" && data.record !== undefined) {
         if (resolveNext) {
           const resolve = resolveNext;
           resolveNext = null;
-          resolve({ value: data.record as T, done: false });
+          resolve({ value: data.record, done: false });
         }
       } else if (data.type === "done") {
         done = true;
         if (resolveNext) {
           const resolve = resolveNext;
           resolveNext = null;
-          resolve({ value: undefined as any, done: true });
+          resolve({ value: undefined!, done: true });
         }
       } else if (data.type === "error") {
         error = new Error(data.error);
@@ -63,7 +73,7 @@ export async function* sendWorkerMessage<T>(
         if (resolveNext) {
           const resolve = resolveNext;
           resolveNext = null;
-          resolve({ value: undefined as any, done: true });
+          resolve({ value: undefined!, done: true });
         }
       }
     }

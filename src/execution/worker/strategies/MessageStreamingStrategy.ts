@@ -1,5 +1,10 @@
-import type { ParseOptions, ParseBinaryOptions } from "../../../common/types.ts";
+import type {
+  ParseOptions,
+  ParseBinaryOptions,
+  CSVBinary,
+} from "../../../common/types.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 import { sendWorkerMessage } from "../utils/messageHandler.ts";
 import { WorkerSession } from "../helpers/WorkerSession.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
@@ -16,9 +21,17 @@ import { serializeOptions } from "../utils/serializeOptions.ts";
 export class MessageStreamingStrategy implements WorkerStrategy {
   readonly name = 'message-streaming';
 
-  async *execute<T>(
-    input: any,
-    options: ParseOptions<any> | ParseBinaryOptions<any> | undefined,
+  async *execute<
+    T,
+    Header extends ReadonlyArray<string> = readonly string[],
+    Delimiter extends string = DEFAULT_DELIMITER,
+    Quotation extends string = DEFAULT_QUOTATION,
+  >(
+    input: string | CSVBinary | ReadableStream<string>,
+    options:
+      | ParseOptions<Header, Delimiter, Quotation>
+      | ParseBinaryOptions<Header, Delimiter, Quotation>
+      | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
   ): AsyncIterableIterator<T> {
@@ -35,7 +48,7 @@ export class MessageStreamingStrategy implements WorkerStrategy {
 
     // Determine message type based on input
     let type: string;
-    let data: any;
+    let data: string | CSVBinary;
     let transfer: Transferable[] | undefined;
 
     if (typeof input === "string") {
@@ -72,7 +85,7 @@ export class MessageStreamingStrategy implements WorkerStrategy {
           options: serializeOptions(options),
           useWASM: engineConfig.hasWasm(),
         },
-        options,
+        options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
         transfer,
       );
     } finally {

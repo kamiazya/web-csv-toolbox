@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
 import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";
@@ -134,7 +133,7 @@ describe("parseUint8ArrayStream function", () => {
         async ({ data, csv, decompression }) => {
           let i = 0;
           for await (const row of parseUint8ArrayStream(csv, {
-            decomposition: decompression,
+            decompression: decompression,
           })) {
             expect(data[i++]).toStrictEqual(row);
           }

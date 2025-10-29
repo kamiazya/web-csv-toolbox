@@ -67,7 +67,7 @@ Parsing options including binary-specific settings.
 interface ParseBinaryOptions<Header> extends ParseOptions<Header> {
   // Binary-specific options
   charset?: string;              // Default: 'utf-8'
-  decomposition?: 'gzip' | 'deflate' | 'gzip, deflate';
+  decompression?: 'gzip' | 'deflate' | 'gzip, deflate';
   ignoreBOM?: boolean;           // Default: false
 
   // Common parsing options
@@ -144,7 +144,7 @@ const binaryStream = response.body;
 
 // Automatically decompresses while streaming
 for await (const record of parseUint8ArrayStream(binaryStream, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }

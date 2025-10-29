@@ -255,7 +255,7 @@ Extends `ParseOptions` with additional binary-specific options:
 ```typescript
 interface ParseBinaryOptions<Header> extends ParseOptions<Header> {
   charset?: string;
-  decomposition?: 'gzip' | 'deflate' | 'deflate-raw';
+  decompression?: 'gzip' | 'deflate' | 'deflate-raw';
   ignoreBOM?: boolean;
 }
 ```
@@ -288,7 +288,7 @@ for await (const record of parse(binary, {
 
 ---
 
-##### `decomposition`
+##### `decompression`
 
 **Type:** `'gzip' | 'deflate' | 'deflate-raw'`
 **Default:** `undefined` (no decompression)
@@ -301,7 +301,7 @@ Decompression method for compressed CSV data.
 const response = await fetch('https://example.com/data.csv.gz');
 
 for await (const record of parse(response, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }
@@ -444,7 +444,7 @@ import { parse } from 'web-csv-toolbox';
 const response = await fetch('https://example.com/data.csv.gz');
 
 for await (const record of parse(response, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }

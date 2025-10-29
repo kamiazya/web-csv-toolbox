@@ -207,7 +207,7 @@ for await (const record of parseBinary(shiftJISData, {
 
 // ✅ Good for: Compressed data
 for await (const record of parseBinary(data, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }
@@ -240,7 +240,7 @@ const binaryStream = response.body;
 
 for await (const record of parseUint8ArrayStream(binaryStream, {
   charset: 'utf-8',
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }
@@ -248,7 +248,7 @@ for await (const record of parseUint8ArrayStream(binaryStream, {
 // ✅ Good for: Compressed streaming data
 const stream = getCompressedCSVStream();
 for await (const record of parseUint8ArrayStream(stream, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }

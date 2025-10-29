@@ -21,6 +21,9 @@ export function parseStreamInMain<
   options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing stream implementation
-  const recordStream = parseStringStreamToStream(stream, options);
+  const recordStream = parseStringStreamToStream<ReadableStream<string>, Header>(
+    stream,
+    options as ParseOptions<Header> | undefined,
+  );
   return convertStreamToAsyncIterableIterator(recordStream);
 }

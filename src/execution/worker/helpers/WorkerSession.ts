@@ -1,12 +1,20 @@
-import type { WorkerOptions } from "../../../common/types.ts";
 import { createWorker } from "#execution/worker/createWorker.js";
 import type { WorkerPool } from "./WorkerPool.ts";
 
 /**
  * Options for creating a WorkerSession.
- * Extends WorkerOptions to reuse workerURL and workerPool definitions.
  */
-export interface WorkerSessionOptions extends WorkerOptions {}
+export interface WorkerSessionOptions {
+  /**
+   * Custom worker URL.
+   */
+  workerURL?: string | URL;
+
+  /**
+   * Worker pool for reusable workers.
+   */
+  workerPool?: WorkerPool;
+}
 
 /**
  * WorkerSession manages the lifecycle of a single worker instance.

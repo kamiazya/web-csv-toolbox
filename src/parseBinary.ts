@@ -1,4 +1,4 @@
-import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
@@ -53,7 +53,7 @@ export async function* parseBinary<
     try {
       yield* executeWithWorkerStrategy<CSVRecord<Header>>(
         bytes,
-        options,
+        options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
         session,
         engineConfig,
       );
@@ -63,8 +63,7 @@ export async function* parseBinary<
   } else {
     // Main thread execution
     if (engineConfig.hasWasm()) {
-      const iterator = await parseBinaryInWASM(bytes, options);
-      yield* iterator;
+      yield* parseBinaryInWASM(bytes, options as ParseBinaryOptions<Header> | undefined);
     } else {
       const iterator = parseBinaryToIterableIterator(bytes, options);
       yield* convertIterableIteratorToAsync(iterator);

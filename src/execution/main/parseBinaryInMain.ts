@@ -21,6 +21,9 @@ export function parseBinaryInMain<
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing binary parsing implementation
-  const iterator = parseBinaryToIterableIterator(binary, options);
+  const iterator = parseBinaryToIterableIterator<Header>(
+    binary,
+    options as ParseBinaryOptions<Header> | undefined,
+  );
   return convertIterableIteratorToAsync(iterator);
 }

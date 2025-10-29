@@ -1,5 +1,10 @@
-import type { ParseOptions, ParseBinaryOptions } from "../../../common/types.ts";
+import type {
+  ParseOptions,
+  ParseBinaryOptions,
+  CSVBinary,
+} from "../../../common/types.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../../constants.ts";
 import { WorkerSession } from "../helpers/WorkerSession.ts";
 import type { WorkerStrategy } from "./WorkerStrategy.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
@@ -16,9 +21,17 @@ import { serializeOptions } from "../utils/serializeOptions.ts";
 export class TransferableStreamStrategy implements WorkerStrategy {
   readonly name = 'stream-transfer';
 
-  async *execute<T>(
-    input: any,
-    options: ParseOptions<any> | ParseBinaryOptions<any> | undefined,
+  async *execute<
+    T,
+    Header extends ReadonlyArray<string> = readonly string[],
+    Delimiter extends string = DEFAULT_DELIMITER,
+    Quotation extends string = DEFAULT_QUOTATION,
+  >(
+    input: string | CSVBinary | ReadableStream<string>,
+    options:
+      | ParseOptions<Header, Delimiter, Quotation>
+      | ParseBinaryOptions<Header, Delimiter, Quotation>
+      | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
   ): AsyncIterableIterator<T> {
@@ -148,7 +161,7 @@ export class TransferableStreamStrategy implements WorkerStrategy {
     }
 
     // Set up message handler
-    port.onmessage = (event) => {
+    port.onmessage = (event: MessageEvent) => {
       const message = event.data;
 
       if (message.type === "record") {
@@ -174,8 +187,8 @@ export class TransferableStreamStrategy implements WorkerStrategy {
       }
     };
 
-    port.onerror = (event) => {
-      error = new Error(`Worker error: ${event}`);
+    port.onmessageerror = (event: MessageEvent) => {
+      error = new Error(`Message deserialization error: ${event.data}`);
       if (resolveNext) {
         resolveNext();
         resolveNext = null;

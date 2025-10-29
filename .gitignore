@@ -133,3 +133,6 @@ dist
 .pnp.*
 
 doc
+
+target
+test-build*.mjs

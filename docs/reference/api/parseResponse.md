@@ -65,7 +65,7 @@ interface ParseOptions<Header> {
 
   // Binary options (relevant for Response)
   charset?: string;             // Default: from Content-Type header or 'utf-8'
-  decomposition?: 'gzip' | 'deflate' | 'gzip, deflate';
+  decompression?: 'gzip' | 'deflate' | 'gzip, deflate';
   ignoreBOM?: boolean;          // Default: false
 
   // Resource limits
@@ -114,7 +114,7 @@ for await (const record of parseResponse(response, {
 
 ---
 
-##### `decomposition`
+##### `decompression`
 
 **Type:** `'gzip' | 'deflate' | 'gzip, deflate'`
 
@@ -126,7 +126,7 @@ Decompression algorithm to apply.
 ```typescript
 // Force gzip decompression
 for await (const record of parseResponse(response, {
-  decomposition: 'gzip'
+  decompression: 'gzip'
 })) {
   console.log(record);
 }

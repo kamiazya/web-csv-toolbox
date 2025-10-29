@@ -112,7 +112,7 @@ export declare namespace parseResponse {
   export function toStream<Header extends ReadonlyArray<string>>(
     response: Response,
     options?: ParseOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>[]>;
+  ): ReadableStream<CSVRecord<Header>>;
 }
 
 Object.defineProperties(parseResponse, {

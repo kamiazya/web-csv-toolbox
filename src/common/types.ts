@@ -196,7 +196,7 @@ export interface BinaryOptions {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility | DecompressionStream Compatibility}.
    */
-  decomposition?: CompressionFormat;
+  decompression?: CompressionFormat;
   /**
    * You can specify the character encoding of the binary.
    *

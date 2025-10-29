@@ -181,7 +181,7 @@ export function parse<
  * for await (const record of parse(response, {
  *   charset: 'shift-jis',
  *   ignoreBOM: true,
- *   decomposition: 'gzip',
+ *   decompression: 'gzip',
  * })) {
  *   // ...
  * }
