@@ -189,9 +189,7 @@ describe("InternalEngineConfig", () => {
         strict: true,
       });
       expect(config.getBitmask()).toBe(
-        EngineFlags.WORKER |
-          EngineFlags.STREAM_TRANSFER |
-          EngineFlags.STRICT,
+        EngineFlags.WORKER | EngineFlags.STREAM_TRANSFER | EngineFlags.STRICT,
       );
     });
   });
@@ -342,7 +340,9 @@ describe("InternalEngineConfig", () => {
         workerStrategy: "stream-transfer",
         strict: true,
       });
-      expect(config.toString()).toBe("worker + wasm + stream-transfer + strict");
+      expect(config.toString()).toBe(
+        "worker + wasm + stream-transfer + strict",
+      );
     });
   });
 
