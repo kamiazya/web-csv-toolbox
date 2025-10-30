@@ -57,7 +57,6 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
           if (this.#header === undefined) {
             this.#setHeader(this.#row as unknown as Header);
           } else {
-            if (this.#skipEmptyLines && !this.#dirty) continue;
             if (this.#dirty) {
               yield Object.fromEntries(
                 this.#header.map((header, index) => [
@@ -66,6 +65,9 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
                 ]),
               ) as unknown as CSVRecord<Header>;
             } else {
+              if (this.#skipEmptyLines) {
+                continue;
+              }
               yield Object.fromEntries(
                 this.#header.map((header) => [header, ""]),
               ) as CSVRecord<Header>;
