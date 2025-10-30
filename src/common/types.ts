@@ -333,11 +333,6 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * When true, completely empty lines (with only delimiters or whitespace)
    * will be skipped during parsing.
    *
-   * @remarks
-   * @remarks
-   * Placed in {@link RecordAssemblerOptions} for appropriate design separation.
-   * Defaults to false for backward compatibility.
-   *
    * @default false
    */
   skipEmptyLines?: boolean;

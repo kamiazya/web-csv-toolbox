@@ -20,9 +20,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #maxFieldCount: number;
   #skipEmptyLines: boolean;
 
-  constructor(
-    options: RecordAssemblerOptions<Header> & { skipEmptyLines?: boolean } = {},
-  ) {
+  constructor(options: RecordAssemblerOptions<Header> = {}) {
     const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
     // Validate maxFieldCount
     if (
