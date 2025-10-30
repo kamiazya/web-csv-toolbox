@@ -372,14 +372,14 @@ describe("parse function", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          // Generate random CSV header
+          // Random header
           const header = g(FC.header, {
             fieldConstraints: { kindExcludes: ["string16bits"] },
           });
           const EOL = g(FC.eol);
           const EOF = g(fc.boolean);
 
-          // Generate CSV data with random empty lines between valid rows
+          // Random CSV rows with occasional empty lines
           const csvData = [
             ...g(FC.csvData, {
               rowsConstraints: { minLength: 1 },
@@ -393,23 +393,31 @@ describe("parse function", () => {
           ];
 
           const csv = [
-            header
-              .map((v) => escapeField(v))
-              .join(","), // header row
+            header.map((v) => escapeField(v)).join(","),
             EOL,
             ...csvData.flatMap((row, i) => [
-              row.length === 0
-                ? "" // intentionally empty line
-                : row.map((v) => escapeField(v)).join(","),
+              row.length === 0 ? "" : row.map((v) => escapeField(v)).join(","),
               ...(EOF || csvData.length - 1 !== i ? [EOL] : []),
             ]),
           ].join("");
 
-          return { header, csv };
+          //Add edge cases (bot-recommended) occasionally
+          const edgeCases = [
+            { header, csv: "\na,b\n1,2" }, // empty line before header
+            { header, csv: "a,b\n\n\n1,2" }, // multiple empty lines in middle
+            { header, csv: "a,b\n1,2\n\n" }, // trailing empty lines
+            { header, csv: "a,b\n\n1,2\n\n3,4\n\n\n5,6" }, // mixed empty lines
+            { header, csv: "a,b\n1,2\n3,4" }, // no empty lines
+          ];
+
+          // Return random edge case or generated CSV
+          return Math.random() < 0.3
+            ? edgeCases[Math.floor(Math.random() * edgeCases.length)]
+            : { header, csv };
         }),
         async ({ header, csv }) => {
           try {
-            // Parse with skipEmptyLines = true
+            // skipEmptyLines = true
             const resultSkipped: any[] = [];
             for await (const record of parse(csv, {
               header,
@@ -417,8 +425,7 @@ describe("parse function", () => {
             })) {
               resultSkipped.push(record);
             }
-
-            // Parse with skipEmptyLines = false
+            //skipEmptyLines = false
             const resultAll: any[] = [];
             for await (const record of parse(csv, {
               header,
@@ -426,11 +433,10 @@ describe("parse function", () => {
             })) {
               resultAll.push(record);
             }
-
             // Property: skipping empty lines never increases record count
             expect(resultSkipped.length).toBeLessThanOrEqual(resultAll.length);
           } catch (err: any) {
-            // Ignore malformed CSVs (unterminated quotes, etc.)
+            // ignore malformed CSVs (unterminated quotes, etc.)
             if (!/Unexpected EOF|ParseError/i.test(err.message)) {
               throw err;
             }
