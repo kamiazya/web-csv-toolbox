@@ -328,6 +328,14 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default 100000
    */
   maxFieldCount?: number;
+
+  /**
+   * When true, completely empty lines (with only delimiters or whitespace)
+   * will be skipped during parsing.
+   *
+   * @default false
+   */
+  skipEmptyLines?: boolean;
 }
 
 /**

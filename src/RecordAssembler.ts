@@ -18,6 +18,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
   #dirty = false;
   #signal?: AbortSignal;
   #maxFieldCount: number;
+  #skipEmptyLines: boolean;
 
   constructor(options: RecordAssemblerOptions<Header> = {}) {
     const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
@@ -31,6 +32,7 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
       );
     }
     this.#maxFieldCount = mfc;
+    this.#skipEmptyLines = options.skipEmptyLines ?? false;
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
     }
@@ -63,6 +65,9 @@ export class RecordAssembler<Header extends ReadonlyArray<string>> {
                 ]),
               ) as unknown as CSVRecord<Header>;
             } else {
+              if (this.#skipEmptyLines) {
+                continue;
+              }
               yield Object.fromEntries(
                 this.#header.map((header) => [header, ""]),
               ) as CSVRecord<Header>;
