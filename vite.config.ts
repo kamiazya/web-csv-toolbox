@@ -49,6 +49,8 @@ export default defineConfig(env => ({
   ],
   test: {
     setupFiles: ["config/vitest.setup.ts"],
+    testTimeout: 30000, // 30 seconds
+    hookTimeout: 30000, // 30 seconds
     browser: {
       enabled: false, // Disabled by default, enable with --browser flag
       provider: webdriverio(),
@@ -57,6 +59,7 @@ export default defineConfig(env => ({
         { browser: "firefox" },
         { browser: "edge" },
       ],
+      fileParallelism: false, // Run test files sequentially to avoid WebDriver connection issues
     },
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage
