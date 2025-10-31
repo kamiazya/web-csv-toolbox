@@ -29,7 +29,9 @@ runs:
         node-version: ${{ inputs.node-version }}
         cache: pnpm
     - name: Install Dependencies
-      run: pnpm install --frozen-lockfile
+      run: |
+        pnpm install --frozen-lockfile
+        pnpm store prune
       shell: bash
     - name: Setup C++
       if: ${{ inputs.skip-rust-setup != 'true' }}
