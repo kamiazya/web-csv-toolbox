@@ -50,7 +50,7 @@ export default defineConfig(env => ({
   test: {
     setupFiles: ["config/vitest.setup.ts"],
     browser: {
-      enabled: true,
+      enabled: false, // Disabled by default, enable with --browser flag
       provider: webdriverio(),
       instances: [
         { browser: "chrome" },
