@@ -6,8 +6,8 @@ import {
   test,
   vi,
 } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.ts";
 import { transform, waitAbort } from "./__tests__/helper.ts";
+import { LexerTransformer } from "./LexerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;

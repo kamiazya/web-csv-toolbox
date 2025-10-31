@@ -1,4 +1,5 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
+import { webdriverio } from "@vitest/browser-webdriverio";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
@@ -48,8 +49,17 @@ export default defineConfig(env => ({
   ],
   test: {
     setupFiles: ["config/vitest.setup.ts"],
+    testTimeout: 30000, // 30 seconds
+    hookTimeout: 30000, // 30 seconds
     browser: {
-      name: "chrome",
+      enabled: false, // Disabled by default, enable with --browser flag
+      provider: webdriverio(),
+      instances: [
+        { browser: "chrome" },
+        { browser: "firefox" },
+        { browser: "edge" },
+      ],
+      fileParallelism: false, // Run test files sequentially to avoid WebDriver connection issues
     },
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage

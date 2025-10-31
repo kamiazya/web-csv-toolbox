@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { Lexer } from "./Lexer.ts";
-import { FC, autoChunk } from "./__tests__/helper.ts";
+import { autoChunk, FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
+import { Lexer } from "./Lexer.ts";
 
 const LOCATION_SHAPE = {
   start: {

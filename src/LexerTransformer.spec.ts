@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.ts";
-import { FC, autoChunk, transform } from "./__tests__/helper.ts";
+import { autoChunk, FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { escapeField } from "./escapeField.ts";
+import { LexerTransformer } from "./LexerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;

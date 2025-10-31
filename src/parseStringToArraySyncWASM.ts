@@ -1,6 +1,6 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
-import type { CSVRecord, CommonOptions } from "./common/types.ts";
+import type { CommonOptions, CSVRecord } from "./common/types.ts";
 import {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,

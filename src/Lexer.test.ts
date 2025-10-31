@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Lexer } from "./Lexer";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import { Lexer } from "./Lexer";
 
 describe("Lexer", () => {
   let lexer: Lexer;
@@ -275,7 +275,7 @@ describe("Lexer", () => {
       expect(() => [
         ...lexer.lex('"Hello"'),
       ]).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
+        // biome-ignore lint/style/noUnusedTemplateLiteral: snapshot string is used by vitest
         `[MyCustomError: Custom reason]`,
       );
     });

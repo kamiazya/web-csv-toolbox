@@ -67,8 +67,5 @@ const bench = withCodSpeed(new Bench({
     }));
   });
 
-
-await bench.warmup();
-
 await bench.run();
 console.table(bench.table());

@@ -92,7 +92,7 @@ export type Split<
 
 type ExtractString<Source extends CSVString> = Source extends
   | `${infer S}`
-  // biome-ignore lint/suspicious/noRedeclare: <explanation>
+  // biome-ignore lint/suspicious/noRedeclare: S is inferred from union type
   | ReadableStream<infer S>
   ? S
   : string;

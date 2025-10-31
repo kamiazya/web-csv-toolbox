@@ -20,10 +20,17 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
       - name: Coverage
         run: pnpm test:coverage
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -37,9 +44,17 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: Run benchmarks
-        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
         with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@4348f634fa7309fe23aac9502e88b999ec90a164 # v4.3.1
+        with:
+          mode: walltime
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
 
@@ -56,7 +71,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-    - run: pnpm test run
+      with:
+        name: dist
+        path: dist
+    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      with:
+        name: web-csv-toolbox-wasm
+        path: web-csv-toolbox-wasm/pkg
+    - run: pnpm vitest run
 
 
   test_deno:
@@ -64,6 +86,9 @@ jobs:
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      with:
+        name: dist
+        path: dist
     - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
       with:
         deno-version: v1.x
@@ -81,6 +106,7 @@ jobs:
 
   test_linux_browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -94,7 +120,14 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
+      - run: pnpm vitest run --browser.enabled=true --browser.name=${{ matrix.browsers }} --browser.headless
 
   # TODO: Consider alternatives to unstable macos browser testing.
   # test_macos_browser:
@@ -124,6 +157,7 @@ jobs:
 
   test_windows_browser:
     runs-on: windows-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -138,4 +172,11 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+        with:
+          name: dist
+          path: dist
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
+      - run: pnpm vitest run --browser.enabled=true --browser.name=${{ matrix.browsers }} --browser.headless

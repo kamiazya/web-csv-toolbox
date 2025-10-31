@@ -1,6 +1,6 @@
-import { Lexer } from "./Lexer.ts";
 import type { LexerTransformerOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { Lexer } from "./Lexer.ts";
 
 /**
  * A transform stream that converts a stream of tokens into a stream of rows.
