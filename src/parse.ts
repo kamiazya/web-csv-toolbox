@@ -181,7 +181,7 @@ export function parse<
  * for await (const record of parse(response, {
  *   charset: 'shift-jis',
  *   ignoreBOM: true,
- *   decomposition: 'gzip',
+ *   decompression: 'gzip',
  * })) {
  *   // ...
  * }
@@ -196,24 +196,52 @@ export async function* parse<const Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {
-    yield* parseString(csv, options);
+    const iterator = parseString(csv, options);
+    yield* iterator;
   } else if (csv instanceof Uint8Array || csv instanceof ArrayBuffer) {
-    yield* parseBinary(csv, options);
+    const iterator = parseBinary(csv, options);
+    // Check if it's a Promise
+    if (iterator instanceof Promise) {
+      yield* await iterator;
+    } else {
+      yield* iterator;
+    }
   } else if (csv instanceof ReadableStream) {
     const [branch1, branch2] = csv.tee();
     const reader1 = branch1.getReader();
     const { value: firstChunk } = await reader1.read();
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
-      yield* parseStringStream(branch2 as ReadableStream<string>, options);
+      const iterator = parseStringStream(
+        branch2 as ReadableStream<string>,
+        options,
+      );
+      // Check if it's a Promise
+      if (iterator instanceof Promise) {
+        yield* await iterator;
+      } else {
+        yield* iterator;
+      }
     } else if (firstChunk instanceof Uint8Array) {
-      yield* parseUint8ArrayStream(
+      const iterator = parseUint8ArrayStream(
         branch2 as ReadableStream<Uint8Array>,
         options,
       );
+      // Check if it's a Promise
+      if (iterator instanceof Promise) {
+        yield* await iterator;
+      } else {
+        yield* iterator;
+      }
     }
   } else if (csv instanceof Response) {
-    yield* parseResponse(csv, options);
+    const iterator = parseResponse(csv, options);
+    // Check if it's a Promise
+    if (iterator instanceof Promise) {
+      yield* await iterator;
+    } else {
+      yield* iterator;
+    }
   }
 }
 

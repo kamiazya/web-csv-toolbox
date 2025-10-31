@@ -26,11 +26,12 @@ If you were catching `RangeError` from `getOptionsFromResponse()`, update to cat
 ```
 
 ### New feature: Experimental compression format support
-- Add `allowExperimentalCompressions` option to enable future/experimental compression formats
-- By default, only known formats are allowed: gzip, deflate, deflate-raw
-- When enabled, unknown formats are passed to runtime (e.g., Brotli if runtime supports it)
-- Provides forward compatibility with future compression formats without library updates
-- See documentation for usage examples and cautions
+- Add `allowExperimentalCompressions` option to enable experimental/non-standard compression formats
+- **Browsers**: By default, only `gzip` and `deflate` are supported (cross-browser compatible)
+- **Node.js**: By default, `gzip`, `deflate`, and `br` (Brotli) are supported
+- When enabled, allows platform-specific formats like `deflate-raw` (Chrome/Edge only)
+- Provides flexibility for environment-specific compression formats
+- See documentation for browser compatibility details and usage examples
 
 **Other improvements in this release:**
 - Add Content-Encoding header validation with RFC 7231 compliance

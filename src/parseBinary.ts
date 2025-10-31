@@ -1,7 +1,12 @@
-import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
+import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
 import { parseBinaryToArraySync } from "./parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "./parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "./parseBinaryToStream.ts";
+import { parseBinaryInWASM } from "./execution/wasm/parseBinaryInWASM.ts";
 import { convertIterableIteratorToAsync } from "./utils/convertIterableIteratorToAsync.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 
@@ -28,12 +33,42 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  * }
  * ```
  */
-export function parseBinary<Header extends ReadonlyArray<string>>(
+export async function* parseBinary<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   bytes: Uint8Array | ArrayBuffer,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const iterator = parseBinaryToIterableIterator(bytes, options);
-  return convertIterableIteratorToAsync(iterator);
+  // Parse engine configuration
+  const engineConfig = new InternalEngineConfig(options?.engine);
+
+  if (engineConfig.hasWorker()) {
+    // Worker execution
+    const session = engineConfig.workerPool
+      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      : null;
+
+    try {
+      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+        bytes,
+        options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
+        session,
+        engineConfig,
+      );
+    } finally {
+      session?.[Symbol.dispose]();
+    }
+  } else {
+    // Main thread execution
+    if (engineConfig.hasWasm()) {
+      yield* parseBinaryInWASM(bytes, options as ParseBinaryOptions<Header> | undefined);
+    } else {
+      const iterator = parseBinaryToIterableIterator(bytes, options);
+      yield* convertIterableIteratorToAsync(iterator);
+    }
+  }
 }
 
 export declare namespace parseBinary {

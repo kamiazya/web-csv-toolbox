@@ -1,6 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 import { FC } from "./__tests__/helper.ts";
+import type { ExecutionStrategy } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseStringStream } from "./parseStringStream.ts";
 import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";

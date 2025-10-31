@@ -1,10 +1,10 @@
 // Copy from https://github.com/nshen/vite-plugin-wasm-pack/blob/a6d261f55a0ef53eb4c277251c5d7391ee657bae/src/index.ts
 // and edit for some improvements.
-import { readFileSync, createReadStream } from "fs";
-import fs from "fs/promises";
+import { dataToEsm } from "@rollup/pluginutils";
+import { createReadStream, readFileSync } from "fs";
+import fs from "node:fs/promises";
 import path from "path";
 import { PluginOption } from "vite";
-import { dataToEsm } from "@rollup/pluginutils";
 
 async function exists(filepath: string) {
   try {
@@ -33,6 +33,7 @@ function vitePluginWasmPack({
   const prefix = "\0";
   const pkg = "pkg"; // default folder of wasm-pack module
   let baseDir: string;
+  let isBuild = false;
 
   type CrateType = { path: string };
   // wasmfileName : CrateType
@@ -51,6 +52,7 @@ function vitePluginWasmPack({
     enforce: "pre",
     configResolved(resolvedConfig) {
       baseDir = resolvedConfig.base;
+      isBuild = resolvedConfig.command === 'build';
     },
 
     resolveId(id: string) {
@@ -73,11 +75,18 @@ function vitePluginWasmPack({
           id,
           id.replace(/\-/g, "_") + ".js",
         );
-        const code = await fs.readFile(modulejs, {
-          encoding: "utf-8",
-        });
-        return code;
+        try {
+          const code = await fs.readFile(modulejs, {
+            encoding: "utf-8",
+          });
+          return code;
+        } catch (error) {
+          console.error(`[vite-plugin-wasm-pack] Failed to load: ${modulejs}`, error);
+          return null;
+        }
       }
+      // Return null for other modules to let Vite handle them
+      return null;
     },
 
     async buildStart(_inputOptions) {
@@ -141,7 +150,7 @@ function vitePluginWasmPack({
     },
 
     buildEnd() {
-      if (copyWasm) {
+      if (copyWasm && isBuild) {
         for (const [fileName, crate] of wasmMap.entries()) {
           this.emitFile({
             type: "asset",

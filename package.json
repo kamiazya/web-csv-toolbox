@@ -31,10 +31,53 @@
     "./package.json": "./package.json"
   },
   "imports": {
-    "./loadWASM.js": {
-      "types": "./dist/loadWASM.d.ts",
-      "browser": "./dist/loadWASM.web.js",
-      "default": "./dist/loadWASM.js"
+    "#execution/worker/createWorker.js": {
+      "types": "./dist/execution/worker/helpers/createWorker.d.ts",
+      "node": "./dist/execution/worker/helpers/createWorker.node.js",
+      "browser": "./dist/execution/worker/helpers/createWorker.web.js",
+      "default": "./dist/execution/worker/helpers/createWorker.web.js"
+    },
+    "#getOptionsFromResponse.constants.js": {
+      "types": "./dist/getOptionsFromResponse.constants.d.ts",
+      "node": "./dist/getOptionsFromResponse.constants.node.js",
+      "browser": "./dist/getOptionsFromResponse.constants.web.js",
+      "default": "./dist/getOptionsFromResponse.constants.web.js"
+    },
+    "#execution/worker/parseStringInWorker.js": {
+      "types": "./dist/execution/worker/parseStringInWorker.d.ts",
+      "node": "./dist/execution/worker/parseStringInWorker.node.js",
+      "browser": "./dist/execution/worker/parseStringInWorker.web.js",
+      "default": "./dist/execution/worker/parseStringInWorker.web.js"
+    },
+    "#execution/worker/parseStringInWorkerWASM.js": {
+      "types": "./dist/execution/worker/parseStringInWorkerWASM.d.ts",
+      "node": "./dist/execution/worker/parseStringInWorkerWASM.node.js",
+      "browser": "./dist/execution/worker/parseStringInWorkerWASM.web.js",
+      "default": "./dist/execution/worker/parseStringInWorkerWASM.web.js"
+    },
+    "#execution/worker/parseBinaryInWorker.js": {
+      "types": "./dist/execution/worker/parseBinaryInWorker.d.ts",
+      "node": "./dist/execution/worker/parseBinaryInWorker.node.js",
+      "browser": "./dist/execution/worker/parseBinaryInWorker.web.js",
+      "default": "./dist/execution/worker/parseBinaryInWorker.web.js"
+    },
+    "#execution/worker/parseBinaryInWorkerWASM.js": {
+      "types": "./dist/execution/worker/parseBinaryInWorkerWASM.d.ts",
+      "node": "./dist/execution/worker/parseBinaryInWorkerWASM.node.js",
+      "browser": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js",
+      "default": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js"
+    },
+    "#execution/worker/parseStreamInWorker.js": {
+      "types": "./dist/execution/worker/parseStreamInWorker.d.ts",
+      "node": "./dist/execution/worker/parseStreamInWorker.node.js",
+      "browser": "./dist/execution/worker/parseStreamInWorker.web.js",
+      "default": "./dist/execution/worker/parseStreamInWorker.web.js"
+    },
+    "#execution/worker/parseUint8ArrayStreamInWorker.js": {
+      "types": "./dist/execution/worker/parseUint8ArrayStreamInWorker.d.ts",
+      "node": "./dist/execution/worker/parseUint8ArrayStreamInWorker.node.js",
+      "browser": "./dist/execution/worker/parseUint8ArrayStreamInWorker.web.js",
+      "default": "./dist/execution/worker/parseUint8ArrayStreamInWorker.web.js"
     }
   },
   "files": [
@@ -84,8 +127,8 @@
     "@codecov/vite-plugin": "^1.9.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.4",
-    "@vitest/browser": "^3.2.3",
-    "@vitest/coverage-istanbul": "^3.2.3",
+    "@vitest/browser-webdriverio": "^4.0.3",
+    "@vitest/coverage-istanbul": "4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^4.1.1",
@@ -93,10 +136,10 @@
     "typedoc": "^0.28.5",
     "typedoc-plugin-mdn-links": "^5.0.2",
     "typescript": "^5.8.3",
-    "vite": "^6.3.5",
+    "vite": "^7.1.12",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "^3.2.3",
+    "vitest": "4.0.3",
     "wasm-pack": "^0.13.1",
-    "webdriverio": "^9.15.0"
+    "webdriverio": "^9.20.0"
   }
 }

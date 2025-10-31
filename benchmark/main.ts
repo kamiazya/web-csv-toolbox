@@ -30,6 +30,13 @@ await loadWASM();
 let binaryCSV: Uint8Array = await getAsBinary()
 let stringCSV: string = await getAsString();
 
+// CSV with more rows for worker overhead comparison
+const largeCSV = [
+  'index,"quated",not quated',
+  ...Array.from({length: 1000}, (_, i) => `${i},"${'x'.repeat(i % 100)}",${'y'.repeat(i % 100)}`),
+  ''
+].join('\n');
+
 const bench = withCodSpeed(new Bench({
   iterations: 50,
 }))
@@ -65,6 +72,26 @@ const bench = withCodSpeed(new Bench({
         // noop
       }
     }));
+  })
+  // Worker execution benchmarks (small dataset - worker overhead likely dominates)
+  .add('parseString with worker (50 rows)', async () => {
+    const records = [];
+    for await (const record of parseString(stringCSV, { execution: ['worker'] })) {
+      records.push(record);
+    }
+  })
+  // Worker execution benchmarks (large dataset - parsing time should dominate)
+  .add('parseString main thread (1000 rows)', async () => {
+    const records = [];
+    for await (const record of parseString(largeCSV, { execution: [] })) {
+      records.push(record);
+    }
+  })
+  .add('parseString with worker (1000 rows)', async () => {
+    const records = [];
+    for await (const record of parseString(largeCSV, { execution: ['worker'] })) {
+      records.push(record);
+    }
   });
 
 

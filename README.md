@@ -36,129 +36,58 @@ A CSV Toolbox utilizing Web Standard APIs.
 
 ## Key Concepts ✨
 
-- 🌐 **Web Standards first.**
-  - Utilizing the Web Standards APIs, such as the [Web Streams API](https://developer.mozilla.org/en/docs/Web/API/Streams_API).
-- ❤️ **TypeScript friendly & User friendly.**
-  - Fully typed and documented.
-- 0️⃣ **Zero dependencies.**
-  - Using only Web Standards APIs.
-- 💪 **Property-based testing.**
-  - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev).
-- ✅ **Cross-platform.**
-  - Works on browsers, Node.js, and Deno.
+- 🌐 **Web Standards first** - Utilizing Web Standards APIs like [Web Streams API](https://developer.mozilla.org/en/docs/Web/API/Streams_API)
+- ❤️ **TypeScript friendly & User friendly** - Fully typed and documented
+- 0️⃣ **Zero dependencies** - Using only Web Standards APIs
+- 💪 **Property-based testing** - Using [fast-check](https://fast-check.dev/) and [vitest](https://vitest.dev)
+- ✅ **Cross-platform** - Works on browsers, Node.js, and Deno
 
 ## Key Features 📗
 
-- 🌊 **Efficient CSV Parsing with Streams**
-  - 💻 Leveraging the [WHATWG Streams API](https://streams.spec.whatwg.org/) and other Web APIs for seamless and efficient data processing.
-- 🛑 **AbortSignal and Timeout Support**: Ensure your CSV processing is cancellable, including support for automatic timeouts.
-  - ✋ Integrate with [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController) to manually cancel operations as needed.
-  - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
-- 🛡️ **Memory Safety Protection**: Built-in limits prevent memory exhaustion attacks.
-  - 🔒 Configurable maximum buffer size (default: 10M characters) to prevent DoS attacks via unbounded input.
-  - 🚨 Throws `RangeError` when buffer exceeds the limit.
-  - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
-  - ⚠️ Throws `RangeError` when field count exceeds the limit.
-  - 💾 Configurable maximum binary size (default: 100MB bytes) for ArrayBuffer/Uint8Array inputs.
-  - 🛑 Throws `RangeError` when binary size exceeds the limit.
-- 🎨 **Flexible Source Support**
-  - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
-- ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
-  - 🔄 Defaults to `,` and `"` respectively.
-- 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
-  - 🔄 Flexible BOM handling.
-  - 🗜️ Supports various compression formats.
-  - 🔤 Charset specification for diverse encoding.
-- 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
-  - 📦 WebAssembly is used for high performance parsing.
-- 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
-- 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
+- 🌊 **Efficient CSV Parsing with Streams** - Memory-efficient processing using Web Streams API
+- 🛑 **AbortSignal and Timeout Support** - Cancellable operations with automatic timeouts
+- 🛡️ **Memory Safety Protection** - Built-in limits prevent memory exhaustion attacks
+- 🎨 **Flexible Source Support** - Parse from `string`, `ReadableStream`, or `Response`
+- ⚙️ **Advanced Parsing Options** - Customize delimiters, quotation marks, and more
+- 💾 **Specialized Binary CSV Parsing** - BOM handling, compression support, charset specification
+- 🚀 **Flexible Execution Strategies** - Worker Threads, WebAssembly, or combined (_Experimental_)
+- 📦 **Lightweight and Zero Dependencies** - No external dependencies
+- 📚 **Fully Typed and Documented** - Complete TypeScript support and [TypeDoc](https://typedoc.org/) documentation
 
-## Installation 📥
+## Quick Start 🚀
 
-### With Package manager 📦
+### Installation
 
-This package can then be installed using a package manager.
+```bash
+# npm
+npm install web-csv-toolbox
 
-```sh
-# Install with npm
-$ npm install web-csv-toolbox
-# Or Yarn
-$ yarn add web-csv-toolbox
-# Or pnpm
-$ pnpm add web-csv-toolbox
+# yarn
+yarn add web-csv-toolbox
+
+# pnpm
+pnpm add web-csv-toolbox
 ```
 
-### From CDN (unpkg.com) 🌐
+### Basic Usage
 
-```html
-<script type="module">
-import { parse } from 'https://unpkg.com/web-csv-toolbox';
+```typescript
+import { parse } from 'web-csv-toolbox';
 
-const csv = `name,age
-Alice,42
-Bob,69`;
+const csv = `name,age,city
+Alice,30,New York
+Bob,25,San Francisco`;
 
 for await (const record of parse(csv)) {
   console.log(record);
 }
-</script>
+// { name: 'Alice', age: '30', city: 'New York' }
+// { name: 'Bob', age: '25', city: 'San Francisco' }
 ```
 
-#### Deno 🦕
+### Fetch from URL
 
-You can install and use the package by specifying the following:
-
-```js
-import { parse } from "npm:web-csv-toolbox";
-```
-
-## Usage 📘
-
-### Parsing CSV files from strings
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-const csv = `name,age
-Alice,42
-Bob,69`;
-
-for await (const record of parse(csv)) {
-  console.log(record);
-}
-// Prints:
-// { name: 'Alice', age: '42' }
-// { name: 'Bob', age: '69' }
-```
-
-### Parsing CSV files from `ReadableStream`s
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-const csv = `name,age
-Alice,42
-Bob,69`;
-
-const stream = new ReadableStream({
-  start(controller) {
-    controller.enqueue(csv);
-    controller.close();
-  },
-});
-
-for await (const record of parse(stream)) {
-  console.log(record);
-}
-// Prints:
-// { name: 'Alice', age: '42' }
-// { name: 'Bob', age: '69' }
-```
-
-### Parsing CSV files from `Response` objects
-
-```js
+```typescript
 import { parse } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
@@ -166,47 +95,25 @@ const response = await fetch('https://example.com/data.csv');
 for await (const record of parse(response)) {
   console.log(record);
 }
-// Prints:
-// { name: 'Alice', age: '42' }
-// { name: 'Bob', age: '69' }
 ```
 
-### Parsing CSV files with different delimiters and quotation characters
+### With Worker Threads (Performance)
 
-```js
-import { parse } from 'web-csv-toolbox';
+```typescript
+import { parse, EnginePresets } from 'web-csv-toolbox';
 
-const csv = `name\tage
-Alice\t42
-Bob\t69`;
-
-for await (const record of parse(csv, { delimiter: '\t' })) {
+// Non-blocking UI, good for large files
+for await (const record of parse(csv, {
+  engine: EnginePresets.balanced()
+})) {
   console.log(record);
+  // UI stays responsive!
 }
-// Prints:
-// { name: 'Alice', age: '42' }
-// { name: 'Bob', age: '69' }
-```
-
-### Parsing CSV files with headers
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-const csv = `Alice,42
-Bob,69`;
-
-for await (const record of parse(csv, { headers: ['name', 'age'] })) {
-  console.log(record);
-}
-// Prints:
-// { name: 'Alice', age: '42' }
-// { name: 'Bob', age: '69' }
 ```
 
 ### Working with Headerless CSV Files
 
-Some CSV files don’t include a header row. You can provide custom headers manually:
+Some CSV files don't include a header row. You can provide custom headers manually:
 
 ```typescript
 import { parse } from 'web-csv-toolbox';
@@ -228,421 +135,186 @@ for await (const record of parse(sensorData, {
 // Temp: 24.8°C, Humidity: 62%, Pressure: 1025 hPa
 ```
 
-### `AbortSignal` / `AbortController` Support
+## Documentation 📖
 
-Support for [`AbortSignal`](https://developer.mozilla.org/docs/Web/API/AbortSignal) / [`AbortController`](https://developer.mozilla.org/docs/Web/API/AbortController), enabling you to cancel ongoing asynchronous CSV processing tasks.
+Our documentation follows the [Diátaxis framework](https://diataxis.fr/) to help you find what you need:
 
-This feature is useful for scenarios where processing needs to be halted, such as when a user navigates away from the page or other conditions that require stopping the task early.
+### 📚 Tutorials - Learn by doing
+Step-by-step guides to get you started:
+- **[Getting Started](./docs/tutorials/getting-started.md)** - Your first CSV parser (10 min)
+- **[Working with Workers](./docs/tutorials/working-with-workers.md)** - Performance optimization with worker threads (15 min)
+- **[Using WebAssembly](./docs/tutorials/using-webassembly.md)** - High-performance parsing with WASM (15 min)
 
-#### Example Use Case: Abort with user action
+### 🔧 How-To Guides - Solve specific problems
+Practical guides for common tasks:
+- **[Choosing the Right API](./docs/how-to-guides/choosing-the-right-api.md)** - Select the best API for your use case
+- **[Secure CSV Processing](./docs/how-to-guides/secure-csv-processing.md)** - Protect against DoS attacks (⚠️ Critical for production)
+- **[Custom CSV Parser](./docs/how-to-guides/custom-csv-parser.md)** - Build custom parsers with low-level APIs
+- **[WASM Performance Optimization](./docs/how-to-guides/wasm-performance-optimization.md)** - Maximize WASM parsing performance
 
-```js
-import { parse } from 'web-csv-toolbox';
+### 📖 Reference - Technical information
+Detailed API documentation:
+- **[Engine Presets](./docs/reference/engine-presets.md)** - Pre-configured engine settings
+- **[Engine Configuration](./docs/reference/engine-config.md)** - Complete configuration reference
+- **[Supported Environments](./docs/reference/supported-environments.md)** - Runtime and browser compatibility
+- **[Versioning Policy](./docs/reference/versioning-policy.md)** - Semantic versioning strategy
+- **High-level API Reference:**
+  - **[parse()](./docs/reference/api/parse.md)** - Universal CSV parser (beginner-friendly)
+- **Low-level API Reference:**
+  - **[Lexer](./docs/reference/api/lexer.md)** - Tokenize CSV text
+  - **[LexerTransformer](./docs/reference/api/lexer-transformer.md)** - Streaming tokenization
+  - **[RecordAssembler](./docs/reference/api/record-assembler.md)** - Convert tokens to records
+  - **[RecordAssemblerTransformer](./docs/reference/api/record-assembler-transformer.md)** - Streaming record assembly
+  - **[WorkerPool](./docs/reference/api/worker-pool.md)** - Worker pool management API
+  - **[WebAssembly](./docs/reference/api/wasm.md)** - WASM API reference
+- **[API Documentation](https://kamiazya.github.io/web-csv-toolbox/)** - Full TypeDoc API reference
 
-const controller = new AbortController();
-const csv = "name,age\nAlice,30\nBob,25";
+### 💡 Explanation - Understand the concepts
+Deep dives into design and architecture:
+- **[Parsing Architecture](./docs/explanation/parsing-architecture.md)** - Understanding the two-stage pipeline
+- **[Execution Strategies](./docs/explanation/execution-strategies.md)** - How different strategies work
+- **[Worker Pool Architecture](./docs/explanation/worker-pool-architecture.md)** - Understanding worker pool design
+- **[WebAssembly Architecture](./docs/explanation/webassembly-architecture.md)** - How WASM achieves high performance
+- **[Security Model](./docs/explanation/security-model.md)** - Understanding the security architecture
 
-try {
-  // Parse the CSV data then pass the AbortSignal to the parse function
-  for await (const record of parse(csv, { signal: controller.signal })) {
-    console.log(record);
+## Security ⚠️
+
+**Critical:** When processing user-uploaded CSV files, always implement resource limits to prevent DoS attacks.
+
+```typescript
+import { WorkerPool, EnginePresets, parseStringStream } from 'web-csv-toolbox';
+
+// Limit concurrent workers to prevent resource exhaustion
+const pool = new WorkerPool({ maxWorkers: 4 });
+
+app.post('/validate-csv', async (c) => {
+  // Early rejection if pool is saturated
+  if (pool.isFull()) {
+    return c.json({ error: 'Service busy' }, 503);
   }
-} catch (error) {
-  if (error instanceof DOMException && error.name === 'AbortError') {
-     // The CSV processing was aborted by the user
-    console.log('CSV processing was aborted by the user.');
-  } else {
-    // An error occurred during CSV processing
-    console.error('An error occurred:', error);
-  }
-}
 
-// Some abort logic, like a cancel button
-document.getElementById('cancel-button')
-  .addEventListener('click', () => {
-    controller.abort();
-  });
+  const csvStream = c.req.raw.body?.pipeThrough(new TextDecoderStream());
+
+  for await (const record of parseStringStream(csvStream, {
+    engine: EnginePresets.balanced({ workerPool: pool })
+  })) {
+    // Process securely...
+  }
+});
 ```
 
-#### Example Use Case: Abort with timeout
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-// Set up a timeout of 5 seconds (5000 milliseconds)
-const signal = AbortSignal.timeout(5000);
-
-const csv = "name,age\nAlice,30\nBob,25";
-
-try {
-  // Pass the AbortSignal to the parse function
-  const result = await parse.toArray(csv, { signal });
-  console.log(result);
-} catch (error) {
-  if (error instanceof DOMException && error.name === 'TimeoutError') {
-    // Handle the case where the processing was aborted due to timeout
-    console.log('CSV processing was aborted due to timeout.');
-  } else {
-    // Handle other errors
-    console.error('An error occurred during CSV processing:', error);
-  }
-}
-```
+📖 **See [SECURITY.md](./SECURITY.md) for our security policy and [How-To: Secure CSV Processing](./docs/how-to-guides/secure-csv-processing.md) for implementation details.**
 
 ## Supported Runtimes 💻
 
-### Works on Node.js
+### Node.js
 
-| Versions | Status |
-| -------- | ------ |
-| 20.x     | ✅     |
-| 22.x     | ✅     |
-| 24.x     | ✅     |
+| Version | Status |
+|---------|--------|
+| 20.x    | ✅     |
+| 22.x    | ✅     |
+| 24.x    | ✅     |
 
+### Browsers
 
-### Works on Browser
+| OS      | Chrome | Firefox | Edge | Safari |
+|---------|--------|---------|------|--------|
+| Windows | ✅     | ✅      | ✅   | -      |
+| macOS   | ✅     | ✅      | ✅   | ⬜*    |
+| Linux   | ✅     | ✅      | ✅   | -      |
 
-| OS      | Chrome | FireFox | Default       |
-| ------- | ------ | ------- | ------------- |
-| Windows | ✅     | ✅      | ✅ (Edge)     |
-| macos   | ✅     | ✅      | ⬜ (Safari *) |
-| Linux   | ✅     | ✅      | -             |
-
-> **\* To Be Tested**:  [I couldn't launch Safari in headless mode](https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41) on GitHub Actions, so I couldn't verify it, but it probably works.
+> **\* Safari:** Basic functionality works. Transferable Streams not supported (auto-falls back to message-streaming).
 
 ### Others
 
-- Verify that JavaScript is executable on the Deno. [![Deno CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml)
-
-## APIs 🧑‍💻
-
-### High-level APIs 🚀
-
-These APIs are designed for **Simplicity and Ease of Use**,
-providing an intuitive and straightforward experience for users.
-
-- **`function parse(input[, options]): AsyncIterableIterator<CSVRecord>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse-1.html)
-  - Parses various CSV input formats into an asynchronous iterable of records.
-- **`function parse.toArray(input[, options]): Promise<CSVRecord[]>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse.toArray.html)
-  - Parses CSV input into an array of records, ideal for smaller data sets.
-
-The `input` paramater can be a `string`, a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
-of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s,
-or a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object,
-or a [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object,
-or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
-
-### Middle-level APIs 🧱
-
-These APIs are optimized for **Enhanced Performance and Control**,
-catering to users who need more detailed and fine-tuned functionality.
-
-- **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
-  - Efficient parsing of CSV strings.
-- **`function parseBinary(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinary-1.html)
-  - Parse CSV Binary of ArrayBuffer or Uint8Array.
-- **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
-  - Customized parsing directly from `Response` objects.
-- **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
-  - Stream-based parsing for larger or continuous data.
-- **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
-  - Combines string-based parsing with stream processing.
-- **`function parseUint8ArrayStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8ArrayStream-1.html)
-  - Parses binary streams with precise control over data types.
-
-### Low-level APIs ⚙️
-
-These APIs are built for **Advanced Customization and Pipeline Design**,
-ideal for developers looking for in-depth control and flexibility.
-
-- **`class LexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/LexerTransformer.html)
-  - A TransformStream class for lexical analysis of CSV data.
-- **`class RecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/RecordAssemblerTransformer.html)
-  - Handles the assembly of parsed data into records.
-
-### Experimental APIs 🧪
-
-These APIs are experimental and may change in the future.
-
-#### Parsing using WebAssembly for high performance.
-
-You can use WebAssembly to parse CSV data for high performance.
-
-- Parsing with WebAssembly is faster than parsing with JavaScript,
-but it takes time to load the WebAssembly module.
-- Supports only UTF-8 encoding csv data.
-- Quotation characters are only `"`. (Double quotation mark)
-  - If you pass a different character, it will throw an error.
-
-```ts
-import { loadWASM, parseStringWASM } from "web-csv-toolbox";
-
-// load WebAssembly module
-await loadWASM();
-
-const csv = "a,b,c\n1,2,3";
-
-// parse CSV string
-const result = parseStringToArraySyncWASM(csv);
-console.log(result);
-// Prints:
-// [{ a: "1", b: "2", c: "3" }]
-```
-
-- **`function loadWASM(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)
-  - Loads the WebAssembly module.
-- **`function parseStringToArraySyncWASM(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)
-  - Parses CSV strings into an array of records.
-
-## Options Configuration 🛠️
-
-### Common Options ⚙️
-
-| Option           | Description                           | Default      | Notes                                                                              |
-| ---------------- | ------------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
-| `delimiter`      | Character to separate fields          | `,`          |                                                                                    |
-| `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
-| `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
-| `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
-| `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
-
-### Advanced Options (Binary-Specific) 🧬
-
-| Option                            | Description                                       | Default | Notes                                                                                                                                                     |
-| --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
-| `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
-| `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
-| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
+- **Deno:** ✅ Verified ([CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml))
+- **CDN:** ✅ Available via [unpkg.com](https://unpkg.com/web-csv-toolbox)
 
 ## Performance & Best Practices ⚡
 
+### Quick Decision Guide
+
+| File Size | Recommended Config | Reason |
+|-----------|-------------------|--------|
+| < 1MB | `mainThread` | No overhead needed |
+| 1-10MB | `balanced` ⭐ | Good performance + compatibility |
+| > 10MB (UTF-8) | `fastest` | Maximum performance with WASM |
+| > 10MB (any) | `balanced` | Broad encoding support |
+
+⭐ **`balanced`** is recommended for production applications.
+
 ### Memory Characteristics
 
-web-csv-toolbox uses different memory patterns depending on the API you choose:
-
-#### 🌊 Streaming APIs (Memory Efficient)
-
-##### Recommended for large files (> 10MB)
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-// ✅ Memory efficient: processes one record at a time
-const response = await fetch('https://example.com/large-data.csv');
+```typescript
+// ✅ Streaming: O(1) memory per record
+const response = await fetch('large-data.csv');
 for await (const record of parse(response)) {
-  console.log(record);
-  // Memory footprint: ~few KB per iteration
+  console.log(record);  // Constant memory usage
 }
-```
 
-- **Memory usage**: O(1) - constant per record
-- **Suitable for**: Files of any size, browser environments
-- **Max file size**: Limited only by available storage/network
-
-#### 📦 Array-Based APIs (Memory Intensive)
-
-##### Recommended for small files (< 1MB)
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-// ⚠️ Loads entire result into memory
+// ❌ Array: O(n) memory for entire file
 const csv = await fetch('data.csv').then(r => r.text());
-const records = await parse.toArray(csv);
-// Memory footprint: entire file + parsed array
+const records = await parse.toArray(csv);  // Loads all into memory
 ```
 
-- **Memory usage**: O(n) - proportional to file size
-- **Suitable for**: Small datasets, quick prototyping
-- **Recommended max**: ~10MB (browser), ~100MB (Node.js)
+📖 **See [Execution Strategies](./docs/explanation/execution-strategies.md) for detailed performance analysis.**
 
-### Platform-Specific Considerations
+## API Overview 🧑‍💻
 
-| Platform | Streaming | Array-Based | Notes |
-|----------|-----------|-------------|-------|
-| **Browser** | Any size | < 10MB | Browser heap limits apply (~100MB-4GB depending on browser) |
-| **Node.js** | Any size | < 100MB | Use `--max-old-space-size` flag for larger heaps |
-| **Deno** | Any size | < 100MB | Similar to Node.js |
+### High-level APIs
 
-### Performance Tips
+Simple and beginner-friendly:
+- **[parse()](./docs/reference/api/parse.md)** - Parse any CSV input (prototyping, learning)
 
-#### 1. Use streaming for large files
+### Middle-level APIs (Production)
 
-```js
-import { parse } from 'web-csv-toolbox';
+Optimized for production use:
+- **[parseString()](./docs/reference/api/parseString.md)** - Parse CSV string
+- **[parseStringStream()](./docs/reference/api/parseStringStream.md)** - Parse text stream
+- **[parseUint8ArrayStream()](./docs/reference/api/parseUint8ArrayStream.md)** - Parse binary stream
+- **[parseBinary()](./docs/reference/api/parseBinary.md)** - Parse ArrayBuffer/Uint8Array
+- **[parseResponse()](./docs/reference/api/parseResponse.md)** - Parse HTTP response
 
-const response = await fetch('https://example.com/large-data.csv');
+### Low-level APIs
 
-// ✅ Good: Streaming approach (constant memory usage)
-for await (const record of parse(response)) {
-  // Process each record immediately
-  console.log(record);
-  // Memory footprint: O(1) - only one record in memory at a time
-}
+Maximum customization:
+- **[LexerTransformer](./docs/reference/api/lexer-transformer.md)** - Streaming tokenization
+- **[RecordAssemblerTransformer](./docs/reference/api/record-assembler-transformer.md)** - Streaming record assembly
+- **[Lexer](./docs/reference/api/lexer.md)** - Tokenize CSV text
+- **[RecordAssembler](./docs/reference/api/record-assembler.md)** - Convert tokens to records
 
-// ❌ Avoid: Loading entire file into memory first
-const response2 = await fetch('https://example.com/large-data.csv');
-const text = await response2.text(); // Loads entire file into memory
-const records = await parse.toArray(text); // Loads all records into memory
-for (const record of records) {
-  console.log(record);
-  // Memory footprint: O(n) - entire file + all records in memory
-}
-```
+### Experimental APIs
 
-#### 2. Enable AbortSignal for timeout protection
+- **[EnginePresets](./docs/reference/engine-presets.md)** - Pre-configured engine settings
+- **[ReusableWorkerPool](./docs/reference/api/worker-pool.md#reusableworkerpool)** - Persistent worker pool for high-throughput scenarios
+- **[loadWASM()](./docs/reference/api/wasm.md#loadwasm)** - Load WebAssembly module
 
-```js
-import { parse } from 'web-csv-toolbox';
+📖 **See [API Documentation](https://kamiazya.github.io/web-csv-toolbox/) for complete reference.**
 
-// Set up a timeout of 30 seconds (30000 milliseconds)
-const signal = AbortSignal.timeout(30000);
+## Contributing 💪
 
-const response = await fetch('https://example.com/large-data.csv');
+We welcome contributions! Here's how you can help:
 
-try {
-  for await (const record of parse(response, { signal })) {
-    // Process each record
-    console.log(record);
-  }
-} catch (error) {
-  if (error instanceof DOMException && error.name === 'TimeoutError') {
-    // Handle timeout
-    console.log('CSV processing was aborted due to timeout.');
-  } else {
-    // Handle other errors
-    console.error('An error occurred during CSV processing:', error);
-  }
-}
-```
+### ⭐ Star the Project
 
-#### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
+The easiest way to contribute is to use the library and star the [repository](https://github.com/kamiazya/web-csv-toolbox/).
 
-```js
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-// 2-3x faster for large CSV strings (UTF-8 only)
-const records = parseStringToArraySyncWASM(csvString);
-```
-
-### Known Limitations
-
-- **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
-- **WASM Parser**: UTF-8 encoding only, double-quote (`"`) only
-- **Streaming**: Best performance with chunk sizes > 1KB
-
-### Security Considerations
-
-For production use with untrusted input, consider:
-- Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
-- Using `maxBinarySize` option to limit ArrayBuffer/Uint8Array inputs (default: 100MB bytes)
-- Using `maxBufferSize` option to limit internal buffer size (default: 10M characters)
-- Using `maxFieldCount` option to limit fields per record (default: 100,000)
-- Implementing additional file size limits at the application level
-- Validating parsed data before use
-
-#### Implementing Size Limits for Untrusted Sources
-
-When processing CSV files from untrusted sources (especially compressed files), you can implement size limits using a custom TransformStream:
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-// Create a size-limiting TransformStream
-class SizeLimitStream extends TransformStream {
-  constructor(maxBytes) {
-    let bytesRead = 0;
-    super({
-      transform(chunk, controller) {
-        bytesRead += chunk.length;
-        if (bytesRead > maxBytes) {
-          controller.error(new Error(`Size limit exceeded: ${maxBytes} bytes`));
-        } else {
-          controller.enqueue(chunk);
-        }
-      }
-    });
-  }
-}
-
-// Example: Limit decompressed data to 10MB
-const response = await fetch('https://untrusted-source.com/data.csv.gz');
-const limitedStream = response.body
-  .pipeThrough(new DecompressionStream('gzip'))
-  .pipeThrough(new SizeLimitStream(10 * 1024 * 1024)); // 10MB limit
-
-try {
-  for await (const record of parse(limitedStream)) {
-    console.log(record);
-  }
-} catch (error) {
-  if (error.message.includes('Size limit exceeded')) {
-    console.error('File too large - possible compression bomb attack');
-  }
-}
-```
-
-**Note**: The library automatically validates Content-Encoding headers when parsing Response objects, rejecting unsupported compression formats.
-
-#### Using Experimental Compression Formats
-
-By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
-
-```js
-import { parse } from 'web-csv-toolbox';
-
-// ✅ Default behavior: Only known formats
-const response = await fetch('data.csv.gz');
-await parse(response); // Works
-
-// ⚠️ Experimental: Allow future formats
-const response2 = await fetch('data.csv.br'); // Brotli compression
-try {
-  await parse(response2, { allowExperimentalCompressions: true });
-  // Works if runtime supports Brotli
-} catch (error) {
-  // Runtime will throw if format is unsupported
-  console.error('Runtime does not support this compression format');
-}
-```
-
-**When to use this:**
-- Your runtime supports a newer compression format (e.g., Brotli in modern browsers)
-- You want to use the format before this library explicitly supports it
-- You trust the compression format source
-
-**Cautions:**
-- Error messages will come from the runtime, not this library
-- No library-level validation for unknown formats
-- You must verify your runtime supports the format
-
-## How to Contribute 💪
-
-## Star ⭐
-
-The easiest way to contribute is to use the library and star [repository](https://github.com/kamiazya/web-csv-toolbox/).
-
-### Questions 💭
+### 💭 Ask Questions
 
 Feel free to ask questions on [GitHub Discussions](https://github.com/kamiazya/web-csv-toolbox/discussions).
 
-### Report bugs / request additional features 💡
+### 💡 Report Bugs / Request Features
 
-Please register at [GitHub Issues](https://github.com/kamiazya/web-csv-toolbox/issues/new/choose).
+Please create an issue at [GitHub Issues](https://github.com/kamiazya/web-csv-toolbox/issues/new/choose).
 
-### Financial Support 💸
+### 💸 Financial Support
 
-Please support [kamiazya](https://github.com/sponsors/kamiazya).
+Support the development via [GitHub Sponsors](https://github.com/sponsors/kamiazya).
 
-> Even just a dollar is enough motivation to develop 😊
+> Even a small contribution provides great motivation! 😊
 
 ## License ⚖️
 
-This software is released under the MIT License, see [LICENSE](https://github.com/kamiazya/web-csv-toolbox?tab=MIT-1-ov-file).
-
+MIT License - see [LICENSE](./LICENSE) for details.
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox?ref=badge_large)
