@@ -52,7 +52,11 @@ export default defineConfig(env => ({
     browser: {
       enabled: true,
       provider: webdriverio(),
-      instances: [{ browser: "chrome" }],
+      instances: [
+        { browser: "chrome" },
+        { browser: "firefox" },
+        { browser: "edge" },
+      ],
     },
     coverage: {
       provider: "istanbul", // use istanbul for browser coverage
