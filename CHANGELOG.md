@@ -1,5 +1,139 @@
 # web-csv-toolbox
 
+## 0.13.0
+
+### Minor Changes
+
+- [#545](https://github.com/kamiazya/web-csv-toolbox/pull/545) [`43a6812`](https://github.com/kamiazya/web-csv-toolbox/commit/43a68127cfe4433ac3c4542933b22f7acbcd93be) Thanks [@kamiazya](https://github.com/kamiazya)! - Add comprehensive memory protection to prevent memory exhaustion attacks
+
+  This release introduces new security features to prevent unbounded memory growth during CSV parsing. The parser now enforces configurable limits on both buffer size and field count to protect against denial-of-service attacks via malformed or malicious CSV data.
+
+  **New Features:**
+
+  - Added `maxBufferSize` option to `CommonOptions` (default: `10 * 1024 * 1024` characters)
+  - Added `maxFieldCount` option to `RecordAssemblerOptions` (default: 100,000 fields)
+  - Throws `RangeError` when buffer exceeds size limit
+  - Throws `RangeError` when field count exceeds limit
+  - Comprehensive memory safety protection against DoS attacks
+
+  **Note:** `maxBufferSize` is measured in UTF-16 code units (JavaScript string length), not bytes. This is approximately 10MB for ASCII text, but may vary for non-ASCII characters.
+
+  **Breaking Changes:**
+  None. This is a backward-compatible enhancement with sensible defaults.
+
+  **Security:**
+  This change addresses three potential security vulnerabilities:
+
+  1. **Unbounded buffer growth via streaming input**: Attackers could exhaust system memory by streaming large amounts of malformed CSV data that cannot be tokenized. The `maxBufferSize` limit prevents this by throwing `RangeError` when the internal buffer exceeds `10 * 1024 * 1024` characters (approximately 10MB for ASCII).
+
+  2. **Quoted field parsing memory exhaustion**: Attackers could exploit the quoted field parsing logic by sending strategically crafted CSV with unclosed quotes or excessive escaped quotes, causing the parser to accumulate unbounded data in the buffer. The `maxBufferSize` limit protects against this attack vector.
+
+  3. **Excessive column count attacks**: Attackers could send CSV files with an enormous number of columns to exhaust memory during header parsing and record assembly. The `maxFieldCount` limit (default: 100,000 fields per record) prevents this by throwing `RangeError` when exceeded.
+
+  Users processing untrusted CSV input are encouraged to use the default limits or configure appropriate `maxBufferSize` and `maxFieldCount` values for their use case.
+
+- [#546](https://github.com/kamiazya/web-csv-toolbox/pull/546) [`76eec90`](https://github.com/kamiazya/web-csv-toolbox/commit/76eec9027400dc77264be2be8a252d284f00dc6a) Thanks [@kamiazya](https://github.com/kamiazya)! - **BREAKING CHANGE**: Change error types from RangeError to TypeError for consistency with Web Standards
+
+  - Change all `RangeError` to `TypeError` for consistency
+  - This affects error handling in:
+    - `getOptionsFromResponse()`: Invalid MIME type, unsupported/multiple content-encodings
+    - `parseResponse()`: Null response body
+    - `parseResponseToStream()`: Null response body
+  - Aligns with Web Standard APIs behavior (DecompressionStream throws TypeError)
+  - Improves consistency for error handling with `catch (error instanceof TypeError)`
+
+  **Migration guide:**
+  If you were catching `RangeError` from `getOptionsFromResponse()`, update to catch `TypeError` instead:
+
+  ```diff
+  - } catch (error) {
+  -   if (error instanceof RangeError) {
+  + } catch (error) {
+  +   if (error instanceof TypeError) {
+        // Handle invalid content type or encoding
+      }
+    }
+  ```
+
+  ### New feature: Experimental compression format support
+
+  - Add `allowExperimentalCompressions` option to enable future/experimental compression formats
+  - By default, only known formats are allowed: gzip, deflate, deflate-raw
+  - When enabled, unknown formats are passed to runtime (e.g., Brotli if runtime supports it)
+  - Provides forward compatibility with future compression formats without library updates
+  - See documentation for usage examples and cautions
+
+  **Other improvements in this release:**
+
+  - Add Content-Encoding header validation with RFC 7231 compliance
+  - Normalize Content-Encoding header: convert to lowercase, trim whitespace
+  - Ignore empty or whitespace-only Content-Encoding headers
+  - Add comprehensive tests for Content-Encoding validation (23 tests)
+  - Add security documentation with TransformStream size limit example
+  - Error messages now guide users to `allowExperimentalCompressions` option when needed
+
+### Patch Changes
+
+- [#547](https://github.com/kamiazya/web-csv-toolbox/pull/547) [`cec6905`](https://github.com/kamiazya/web-csv-toolbox/commit/cec6905200814e21efa17adbb4a6652519dd1e74) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix AbortSignal propagation in Transform Stream components
+
+  This release fixes a security vulnerability where AbortSignal was not properly propagated through the Transform Stream pipeline, allowing processing to continue even after abort requests.
+
+  **Fixed Issues:**
+
+  - Fixed `LexerTransformer` to accept and propagate `AbortSignal` to internal `Lexer` instance
+  - Fixed `RecordAssemblerTransformer` to properly propagate `AbortSignal` to internal `RecordAssembler` instance
+  - Added comprehensive tests for AbortSignal propagation in Transform Stream components
+  - Added `waitAbort` helper function to handle race conditions in AbortSignal tests
+  - Improved constructor initialization order in both Transformer classes for better code clarity
+
+  **Code Quality Improvements:**
+
+  - Added `LexerTransformerOptions` type definition for better type consistency across Transformer classes
+  - Refactored constructors to initialize local variables before `super()` calls, improving code readability
+  - Removed redundant type intersections in `RecordAssemblerTransformer`
+  - Eliminated code duplication by moving test helpers to shared location
+
+  **Security Impact:**
+
+  This fix addresses a medium-severity security issue where attackers could bypass abort signals in streaming CSV processing. Without this fix, malicious actors could send large CSV payloads and continue consuming system resources (CPU, memory) even after cancellation attempts, potentially causing service degradation or temporary resource exhaustion.
+
+  **Before this fix:**
+
+  ```ts
+  const controller = new AbortController();
+  const stream = largeCSVStream
+    .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+    .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }));
+
+  controller.abort(); // Signal was ignored - processing continued!
+  ```
+
+  **After this fix:**
+
+  ```ts
+  const controller = new AbortController();
+  const stream = largeCSVStream
+    .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+    .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }));
+
+  controller.abort(); // Processing stops immediately with AbortError
+  ```
+
+  Users processing untrusted CSV streams should ensure they implement proper timeout and abort signal handling to prevent resource exhaustion.
+
+- [#548](https://github.com/kamiazya/web-csv-toolbox/pull/548) [`3946273`](https://github.com/kamiazya/web-csv-toolbox/commit/3946273aa1c59a7b4a9fae6c2dbfae0d80999761) Thanks [@kamiazya](https://github.com/kamiazya)! - Add binary size limit protection to prevent memory exhaustion attacks
+
+  - Add `maxBinarySize` option (default: 100MB) for ArrayBuffer/Uint8Array inputs
+  - Throw `RangeError` when binary size exceeds the limit
+  - Update documentation with security considerations for large file handling
+  - Add comprehensive tests for binary size validation
+
+- [#550](https://github.com/kamiazya/web-csv-toolbox/pull/550) [`7565212`](https://github.com/kamiazya/web-csv-toolbox/commit/756521231cde231531fdb74f1a3eeee8400b17f8) Thanks [@VaishnaviOnPC](https://github.com/VaishnaviOnPC)! - docs: Add headerless csv example
+
+- [#542](https://github.com/kamiazya/web-csv-toolbox/pull/542) [`b317547`](https://github.com/kamiazya/web-csv-toolbox/commit/b317547d6764b326a27bccaf7719abab968317bd) Thanks [@kamiazya](https://github.com/kamiazya)! - Add GMO Security Program badge to README.md
+
+- [#560](https://github.com/kamiazya/web-csv-toolbox/pull/560) [`a520d54`](https://github.com/kamiazya/web-csv-toolbox/commit/a520d54311834d80163dfd1b4be0162ac4d22908) Thanks [@VaishnaviOnPC](https://github.com/VaishnaviOnPC)! - Add skipEmptyLines option to ParseOptions and parsing functions.
+
 ## 0.12.0
 
 ### Minor Changes
