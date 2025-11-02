@@ -1,5 +1,9 @@
 import { CSVLexer } from "./CSVLexer.ts";
-import type { CSVLexerTransformerOptions, ExtendedQueuingStrategy, Token } from "./common/types.ts";
+import type {
+  CSVLexerTransformerOptions,
+  ExtendedQueuingStrategy,
+  Token,
+} from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
@@ -94,7 +98,8 @@ export class CSVLexerTransformer<
     },
   ) {
     const lexer = new CSVLexer(options);
-    const checkInterval = writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 100;
+    const checkInterval =
+      writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 100;
 
     super(
       {
@@ -106,7 +111,11 @@ export class CSVLexerTransformer<
                 tokens.push(token);
 
                 // Check backpressure periodically based on checkInterval
-                if (tokens.length % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                if (
+                  tokens.length % checkInterval === 0 &&
+                  controller.desiredSize !== null &&
+                  controller.desiredSize <= 0
+                ) {
                   // Yield to event loop when backpressure is detected
                   await new Promise(resolve => setTimeout(resolve, 0));
                 }
@@ -127,7 +136,11 @@ export class CSVLexerTransformer<
               tokens.push(token);
 
               // Check backpressure periodically based on checkInterval
-              if (tokens.length % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              if (
+                tokens.length % checkInterval === 0 &&
+                controller.desiredSize !== null &&
+                controller.desiredSize <= 0
+              ) {
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
             }

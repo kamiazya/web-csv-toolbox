@@ -108,7 +108,8 @@ export class CSVRecordAssemblerTransformer<
     },
   ) {
     const assembler = new CSVRecordAssembler(options);
-    const checkInterval = writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 10;
+    const checkInterval =
+      writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 10;
 
     super(
       {
@@ -120,7 +121,11 @@ export class CSVRecordAssemblerTransformer<
               recordCount++;
 
               // Check backpressure periodically based on checkInterval
-              if (recordCount % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              if (
+                recordCount % checkInterval === 0 &&
+                controller.desiredSize !== null &&
+                controller.desiredSize <= 0
+              ) {
                 // Yield to event loop when backpressure is detected
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
@@ -137,7 +142,11 @@ export class CSVRecordAssemblerTransformer<
               recordCount++;
 
               // Check backpressure periodically based on checkInterval
-              if (recordCount % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              if (
+                recordCount % checkInterval === 0 &&
+                controller.desiredSize !== null &&
+                controller.desiredSize <= 0
+              ) {
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
             }
