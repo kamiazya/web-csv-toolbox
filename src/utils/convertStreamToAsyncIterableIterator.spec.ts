@@ -91,9 +91,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
     const stream = createErrorStream([1, 2], "test error");
     const iterator = convertStreamToAsyncIterableIterator(stream);
 
-    await expect(collectAsyncIterator(iterator)).rejects.toThrow(
-      "test error",
-    );
+    await expect(collectAsyncIterator(iterator)).rejects.toThrow("test error");
   });
 
   it("should handle streams that error immediately", async () => {
@@ -291,9 +289,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
 
-      await expect(collectAsyncIterator(iterator)).rejects.toThrow(
-        "test error",
-      );
+      await expect(collectAsyncIterator(iterator)).rejects.toThrow("test error");
 
       // Verify cancel was called with the error
       expect(cancelSpy).toHaveBeenCalledOnce();
