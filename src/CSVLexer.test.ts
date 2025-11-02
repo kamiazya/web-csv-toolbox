@@ -272,7 +272,9 @@ describe("CSVLexer", () => {
 
       controller.abort(new MyCustomError("Custom reason"));
 
-      expect(() => [...lexer.lex('"Hello"')]).toThrowErrorMatchingInlineSnapshot(
+      expect(() => [
+        ...lexer.lex('"Hello"'),
+      ]).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
         "[MyCustomError: Custom reason]",
       );

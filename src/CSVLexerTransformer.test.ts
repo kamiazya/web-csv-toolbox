@@ -71,7 +71,9 @@ describe("CSVLexerTransformer", () => {
     });
 
     test("should throw DOMException named AbortError if the signal is aborted", async () => {
-      const transformer = new CSVLexerTransformer({ signal: controller.signal });
+      const transformer = new CSVLexerTransformer({
+        signal: controller.signal,
+      });
       controller.abort();
 
       try {

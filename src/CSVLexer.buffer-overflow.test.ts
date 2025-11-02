@@ -81,10 +81,14 @@ describe("CSVLexer - Buffer Overflow Protection", () => {
       const lexer = new CSVLexer({ maxBufferSize: 100 });
 
       // First chunk is within limit
-      expect(() => [...lexer.lex("a".repeat(50), { stream: true })]).not.toThrow();
+      expect(() => [
+        ...lexer.lex("a".repeat(50), { stream: true }),
+      ]).not.toThrow();
 
       // Second chunk exceeds limit
-      expect(() => [...lexer.lex("a".repeat(60), { stream: true })]).toThrow(RangeError);
+      expect(() => [...lexer.lex("a".repeat(60), { stream: true })]).toThrow(
+        RangeError,
+      );
     });
 
     test("should not check buffer size when chunk is empty", () => {

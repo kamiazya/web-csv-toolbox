@@ -108,8 +108,7 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== "" ||
-              escapeField(field, { delimiter }) !== field
+              ...(field !== "" || escapeField(field, { delimiter }) !== field
                 ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter
@@ -306,7 +305,9 @@ describe("class Lexer", () => {
           const lexer2 = new CSVLexer(options);
           const actual = [
             // lex chunked data
-            ...chunks.flatMap((chunk) => [...lexer2.lex(chunk, { stream: true })]),
+            ...chunks.flatMap((chunk) => [
+              ...lexer2.lex(chunk, { stream: true }),
+            ]),
             // flush lexer2
             ...lexer2.lex(),
           ];
