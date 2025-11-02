@@ -133,7 +133,9 @@ describe("CSVRecordAssemblerTransformer", () => {
 
       await stream
         .pipeThrough(new CSVLexerTransformer())
-        .pipeThrough(new CSVRecordAssemblerTransformer({}, undefined, customStrategy))
+        .pipeThrough(
+          new CSVRecordAssemblerTransformer({}, undefined, customStrategy),
+        )
         .pipeTo(
           new WritableStream({
             write(record) {
