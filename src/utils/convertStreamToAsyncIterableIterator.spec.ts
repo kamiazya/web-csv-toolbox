@@ -183,9 +183,12 @@ describe("convertStreamToAsyncIterableIterator", () => {
   describe("native async iteration detection", () => {
     it("should use native Symbol.asyncIterator when available", async () => {
       const stream = createStream([1, 2, 3]);
-      const asyncIteratorSpy = vi.fn(stream[Symbol.asyncIterator as any]);
 
-      // Mock the Symbol.asyncIterator to track calls
+      // Spy on the Symbol.asyncIterator method
+      const originalAsyncIterator = (stream as any)[Symbol.asyncIterator];
+      const asyncIteratorSpy = vi.fn(originalAsyncIterator.bind(stream));
+
+      // Replace Symbol.asyncIterator with the spy
       Object.defineProperty(stream, Symbol.asyncIterator, {
         value: asyncIteratorSpy,
         writable: true,
@@ -195,7 +198,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
       const iterator = convertStreamToAsyncIterableIterator(stream);
       await collectAsyncIterator(iterator);
 
-      // Verify native async iterator was called
+      // Verify native async iterator method was called
       expect(asyncIteratorSpy).toHaveBeenCalledOnce();
     });
 
