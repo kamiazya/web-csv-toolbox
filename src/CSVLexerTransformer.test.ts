@@ -131,10 +131,7 @@ describe("CSVLexerTransformer", () => {
 
     it("should accept custom writable strategy", async () => {
       const customStrategy = { highWaterMark: 32 };
-      const transformer = new CSVLexerTransformer(
-        {},
-        customStrategy,
-      );
+      const transformer = new CSVLexerTransformer({}, customStrategy);
       expect(transformer.writable).toBeDefined();
 
       // Verify it works with actual data
