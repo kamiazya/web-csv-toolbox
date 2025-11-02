@@ -2,8 +2,8 @@ import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import type {
   CSVRecord,
   CSVRecordAssemblerOptions,
-  Token,
   ExtendedQueuingStrategy,
+  Token,
 } from "./common/types.ts";
 
 /**

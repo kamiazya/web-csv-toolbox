@@ -1,5 +1,5 @@
 import { CSVLexer } from "./CSVLexer.ts";
-import type { CSVLexerTransformerOptions, Token, ExtendedQueuingStrategy } from "./common/types.ts";
+import type { CSVLexerTransformerOptions, ExtendedQueuingStrategy, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
