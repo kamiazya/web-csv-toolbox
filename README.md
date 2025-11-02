@@ -364,7 +364,7 @@ ideal for developers looking for in-depth control and flexibility.
 
 #### Customizing Queuing Strategies
 
-Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments, similar to the standard `TransformStream`.
+Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments with **data-type-aware size counting** and **configurable backpressure handling**.
 
 **Constructor signature:**
 ```typescript
@@ -372,46 +372,119 @@ new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
 new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
 ```
 
-**Default values (starting points, not benchmarked):**
+**Default queuing strategies (starting points, not benchmarked):**
 ```typescript
 // CSVLexerTransformer defaults
-writableStrategy: { highWaterMark: 8 }   // 8 string chunks
-readableStrategy: { highWaterMark: 16 }  // 16 token arrays
+writableStrategy: {
+  highWaterMark: 65536,           // 64KB of characters
+  size: (chunk) => chunk.length,  // Count by string length
+  checkInterval: 100              // Check backpressure every 100 tokens
+}
+readableStrategy: {
+  highWaterMark: 1024,              // 1024 tokens
+  size: (tokens) => tokens.length,  // Count by number of tokens
+  checkInterval: 100                // Check backpressure every 100 tokens
+}
 
 // CSVRecordAssemblerTransformer defaults
-writableStrategy: { highWaterMark: 16 }  // 16 token arrays
-readableStrategy: { highWaterMark: 8 }   // 8 CSV records
+writableStrategy: {
+  highWaterMark: 1024,              // 1024 tokens
+  size: (tokens) => tokens.length,  // Count by number of tokens
+  checkInterval: 10                 // Check backpressure every 10 records
+}
+readableStrategy: {
+  highWaterMark: 256,     // 256 records
+  size: () => 1,          // Each record counts as 1
+  checkInterval: 10       // Check backpressure every 10 records
+}
 ```
+
+**Key Features:**
+
+🎯 **Smart Size Counting:**
+- Character-based counting for string inputs (accurate memory tracking)
+- Token-based counting between transformers (smooth pipeline flow)
+- Record-based counting for output (intuitive and predictable)
+
+⚡ **Cooperative Backpressure:**
+- Monitors `controller.desiredSize` during processing
+- Yields to event loop when backpressure detected
+- Prevents blocking the main thread
+- Critical for browser UI responsiveness
+
+🔧 **Tunable Check Interval:**
+- `checkInterval`: How often to check for backpressure
+- Lower values (5-25): More responsive, slight overhead
+- Higher values (100-500): Less overhead, slower response
+- Customize based on downstream consumer speed
 
 > ⚠️ **Important**: These defaults are theoretical starting points based on data flow characteristics, **not empirical benchmarks**. Optimal values vary by runtime (browser/Node.js/Deno), file size, memory constraints, and CPU performance. **Profile your specific use case** to find the best values.
 
 **When to customize:**
-- 🚀 **High-throughput servers**: Try higher values (e.g., 32-64) and measure performance
-- 📱 **Memory-constrained environments** (browsers, edge): Try lower values (e.g., 1-4) and monitor memory
-- 🔧 **Custom pipelines**: Profile with representative data and iterate
+- 🚀 **High-throughput servers**: Higher `highWaterMark` (128KB+, 2048+ tokens), higher `checkInterval` (200-500)
+- 📱 **Memory-constrained environments**: Lower `highWaterMark` (16KB, 256 tokens), lower `checkInterval` (10-25)
+- 🐌 **Slow consumers** (DB writes, API calls): Lower `highWaterMark`, lower `checkInterval` for responsive backpressure
+- 🏃 **Fast processing**: Higher values to reduce overhead
 
-**Example:**
+**Example - High-throughput server:**
 ```typescript
 import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
-// Customize based on YOUR profiling results
 const response = await fetch('large-dataset.csv');
 await response.body
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CSVLexerTransformer(
-    {},                       // options
-    { highWaterMark: 32 },    // writableStrategy
-    { highWaterMark: 64 },    // readableStrategy
+    {},
+    {
+      highWaterMark: 131072,          // 128KB
+      size: (chunk) => chunk.length,
+      checkInterval: 200              // Less frequent checks
+    },
+    {
+      highWaterMark: 2048,            // 2048 tokens
+      size: (tokens) => tokens.length,
+      checkInterval: 100
+    }
   ))
   .pipeThrough(new CSVRecordAssemblerTransformer(
-    {},                       // options
-    { highWaterMark: 64 },    // writableStrategy
-    { highWaterMark: 32 },    // readableStrategy
+    {},
+    {
+      highWaterMark: 2048,            // 2048 tokens
+      size: (tokens) => tokens.length,
+      checkInterval: 20
+    },
+    {
+      highWaterMark: 512,             // 512 records
+      size: () => 1,
+      checkInterval: 10
+    }
   ))
   .pipeTo(yourRecordProcessor);
 ```
 
-For benchmarking examples, see `benchmark/queuing-strategy.bench.ts` in the repository.
+**Example - Slow consumer (API writes):**
+```typescript
+await csvStream
+  .pipeThrough(new CSVLexerTransformer())  // Use defaults
+  .pipeThrough(new CSVRecordAssemblerTransformer(
+    {},
+    { highWaterMark: 512, size: (t) => t.length, checkInterval: 5 },
+    { highWaterMark: 64, size: () => 1, checkInterval: 2 }  // Very responsive
+  ))
+  .pipeTo(new WritableStream({
+    async write(record) {
+      await fetch('/api/save', { method: 'POST', body: JSON.stringify(record) });
+    }
+  }));
+```
+
+**Benchmarking:**
+Use the provided benchmark tool to find optimal values for your use case:
+```bash
+pnpm --filter web-csv-toolbox-benchmark queuing-strategy
+```
+
+See `benchmark/queuing-strategy.bench.ts` for implementation details.
 
 ### Experimental APIs 🧪
 
