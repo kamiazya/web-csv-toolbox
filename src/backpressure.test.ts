@@ -8,6 +8,34 @@ describe("Backpressure handling", () => {
   });
 
   describe("CSVLexerTransformer", () => {
+    it("should execute yieldToEventLoop during transform when backpressure occurs", async () => {
+      const csv = "a,b,c\n1,2,3\n4,5,6\n";
+      const lexer = new CSVLexerTransformer(
+        {},
+        { highWaterMark: 1, size: (chunk) => chunk.length, checkInterval: 1 },
+        { highWaterMark: 1, size: (tokens) => tokens.length, checkInterval: 1 },
+      );
+
+      // Don't mock - let it execute for coverage
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(csv);
+          controller.close();
+        },
+      });
+
+      const results: unknown[] = [];
+      await stream.pipeThrough(lexer).pipeTo(
+        new WritableStream({
+          write(chunk) {
+            results.push(chunk);
+          },
+        }),
+      );
+
+      expect(results.length).toBeGreaterThan(0);
+    });
+
     it("should call yieldToEventLoop when backpressure is detected with checkInterval=1", async () => {
       const csv = "a,b,c\n1,2,3\n4,5,6\n";
       const lexer = new CSVLexerTransformer(
@@ -104,9 +132,75 @@ describe("Backpressure handling", () => {
 
       return result; // Ensure promise resolves
     });
+
+    it("should execute yieldToEventLoop during flush when backpressure occurs", async () => {
+      const csv = "a,b,";
+      const lexer = new CSVLexerTransformer(
+        {},
+        { highWaterMark: 1, size: (chunk) => chunk.length, checkInterval: 1 },
+        { highWaterMark: 1, size: (tokens) => tokens.length, checkInterval: 1 },
+      );
+
+      // Don't mock - let it execute for coverage
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(csv);
+          controller.close();
+        },
+      });
+
+      const results: unknown[] = [];
+      await stream.pipeThrough(lexer).pipeTo(
+        new WritableStream({
+          write(chunk) {
+            results.push(chunk);
+          },
+        }),
+      );
+
+      expect(results.length).toBeGreaterThan(0);
+    });
   });
 
   describe("CSVRecordAssemblerTransformer", () => {
+    it("should execute yieldToEventLoop during transform when backpressure occurs", async () => {
+      const csv = "a,b\n1,2\n3,4\n";
+      const lexer = new CSVLexerTransformer();
+      const assembler = new CSVRecordAssemblerTransformer(
+        {},
+        {
+          highWaterMark: 1,
+          size: (tokens) => tokens.length,
+          checkInterval: 1,
+        },
+        { highWaterMark: 1, size: () => 1, checkInterval: 1 },
+      );
+
+      // Don't mock - let it execute for coverage
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(csv);
+          controller.close();
+        },
+      });
+
+      const results: unknown[] = [];
+      await stream
+        .pipeThrough(lexer)
+        .pipeThrough(assembler)
+        .pipeTo(
+          new WritableStream({
+            write(chunk) {
+              results.push(chunk);
+            },
+          }),
+        );
+
+      expect(results.length).toBe(2);
+      expect(results[0]).toEqual({ a: "1", b: "2" });
+      expect(results[1]).toEqual({ a: "3", b: "4" });
+    });
+
     it("should call yieldToEventLoop when backpressure is detected with checkInterval=1", async () => {
       const csv = "a,b\n1,2\n3,4\n";
       const lexer = new CSVLexerTransformer();
@@ -218,6 +312,42 @@ describe("Backpressure handling", () => {
       expect(result).toBeInstanceOf(Promise);
 
       return result; // Ensure promise resolves
+    });
+
+    it("should execute yieldToEventLoop during flush when backpressure occurs", async () => {
+      const csv = "a,b\n1,";
+      const lexer = new CSVLexerTransformer();
+      const assembler = new CSVRecordAssemblerTransformer(
+        {},
+        {
+          highWaterMark: 1,
+          size: (tokens) => tokens.length,
+          checkInterval: 1,
+        },
+        { highWaterMark: 1, size: () => 1, checkInterval: 1 },
+      );
+
+      // Don't mock - let it execute for coverage
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(csv);
+          controller.close();
+        },
+      });
+
+      const results: unknown[] = [];
+      await stream
+        .pipeThrough(lexer)
+        .pipeThrough(assembler)
+        .pipeTo(
+          new WritableStream({
+            write(chunk) {
+              results.push(chunk);
+            },
+          }),
+        );
+
+      expect(results.length).toBeGreaterThan(0);
     });
   });
 
