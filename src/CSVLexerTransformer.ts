@@ -7,7 +7,19 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  *
  * @category Low-level API
  *
- * @example Parse a CSV with headers by data
+ * @param options - CSV-specific options (delimiter, quotation, etc.)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 8 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 16 }`)
+ *
+ * @remarks
+ * Follows the Web Streams API pattern where queuing strategies are passed as
+ * constructor arguments, similar to the standard `TransformStream`.
+ *
+ * Default highWaterMark values are starting points based on data flow characteristics,
+ * not empirical benchmarks. Optimal values depend on your runtime environment,
+ * data size, and performance requirements.
+ *
+ * @example Basic usage
  * ```ts
  * new ReadableStream({
  *   start(controller) {
@@ -32,12 +44,13 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * // { type: RecordDelimiter, value: "\r\n", location: {...} }
  * ```
  *
- * @example Custom queuing strategies for high-throughput scenarios
+ * @example Custom queuing strategies
  * ```ts
- * const transformer = new CSVLexerTransformer({
- *   writableStrategy: { highWaterMark: 32 },
- *   readableStrategy: { highWaterMark: 64 },
- * });
+ * const transformer = new CSVLexerTransformer(
+ *   { delimiter: ',' },
+ *   { highWaterMark: 32 },  // writable
+ *   { highWaterMark: 64 },  // readable
+ * );
  *
  * await fetch('large-file.csv')
  *   .then(res => res.body)
@@ -51,12 +64,12 @@ export class CSVLexerTransformer<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token[]> {
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
-  constructor(options: CSVLexerTransformerOptions<Delimiter, Quotation> = {}) {
+  constructor(
+    options: CSVLexerTransformerOptions<Delimiter, Quotation> = {},
+    writableStrategy: QueuingStrategy<string> = { highWaterMark: 8 },
+    readableStrategy: QueuingStrategy<Token[]> = { highWaterMark: 16 },
+  ) {
     const lexer = new CSVLexer(options);
-    const {
-      writableStrategy = { highWaterMark: 8 },
-      readableStrategy = { highWaterMark: 16 },
-    } = options;
 
     super(
       {

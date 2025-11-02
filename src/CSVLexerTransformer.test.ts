@@ -131,9 +131,10 @@ describe("CSVLexerTransformer", () => {
 
     it("should accept custom writable strategy", async () => {
       const customStrategy = { highWaterMark: 32 };
-      const transformer = new CSVLexerTransformer({
-        writableStrategy: customStrategy,
-      });
+      const transformer = new CSVLexerTransformer(
+        {},
+        customStrategy,
+      );
       expect(transformer.writable).toBeDefined();
 
       // Verify it works with actual data
@@ -143,9 +144,11 @@ describe("CSVLexerTransformer", () => {
 
     it("should accept custom readable strategy", async () => {
       const customStrategy = { highWaterMark: 64 };
-      const transformer = new CSVLexerTransformer({
-        readableStrategy: customStrategy,
-      });
+      const transformer = new CSVLexerTransformer(
+        {},
+        undefined,
+        customStrategy,
+      );
       expect(transformer.readable).toBeDefined();
 
       // Verify it works with actual data
@@ -154,10 +157,11 @@ describe("CSVLexerTransformer", () => {
     });
 
     it("should accept both custom strategies", async () => {
-      const transformer = new CSVLexerTransformer({
-        writableStrategy: { highWaterMark: 4 },
-        readableStrategy: { highWaterMark: 2 },
-      });
+      const transformer = new CSVLexerTransformer(
+        {},
+        { highWaterMark: 4 },
+        { highWaterMark: 2 },
+      );
       expect(transformer.writable).toBeDefined();
       expect(transformer.readable).toBeDefined();
 

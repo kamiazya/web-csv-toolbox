@@ -364,21 +364,23 @@ ideal for developers looking for in-depth control and flexibility.
 
 #### Customizing Queuing Strategies
 
-Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` allow you to customize their internal buffering behavior using `writableStrategy` and `readableStrategy` options. This is useful for optimizing performance based on your specific environment.
+Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments, similar to the standard `TransformStream`.
+
+**Constructor signature:**
+```typescript
+new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
+new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
+```
 
 **Default values (starting points, not benchmarked):**
 ```typescript
-// CSVLexerTransformer
-const lexer = new CSVLexerTransformer({
-  writableStrategy: { highWaterMark: 8 },  // Default: 8 string chunks
-  readableStrategy: { highWaterMark: 16 }, // Default: 16 token arrays
-});
+// CSVLexerTransformer defaults
+writableStrategy: { highWaterMark: 8 }   // 8 string chunks
+readableStrategy: { highWaterMark: 16 }  // 16 token arrays
 
-// CSVRecordAssemblerTransformer
-const assembler = new CSVRecordAssemblerTransformer({
-  writableStrategy: { highWaterMark: 16 }, // Default: 16 token arrays
-  readableStrategy: { highWaterMark: 8 },  // Default: 8 CSV records
-});
+// CSVRecordAssemblerTransformer defaults
+writableStrategy: { highWaterMark: 16 }  // 16 token arrays
+readableStrategy: { highWaterMark: 8 }   // 8 CSV records
 ```
 
 > ⚠️ **Important**: These defaults are theoretical starting points based on data flow characteristics, **not empirical benchmarks**. Optimal values vary by runtime (browser/Node.js/Deno), file size, memory constraints, and CPU performance. **Profile your specific use case** to find the best values.
@@ -396,14 +398,16 @@ import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-tool
 const response = await fetch('large-dataset.csv');
 await response.body
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new CSVLexerTransformer({
-    writableStrategy: { highWaterMark: 32 },
-    readableStrategy: { highWaterMark: 64 },
-  }))
-  .pipeThrough(new CSVRecordAssemblerTransformer({
-    writableStrategy: { highWaterMark: 64 },
-    readableStrategy: { highWaterMark: 32 },
-  }))
+  .pipeThrough(new CSVLexerTransformer(
+    {},                       // options
+    { highWaterMark: 32 },    // writableStrategy
+    { highWaterMark: 64 },    // readableStrategy
+  ))
+  .pipeThrough(new CSVRecordAssemblerTransformer(
+    {},                       // options
+    { highWaterMark: 64 },    // writableStrategy
+    { highWaterMark: 32 },    // readableStrategy
+  ))
   .pipeTo(yourRecordProcessor);
 ```
 

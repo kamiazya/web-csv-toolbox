@@ -7,10 +7,21 @@ import type {
 
 /**
  * A transform stream that converts a stream of tokens into a stream of CSV records.
+ *
  * @template Header The type of the header row.
- * @param options The options for the parser.
+ * @param options - CSV-specific options (header, maxFieldCount, etc.)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 16 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 8 }`)
  *
  * @category Low-level API
+ *
+ * @remarks
+ * Follows the Web Streams API pattern where queuing strategies are passed as
+ * constructor arguments, similar to the standard `TransformStream`.
+ *
+ * Default highWaterMark values are starting points based on data flow characteristics,
+ * not empirical benchmarks. Optimal values depend on your runtime environment,
+ * data size, and performance requirements.
  *
  * @example Parse a CSV with headers by data
  *  ```ts
@@ -48,12 +59,13 @@ import type {
  * // { name: "Charlie", age: "30" }
  * ```
  *
- * @example Custom queuing strategies for memory-constrained environments
+ * @example Custom queuing strategies
  * ```ts
- * const transformer = new CSVRecordAssemblerTransformer({
- *   writableStrategy: { highWaterMark: 8 },
- *   readableStrategy: { highWaterMark: 2 },
- * });
+ * const transformer = new CSVRecordAssemblerTransformer(
+ *   {},
+ *   { highWaterMark: 8 },  // writable
+ *   { highWaterMark: 2 },  // readable
+ * );
  *
  * await tokenStream
  *   .pipeThrough(transformer)
@@ -65,12 +77,12 @@ export class CSVRecordAssemblerTransformer<
 > extends TransformStream<Token[], CSVRecord<Header>> {
   public readonly assembler: CSVRecordAssembler<Header>;
 
-  constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
+  constructor(
+    options: CSVRecordAssemblerOptions<Header> = {},
+    writableStrategy: QueuingStrategy<Token[]> = { highWaterMark: 16 },
+    readableStrategy: QueuingStrategy<CSVRecord<Header>> = { highWaterMark: 8 },
+  ) {
     const assembler = new CSVRecordAssembler(options);
-    const {
-      writableStrategy = { highWaterMark: 16 },
-      readableStrategy = { highWaterMark: 8 },
-    } = options;
 
     super(
       {
