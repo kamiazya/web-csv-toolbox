@@ -355,9 +355,9 @@ catering to users who need more detailed and fine-tuned functionality.
 These APIs are built for **Advanced Customization and Pipeline Design**,
 ideal for developers looking for in-depth control and flexibility.
 
-- **`class LexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/LexerTransformer.html)
+- **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
   - A TransformStream class for lexical analysis of CSV data.
-- **`class RecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/RecordAssemblerTransformer.html)
+- **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
   - Handles the assembly of parsed data into records.
 
 ### Experimental APIs 🧪

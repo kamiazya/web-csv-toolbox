@@ -1,11 +1,11 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Lexer } from "./Lexer";
+import { CSVLexer } from "./CSVLexer";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 
-describe("Lexer", () => {
-  let lexer: Lexer;
+describe("CSVLexer", () => {
+  let lexer: CSVLexer;
   beforeEach(() => {
-    lexer = new Lexer();
+    lexer = new CSVLexer();
   });
 
   test("should parse a field with not escaped", () => {
@@ -162,7 +162,7 @@ describe("Lexer", () => {
   });
 
   test("should utilize buffers for lexical analysis", () => {
-    let tokens = lexer.lex("Hello World\nHello ", true);
+    let tokens = lexer.lex("Hello World\nHello ", { stream: true });
     expect([...tokens]).toStrictEqual([
       {
         type: Field,
@@ -199,7 +199,7 @@ describe("Lexer", () => {
   });
 
   test("should utilize buffers for lexical analysis with escaped", () => {
-    let tokens = lexer.lex('"Hello World"\n"Hello"', true);
+    let tokens = lexer.lex('"Hello World"\n"Hello"', { stream: true });
     expect([...tokens]).toStrictEqual([
       {
         type: Field,
@@ -237,8 +237,7 @@ describe("Lexer", () => {
 
   test("should thorw an error if the field is not closed", () => {
     expect(() => [...lexer.lex('"Hello')]).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+      "[ParseError: Unexpected EOF while parsing quoted field.]",
     );
   });
 
@@ -246,7 +245,7 @@ describe("Lexer", () => {
     let controller: AbortController;
     beforeEach(() => {
       controller = new AbortController();
-      lexer = new Lexer({
+      lexer = new CSVLexer({
         signal: controller.signal,
       });
     });
@@ -274,10 +273,7 @@ describe("Lexer", () => {
 
       expect(() => [
         ...lexer.lex('"Hello"'),
-      ]).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
-        `[MyCustomError: Custom reason]`,
-      );
+      ]).toThrowErrorMatchingInlineSnapshot("[MyCustomError: Custom reason]");
     });
   });
 
@@ -292,7 +288,7 @@ describe("Lexer", () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
 
-    lexer = new Lexer({ signal });
+    lexer = new CSVLexer({ signal });
     try {
       [...lexer.lex('"Hello"')];
       expect.unreachable();

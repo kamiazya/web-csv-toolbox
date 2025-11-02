@@ -1,12 +1,12 @@
-import { RecordAssembler } from "./RecordAssembler.ts";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import type {
   CSVRecord,
-  RecordAssemblerOptions,
+  CSVRecordAssemblerOptions,
   Token,
 } from "./common/types.ts";
 
 /**
- * A transform stream that converts a stream of tokens into a stream of rows.
+ * A transform stream that converts a stream of tokens into a stream of CSV records.
  * @template Header The type of the header row.
  * @param options The options for the parser.
  *
@@ -22,8 +22,8 @@ import type {
  *     controller.enqueue("Charlie,30\r\n");
  *     controller.close();
  *   })
- *   .pipeThrough(new LexerTransformer())
- *   .pipeThrough(new RecordAssemblerTransformer())
+ *   .pipeThrough(new CSVLexerTransformer())
+ *   .pipeThrough(new CSVRecordAssemblerTransformer())
  *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
@@ -40,25 +40,25 @@ import type {
  *     controller.close();
  *   }
  * })
- * .pipeThrough(new LexerTransformer())
- * .pipeThrough(new RecordAssemblerTransformer({ header: ["name", "age"] }))
+ * .pipeThrough(new CSVLexerTransformer())
+ * .pipeThrough(new CSVRecordAssemblerTransformer({ header: ["name", "age"] }))
  * .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
  * // { name: "Charlie", age: "30" }
  * ```
  */
-export class RecordAssemblerTransformer<
+export class CSVRecordAssemblerTransformer<
   Header extends ReadonlyArray<string>,
 > extends TransformStream<Token[], CSVRecord<Header>> {
-  public readonly assembler: RecordAssembler<Header>;
+  public readonly assembler: CSVRecordAssembler<Header>;
 
-  constructor(options: RecordAssemblerOptions<Header> = {}) {
-    const assembler = new RecordAssembler(options);
+  constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
+    const assembler = new CSVRecordAssembler(options);
     super({
       transform: (tokens, controller) => {
         try {
-          for (const token of assembler.assemble(tokens, false)) {
+          for (const token of assembler.assemble(tokens, { stream: true })) {
             controller.enqueue(token);
           }
         } catch (error) {
@@ -67,7 +67,7 @@ export class RecordAssemblerTransformer<
       },
       flush: (controller) => {
         try {
-          for (const token of assembler.flush()) {
+          for (const token of assembler.assemble()) {
             controller.enqueue(token);
           }
         } catch (error) {

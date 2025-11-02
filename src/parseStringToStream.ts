@@ -1,5 +1,5 @@
-import { Lexer } from "./Lexer.ts";
-import { RecordAssembler } from "./RecordAssembler.ts";
+import { CSVLexer } from "./CSVLexer.ts";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
@@ -34,8 +34,8 @@ export function parseStringToStream<const Header extends ReadonlyArray<string>>(
   options?: ParseOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {
   try {
-    const lexer = new Lexer(options);
-    const assembler = new RecordAssembler(options);
+    const lexer = new CSVLexer(options);
+    const assembler = new CSVRecordAssembler(options);
     return new ReadableStream({
       start(controller) {
         const tokens = lexer.lex(csv);

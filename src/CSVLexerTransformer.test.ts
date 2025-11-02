@@ -6,13 +6,13 @@ import {
   test,
   vi,
 } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { transform, waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
 
-describe("LexerTransformer", () => {
+describe("CSVLexerTransformer", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.restoreAllMocks();
@@ -21,7 +21,7 @@ describe("LexerTransformer", () => {
   it("should throw an error if options is invalid", async () => {
     expect(
       () =>
-        new LexerTransformer({
+        new CSVLexerTransformer({
           delimiter: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -31,7 +31,7 @@ describe("LexerTransformer", () => {
 
     expect(
       () =>
-        new LexerTransformer({
+        new CSVLexerTransformer({
           quotation: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -41,7 +41,7 @@ describe("LexerTransformer", () => {
   });
 
   it("should throw an error if the input is invalid", async () => {
-    const transformer = new LexerTransformer();
+    const transformer = new CSVLexerTransformer();
     expect(async () => {
       await transform(transformer, ['"']);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -51,7 +51,7 @@ describe("LexerTransformer", () => {
   });
 
   it("should throw an error if the input is invalid", async () => {
-    const transformer = new LexerTransformer();
+    const transformer = new CSVLexerTransformer();
     vi.spyOn(transformer.lexer, "lex").mockImplementationOnce(() => {
       throw new Error("test");
     });
@@ -71,7 +71,9 @@ describe("LexerTransformer", () => {
     });
 
     test("should throw DOMException named AbortError if the signal is aborted", async () => {
-      const transformer = new LexerTransformer({ signal: controller.signal });
+      const transformer = new CSVLexerTransformer({
+        signal: controller.signal,
+      });
       controller.abort();
 
       try {
@@ -90,7 +92,9 @@ describe("LexerTransformer", () => {
           this.name = "MyCustomError";
         }
       }
-      const transformer = new LexerTransformer({ signal: controller.signal });
+      const transformer = new CSVLexerTransformer({
+        signal: controller.signal,
+      });
       controller.abort(new MyCustomError("Custom abort reason"));
 
       try {
@@ -106,7 +110,7 @@ describe("LexerTransformer", () => {
   test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
-    const transformer = new LexerTransformer({ signal });
+    const transformer = new CSVLexerTransformer({ signal });
 
     try {
       await transform(transformer, ["field1,field2\nvalue1,value2"]);

@@ -280,17 +280,17 @@ export interface BinaryOptions {
 }
 
 /**
- * Lexer Transformer Options for CSV.
+ * CSV Lexer Transformer Options.
  * @category Types
  */
-export interface LexerTransformerOptions<
+export interface CSVLexerTransformerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     AbortSignalOptions {}
 
 /**
- * Record Assembler Options for CSV.
+ * CSV Record Assembler Options.
  * @category Types
  *
  * @remarks
@@ -300,7 +300,7 @@ export interface LexerTransformerOptions<
  * If you don't specify `header`,
  * the first record will be treated as a header.
  */
-export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
+export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
   extends AbortSignalOptions {
   /**
    * CSV header.
@@ -347,7 +347,7 @@ export interface ParseOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    RecordAssemblerOptions<Header>,
+    CSVRecordAssemblerOptions<Header>,
     AbortSignalOptions {}
 
 /**

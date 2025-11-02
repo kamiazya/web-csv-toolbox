@@ -1,6 +1,6 @@
 import { beforeEach, describe as describe_, expect, test } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.ts";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import { waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
@@ -15,8 +15,8 @@ async function processCSV(csv: string, signal?: AbortSignal) {
   });
 
   await stream
-    .pipeThrough(new LexerTransformer({ signal }))
-    .pipeThrough(new RecordAssemblerTransformer({ signal }))
+    .pipeThrough(new CSVLexerTransformer({ signal }))
+    .pipeThrough(new CSVRecordAssemblerTransformer({ signal }))
     .pipeTo(
       new WritableStream({
         write(record) {
@@ -28,7 +28,7 @@ async function processCSV(csv: string, signal?: AbortSignal) {
   return results;
 }
 
-describe("RecordAssemblerTransformer", () => {
+describe("CSVRecordAssemblerTransformer", () => {
   describe("when AbortSignal is provided", () => {
     let controller: AbortController;
 
@@ -63,9 +63,9 @@ describe("RecordAssemblerTransformer", () => {
 
       try {
         await stream
-          .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+          .pipeThrough(new CSVLexerTransformer({ signal: controller.signal }))
           .pipeThrough(
-            new RecordAssemblerTransformer({ signal: controller.signal }),
+            new CSVRecordAssemblerTransformer({ signal: controller.signal }),
           )
           .pipeTo(new WritableStream());
         expect.fail("Should have thrown AbortError");

@@ -1,9 +1,9 @@
-import { Lexer } from "./Lexer.ts";
-import type { LexerTransformerOptions, Token } from "./common/types.ts";
+import { CSVLexer } from "./CSVLexer.ts";
+import type { CSVLexerTransformerOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
- * A transform stream that converts a stream of tokens into a stream of rows.
+ * A transform stream that converts a stream of strings into a stream of tokens.
  *
  * @category Low-level API
  *
@@ -16,7 +16,7 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  *     controller.close();
  *   }
  * })
- *   .pipeThrough(new LexerTransformer())
+ *   .pipeThrough(new CSVLexerTransformer())
  *   .pipeTo(new WritableStream({ write(tokens) {
  *     for (const token of tokens) {
  *       console.log(token);
@@ -32,18 +32,18 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * // { type: RecordDelimiter, value: "\r\n", location: {...} }
  * ```
  */
-export class LexerTransformer<
+export class CSVLexerTransformer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token[]> {
-  public readonly lexer: Lexer<Delimiter, Quotation>;
-  constructor(options: LexerTransformerOptions<Delimiter, Quotation> = {}) {
-    const lexer = new Lexer(options);
+  public readonly lexer: CSVLexer<Delimiter, Quotation>;
+  constructor(options: CSVLexerTransformerOptions<Delimiter, Quotation> = {}) {
+    const lexer = new CSVLexer(options);
     super({
       transform: (chunk, controller) => {
         if (chunk.length !== 0) {
           try {
-            controller.enqueue([...lexer.lex(chunk, true)]);
+            controller.enqueue([...lexer.lex(chunk, { stream: true })]);
           } catch (error) {
             controller.error(error);
           }
@@ -51,7 +51,7 @@ export class LexerTransformer<
       },
       flush: (controller) => {
         try {
-          controller.enqueue(lexer.flush());
+          controller.enqueue([...lexer.lex()]);
         } catch (error) {
           controller.error(error);
         }
