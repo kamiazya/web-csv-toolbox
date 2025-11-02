@@ -23,6 +23,11 @@ import type {
  * - Writable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
  * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
  *
+ * **Backpressure Handling:**
+ * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
+ * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
+ * and allows the downstream consumer to catch up.
+ *
  * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
  * Optimal values depend on your runtime environment, data size, and performance requirements.
  *
@@ -95,19 +100,34 @@ export class CSVRecordAssemblerTransformer<
 
     super(
       {
-        transform: (tokens, controller) => {
+        transform: async (tokens, controller) => {
           try {
-            for (const token of assembler.assemble(tokens, { stream: true })) {
-              controller.enqueue(token);
+            let recordCount = 0;
+            for (const record of assembler.assemble(tokens, { stream: true })) {
+              controller.enqueue(record);
+              recordCount++;
+
+              // Check backpressure periodically (every 10 records)
+              if (recordCount % 10 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                // Yield to event loop when backpressure is detected
+                await new Promise(resolve => setTimeout(resolve, 0));
+              }
             }
           } catch (error) {
             controller.error(error);
           }
         },
-        flush: (controller) => {
+        flush: async (controller) => {
           try {
-            for (const token of assembler.assemble()) {
-              controller.enqueue(token);
+            let recordCount = 0;
+            for (const record of assembler.assemble()) {
+              controller.enqueue(record);
+              recordCount++;
+
+              // Check backpressure periodically
+              if (recordCount % 10 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+              }
             }
           } catch (error) {
             controller.error(error);

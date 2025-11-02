@@ -19,6 +19,11 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
  * - Readable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
  *
+ * **Backpressure Handling:**
+ * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
+ * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
+ * and allows the downstream consumer to catch up.
+ *
  * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
  * Optimal values depend on your runtime environment, data size, and performance requirements.
  *
@@ -82,18 +87,43 @@ export class CSVLexerTransformer<
 
     super(
       {
-        transform: (chunk, controller) => {
+        transform: async (chunk, controller) => {
           if (chunk.length !== 0) {
             try {
-              controller.enqueue([...lexer.lex(chunk, { stream: true })]);
+              const tokens: Token[] = [];
+              for (const token of lexer.lex(chunk, { stream: true })) {
+                tokens.push(token);
+
+                // Check backpressure periodically (every 100 tokens)
+                if (tokens.length % 100 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                  // Yield to event loop when backpressure is detected
+                  await new Promise(resolve => setTimeout(resolve, 0));
+                }
+              }
+
+              if (tokens.length > 0) {
+                controller.enqueue(tokens);
+              }
             } catch (error) {
               controller.error(error);
             }
           }
         },
-        flush: (controller) => {
+        flush: async (controller) => {
           try {
-            controller.enqueue([...lexer.lex()]);
+            const tokens: Token[] = [];
+            for (const token of lexer.lex()) {
+              tokens.push(token);
+
+              // Check backpressure periodically
+              if (tokens.length % 100 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+              }
+            }
+
+            if (tokens.length > 0) {
+              controller.enqueue(tokens);
+            }
           } catch (error) {
             controller.error(error);
           }

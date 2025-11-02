@@ -65,6 +65,20 @@ Each transformer uses a **custom size algorithm** optimized for its data type:
 - Token-based counting between lexer and assembler ensures smooth data flow
 - Record-based counting on final output is intuitive and easy to reason about
 
+### Backpressure Handling
+
+Both transformers implement **cooperative backpressure handling**:
+
+- Periodically checks `controller.desiredSize` during processing
+- When backpressure is detected (`desiredSize ≤ 0`), yields to the event loop via `setTimeout(0)`
+- Prevents blocking the main thread during heavy CSV processing
+- Allows downstream consumers to catch up, avoiding memory buildup
+
+This is especially important for:
+- Large CSV files that generate many tokens/records
+- Slow downstream consumers (e.g., database writes, API calls)
+- Browser environments where UI responsiveness is critical
+
 Optimal values depend on your runtime environment (browser/Node.js/Deno), data size, memory constraints, and CPU performance. **You should profile your specific use case** to find the best values.
 
 ## Benchmarking Tool
