@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { CSVLexer } from "./CSVLexer.ts";
 import { FC, autoChunk } from "./__tests__/helper.ts";
+import { CSVLexer } from "./CSVLexer.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
 import { escapeField } from "./escapeField.ts";
@@ -67,8 +67,8 @@ describe("class Lexer", () => {
             .join(",");
           const expected = [
             ...row.flatMap((field, i) => [
-              // field should be escaped with double quote,
-              // so empty field should be escaped with double quote
+              // field should be escaped with double quote, so empty field should be
+              // escaped with double quote
               { type: Field, value: field, location: LOCATION_SHAPE },
               // if field is not last field, it should be followed by a field delimiter
               ...(row.length - 1 !== i
@@ -108,7 +108,8 @@ describe("class Lexer", () => {
           const expected = [
             ...row.flatMap((field, i) => [
               // if field is empty, it should be ignored
-              ...(field !== "" || escapeField(field, { delimiter }) !== field
+              ...(field !== "" ||
+              escapeField(field, { delimiter }) !== field
                 ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
                 : []),
               // if field is not last field, it should be followed by a field delimiter

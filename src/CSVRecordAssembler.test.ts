@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { CSVRecordAssembler } from "./RecordAssembler.js";
 import { Field } from "./common/constants";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.js";
 
 describe("CSVRecordAssembler", () => {
   describe("constructor validation", () => {
@@ -23,9 +23,9 @@ describe("CSVRecordAssembler", () => {
     });
 
     test("should throw RangeError if maxFieldCount is NaN", () => {
-      expect(() => new CSVRecordAssembler({ maxFieldCount: Number.NaN })).toThrow(
-        RangeError,
-      );
+      expect(
+        () => new CSVRecordAssembler({ maxFieldCount: Number.NaN }),
+      ).toThrow(RangeError);
     });
 
     test("should accept Number.POSITIVE_INFINITY as maxFieldCount", () => {

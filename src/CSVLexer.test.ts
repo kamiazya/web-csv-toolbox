@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { CSVLexer } from "./CSVLexer";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import { CSVLexer } from "./CSVLexer";
 
 describe("CSVLexer", () => {
   let lexer: CSVLexer;
@@ -238,7 +238,7 @@ describe("CSVLexer", () => {
   test("should thorw an error if the field is not closed", () => {
     expect(() => [...lexer.lex('"Hello')]).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+      "[ParseError: Unexpected EOF while parsing quoted field.]",
     );
   });
 
@@ -272,11 +272,9 @@ describe("CSVLexer", () => {
 
       controller.abort(new MyCustomError("Custom reason"));
 
-      expect(() => [
-        ...lexer.lex('"Hello"'),
-      ]).toThrowErrorMatchingInlineSnapshot(
+      expect(() => [...lexer.lex('"Hello"')]).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
-        `[MyCustomError: Custom reason]`,
+        "[MyCustomError: Custom reason]",
       );
     });
   });

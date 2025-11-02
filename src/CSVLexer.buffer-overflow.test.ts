@@ -52,7 +52,9 @@ describe("CSVLexer - Buffer Overflow Protection", () => {
       // Attack vector: unclosed quoted field that accumulates in buffer
       const unclosedQuote = `"${"a".repeat(11 * 1024 * 1024)}`;
 
-      expect(() => [...lexer.lex(unclosedQuote, { stream: true })]).toThrow(RangeError);
+      expect(() => [...lexer.lex(unclosedQuote, { stream: true })]).toThrow(
+        RangeError,
+      );
     });
   });
 

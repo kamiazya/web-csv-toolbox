@@ -286,7 +286,9 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     test("should accept header within limit", () => {
       const normalHeader = ["field1", "field2", "field3"];
 
-      expect(() => new CSVRecordAssembler({ header: normalHeader })).not.toThrow();
+      expect(
+        () => new CSVRecordAssembler({ header: normalHeader }),
+      ).not.toThrow();
     });
   });
 
