@@ -35,7 +35,9 @@ export function convertStreamToAsyncIterableIterator<T>(
   ) {
     // ReadableStream is AsyncIterable in modern environments
     // Cast to AsyncIterableIterator since the native iterator is compatible
-    return (stream as AsyncIterable<T>)[Symbol.asyncIterator]() as AsyncIterableIterator<T>;
+    return (stream as AsyncIterable<T>)[
+      Symbol.asyncIterator
+    ]() as AsyncIterableIterator<T>;
   }
 
   // TODO: Once Safari supports ReadableStream async iteration, this fallback
