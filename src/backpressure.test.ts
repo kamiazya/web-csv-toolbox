@@ -224,7 +224,10 @@ describe("Backpressure handling", () => {
   describe("Integration: backpressure handling behavior", () => {
     it("should process large CSV without blocking", async () => {
       // Large CSV to test performance
-      const rows = Array.from({ length: 500 }, (_, i) => `${i},value${i},data${i}`);
+      const rows = Array.from(
+        { length: 500 },
+        (_, i) => `${i},value${i},data${i}`,
+      );
       const csv = `id,value,data\n${rows.join("\n")}\n`;
 
       const lexer = new CSVLexerTransformer(
