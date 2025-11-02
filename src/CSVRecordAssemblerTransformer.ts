@@ -127,7 +127,7 @@ export class CSVRecordAssemblerTransformer<
                 controller.desiredSize <= 0
               ) {
                 // Yield to event loop when backpressure is detected
-                await new Promise(resolve => setTimeout(resolve, 0));
+                await new Promise((resolve) => setTimeout(resolve, 0));
               }
             }
           } catch (error) {
@@ -147,7 +147,7 @@ export class CSVRecordAssemblerTransformer<
                 controller.desiredSize !== null &&
                 controller.desiredSize <= 0
               ) {
-                await new Promise(resolve => setTimeout(resolve, 0));
+                await new Promise((resolve) => setTimeout(resolve, 0));
               }
             }
           } catch (error) {

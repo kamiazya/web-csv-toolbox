@@ -117,7 +117,7 @@ export class CSVLexerTransformer<
                   controller.desiredSize <= 0
                 ) {
                   // Yield to event loop when backpressure is detected
-                  await new Promise(resolve => setTimeout(resolve, 0));
+                  await new Promise((resolve) => setTimeout(resolve, 0));
                 }
               }
 
@@ -141,7 +141,7 @@ export class CSVLexerTransformer<
                 controller.desiredSize !== null &&
                 controller.desiredSize <= 0
               ) {
-                await new Promise(resolve => setTimeout(resolve, 0));
+                await new Promise((resolve) => setTimeout(resolve, 0));
               }
             }
 
