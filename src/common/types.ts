@@ -426,7 +426,9 @@ export interface BackpressureOptions {
  *
  * @category Types
  */
-export interface ExtendedQueuingStrategy<T> extends QueuingStrategy<T>, BackpressureOptions {}
+export interface ExtendedQueuingStrategy<T>
+  extends QueuingStrategy<T>,
+    BackpressureOptions {}
 
 /**
  * CSV.
