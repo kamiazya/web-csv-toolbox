@@ -92,7 +92,9 @@ describe("CSVLexerTransformer", () => {
           this.name = "MyCustomError";
         }
       }
-      const transformer = new CSVLexerTransformer({ signal: controller.signal });
+      const transformer = new CSVLexerTransformer({
+        signal: controller.signal,
+      });
       controller.abort(new MyCustomError("Custom abort reason"));
 
       try {

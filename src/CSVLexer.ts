@@ -88,7 +88,10 @@ export class CSVLexer<
    * @param options - Lexer options.
    * @returns An iterable iterator of tokens.
    */
-  public lex(chunk?: string, options?: CSVLexerLexOptions): IterableIterator<Token> {
+  public lex(
+    chunk?: string,
+    options?: CSVLexerLexOptions,
+  ): IterableIterator<Token> {
     const stream = options?.stream ?? false;
 
     if (!stream) {

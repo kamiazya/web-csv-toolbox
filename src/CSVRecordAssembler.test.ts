@@ -30,7 +30,8 @@ describe("CSVRecordAssembler", () => {
 
     test("should accept Number.POSITIVE_INFINITY as maxFieldCount", () => {
       expect(
-        () => new CSVRecordAssembler({ maxFieldCount: Number.POSITIVE_INFINITY }),
+        () =>
+          new CSVRecordAssembler({ maxFieldCount: Number.POSITIVE_INFINITY }),
       ).not.toThrow();
     });
   });
