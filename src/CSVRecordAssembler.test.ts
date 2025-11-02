@@ -1,47 +1,47 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { RecordAssembler } from "./RecordAssembler.js";
+import { CSVRecordAssembler } from "./RecordAssembler.js";
 import { Field } from "./common/constants";
 
-describe("RecordAssembler", () => {
+describe("CSVRecordAssembler", () => {
   describe("constructor validation", () => {
     test("should throw RangeError if maxFieldCount is negative", () => {
-      expect(() => new RecordAssembler({ maxFieldCount: -1 })).toThrow(
+      expect(() => new CSVRecordAssembler({ maxFieldCount: -1 })).toThrow(
         RangeError,
       );
     });
 
     test("should throw RangeError if maxFieldCount is zero", () => {
-      expect(() => new RecordAssembler({ maxFieldCount: 0 })).toThrow(
+      expect(() => new CSVRecordAssembler({ maxFieldCount: 0 })).toThrow(
         RangeError,
       );
     });
 
     test("should throw RangeError if maxFieldCount is not an integer", () => {
-      expect(() => new RecordAssembler({ maxFieldCount: 1.5 })).toThrow(
+      expect(() => new CSVRecordAssembler({ maxFieldCount: 1.5 })).toThrow(
         RangeError,
       );
     });
 
     test("should throw RangeError if maxFieldCount is NaN", () => {
-      expect(() => new RecordAssembler({ maxFieldCount: Number.NaN })).toThrow(
+      expect(() => new CSVRecordAssembler({ maxFieldCount: Number.NaN })).toThrow(
         RangeError,
       );
     });
 
     test("should accept Number.POSITIVE_INFINITY as maxFieldCount", () => {
       expect(
-        () => new RecordAssembler({ maxFieldCount: Number.POSITIVE_INFINITY }),
+        () => new CSVRecordAssembler({ maxFieldCount: Number.POSITIVE_INFINITY }),
       ).not.toThrow();
     });
   });
 
   describe("when AbortSignal is provided", () => {
-    let assembler: RecordAssembler<readonly string[]>;
+    let assembler: CSVRecordAssembler<readonly string[]>;
     let controller: AbortController;
 
     beforeEach(() => {
       controller = new AbortController();
-      assembler = new RecordAssembler({
+      assembler = new CSVRecordAssembler({
         signal: controller.signal,
       });
     });
@@ -109,7 +109,7 @@ describe("RecordAssembler", () => {
     }
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
-    const assembler = new RecordAssembler({ signal });
+    const assembler = new CSVRecordAssembler({ signal });
     try {
       [
         ...assembler.assemble([

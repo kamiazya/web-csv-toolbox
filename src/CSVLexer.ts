@@ -20,9 +20,9 @@ export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 /**
  * CSV Lexer.
  *
- * Lexer tokenizes CSV data into fields and records.
+ * CSVLexer tokenizes CSV data into fields and records.
  */
-export class Lexer<
+export class CSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > {
@@ -44,7 +44,7 @@ export class Lexer<
   #signal?: AbortSignal;
 
   /**
-   * Constructs a new Lexer instance.
+   * Constructs a new CSVLexer instance.
    * @param options - The common options for the lexer.
    */
   constructor(
@@ -73,29 +73,23 @@ export class Lexer<
 
   /**
    * Lexes the given chunk of CSV data.
-   * @param chunk - The chunk of CSV data to be lexed.
-   * @param buffering - Indicates whether the lexer is buffering or not.
+   * @param chunk - The chunk of CSV data to be lexed. Omit to flush remaining data.
+   * @param options - Lexer options.
+   * @param options.stream - If true, expects more chunks. If false or omitted, flushes remaining data.
    * @returns An iterable iterator of tokens.
    */
-  public lex(chunk: string | null, buffering = false): IterableIterator<Token> {
-    if (!buffering) {
+  public lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+    const stream = options?.stream ?? false;
+
+    if (!stream) {
       this.#flush = true;
     }
-    if (typeof chunk === "string" && chunk.length !== 0) {
+    if (chunk !== undefined && chunk.length !== 0) {
       this.#buffer += chunk;
       this.#checkBufferSize();
     }
 
     return this.#tokens();
-  }
-
-  /**
-   * Flushes the lexer and returns any remaining tokens.
-   * @returns An array of tokens.
-   */
-  public flush(): Token[] {
-    this.#flush = true;
-    return [...this.#tokens()];
   }
 
   /**

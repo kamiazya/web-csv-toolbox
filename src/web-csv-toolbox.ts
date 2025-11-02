@@ -1,7 +1,8 @@
 export * from "./common/constants.ts";
 export * from "./common/errors.ts";
 export * from "./common/types.ts";
-export * from "./LexerTransformer.ts";
+export * from "./CSVLexer.ts";
+export * from "./CSVLexerTransformer.ts";
 export * from "./loadWASM.ts";
 export * from "./parse.ts";
 export * from "./parseBinary.ts";
@@ -10,4 +11,5 @@ export * from "./parseString.ts";
 export * from "./parseStringStream.ts";
 export * from "./parseStringToArraySyncWASM.ts";
 export * from "./parseUint8ArrayStream.ts";
-export * from "./RecordAssemblerTransformer.ts";
+export * from "./CSVRecordAssembler.ts";
+export * from "./CSVRecordAssemblerTransformer.ts";

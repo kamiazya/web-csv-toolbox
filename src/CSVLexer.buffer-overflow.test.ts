@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Lexer } from "./Lexer";
+import { CSVLexer } from "./CSVLexer";
 import { Field } from "./common/constants";
 
-describe("Lexer - Buffer Overflow Protection", () => {
+describe("CSVLexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {
-    let lexer: Lexer;
+    let lexer: CSVLexer;
     beforeEach(() => {
-      lexer = new Lexer();
+      lexer = new CSVLexer();
     });
 
     test("should not throw error for normal-sized input", () => {
@@ -43,7 +43,7 @@ describe("Lexer - Buffer Overflow Protection", () => {
 
       expect(() => {
         for (let i = 0; i < 12; i++) {
-          [...lexer.lex(smallChunk, true)]; // buffering = true
+          [...lexer.lex(smallChunk, { stream: true })]; // buffering = true
         }
       }).toThrow(RangeError);
     });
@@ -52,20 +52,20 @@ describe("Lexer - Buffer Overflow Protection", () => {
       // Attack vector: unclosed quoted field that accumulates in buffer
       const unclosedQuote = `"${"a".repeat(11 * 1024 * 1024)}`;
 
-      expect(() => [...lexer.lex(unclosedQuote, true)]).toThrow(RangeError);
+      expect(() => [...lexer.lex(unclosedQuote, { stream: true })]).toThrow(RangeError);
     });
   });
 
   describe("with custom buffer size", () => {
     test("should respect custom maxBufferSize option", () => {
-      const lexer = new Lexer({ maxBufferSize: 1024 }); // 1K characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 1024 }); // 1K characters limit
       const largeChunk = "a".repeat(2048); // 2K characters
 
       expect(() => [...lexer.lex(largeChunk)]).toThrow(RangeError);
     });
 
     test("should allow Infinity as maxBufferSize to disable limit", () => {
-      const lexer = new Lexer({ maxBufferSize: Number.POSITIVE_INFINITY });
+      const lexer = new CSVLexer({ maxBufferSize: Number.POSITIVE_INFINITY });
       const largeChunk = "a".repeat(20 * 1024 * 1024); // 20M characters
 
       // This should not throw, but may take some time and memory
@@ -76,31 +76,31 @@ describe("Lexer - Buffer Overflow Protection", () => {
 
   describe("buffer size check timing", () => {
     test("should check buffer size after each chunk addition", () => {
-      const lexer = new Lexer({ maxBufferSize: 100 });
+      const lexer = new CSVLexer({ maxBufferSize: 100 });
 
       // First chunk is within limit
-      expect(() => [...lexer.lex("a".repeat(50), true)]).not.toThrow();
+      expect(() => [...lexer.lex("a".repeat(50), { stream: true })]).not.toThrow();
 
       // Second chunk exceeds limit
-      expect(() => [...lexer.lex("a".repeat(60), true)]).toThrow(RangeError);
+      expect(() => [...lexer.lex("a".repeat(60), { stream: true })]).toThrow(RangeError);
     });
 
     test("should not check buffer size when chunk is empty", () => {
-      const lexer = new Lexer({ maxBufferSize: 10 });
+      const lexer = new CSVLexer({ maxBufferSize: 10 });
       // Pre-fill buffer to near limit
-      [...lexer.lex("a".repeat(8), true)];
+      [...lexer.lex("a".repeat(8), { stream: true })];
 
       // Empty chunk should not trigger check
-      expect(() => [...lexer.lex("", true)]).not.toThrow();
+      expect(() => [...lexer.lex("", { stream: true })]).not.toThrow();
 
       // Null chunk should not trigger check
-      expect(() => [...lexer.lex(null, true)]).not.toThrow();
+      expect(() => [...lexer.lex(undefined, { stream: true })]).not.toThrow();
     });
   });
 
   describe("realistic attack scenarios", () => {
     test("should prevent DoS via malformed CSV without delimiters", () => {
-      const lexer = new Lexer({ maxBufferSize: 1024 * 1024 }); // 1M characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 1024 * 1024 }); // 1M characters limit
       // Malformed CSV that doesn't match any token pattern
       const malformedData = "x".repeat(2 * 1024 * 1024); // 2M characters of invalid data
 
@@ -108,44 +108,44 @@ describe("Lexer - Buffer Overflow Protection", () => {
     });
 
     test("should prevent DoS via streaming incomplete quoted fields", () => {
-      const lexer = new Lexer({ maxBufferSize: 512 * 1024 }); // 512K characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 512 * 1024 }); // 512K characters limit
 
       expect(() => {
         // Stream chunks of quoted field without closing quote
         for (let i = 0; i < 10; i++) {
           const chunk =
             i === 0 ? `"${"data".repeat(1024 * 30)}` : "data".repeat(1024 * 30);
-          [...lexer.lex(chunk, true)];
+          [...lexer.lex(chunk, { stream: true })];
         }
       }).toThrow(RangeError);
     });
 
     test("should prevent infinite loop with escaped quotes in long field", () => {
-      const lexer = new Lexer({ maxBufferSize: 256 * 1024 }); // 256K characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 256 * 1024 }); // 256K characters limit
 
       expect(() => {
         // Attack: Field with many escaped quotes that doesn't close
         // This simulates the do-while loop scenario mentioned in the security report
         const chunk = `"${'""'.repeat(150 * 1024)}`;
-        [...lexer.lex(chunk, true)];
+        [...lexer.lex(chunk, { stream: true })];
       }).toThrow(RangeError);
     });
 
     test("should handle streaming with escaped quotes that eventually exceeds buffer", () => {
-      const lexer = new Lexer({ maxBufferSize: 128 * 1024 }); // 128K characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 128 * 1024 }); // 128K characters limit
 
       expect(() => {
         // Stream multiple chunks with escaped quotes
         for (let i = 0; i < 5; i++) {
           const chunk =
             i === 0 ? `"${'""'.repeat(30 * 1024)}` : '""'.repeat(30 * 1024);
-          [...lexer.lex(chunk, true)];
+          [...lexer.lex(chunk, { stream: true })];
         }
       }).toThrow(RangeError);
     });
 
     test("should properly parse valid quoted field with many escaped quotes within limit", () => {
-      const lexer = new Lexer({ maxBufferSize: 1024 * 1024 }); // 1M characters limit
+      const lexer = new CSVLexer({ maxBufferSize: 1024 * 1024 }); // 1M characters limit
       // Valid field with escaped quotes that closes properly
       const validData = `"${'""'.repeat(1000)}"`;
 

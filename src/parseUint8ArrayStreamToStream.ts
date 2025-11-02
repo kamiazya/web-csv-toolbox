@@ -1,5 +1,5 @@
-import { LexerTransformer } from "./LexerTransformer.ts";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { pipeline } from "./utils/pipeline.ts";
 
@@ -13,13 +13,13 @@ export function parseUint8ArrayStreamToStream<Header extends readonly string[]>(
         stream,
         new DecompressionStream(decomposition),
         new TextDecoderStream(charset, { fatal, ignoreBOM }),
-        new LexerTransformer(options),
-        new RecordAssemblerTransformer(options),
+        new CSVLexerTransformer(options),
+        new CSVRecordAssemblerTransformer(options),
       )
     : pipeline(
         stream,
         new TextDecoderStream(charset, { fatal, ignoreBOM }),
-        new LexerTransformer(options),
-        new RecordAssemblerTransformer(options),
+        new CSVLexerTransformer(options),
+        new CSVRecordAssemblerTransformer(options),
       );
 }

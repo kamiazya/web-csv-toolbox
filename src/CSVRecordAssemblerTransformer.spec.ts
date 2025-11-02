@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_, vi } from "vitest";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import { FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
@@ -22,10 +22,10 @@ const LOCATION_SHAPE = {
   rowNumber: expect.any(Number),
 };
 
-describe("RecordAssemblerTransformer", () => {
+describe("CSVRecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
     expect(
-      () => new RecordAssemblerTransformer({ header: [] }),
+      () => new CSVRecordAssemblerTransformer({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not be empty.]`,
@@ -34,7 +34,7 @@ describe("RecordAssemblerTransformer", () => {
 
   it("should throw error if header has duplicated fields", () => {
     expect(
-      () => new RecordAssemblerTransformer({ header: ["a", "a"] }),
+      () => new CSVRecordAssemblerTransformer({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not contain duplicate fields.]`,
@@ -96,7 +96,7 @@ describe("RecordAssemblerTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new RecordAssemblerTransformer(), [
+          const actual = await transform(new CSVRecordAssemblerTransformer(), [
             tokens,
           ]);
           expect(actual).toEqual(expected);
@@ -141,7 +141,7 @@ describe("RecordAssemblerTransformer", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const parser = new RecordAssemblerTransformer({
+          const parser = new CSVRecordAssemblerTransformer({
             header,
           });
           const actual = await transform(parser, [tokens]);
@@ -151,7 +151,7 @@ describe("RecordAssemblerTransformer", () => {
     ));
 
   it("should throw an error if throws error on assemble", async () => {
-    const transformer = new RecordAssemblerTransformer();
+    const transformer = new CSVRecordAssemblerTransformer();
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
       throw new Error("test");
     });
@@ -164,7 +164,7 @@ describe("RecordAssemblerTransformer", () => {
   });
 
   it("should throw an error if throws error on flush", async () => {
-    const transformer = new RecordAssemblerTransformer();
+    const transformer = new CSVRecordAssemblerTransformer();
     vi.spyOn(transformer.assembler, "flush").mockImplementationOnce(() => {
       throw new Error("test");
     });

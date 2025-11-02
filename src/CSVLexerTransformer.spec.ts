@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
-import { LexerTransformer } from "./LexerTransformer.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { FC, autoChunk, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { escapeField } from "./escapeField.ts";
@@ -22,9 +22,9 @@ const LOCATION_SHAPE = {
   rowNumber: expect.any(Number),
 };
 
-describe("LexerTransformer", () => {
+describe("CSVLexerTransformer", () => {
   it("should be a TransformStream", () => {
-    expect(new LexerTransformer()).toBeInstanceOf(TransformStream);
+    expect(new CSVLexerTransformer()).toBeInstanceOf(TransformStream);
   });
 
   it("should separate fields by commas by default", async () => {
@@ -58,7 +58,7 @@ describe("LexerTransformer", () => {
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
-          const lexer = new LexerTransformer();
+          const lexer = new CSVLexerTransformer();
           const actual = (await transform(lexer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
@@ -92,7 +92,7 @@ describe("LexerTransformer", () => {
           return { expected, chunks };
         }),
         async ({ expected, chunks }) => {
-          const lexer = new LexerTransformer();
+          const lexer = new CSVLexerTransformer();
           const actual = (await transform(lexer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
@@ -154,7 +154,7 @@ describe("LexerTransformer", () => {
           return { options, chunks, expected };
         }),
         async ({ options, chunks, expected }) => {
-          const lexer = new LexerTransformer(options);
+          const lexer = new CSVLexerTransformer(options);
           const actual = (await transform(lexer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
