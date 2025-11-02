@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 import { CSVLexer } from "./CSVLexer";
+import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 
 describe("CSVLexer", () => {
   let lexer: CSVLexer;
@@ -274,10 +274,7 @@ describe("CSVLexer", () => {
 
       expect(() => [
         ...lexer.lex('"Hello"'),
-      ]).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: <explanation>
-        "[MyCustomError: Custom reason]",
-      );
+      ]).toThrowErrorMatchingInlineSnapshot("[MyCustomError: Custom reason]");
     });
   });
 
