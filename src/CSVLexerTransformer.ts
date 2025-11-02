@@ -8,16 +8,19 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * @category Low-level API
  *
  * @param options - CSV-specific options (delimiter, quotation, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 8 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 16 }`)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length }`)
  *
  * @remarks
  * Follows the Web Streams API pattern where queuing strategies are passed as
  * constructor arguments, similar to the standard `TransformStream`.
  *
- * Default highWaterMark values are starting points based on data flow characteristics,
- * not empirical benchmarks. Optimal values depend on your runtime environment,
- * data size, and performance requirements.
+ * **Default Queuing Strategy:**
+ * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
+ * - Readable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
+ *
+ * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
+ * Optimal values depend on your runtime environment, data size, and performance requirements.
  *
  * @example Basic usage
  * ```ts
@@ -48,8 +51,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * ```ts
  * const transformer = new CSVLexerTransformer(
  *   { delimiter: ',' },
- *   { highWaterMark: 32 },  // writable
- *   { highWaterMark: 64 },  // readable
+ *   { highWaterMark: 131072, size: (chunk) => chunk.length },  // 128KB of characters
+ *   { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
  * );
  *
  * await fetch('large-file.csv')
@@ -66,8 +69,14 @@ export class CSVLexerTransformer<
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
   constructor(
     options: CSVLexerTransformerOptions<Delimiter, Quotation> = {},
-    writableStrategy: QueuingStrategy<string> = { highWaterMark: 8 },
-    readableStrategy: QueuingStrategy<Token[]> = { highWaterMark: 16 },
+    writableStrategy: QueuingStrategy<string> = {
+      highWaterMark: 65536, // 64KB worth of characters
+      size: (chunk) => chunk.length, // Count by string length (character count)
+    },
+    readableStrategy: QueuingStrategy<Token[]> = {
+      highWaterMark: 1024, // 1024 tokens
+      size: (tokens) => tokens.length, // Count by number of tokens in array
+    },
   ) {
     const lexer = new CSVLexer(options);
 

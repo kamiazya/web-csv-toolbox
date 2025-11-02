@@ -37,22 +37,45 @@ const mediumCSV = generateCSV(1000);  // ~30KB
 const largeCSV = generateCSV(10000);  // ~300KB
 
 // Strategy configurations to test
+// Each configuration specifies highWaterMark values for each stage of the pipeline
+// Note: Default strategies use custom size algorithms (character count, token count, etc.)
 const strategies = [
-  { name: 'hwm-1', writable: 1, readable: 1 },
-  { name: 'hwm-2', writable: 2, readable: 2 },
-  { name: 'hwm-4', writable: 4, readable: 4 },
-  { name: 'hwm-8', writable: 8, readable: 8 },
-  { name: 'hwm-default-lexer', writable: 8, readable: 16 }, // CSVLexerTransformer default
-  { name: 'hwm-default-assembler', writable: 16, readable: 8 }, // CSVRecordAssemblerTransformer default
-  { name: 'hwm-16', writable: 16, readable: 16 },
-  { name: 'hwm-32', writable: 32, readable: 32 },
-  { name: 'hwm-64', writable: 64, readable: 64 },
+  {
+    name: 'hwm-defaults',
+    lexerWritable: 65536,   // 64KB characters (default)
+    lexerReadable: 1024,    // 1024 tokens (default)
+    assemblerWritable: 1024, // 1024 tokens (default)
+    assemblerReadable: 256   // 256 records (default)
+  },
+  {
+    name: 'hwm-small',
+    lexerWritable: 16384,   // 16KB characters
+    lexerReadable: 256,     // 256 tokens
+    assemblerWritable: 256, // 256 tokens
+    assemblerReadable: 64   // 64 records
+  },
+  {
+    name: 'hwm-large',
+    lexerWritable: 131072,  // 128KB characters
+    lexerReadable: 2048,    // 2048 tokens
+    assemblerWritable: 2048, // 2048 tokens
+    assemblerReadable: 512   // 512 records
+  },
+  {
+    name: 'hwm-xlarge',
+    lexerWritable: 262144,  // 256KB characters
+    lexerReadable: 4096,    // 4096 tokens
+    assemblerWritable: 4096, // 4096 tokens
+    assemblerReadable: 1024  // 1024 records
+  },
 ];
 
 async function benchmarkPipeline(
   csv: string,
-  writableHWM: number,
-  readableHWM: number
+  lexerWritableHWM: number,
+  lexerReadableHWM: number,
+  assemblerWritableHWM: number,
+  assemblerReadableHWM: number,
 ): Promise<void> {
   const stream = new ReadableStream({
     start(controller) {
@@ -64,13 +87,13 @@ async function benchmarkPipeline(
   await stream
     .pipeThrough(new CSVLexerTransformer(
       {},
-      { highWaterMark: writableHWM },
-      { highWaterMark: readableHWM },
+      { highWaterMark: lexerWritableHWM, size: (chunk) => chunk.length },
+      { highWaterMark: lexerReadableHWM, size: (tokens) => tokens.length },
     ))
     .pipeThrough(new CSVRecordAssemblerTransformer(
       {},
-      { highWaterMark: writableHWM },
-      { highWaterMark: readableHWM },
+      { highWaterMark: assemblerWritableHWM, size: (tokens) => tokens.length },
+      { highWaterMark: assemblerReadableHWM, size: () => 1 },
     ))
     .pipeTo(new WritableStream({
       write() {
@@ -86,21 +109,21 @@ const bench = withCodSpeed(new Bench({
 }));
 
 // Add benchmarks for each combination of data size and strategy
-for (const { name, writable, readable } of strategies) {
+for (const { name, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable } of strategies) {
   bench.add(`small (100 rows) - ${name}`, async () => {
-    await benchmarkPipeline(smallCSV, writable, readable);
+    await benchmarkPipeline(smallCSV, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable);
   });
 }
 
-for (const { name, writable, readable } of strategies) {
+for (const { name, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable } of strategies) {
   bench.add(`medium (1000 rows) - ${name}`, async () => {
-    await benchmarkPipeline(mediumCSV, writable, readable);
+    await benchmarkPipeline(mediumCSV, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable);
   });
 }
 
-for (const { name, writable, readable } of strategies) {
+for (const { name, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable } of strategies) {
   bench.add(`large (10000 rows) - ${name}`, async () => {
-    await benchmarkPipeline(largeCSV, writable, readable);
+    await benchmarkPipeline(largeCSV, lexerWritable, lexerReadable, assemblerWritable, assemblerReadable);
   });
 }
 

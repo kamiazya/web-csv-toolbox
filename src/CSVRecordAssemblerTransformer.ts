@@ -10,8 +10,8 @@ import type {
  *
  * @template Header The type of the header row.
  * @param options - CSV-specific options (header, maxFieldCount, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 16 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 8 }`)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  *
  * @category Low-level API
  *
@@ -19,9 +19,12 @@ import type {
  * Follows the Web Streams API pattern where queuing strategies are passed as
  * constructor arguments, similar to the standard `TransformStream`.
  *
- * Default highWaterMark values are starting points based on data flow characteristics,
- * not empirical benchmarks. Optimal values depend on your runtime environment,
- * data size, and performance requirements.
+ * **Default Queuing Strategy:**
+ * - Writable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
+ * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
+ *
+ * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
+ * Optimal values depend on your runtime environment, data size, and performance requirements.
  *
  * @example Parse a CSV with headers by data
  *  ```ts
@@ -63,8 +66,8 @@ import type {
  * ```ts
  * const transformer = new CSVRecordAssemblerTransformer(
  *   {},
- *   { highWaterMark: 8 },  // writable
- *   { highWaterMark: 2 },  // readable
+ *   { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
+ *   { highWaterMark: 512, size: () => 1 },  // 512 records
  * );
  *
  * await tokenStream
@@ -79,8 +82,14 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
-    writableStrategy: QueuingStrategy<Token[]> = { highWaterMark: 16 },
-    readableStrategy: QueuingStrategy<CSVRecord<Header>> = { highWaterMark: 8 },
+    writableStrategy: QueuingStrategy<Token[]> = {
+      highWaterMark: 1024, // 1024 tokens
+      size: (tokens) => tokens.length, // Count by number of tokens in array
+    },
+    readableStrategy: QueuingStrategy<CSVRecord<Header>> = {
+      highWaterMark: 256, // 256 records
+      size: () => 1, // Each record counts as 1
+    },
   ) {
     const assembler = new CSVRecordAssembler(options);
 

@@ -24,20 +24,46 @@ new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?
 ### CSVLexerTransformer
 
 - **Parameter 1** `options`: CSV-specific options (delimiter, quotation, etc.)
-- **Parameter 2** `writableStrategy`: Controls buffering for incoming string chunks (default: `{ highWaterMark: 8 }`)
-- **Parameter 3** `readableStrategy`: Controls buffering for outgoing token arrays (default: `{ highWaterMark: 16 }`)
+- **Parameter 2** `writableStrategy`: Controls buffering for incoming string chunks
+  - Default: `{ highWaterMark: 65536, size: (chunk) => chunk.length }`
+  - Counts by **character count** (string length)
+  - Default allows ~64KB of characters
+- **Parameter 3** `readableStrategy`: Controls buffering for outgoing token arrays
+  - Default: `{ highWaterMark: 1024, size: (tokens) => tokens.length }`
+  - Counts by **number of tokens** in each array
+  - Default allows 1024 tokens
 
 ### CSVRecordAssemblerTransformer
 
 - **Parameter 1** `options`: CSV-specific options (header, maxFieldCount, etc.)
-- **Parameter 2** `writableStrategy`: Controls buffering for incoming token arrays (default: `{ highWaterMark: 16 }`)
-- **Parameter 3** `readableStrategy`: Controls buffering for outgoing CSV records (default: `{ highWaterMark: 8 }`)
+- **Parameter 2** `writableStrategy`: Controls buffering for incoming token arrays
+  - Default: `{ highWaterMark: 1024, size: (tokens) => tokens.length }`
+  - Counts by **number of tokens** in each array
+  - Default allows 1024 tokens
+- **Parameter 3** `readableStrategy`: Controls buffering for outgoing CSV records
+  - Default: `{ highWaterMark: 256, size: () => 1 }`
+  - Counts each **record as 1**
+  - Default allows 256 records
 
-## Default Values
+## Default Values Rationale
 
-**Important**: The default values are **theoretical starting points** based on data flow characteristics, **not empirical benchmarks**. They are:
-- Lexer produces more output (tokens) than input (strings), so readable side has higher HWM
-- Assembler consumes multiple token arrays to produce records, so writable side has higher HWM
+**Important**: The default values are **theoretical starting points** based on data flow characteristics, **not empirical benchmarks**.
+
+### Size Counting Strategy
+
+Each transformer uses a **custom size algorithm** optimized for its data type:
+
+- **CSVLexerTransformer writable**: Counts by **string length** (characters). This provides accurate backpressure based on actual data volume.
+- **CSVLexerTransformer readable**: Counts by **number of tokens**. Prevents excessive token accumulation.
+- **CSVRecordAssemblerTransformer writable**: Counts by **number of tokens**. Matches the lexer's readable side for smooth pipeline flow.
+- **CSVRecordAssemblerTransformer readable**: Counts **each record as 1**. Simple and effective for record-based backpressure.
+
+### Why These Defaults?
+
+- Lexer typically produces multiple tokens per character (delimiters, quotes, fields)
+- Using character-based counting on writable side provides more predictable memory usage
+- Token-based counting between lexer and assembler ensures smooth data flow
+- Record-based counting on final output is intuitive and easy to reason about
 
 Optimal values depend on your runtime environment (browser/Node.js/Deno), data size, memory constraints, and CPU performance. **You should profile your specific use case** to find the best values.
 
@@ -62,14 +88,14 @@ const lexer = new CSVLexerTransformer();
 // Custom strategies based on YOUR profiling results
 const lexer = new CSVLexerTransformer(
   { delimiter: ',' },
-  { highWaterMark: 32 },    // writable
-  { highWaterMark: 64 },    // readable
+  { highWaterMark: 131072, size: (chunk) => chunk.length },  // 128KB of characters
+  { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
 );
 
 const assembler = new CSVRecordAssemblerTransformer(
   {},
-  { highWaterMark: 4 },     // writable
-  { highWaterMark: 2 },     // readable
+  { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
+  { highWaterMark: 512, size: () => 1 },                     // 512 records
 );
 ```
 
