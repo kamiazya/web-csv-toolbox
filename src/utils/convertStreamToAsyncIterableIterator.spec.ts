@@ -345,6 +345,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
     it("should release lock on early termination with break", async () => {
       const stream = createStream([1, 2, 3, 4, 5]);
 
+      const cancelSpy = vi.fn();
       const releaseLockSpy = vi.fn();
       const originalGetReader = stream.getReader.bind(stream);
 
@@ -357,7 +358,13 @@ describe("convertStreamToAsyncIterableIterator", () => {
 
       stream.getReader = vi.fn(() => {
         const reader = originalGetReader();
+        const originalCancel = reader.cancel.bind(reader);
         const originalReleaseLock = reader.releaseLock.bind(reader);
+
+        reader.cancel = vi.fn(async (reason) => {
+          cancelSpy(reason);
+          return originalCancel(reason);
+        });
 
         reader.releaseLock = vi.fn(() => {
           releaseLockSpy();
@@ -376,10 +383,14 @@ describe("convertStreamToAsyncIterableIterator", () => {
         if (value === 3) break;
       }
 
-      // Note: releaseLock might not be called immediately on break
-      // as the generator is not fully consumed, but the lock should
-      // eventually be released when the iterator is garbage collected
       expect(result).toEqual([1, 2, 3]);
+
+      // Verify cancel was called on early termination
+      expect(cancelSpy).toHaveBeenCalledOnce();
+      expect(cancelSpy).toHaveBeenCalledWith(undefined);
+
+      // Verify releaseLock was called
+      expect(releaseLockSpy).toHaveBeenCalledOnce();
     });
   });
 });

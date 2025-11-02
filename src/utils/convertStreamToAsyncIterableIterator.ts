@@ -48,13 +48,20 @@ export function convertStreamToAsyncIterableIterator<T>(
   // Fallback for Safari
   return (async function* () {
     const reader = stream.getReader();
+    let completed = false;
+    let errored = false;
+
     try {
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          completed = true;
+          break;
+        }
         yield value;
       }
     } catch (error) {
+      errored = true;
       // Cancel the stream on error to release underlying resources
       // and signal to the source that no more data is needed
       await reader.cancel(error).catch(() => {
@@ -62,6 +69,12 @@ export function convertStreamToAsyncIterableIterator<T>(
       });
       throw error;
     } finally {
+      // Cancel on early termination (e.g., break in for-await-of)
+      if (!completed && !errored) {
+        await reader.cancel().catch(() => {
+          // Ignore cancel errors on early termination
+        });
+      }
       reader.releaseLock();
     }
   })();
