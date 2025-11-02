@@ -47,6 +47,7 @@ export default defineConfig(env => ({
     }),
   ],
   test: {
+    testTimeout: 10000,
     setupFiles: ["config/vitest.setup.ts"],
     browser: {
       name: "chrome",

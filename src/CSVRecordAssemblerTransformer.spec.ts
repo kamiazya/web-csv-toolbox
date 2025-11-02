@@ -165,8 +165,21 @@ describe("CSVRecordAssemblerTransformer", () => {
 
   it("should throw an error if throws error on flush", async () => {
     const transformer = new CSVRecordAssemblerTransformer();
-    vi.spyOn(transformer.assembler, "flush").mockImplementationOnce(() => {
-      throw new Error("test");
+    // Mock the assemble method to throw error during flush (when called without tokens)
+    const originalAssemble = transformer.assembler.assemble.bind(
+      transformer.assembler,
+    );
+    vi.spyOn(transformer.assembler, "assemble").mockImplementation(function* (
+      tokens,
+      options,
+    ) {
+      // If tokens are provided, use original implementation
+      if (tokens !== undefined) {
+        yield* originalAssemble(tokens, options);
+      } else {
+        // If no tokens (flush phase), throw error
+        throw new Error("test");
+      }
     });
     expect(async () => {
       await transform(transformer, [[]]);
