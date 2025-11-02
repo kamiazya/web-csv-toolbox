@@ -120,4 +120,50 @@ describe("CSVLexerTransformer", () => {
       expect((error as DOMException).name).toBe("TimeoutError");
     }
   });
+
+  describe("queuing strategy", () => {
+    it("should use default strategies when not specified", () => {
+      const transformer = new CSVLexerTransformer();
+      // TransformStream has writable and readable properties
+      expect(transformer.writable).toBeDefined();
+      expect(transformer.readable).toBeDefined();
+    });
+
+    it("should accept custom writable strategy", async () => {
+      const customStrategy = { highWaterMark: 32 };
+      const transformer = new CSVLexerTransformer({
+        writableStrategy: customStrategy,
+      });
+      expect(transformer.writable).toBeDefined();
+
+      // Verify it works with actual data
+      const result = await transform(transformer, ["name,age\n", "Alice,20\n"]);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it("should accept custom readable strategy", async () => {
+      const customStrategy = { highWaterMark: 64 };
+      const transformer = new CSVLexerTransformer({
+        readableStrategy: customStrategy,
+      });
+      expect(transformer.readable).toBeDefined();
+
+      // Verify it works with actual data
+      const result = await transform(transformer, ["name,age\n", "Alice,20\n"]);
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it("should accept both custom strategies", async () => {
+      const transformer = new CSVLexerTransformer({
+        writableStrategy: { highWaterMark: 4 },
+        readableStrategy: { highWaterMark: 2 },
+      });
+      expect(transformer.writable).toBeDefined();
+      expect(transformer.readable).toBeDefined();
+
+      // Verify it works with actual data
+      const result = await transform(transformer, ["name,age\n", "Alice,20\n"]);
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
 });

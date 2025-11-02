@@ -357,8 +357,57 @@ ideal for developers looking for in-depth control and flexibility.
 
 - **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
   - A TransformStream class for lexical analysis of CSV data.
+  - Supports custom queuing strategies for controlling backpressure and memory usage.
 - **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
   - Handles the assembly of parsed data into records.
+  - Supports custom queuing strategies for controlling backpressure and memory usage.
+
+#### Customizing Queuing Strategies
+
+Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` allow you to customize their internal buffering behavior using `writableStrategy` and `readableStrategy` options. This is useful for optimizing performance based on your specific environment.
+
+**Default values (starting points, not benchmarked):**
+```typescript
+// CSVLexerTransformer
+const lexer = new CSVLexerTransformer({
+  writableStrategy: { highWaterMark: 8 },  // Default: 8 string chunks
+  readableStrategy: { highWaterMark: 16 }, // Default: 16 token arrays
+});
+
+// CSVRecordAssemblerTransformer
+const assembler = new CSVRecordAssemblerTransformer({
+  writableStrategy: { highWaterMark: 16 }, // Default: 16 token arrays
+  readableStrategy: { highWaterMark: 8 },  // Default: 8 CSV records
+});
+```
+
+> ⚠️ **Important**: These defaults are theoretical starting points based on data flow characteristics, **not empirical benchmarks**. Optimal values vary by runtime (browser/Node.js/Deno), file size, memory constraints, and CPU performance. **Profile your specific use case** to find the best values.
+
+**When to customize:**
+- 🚀 **High-throughput servers**: Try higher values (e.g., 32-64) and measure performance
+- 📱 **Memory-constrained environments** (browsers, edge): Try lower values (e.g., 1-4) and monitor memory
+- 🔧 **Custom pipelines**: Profile with representative data and iterate
+
+**Example:**
+```typescript
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+
+// Customize based on YOUR profiling results
+const response = await fetch('large-dataset.csv');
+await response.body
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(new CSVLexerTransformer({
+    writableStrategy: { highWaterMark: 32 },
+    readableStrategy: { highWaterMark: 64 },
+  }))
+  .pipeThrough(new CSVRecordAssemblerTransformer({
+    writableStrategy: { highWaterMark: 64 },
+    readableStrategy: { highWaterMark: 32 },
+  }))
+  .pipeTo(yourRecordProcessor);
+```
+
+For benchmarking examples, see `benchmark/queuing-strategy.bench.ts` in the repository.
 
 ### Experimental APIs 🧪
 

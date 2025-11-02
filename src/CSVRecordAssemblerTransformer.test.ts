@@ -88,4 +88,97 @@ describe("CSVRecordAssemblerTransformer", () => {
       expect((error as DOMException).name).toBe("TimeoutError");
     }
   });
+
+  describe("queuing strategy", () => {
+    test("should use default strategies when not specified", () => {
+      const transformer = new CSVRecordAssemblerTransformer();
+      // TransformStream has writable and readable properties
+      expect(transformer.writable).toBeDefined();
+      expect(transformer.readable).toBeDefined();
+    });
+
+    test("should accept custom writable strategy", async () => {
+      const customStrategy = { highWaterMark: 64 };
+      const results: unknown[] = [];
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue("name,age\nAlice,20\nBob,25");
+          controller.close();
+        },
+      });
+
+      await stream
+        .pipeThrough(new CSVLexerTransformer())
+        .pipeThrough(
+          new CSVRecordAssemblerTransformer({
+            writableStrategy: customStrategy,
+          }),
+        )
+        .pipeTo(
+          new WritableStream({
+            write(record) {
+              results.push(record);
+            },
+          }),
+        );
+
+      expect(results.length).toBe(2);
+    });
+
+    test("should accept custom readable strategy", async () => {
+      const customStrategy = { highWaterMark: 2 };
+      const results: unknown[] = [];
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue("name,age\nAlice,20\nBob,25");
+          controller.close();
+        },
+      });
+
+      await stream
+        .pipeThrough(new CSVLexerTransformer())
+        .pipeThrough(
+          new CSVRecordAssemblerTransformer({
+            readableStrategy: customStrategy,
+          }),
+        )
+        .pipeTo(
+          new WritableStream({
+            write(record) {
+              results.push(record);
+            },
+          }),
+        );
+
+      expect(results.length).toBe(2);
+    });
+
+    test("should accept both custom strategies", async () => {
+      const results: unknown[] = [];
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue("name,age\nAlice,20\nBob,25");
+          controller.close();
+        },
+      });
+
+      await stream
+        .pipeThrough(new CSVLexerTransformer())
+        .pipeThrough(
+          new CSVRecordAssemblerTransformer({
+            writableStrategy: { highWaterMark: 32 },
+            readableStrategy: { highWaterMark: 4 },
+          }),
+        )
+        .pipeTo(
+          new WritableStream({
+            write(record) {
+              results.push(record);
+            },
+          }),
+        );
+
+      expect(results.length).toBe(2);
+    });
+  });
 });

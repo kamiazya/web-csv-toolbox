@@ -31,6 +31,20 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * // { type: Field, value: "20" }
  * // { type: RecordDelimiter, value: "\r\n", location: {...} }
  * ```
+ *
+ * @example Custom queuing strategies for high-throughput scenarios
+ * ```ts
+ * const transformer = new CSVLexerTransformer({
+ *   writableStrategy: { highWaterMark: 32 },
+ *   readableStrategy: { highWaterMark: 64 },
+ * });
+ *
+ * await fetch('large-file.csv')
+ *   .then(res => res.body)
+ *   .pipeThrough(new TextDecoderStream())
+ *   .pipeThrough(transformer)
+ *   .pipeTo(yourProcessor);
+ * ```
  */
 export class CSVLexerTransformer<
   Delimiter extends string = DEFAULT_DELIMITER,
@@ -39,24 +53,33 @@ export class CSVLexerTransformer<
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
   constructor(options: CSVLexerTransformerOptions<Delimiter, Quotation> = {}) {
     const lexer = new CSVLexer(options);
-    super({
-      transform: (chunk, controller) => {
-        if (chunk.length !== 0) {
+    const {
+      writableStrategy = { highWaterMark: 8 },
+      readableStrategy = { highWaterMark: 16 },
+    } = options;
+
+    super(
+      {
+        transform: (chunk, controller) => {
+          if (chunk.length !== 0) {
+            try {
+              controller.enqueue([...lexer.lex(chunk, { stream: true })]);
+            } catch (error) {
+              controller.error(error);
+            }
+          }
+        },
+        flush: (controller) => {
           try {
-            controller.enqueue([...lexer.lex(chunk, { stream: true })]);
+            controller.enqueue([...lexer.lex()]);
           } catch (error) {
             controller.error(error);
           }
-        }
+        },
       },
-      flush: (controller) => {
-        try {
-          controller.enqueue([...lexer.lex()]);
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-    });
+      writableStrategy,
+      readableStrategy,
+    );
     this.lexer = lexer;
   }
 }

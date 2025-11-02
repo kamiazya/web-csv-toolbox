@@ -287,7 +287,61 @@ export interface CSVLexerTransformerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    AbortSignalOptions {}
+    AbortSignalOptions {
+  /**
+   * Strategy for controlling the writable side's internal queue.
+   *
+   * @remarks
+   * Controls backpressure for incoming string chunks. Higher `highWaterMark`
+   * values allow more chunks to be buffered, improving throughput at the
+   * cost of memory usage.
+   *
+   * **Note**: The default value is a starting point based on data flow
+   * characteristics, not benchmarked performance. Optimal values depend on
+   * your runtime environment (browser/Node.js/Deno), data size, and
+   * performance requirements. Profile your specific use case and adjust
+   * accordingly.
+   *
+   * @default { highWaterMark: 8 }
+   *
+   * @example
+   * ```ts
+   * // Customize based on your profiling results
+   * const transformer = new CSVLexerTransformer({
+   *   writableStrategy: { highWaterMark: 32 }
+   * });
+   * ```
+   */
+  writableStrategy?: QueuingStrategy<string>;
+
+  /**
+   * Strategy for controlling the readable side's internal queue.
+   *
+   * @remarks
+   * Controls backpressure for outgoing token arrays. Higher `highWaterMark`
+   * values allow more token arrays to be buffered before applying backpressure.
+   *
+   * The default value is set higher than writable side because the lexer
+   * typically produces more output (tokens) than input (string chunks).
+   *
+   * **Note**: The default value is a starting point based on data flow
+   * characteristics, not benchmarked performance. Optimal values depend on
+   * your runtime environment (browser/Node.js/Deno), data size, and
+   * performance requirements. Profile your specific use case and adjust
+   * accordingly.
+   *
+   * @default { highWaterMark: 16 }
+   *
+   * @example
+   * ```ts
+   * // Customize based on your profiling results
+   * const transformer = new CSVLexerTransformer({
+   *   readableStrategy: { highWaterMark: 4 }
+   * });
+   * ```
+   */
+  readableStrategy?: QueuingStrategy<Token[]>;
+}
 
 /**
  * CSV Record Assembler Options.
@@ -336,6 +390,60 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default false
    */
   skipEmptyLines?: boolean;
+
+  /**
+   * Strategy for controlling the writable side's internal queue.
+   *
+   * @remarks
+   * Controls backpressure for incoming token arrays. Higher `highWaterMark`
+   * values allow more token arrays to be buffered, improving throughput at
+   * the cost of memory usage.
+   *
+   * The default value is set higher than readable side because the assembler
+   * typically receives multiple token arrays to produce a single record.
+   *
+   * **Note**: The default value is a starting point based on data flow
+   * characteristics, not benchmarked performance. Optimal values depend on
+   * your runtime environment (browser/Node.js/Deno), data size, and
+   * performance requirements. Profile your specific use case and adjust
+   * accordingly.
+   *
+   * @default { highWaterMark: 16 }
+   *
+   * @example
+   * ```ts
+   * // Customize based on your profiling results
+   * const transformer = new CSVRecordAssemblerTransformer({
+   *   writableStrategy: { highWaterMark: 64 }
+   * });
+   * ```
+   */
+  writableStrategy?: QueuingStrategy<Token[]>;
+
+  /**
+   * Strategy for controlling the readable side's internal queue.
+   *
+   * @remarks
+   * Controls backpressure for outgoing CSV records. Higher `highWaterMark`
+   * values allow more records to be buffered before applying backpressure.
+   *
+   * **Note**: The default value is a starting point based on data flow
+   * characteristics, not benchmarked performance. Optimal values depend on
+   * your runtime environment (browser/Node.js/Deno), data size, and
+   * performance requirements. Profile your specific use case and adjust
+   * accordingly.
+   *
+   * @default { highWaterMark: 8 }
+   *
+   * @example
+   * ```ts
+   * // Customize based on your profiling results
+   * const transformer = new CSVRecordAssemblerTransformer({
+   *   readableStrategy: { highWaterMark: 2 }
+   * });
+   * ```
+   */
+  readableStrategy?: QueuingStrategy<CSVRecord<Header>>;
 }
 
 /**
@@ -347,7 +455,7 @@ export interface ParseOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    CSVRecordAssemblerOptions<Header>,
+    Omit<CSVRecordAssemblerOptions<Header>, "writableStrategy" | "readableStrategy">,
     AbortSignalOptions {}
 
 /**

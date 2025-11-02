@@ -47,6 +47,18 @@ import type {
  * // { name: "Bob", age: "25" }
  * // { name: "Charlie", age: "30" }
  * ```
+ *
+ * @example Custom queuing strategies for memory-constrained environments
+ * ```ts
+ * const transformer = new CSVRecordAssemblerTransformer({
+ *   writableStrategy: { highWaterMark: 8 },
+ *   readableStrategy: { highWaterMark: 2 },
+ * });
+ *
+ * await tokenStream
+ *   .pipeThrough(transformer)
+ *   .pipeTo(yourRecordProcessor);
+ * ```
  */
 export class CSVRecordAssemblerTransformer<
   Header extends ReadonlyArray<string>,
@@ -55,26 +67,35 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
     const assembler = new CSVRecordAssembler(options);
-    super({
-      transform: (tokens, controller) => {
-        try {
-          for (const token of assembler.assemble(tokens, { stream: true })) {
-            controller.enqueue(token);
+    const {
+      writableStrategy = { highWaterMark: 16 },
+      readableStrategy = { highWaterMark: 8 },
+    } = options;
+
+    super(
+      {
+        transform: (tokens, controller) => {
+          try {
+            for (const token of assembler.assemble(tokens, { stream: true })) {
+              controller.enqueue(token);
+            }
+          } catch (error) {
+            controller.error(error);
           }
-        } catch (error) {
-          controller.error(error);
-        }
-      },
-      flush: (controller) => {
-        try {
-          for (const token of assembler.assemble()) {
-            controller.enqueue(token);
+        },
+        flush: (controller) => {
+          try {
+            for (const token of assembler.assemble()) {
+              controller.enqueue(token);
+            }
+          } catch (error) {
+            controller.error(error);
           }
-        } catch (error) {
-          controller.error(error);
-        }
+        },
       },
-    });
+      writableStrategy,
+      readableStrategy,
+    );
     this.assembler = assembler;
   }
 }
