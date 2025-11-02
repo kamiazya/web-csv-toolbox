@@ -62,14 +62,16 @@ async function benchmarkPipeline(
   });
 
   await stream
-    .pipeThrough(new CSVLexerTransformer({
-      writableStrategy: { highWaterMark: writableHWM },
-      readableStrategy: { highWaterMark: readableHWM },
-    }))
-    .pipeThrough(new CSVRecordAssemblerTransformer({
-      writableStrategy: { highWaterMark: readableHWM },
-      readableStrategy: { highWaterMark: writableHWM },
-    }))
+    .pipeThrough(new CSVLexerTransformer(
+      {},
+      { highWaterMark: writableHWM },
+      { highWaterMark: readableHWM },
+    ))
+    .pipeThrough(new CSVRecordAssemblerTransformer(
+      {},
+      { highWaterMark: writableHWM },
+      { highWaterMark: readableHWM },
+    ))
     .pipeTo(new WritableStream({
       write() {
         // noop - just consume the stream
