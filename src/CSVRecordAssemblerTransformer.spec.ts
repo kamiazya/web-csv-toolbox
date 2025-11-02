@@ -169,18 +169,17 @@ describe("CSVRecordAssemblerTransformer", () => {
     const originalAssemble = transformer.assembler.assemble.bind(
       transformer.assembler,
     );
-    vi.spyOn(transformer.assembler, "assemble").mockImplementation(function* (
-      tokens,
-      options,
-    ) {
-      // If tokens are provided, use original implementation
-      if (tokens !== undefined) {
-        yield* originalAssemble(tokens, options);
-      } else {
-        // If no tokens (flush phase), throw error
-        throw new Error("test");
-      }
-    });
+    vi.spyOn(transformer.assembler, "assemble").mockImplementation(
+      function* (tokens, options) {
+        // If tokens are provided, use original implementation
+        if (tokens !== undefined) {
+          yield* originalAssemble(tokens, options);
+        } else {
+          // If no tokens (flush phase), throw error
+          throw new Error("test");
+        }
+      },
+    );
     expect(async () => {
       await transform(transformer, [[]]);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
