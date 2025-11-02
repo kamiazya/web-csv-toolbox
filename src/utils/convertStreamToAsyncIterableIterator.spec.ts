@@ -199,7 +199,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
       expect(asyncIteratorSpy).toHaveBeenCalledOnce();
     });
 
-    it("should produce same results with both native and fallback paths", async () => {
+    it("should produce same results in native and fallback paths", async () => {
       const testData = [1, 2, 3, 4, 5];
 
       // Test with native path (if available)
@@ -289,7 +289,9 @@ describe("convertStreamToAsyncIterableIterator", () => {
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
 
-      await expect(collectAsyncIterator(iterator)).rejects.toThrow("test error");
+      await expect(collectAsyncIterator(iterator)).rejects.toThrow(
+        "test error",
+      );
 
       // Verify cancel was called with the error
       expect(cancelSpy).toHaveBeenCalledOnce();
@@ -340,7 +342,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
       expect(releaseLockSpy).toHaveBeenCalledOnce();
     });
 
-    it("should properly release lock on early termination with break", async () => {
+    it("should release lock on early termination with break", async () => {
       const stream = createStream([1, 2, 3, 4, 5]);
 
       const releaseLockSpy = vi.fn();
