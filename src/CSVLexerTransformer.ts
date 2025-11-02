@@ -1,5 +1,5 @@
 import { CSVLexer } from "./CSVLexer.ts";
-import type { CSVLexerTransformerOptions, Token } from "./common/types.ts";
+import type { CSVLexerTransformerOptions, Token, ExtendedQueuingStrategy } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**
@@ -8,8 +8,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * @category Low-level API
  *
  * @param options - CSV-specific options (delimiter, quotation, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length }`)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length, checkInterval: 100 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 100 }`)
  *
  * @remarks
  * Follows the Web Streams API pattern where queuing strategies are passed as
@@ -52,12 +52,20 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * // { type: RecordDelimiter, value: "\r\n", location: {...} }
  * ```
  *
- * @example Custom queuing strategies
+ * @example Custom queuing strategies with backpressure tuning
  * ```ts
  * const transformer = new CSVLexerTransformer(
  *   { delimiter: ',' },
- *   { highWaterMark: 131072, size: (chunk) => chunk.length },  // 128KB of characters
- *   { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
+ *   {
+ *     highWaterMark: 131072,           // 128KB of characters
+ *     size: (chunk) => chunk.length,   // Count by character length
+ *     checkInterval: 200               // Check backpressure every 200 tokens
+ *   },
+ *   {
+ *     highWaterMark: 2048,             // 2048 tokens
+ *     size: (tokens) => tokens.length, // Count by token count
+ *     checkInterval: 50                // Check backpressure every 50 tokens
+ *   }
  * );
  *
  * await fetch('large-file.csv')
@@ -74,16 +82,19 @@ export class CSVLexerTransformer<
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
   constructor(
     options: CSVLexerTransformerOptions<Delimiter, Quotation> = {},
-    writableStrategy: QueuingStrategy<string> = {
+    writableStrategy: ExtendedQueuingStrategy<string> = {
       highWaterMark: 65536, // 64KB worth of characters
       size: (chunk) => chunk.length, // Count by string length (character count)
+      checkInterval: 100, // Check backpressure every 100 tokens
     },
-    readableStrategy: QueuingStrategy<Token[]> = {
+    readableStrategy: ExtendedQueuingStrategy<Token[]> = {
       highWaterMark: 1024, // 1024 tokens
       size: (tokens) => tokens.length, // Count by number of tokens in array
+      checkInterval: 100, // Check backpressure every 100 tokens
     },
   ) {
     const lexer = new CSVLexer(options);
+    const checkInterval = writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 100;
 
     super(
       {
@@ -94,8 +105,8 @@ export class CSVLexerTransformer<
               for (const token of lexer.lex(chunk, { stream: true })) {
                 tokens.push(token);
 
-                // Check backpressure periodically (every 100 tokens)
-                if (tokens.length % 100 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+                // Check backpressure periodically based on checkInterval
+                if (tokens.length % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
                   // Yield to event loop when backpressure is detected
                   await new Promise(resolve => setTimeout(resolve, 0));
                 }
@@ -115,8 +126,8 @@ export class CSVLexerTransformer<
             for (const token of lexer.lex()) {
               tokens.push(token);
 
-              // Check backpressure periodically
-              if (tokens.length % 100 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              // Check backpressure periodically based on checkInterval
+              if (tokens.length % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
             }

@@ -67,12 +67,18 @@ Each transformer uses a **custom size algorithm** optimized for its data type:
 
 ### Backpressure Handling
 
-Both transformers implement **cooperative backpressure handling**:
+Both transformers implement **cooperative backpressure handling** with configurable check intervals:
 
 - Periodically checks `controller.desiredSize` during processing
 - When backpressure is detected (`desiredSize ≤ 0`), yields to the event loop via `setTimeout(0)`
 - Prevents blocking the main thread during heavy CSV processing
 - Allows downstream consumers to catch up, avoiding memory buildup
+
+**Configurable Check Interval:**
+- Set via `checkInterval` property in `ExtendedQueuingStrategy`
+- Lower values = more responsive but slight overhead
+- Higher values = less overhead but slower response
+- Defaults: 100 tokens (lexer), 10 records (assembler)
 
 This is especially important for:
 - Large CSV files that generate many tokens/records
@@ -102,14 +108,30 @@ const lexer = new CSVLexerTransformer();
 // Custom strategies based on YOUR profiling results
 const lexer = new CSVLexerTransformer(
   { delimiter: ',' },
-  { highWaterMark: 131072, size: (chunk) => chunk.length },  // 128KB of characters
-  { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
+  {
+    highWaterMark: 131072,           // 128KB of characters
+    size: (chunk) => chunk.length,   // Count by character length
+    checkInterval: 200               // Check backpressure every 200 tokens
+  },
+  {
+    highWaterMark: 2048,             // 2048 tokens
+    size: (tokens) => tokens.length, // Count by token count
+    checkInterval: 50                // Check backpressure every 50 tokens
+  }
 );
 
 const assembler = new CSVRecordAssemblerTransformer(
   {},
-  { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
-  { highWaterMark: 512, size: () => 1 },                     // 512 records
+  {
+    highWaterMark: 2048,             // 2048 tokens
+    size: (tokens) => tokens.length, // Count by token count
+    checkInterval: 20                // Check backpressure every 20 records
+  },
+  {
+    highWaterMark: 512,              // 512 records
+    size: () => 1,                   // Each record counts as 1
+    checkInterval: 5                 // Check backpressure every 5 records
+  }
 );
 ```
 

@@ -3,6 +3,7 @@ import type {
   CSVRecord,
   CSVRecordAssemblerOptions,
   Token,
+  ExtendedQueuingStrategy,
 } from "./common/types.ts";
 
 /**
@@ -10,8 +11,8 @@ import type {
  *
  * @template Header The type of the header row.
  * @param options - CSV-specific options (header, maxFieldCount, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 10 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1, checkInterval: 10 }`)
  *
  * @category Low-level API
  *
@@ -67,12 +68,20 @@ import type {
  * // { name: "Charlie", age: "30" }
  * ```
  *
- * @example Custom queuing strategies
+ * @example Custom queuing strategies with backpressure tuning
  * ```ts
  * const transformer = new CSVRecordAssemblerTransformer(
  *   {},
- *   { highWaterMark: 2048, size: (tokens) => tokens.length },  // 2048 tokens
- *   { highWaterMark: 512, size: () => 1 },  // 512 records
+ *   {
+ *     highWaterMark: 2048,             // 2048 tokens
+ *     size: (tokens) => tokens.length, // Count by token count
+ *     checkInterval: 20                // Check backpressure every 20 records
+ *   },
+ *   {
+ *     highWaterMark: 512,              // 512 records
+ *     size: () => 1,                   // Each record counts as 1
+ *     checkInterval: 5                 // Check backpressure every 5 records
+ *   }
  * );
  *
  * await tokenStream
@@ -87,16 +96,19 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
-    writableStrategy: QueuingStrategy<Token[]> = {
+    writableStrategy: ExtendedQueuingStrategy<Token[]> = {
       highWaterMark: 1024, // 1024 tokens
       size: (tokens) => tokens.length, // Count by number of tokens in array
+      checkInterval: 10, // Check backpressure every 10 records
     },
-    readableStrategy: QueuingStrategy<CSVRecord<Header>> = {
+    readableStrategy: ExtendedQueuingStrategy<CSVRecord<Header>> = {
       highWaterMark: 256, // 256 records
       size: () => 1, // Each record counts as 1
+      checkInterval: 10, // Check backpressure every 10 records
     },
   ) {
     const assembler = new CSVRecordAssembler(options);
+    const checkInterval = writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 10;
 
     super(
       {
@@ -107,8 +119,8 @@ export class CSVRecordAssemblerTransformer<
               controller.enqueue(record);
               recordCount++;
 
-              // Check backpressure periodically (every 10 records)
-              if (recordCount % 10 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              // Check backpressure periodically based on checkInterval
+              if (recordCount % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
                 // Yield to event loop when backpressure is detected
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
@@ -124,8 +136,8 @@ export class CSVRecordAssemblerTransformer<
               controller.enqueue(record);
               recordCount++;
 
-              // Check backpressure periodically
-              if (recordCount % 10 === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
+              // Check backpressure periodically based on checkInterval
+              if (recordCount % checkInterval === 0 && controller.desiredSize !== null && controller.desiredSize <= 0) {
                 await new Promise(resolve => setTimeout(resolve, 0));
               }
             }
