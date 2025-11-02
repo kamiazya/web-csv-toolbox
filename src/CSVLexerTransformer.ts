@@ -84,6 +84,16 @@ export class CSVLexerTransformer<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token[]> {
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
+
+  /**
+   * Yields to the event loop to allow backpressure handling.
+   * Can be overridden for testing purposes.
+   * @internal
+   */
+  protected async yieldToEventLoop(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
   constructor(
     options: CSVLexerTransformerOptions<Delimiter, Quotation> = {},
     writableStrategy: ExtendedQueuingStrategy<string> = {
@@ -117,7 +127,7 @@ export class CSVLexerTransformer<
                   controller.desiredSize <= 0
                 ) {
                   // Yield to event loop when backpressure is detected
-                  await new Promise((resolve) => setTimeout(resolve, 0));
+                  await this.yieldToEventLoop();
                 }
               }
 
@@ -141,7 +151,7 @@ export class CSVLexerTransformer<
                 controller.desiredSize !== null &&
                 controller.desiredSize <= 0
               ) {
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await this.yieldToEventLoop();
               }
             }
 

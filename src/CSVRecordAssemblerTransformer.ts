@@ -94,6 +94,15 @@ export class CSVRecordAssemblerTransformer<
 > extends TransformStream<Token[], CSVRecord<Header>> {
   public readonly assembler: CSVRecordAssembler<Header>;
 
+  /**
+   * Yields to the event loop to allow backpressure handling.
+   * Can be overridden for testing purposes.
+   * @internal
+   */
+  protected async yieldToEventLoop(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
     writableStrategy: ExtendedQueuingStrategy<Token[]> = {
@@ -127,7 +136,7 @@ export class CSVRecordAssemblerTransformer<
                 controller.desiredSize <= 0
               ) {
                 // Yield to event loop when backpressure is detected
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await this.yieldToEventLoop();
               }
             }
           } catch (error) {
@@ -147,7 +156,7 @@ export class CSVRecordAssemblerTransformer<
                 controller.desiredSize !== null &&
                 controller.desiredSize <= 0
               ) {
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await this.yieldToEventLoop();
               }
             }
           } catch (error) {
