@@ -403,6 +403,34 @@ export type CSVBinary =
   | Uint8Array;
 
 /**
+ * Backpressure monitoring options.
+ *
+ * @category Types
+ */
+export interface BackpressureOptions {
+  /**
+   * How often to check for backpressure (in number of items processed).
+   *
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * Default:
+   * - CSVLexerTransformer: 100 tokens
+   * - CSVRecordAssemblerTransformer: 10 records
+   */
+  checkInterval?: number;
+}
+
+/**
+ * Extended queuing strategy with backpressure monitoring options.
+ *
+ * @category Types
+ */
+export interface ExtendedQueuingStrategy<T>
+  extends QueuingStrategy<T>,
+    BackpressureOptions {}
+
+/**
  * CSV.
  *
  * @category Types
