@@ -12,6 +12,17 @@ import type {
 const DEFAULT_MAX_FIELD_COUNT = 100_000;
 
 /**
+ * Options for the CSVRecordAssembler.assemble method.
+ */
+export interface CSVRecordAssemblerAssembleOptions {
+  /**
+   * If true, indicates that more tokens are expected.
+   * If false or omitted, flushes remaining data.
+   */
+  stream?: boolean;
+}
+
+/**
  * CSV Record Assembler.
  *
  * CSVRecordAssembler assembles tokens into CSV records.
@@ -50,12 +61,11 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
    * Assembles tokens into CSV records.
    * @param tokens - The tokens to assemble. Omit to flush remaining data.
    * @param options - Assembler options.
-   * @param options.stream - If true, expects more tokens. If false or omitted, flushes remaining data.
    * @returns An iterable iterator of CSV records.
    */
   public *assemble(
     tokens?: Iterable<Token>,
-    options?: { stream?: boolean },
+    options?: CSVRecordAssemblerAssembleOptions,
   ): IterableIterator<CSVRecord<Header>> {
     const stream = options?.stream ?? false;
 

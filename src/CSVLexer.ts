@@ -18,6 +18,17 @@ import { escapeRegExp } from "./utils/escapeRegExp.ts";
 export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
 /**
+ * Options for the CSVLexer.lex method.
+ */
+export interface CSVLexerLexOptions {
+  /**
+   * If true, indicates that more chunks are expected.
+   * If false or omitted, flushes remaining data.
+   */
+  stream?: boolean;
+}
+
+/**
  * CSV Lexer.
  *
  * CSVLexer tokenizes CSV data into fields and records.
@@ -75,10 +86,9 @@ export class CSVLexer<
    * Lexes the given chunk of CSV data.
    * @param chunk - The chunk of CSV data to be lexed. Omit to flush remaining data.
    * @param options - Lexer options.
-   * @param options.stream - If true, expects more chunks. If false or omitted, flushes remaining data.
    * @returns An iterable iterator of tokens.
    */
-  public lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+  public lex(chunk?: string, options?: CSVLexerLexOptions): IterableIterator<Token> {
     const stream = options?.stream ?? false;
 
     if (!stream) {
