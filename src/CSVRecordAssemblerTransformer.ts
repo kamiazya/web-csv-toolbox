@@ -125,7 +125,9 @@ export class CSVRecordAssemblerTransformer<
         transform: async (token, controller) => {
           try {
             let recordCount = 0;
-            for (const record of assembler.assemble([token], { stream: true })) {
+            for (const record of assembler.assemble([token], {
+              stream: true,
+            })) {
               controller.enqueue(record);
               recordCount++;
 
