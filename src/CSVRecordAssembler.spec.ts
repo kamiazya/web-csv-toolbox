@@ -92,7 +92,7 @@ describe("class RecordAssembler", () => {
         }),
         async ({ tokens, expected }) => {
           const assembler = new CSVRecordAssembler();
-          const actual = [...assembler.assemble(tokens, true)];
+          const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },
       ),
@@ -133,7 +133,7 @@ describe("class RecordAssembler", () => {
         }),
         async ({ header, tokens, expected }) => {
           const assembler = new CSVRecordAssembler({ header });
-          const actual = [...assembler.assemble(tokens, true)];
+          const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },
       ),
