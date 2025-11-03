@@ -667,8 +667,8 @@ console.log(adults);
 
 ### ✅ Do
 
-- Use `flush: false` when processing streaming data
-- Always call `lex()` or `assemble()` without arguments at the end of streaming
+- Use `{ stream: true }` when processing streaming data
+- Call `assemble()` without arguments (or with `{ stream: false }`) at the end of streaming to flush remaining data
 - Set appropriate `maxFieldCount` for your use case
 - Use `AbortSignal` for long-running operations
 - Validate data with schema libraries (Zod, Yup, etc.)
