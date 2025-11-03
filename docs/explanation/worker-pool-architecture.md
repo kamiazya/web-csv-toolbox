@@ -6,7 +6,8 @@ This document explains how worker pool management works in web-csv-toolbox and w
 
 Web Workers are asynchronous resources that, if not properly terminated, can prevent Node.js processes from exiting. This creates a critical challenge for library design:
 
-**Problem 1: Process Hanging**
+### Problem 1: Process Hanging
+
 ```typescript
 // Without proper cleanup
 const records = await parseString(csv, { engine: { worker: true } });
@@ -14,7 +15,8 @@ console.log('Done');
 // Process never exits! Worker is still alive
 ```
 
-**Problem 2: User Experience**
+### Problem 2: User Experience
+
 ```typescript
 // Forcing users to clean up
 const records = await parseString(csv, { engine: { worker: true } });
@@ -25,7 +27,7 @@ These conflicting requirements led to the dual-pool architecture.
 
 ## Architecture Overview
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ WorkerPool Interface                                    │
 │  Defines the contract for all worker pool              │
@@ -90,7 +92,7 @@ ReusableWorkerPool is designed for **high-throughput scenarios** where worker re
 ### Characteristics
 
 **Worker Lifecycle:**
-```
+```text
 getWorker() → [Worker Pool] → releaseWorker()
                  │    ▲              │
                  │    └──────────────┘
@@ -373,7 +375,7 @@ TransientWorkerPool is designed for **one-shot operations** where automatic clea
 ### Characteristics
 
 **Worker Lifecycle:**
-```
+```text
 getWorker() → [New Worker] → releaseWorker()
                                    │
                                    ▼
@@ -497,7 +499,7 @@ This ensures:
 
 ### ReusableWorkerPool Memory Pattern
 
-```
+```text
 Memory Usage:
 │
 │     ┌─── Pool created
@@ -514,7 +516,7 @@ Memory Usage:
 
 ### TransientWorkerPool Memory Pattern
 
-```
+```text
 Memory Usage:
 │
 │     ┌─── Job 1 ──┐
