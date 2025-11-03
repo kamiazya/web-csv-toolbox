@@ -154,6 +154,7 @@ describe("CSVRecordAssemblerTransformer", () => {
   it("should throw an error if throws error during transform", async () => {
     const transformer = new CSVRecordAssemblerTransformer();
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(
+      // biome-ignore lint/correctness/useYield: Test mock that throws error before yielding
       function* () {
         throw new Error("test");
       },
@@ -172,6 +173,7 @@ describe("CSVRecordAssemblerTransformer", () => {
     const transformer = new CSVRecordAssemblerTransformer();
     // Mock the assemble method to throw error during flush
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(
+      // biome-ignore lint/correctness/useYield: Test mock that throws error before yielding
       function* () {
         throw new Error("test");
       },
