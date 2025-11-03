@@ -6,7 +6,7 @@ This document explains the WebAssembly (WASM) implementation in web-csv-toolbox 
 
 web-csv-toolbox includes an optional WebAssembly module that provides improved CSV parsing performance compared to the JavaScript implementation. The WASM module is a compiled version of optimized parsing code that runs at near-native speed.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ High-Level API (parse, parseString, etc.)                   │
 └─────────────────────────────────────────────────────────────┘
@@ -148,7 +148,7 @@ export function parseStringToArraySyncWASM<Header>(
 
 ### JavaScript ↔ WASM Boundary
 
-```
+```text
 ┌──────────────────┐                    ┌──────────────────┐
 │ JavaScript Heap  │                    │ WASM Linear      │
 │                  │                    │ Memory           │
@@ -257,7 +257,7 @@ for await (const record of parse(csv, {
 ```
 
 **Architecture:**
-```
+```text
 Main Thread:
   1. Load CSV string
   2. Call WASM function
@@ -284,7 +284,7 @@ for await (const record of parse(csv, {
 ```
 
 **Architecture:**
-```
+```text
 Main Thread:                 Worker Thread:
   1. Transfer CSV data  -->    1. Receive CSV data
   2. Wait for results          2. Call WASM function
@@ -387,7 +387,7 @@ lexer.flush();
 
 The execution router automatically falls back to JavaScript when WASM is unavailable or incompatible:
 
-```typescript
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ User requests WASM execution                                 │
 └─────────────────────────────────────────────────────────────┘
@@ -502,7 +502,7 @@ wasm-bindgen --target web
 
 The WASM binary is bundled with the npm package:
 
-```
+```text
 web-csv-toolbox/
 ├── dist/
 │   ├── index.js                          # Main entry point

@@ -454,12 +454,12 @@ export interface EngineConfig {
    *
    * Use {@link WorkerPool} with the `using` syntax for automatic cleanup.
    *
-   * @example Using WorkerPool with automatic cleanup
+   * @example Using ReusableWorkerPool with automatic cleanup
    * ```ts
-   * import { WorkerPool, parseString } from 'web-csv-toolbox';
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
    *
    * async function processCSV(csv: string) {
-   *   using pool = new WorkerPool();
+   *   using pool = new ReusableWorkerPool();
    *
    *   const records = [];
    *   for await (const record of parseString(csv, {
@@ -475,7 +475,9 @@ export interface EngineConfig {
    *
    * @example Multiple operations with same pool
    * ```ts
-   * using pool = new WorkerPool();
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * using pool = new ReusableWorkerPool();
    *
    * await parseString(csv1, { engine: { worker: true, workerPool: pool } });
    * await parseString(csv2, { engine: { worker: true, workerPool: pool } });

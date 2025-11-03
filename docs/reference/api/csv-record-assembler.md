@@ -442,8 +442,8 @@ const assembler = new CSVRecordAssembler();
 const chunks = ['name,age\r\n', 'Alice,30\r\n', 'Bob,25\r\n'];
 
 for (const chunk of chunks) {
-  const tokens = lexer.lex(chunk, true); // buffering=true
-  const records = assembler.assemble(tokens, false); // flush=false
+  const tokens = lexer.lex(chunk, { stream: true });
+  const records = assembler.assemble(tokens, { stream: true });
 
   for (const record of records) {
     console.log(record);
