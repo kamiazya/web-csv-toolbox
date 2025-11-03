@@ -126,7 +126,11 @@ export default defineConfig(({ command }) => ({
           browser: {
             enabled: true,
             provider: webdriverio(),
-            instances: [{ browser: "chrome" }],
+            instances: [
+              { browser: "chrome" },
+              { browser: "firefox" },
+              { browser: "edge" },
+            ],
             headless: true,
           },
         },
