@@ -96,9 +96,10 @@ describe("CSVRecordAssemblerTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new CSVRecordAssemblerTransformer(), [
+          const actual = await transform(
+            new CSVRecordAssemblerTransformer(),
             tokens,
-          ]);
+          );
           expect(actual).toEqual(expected);
         },
       ),
@@ -144,7 +145,7 @@ describe("CSVRecordAssemblerTransformer", () => {
           const parser = new CSVRecordAssemblerTransformer({
             header,
           });
-          const actual = await transform(parser, [tokens]);
+          const actual = await transform(parser, tokens);
           expect(actual).toEqual(expected);
         },
       ),
@@ -156,7 +157,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       throw new Error("test");
     });
     expect(async () => {
-      await transform(transformer, [[]]);
+      await transform(transformer, []);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[Error: test]`,
@@ -181,7 +182,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       },
     );
     expect(async () => {
-      await transform(transformer, [[]]);
+      await transform(transformer, []);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[Error: test]`,

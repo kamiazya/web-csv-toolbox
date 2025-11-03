@@ -1,6 +1,6 @@
 # CSVLexerTransformer API Reference
 
-The **CSVLexerTransformer** class is a TransformStream that wraps the [CSVLexer](./csv-lexer.md) for use in streaming pipelines. It converts a stream of CSV string chunks into a stream of token arrays.
+The **CSVLexerTransformer** class is a TransformStream that wraps the [CSVLexer](./csv-lexer.md) for use in streaming pipelines. It converts a stream of CSV string chunks into a stream of tokens.
 
 ## Overview
 
@@ -18,10 +18,8 @@ const csvStream = new ReadableStream({
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      for (const token of tokens) {
-        console.log(token);
-      }
+    write(token) {
+      console.log(token);
     }
   }));
 ```
@@ -32,7 +30,7 @@ csvStream
 new CSVLexerTransformer<Delimiter, Quotation>(
   options?: CSVLexerTransformerOptions,
   writableStrategy?: ExtendedQueuingStrategy<string>,
-  readableStrategy?: ExtendedQueuingStrategy<Token[]>
+  readableStrategy?: ExtendedQueuingStrategy<Token>
 )
 ```
 
@@ -78,8 +76,8 @@ const transformer = new CSVLexerTransformer(
 
 #### `readableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<Token[]>`
-**Default:** `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 100 }`
+**Type:** `ExtendedQueuingStrategy<Token>`
+**Default:** `{ highWaterMark: 1024, size: () => 1, checkInterval: 100 }`
 
 Queuing strategy for the readable side (output stream).
 
@@ -94,7 +92,7 @@ const transformer = new CSVLexerTransformer(
 
 **When to customize:**
 - ✅ Optimize for your specific workload by profiling
-- ✅ Adjust based on token density (more fields = more tokens)
+- ✅ Adjust based on processing requirements
 - ❌ Don't guess without benchmarking
 
 **ExtendedQueuingStrategy:**
@@ -140,14 +138,14 @@ A stream of CSV string chunks.
 
 ### Output
 
-**Type:** `ReadableStream<Token[]>`
+**Type:** `ReadableStream<Token>`
 
-A stream of token arrays.
+A stream of individual tokens.
 
 **Notes:**
-- Each chunk produces an array of tokens
-- Empty arrays are possible (buffering incomplete tokens)
-- Final chunk includes all remaining tokens
+- Each token is emitted individually
+- Provides fine-grained backpressure control
+- All tokens are streamed sequentially
 
 ---
 
@@ -170,11 +168,8 @@ const csvStream = new ReadableStream({
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(`Received ${tokens.length} tokens`);
-      for (const token of tokens) {
-        console.log(token);
-      }
+    write(token) {
+      console.log(token);
     }
   }));
 ```
@@ -192,8 +187,8 @@ const stream = file.stream()
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CSVLexerTransformer());
 
-for await (const tokens of stream) {
-  console.log(tokens);
+for await (const token of stream) {
+  console.log(token);
 }
 ```
 
@@ -209,10 +204,8 @@ const fileStream = Readable.toWeb(
 fileStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      for (const token of tokens) {
-        console.log(token);
-      }
+    write(token) {
+      console.log(token);
     }
   }));
 ```
@@ -230,8 +223,8 @@ response.body
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(tokens);
+    write(token) {
+      console.log(token);
     }
   }));
 ```
@@ -272,10 +265,9 @@ import { CSVLexerTransformer } from 'web-csv-toolbox';
 class FieldFilterTransform extends TransformStream {
   constructor() {
     super({
-      transform(tokens, controller) {
-        const fields = tokens.filter(t => t.type === 'Field');
-        if (fields.length > 0) {
-          controller.enqueue(fields);
+      transform(token, controller) {
+        if (token.type === 'Field') {
+          controller.enqueue(token);
         }
       }
     });
@@ -286,8 +278,8 @@ csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new FieldFilterTransform())
   .pipeTo(new WritableStream({
-    write(fieldTokens) {
-      console.log(fieldTokens); // Only Field tokens
+    write(fieldToken) {
+      console.log(fieldToken); // Only Field tokens
     }
   }));
 ```
@@ -311,8 +303,8 @@ const csvStream = new ReadableStream({
 csvStream
   .pipeThrough(new CSVLexerTransformer({ maxBufferSize: 10_000_000 }))
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(tokens);
+    write(token) {
+      console.log(token);
     }
   }))
   .catch(error => {
@@ -339,8 +331,8 @@ const csvStream = new ReadableStream({
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(tokens);
+    write(token) {
+      console.log(token);
     }
   }))
   .catch(error => {
@@ -366,8 +358,8 @@ setTimeout(() => controller.abort(), 5000); // Abort after 5 seconds
 csvStream
   .pipeThrough(new CSVLexerTransformer({ signal: controller.signal }))
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(tokens);
+    write(token) {
+      console.log(token);
     }
   }))
   .catch(error => {
@@ -441,11 +433,11 @@ import { CSVLexerTransformer } from 'web-csv-toolbox';
 class UppercaseTransform extends TransformStream {
   constructor() {
     super({
-      transform(tokens, controller) {
-        const uppercased = tokens.map(token => ({
+      transform(token, controller) {
+        const uppercased = {
           ...token,
           value: token.value.toUpperCase()
-        }));
+        };
         controller.enqueue(uppercased);
       }
     });
@@ -466,10 +458,8 @@ csvStream
 import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const writable = new WritableStream({
-  write(tokens) {
-    for (const token of tokens) {
-      console.log(token);
-    }
+  write(token) {
+    console.log(token);
   },
   close() {
     console.log('Stream closed');
@@ -518,10 +508,12 @@ let tokenCount = 0;
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new TransformStream({
-    transform(tokens, controller) {
-      tokenCount += tokens.length;
-      console.log(`Processed ${tokenCount} tokens`);
-      controller.enqueue(tokens);
+    transform(token, controller) {
+      tokenCount++;
+      if (tokenCount % 100 === 0) {
+        console.log(`Processed ${tokenCount} tokens`);
+      }
+      controller.enqueue(token);
     }
   }))
   .pipeTo(writable);
@@ -538,16 +530,15 @@ import { CSVLexerTransformer } from 'web-csv-toolbox';
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new TransformStream({
-    transform(tokens, controller) {
-      const fields = tokens
-        .filter(t => t.type === 'Field')
-        .map(t => t.value);
-      controller.enqueue(fields);
+    transform(token, controller) {
+      if (token.type === 'Field') {
+        controller.enqueue(token.value);
+      }
     }
   }))
   .pipeTo(new WritableStream({
-    write(fields) {
-      console.log(fields); // ['Alice', '30']
+    write(value) {
+      console.log(value); // 'Alice', '30', etc.
     }
   }));
 ```
@@ -562,8 +553,8 @@ import { CSVLexerTransformer } from 'web-csv-toolbox';
 csvStream
   .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
-    write(tokens) {
-      console.log(tokens);
+    write(token) {
+      console.log(token);
     }
   }))
   .catch(error => {

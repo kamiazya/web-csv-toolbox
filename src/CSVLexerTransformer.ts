@@ -13,7 +13,7 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  *
  * @param options - CSV-specific options (delimiter, quotation, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length, checkInterval: 100 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 100 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1, checkInterval: 100 }`)
  *
  * @remarks
  * Follows the Web Streams API pattern where queuing strategies are passed as
@@ -21,7 +21,7 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  *
  * **Default Queuing Strategy:**
  * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
- * - Readable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
+ * - Readable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
  *
  * **Backpressure Handling:**
  * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
@@ -41,10 +41,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  *   }
  * })
  *   .pipeThrough(new CSVLexerTransformer())
- *   .pipeTo(new WritableStream({ write(tokens) {
- *     for (const token of tokens) {
- *       console.log(token);
- *     }
+ *   .pipeTo(new WritableStream({ write(token) {
+ *     console.log(token);
  *   }}));
  * // { type: Field, value: "name", location: {...} }
  * // { type: FieldDelimiter, value: ",", location: {...} }
@@ -61,14 +59,14 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * const transformer = new CSVLexerTransformer(
  *   { delimiter: ',' },
  *   {
- *     highWaterMark: 131072,           // 128KB of characters
- *     size: (chunk) => chunk.length,   // Count by character length
- *     checkInterval: 200               // Check backpressure every 200 tokens
+ *     highWaterMark: 131072,         // 128KB of characters
+ *     size: (chunk) => chunk.length, // Count by character length
+ *     checkInterval: 200             // Check backpressure every 200 tokens
  *   },
  *   {
- *     highWaterMark: 2048,             // 2048 tokens
- *     size: (tokens) => tokens.length, // Count by token count
- *     checkInterval: 50                // Check backpressure every 50 tokens
+ *     highWaterMark: 2048,           // 2048 tokens
+ *     size: () => 1,                 // Each token counts as 1
+ *     checkInterval: 50              // Check backpressure every 50 tokens
  *   }
  * );
  *
@@ -82,7 +80,7 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 export class CSVLexerTransformer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends TransformStream<string, Token[]> {
+> extends TransformStream<string, Token> {
   public readonly lexer: CSVLexer<Delimiter, Quotation>;
 
   /**
@@ -101,9 +99,9 @@ export class CSVLexerTransformer<
       size: (chunk) => chunk.length, // Count by string length (character count)
       checkInterval: 100, // Check backpressure every 100 tokens
     },
-    readableStrategy: ExtendedQueuingStrategy<Token[]> = {
+    readableStrategy: ExtendedQueuingStrategy<Token> = {
       highWaterMark: 1024, // 1024 tokens
-      size: (tokens) => tokens.length, // Count by number of tokens in array
+      size: () => 1, // Each token counts as 1
       checkInterval: 100, // Check backpressure every 100 tokens
     },
   ) {
@@ -116,23 +114,20 @@ export class CSVLexerTransformer<
         transform: async (chunk, controller) => {
           if (chunk.length !== 0) {
             try {
-              const tokens: Token[] = [];
+              let tokenCount = 0;
               for (const token of lexer.lex(chunk, { stream: true })) {
-                tokens.push(token);
+                controller.enqueue(token);
+                tokenCount++;
 
                 // Check backpressure periodically based on checkInterval
                 if (
-                  tokens.length % checkInterval === 0 &&
+                  tokenCount % checkInterval === 0 &&
                   controller.desiredSize !== null &&
                   controller.desiredSize <= 0
                 ) {
                   // Yield to event loop when backpressure is detected
                   await this.yieldToEventLoop();
                 }
-              }
-
-              if (tokens.length > 0) {
-                controller.enqueue(tokens);
               }
             } catch (error) {
               controller.error(error);
@@ -141,22 +136,19 @@ export class CSVLexerTransformer<
         },
         flush: async (controller) => {
           try {
-            const tokens: Token[] = [];
+            let tokenCount = 0;
             for (const token of lexer.lex()) {
-              tokens.push(token);
+              controller.enqueue(token);
+              tokenCount++;
 
               // Check backpressure periodically based on checkInterval
               if (
-                tokens.length % checkInterval === 0 &&
+                tokenCount % checkInterval === 0 &&
                 controller.desiredSize !== null &&
                 controller.desiredSize <= 0
               ) {
                 await this.yieldToEventLoop();
               }
-            }
-
-            if (tokens.length > 0) {
-              controller.enqueue(tokens);
             }
           } catch (error) {
             controller.error(error);

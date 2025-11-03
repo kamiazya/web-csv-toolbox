@@ -1,6 +1,6 @@
 # CSVRecordAssemblerTransformer API Reference
 
-The **CSVRecordAssemblerTransformer** class is a TransformStream that wraps the [CSVRecordAssembler](./csv-record-assembler.md) for use in streaming pipelines. It converts a stream of token arrays into a stream of CSV records (JavaScript objects).
+The **CSVRecordAssemblerTransformer** class is a TransformStream that wraps the [CSVRecordAssembler](./csv-record-assembler.md) for use in streaming pipelines. It converts a stream of tokens into a stream of CSV records (JavaScript objects).
 
 ## Overview
 
@@ -31,7 +31,7 @@ csvStream
 ```typescript
 new CSVRecordAssemblerTransformer<Header>(
   options?: CSVRecordAssemblerOptions<Header>,
-  writableStrategy?: ExtendedQueuingStrategy<Token[]>,
+  writableStrategy?: ExtendedQueuingStrategy<Token>,
   readableStrategy?: ExtendedQueuingStrategy<CSVRecord<Header>>
 )
 ```
@@ -57,8 +57,8 @@ All options are the same as [CSVRecordAssembler options](./csv-record-assembler.
 
 #### `writableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<Token[]>`
-**Default:** `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 10 }`
+**Type:** `ExtendedQueuingStrategy<Token>`
+**Default:** `{ highWaterMark: 1024, size: () => 1, checkInterval: 10 }`
 
 Queuing strategy for the writable side (input stream).
 
@@ -72,7 +72,7 @@ const transformer = new CSVRecordAssemblerTransformer(
 
 **When to customize:**
 - ✅ Match with CSVLexerTransformer output buffer
-- ✅ Adjust based on token array sizes
+- ✅ Adjust based on processing requirements
 - ❌ Don't set arbitrarily without profiling
 
 #### `readableStrategy`
@@ -128,9 +128,9 @@ console.log(transformer.assembler); // CSVRecordAssembler instance
 
 ### Input
 
-**Type:** `ReadableStream<Token[]>`
+**Type:** `ReadableStream<Token>`
 
-A stream of token arrays (typically from [CSVLexerTransformer](./csv-lexer-transformer.md)).
+A stream of tokens (typically from [CSVLexerTransformer](./csv-lexer-transformer.md)).
 
 ### Output
 
