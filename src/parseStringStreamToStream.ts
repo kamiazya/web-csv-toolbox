@@ -1,5 +1,5 @@
-import { LexerTransformer } from "./LexerTransformer.ts";
-import { RecordAssemblerTransformer } from "./RecordAssemblerTransformer.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { pipeline } from "./utils/pipeline.ts";
@@ -39,7 +39,7 @@ export function parseStringStreamToStream<
 ): ReadableStream<CSVRecord<Header>> {
   return pipeline(
     stream,
-    new LexerTransformer(options),
-    new RecordAssemblerTransformer(options),
+    new CSVLexerTransformer(options),
+    new CSVRecordAssemblerTransformer(options),
   );
 }

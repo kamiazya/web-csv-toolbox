@@ -227,8 +227,239 @@ app.post('/validate-csv', async (c) => {
 
 ### Others
 
-- **Deno:** ✅ Verified ([CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml))
+- **Deno:** ✅ Verified [![Deno CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml)
 - **CDN:** ✅ Available via [unpkg.com](https://unpkg.com/web-csv-toolbox)
+
+## APIs 🧑‍💻
+
+### High-level APIs 🚀
+
+These APIs are designed for **Simplicity and Ease of Use**,
+providing an intuitive and straightforward experience for users.
+
+- **`function parse(input[, options]): AsyncIterableIterator<CSVRecord>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse-1.html)
+  - Parses various CSV input formats into an asynchronous iterable of records.
+- **`function parse.toArray(input[, options]): Promise<CSVRecord[]>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse.toArray.html)
+  - Parses CSV input into an array of records, ideal for smaller data sets.
+
+The `input` paramater can be a `string`, a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
+of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s,
+or a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object,
+or a [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object,
+or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
+
+### Middle-level APIs 🧱
+
+These APIs are optimized for **Enhanced Performance and Control**,
+catering to users who need more detailed and fine-tuned functionality.
+
+- **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
+  - Efficient parsing of CSV strings.
+- **`function parseBinary(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinary-1.html)
+  - Parse CSV Binary of ArrayBuffer or Uint8Array.
+- **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
+  - Customized parsing directly from `Response` objects.
+- **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
+  - Stream-based parsing for larger or continuous data.
+- **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
+  - Combines string-based parsing with stream processing.
+- **`function parseUint8ArrayStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8ArrayStream-1.html)
+  - Parses binary streams with precise control over data types.
+
+### Low-level APIs ⚙️
+
+These APIs are built for **Advanced Customization and Pipeline Design**,
+ideal for developers looking for in-depth control and flexibility.
+
+- **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
+  - A TransformStream class for lexical analysis of CSV data.
+  - Supports custom queuing strategies for controlling backpressure and memory usage.
+- **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
+  - Handles the assembly of parsed data into records.
+  - Supports custom queuing strategies for controlling backpressure and memory usage.
+
+#### Customizing Queuing Strategies
+
+Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments with **data-type-aware size counting** and **configurable backpressure handling**.
+
+**Constructor signature:**
+```typescript
+new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
+new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
+```
+
+**Default queuing strategies (starting points, not benchmarked):**
+```typescript
+// CSVLexerTransformer defaults
+writableStrategy: {
+  highWaterMark: 65536,           // 64KB of characters
+  size: (chunk) => chunk.length,  // Count by string length
+  checkInterval: 100              // Check backpressure every 100 tokens
+}
+readableStrategy: {
+  highWaterMark: 1024,              // 1024 tokens
+  size: (tokens) => tokens.length,  // Count by number of tokens
+  checkInterval: 100                // Check backpressure every 100 tokens
+}
+
+// CSVRecordAssemblerTransformer defaults
+writableStrategy: {
+  highWaterMark: 1024,              // 1024 tokens
+  size: (tokens) => tokens.length,  // Count by number of tokens
+  checkInterval: 10                 // Check backpressure every 10 records
+}
+readableStrategy: {
+  highWaterMark: 256,     // 256 records
+  size: () => 1,          // Each record counts as 1
+  checkInterval: 10       // Check backpressure every 10 records
+}
+```
+
+**Key Features:**
+
+🎯 **Smart Size Counting:**
+- Character-based counting for string inputs (accurate memory tracking)
+- Token-based counting between transformers (smooth pipeline flow)
+- Record-based counting for output (intuitive and predictable)
+
+⚡ **Cooperative Backpressure:**
+- Monitors `controller.desiredSize` during processing
+- Yields to event loop when backpressure detected
+- Prevents blocking the main thread
+- Critical for browser UI responsiveness
+
+🔧 **Tunable Check Interval:**
+- `checkInterval`: How often to check for backpressure
+- Lower values (5-25): More responsive, slight overhead
+- Higher values (100-500): Less overhead, slower response
+- Customize based on downstream consumer speed
+
+> ⚠️ **Important**: These defaults are theoretical starting points based on data flow characteristics, **not empirical benchmarks**. Optimal values vary by runtime (browser/Node.js/Deno), file size, memory constraints, and CPU performance. **Profile your specific use case** to find the best values.
+
+**When to customize:**
+- 🚀 **High-throughput servers**: Higher `highWaterMark` (128KB+, 2048+ tokens), higher `checkInterval` (200-500)
+- 📱 **Memory-constrained environments**: Lower `highWaterMark` (16KB, 256 tokens), lower `checkInterval` (10-25)
+- 🐌 **Slow consumers** (DB writes, API calls): Lower `highWaterMark`, lower `checkInterval` for responsive backpressure
+- 🏃 **Fast processing**: Higher values to reduce overhead
+
+**Example - High-throughput server:**
+```typescript
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+
+const response = await fetch('large-dataset.csv');
+await response.body
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(new CSVLexerTransformer(
+    {},
+    {
+      highWaterMark: 131072,          // 128KB
+      size: (chunk) => chunk.length,
+      checkInterval: 200              // Less frequent checks
+    },
+    {
+      highWaterMark: 2048,            // 2048 tokens
+      size: (tokens) => tokens.length,
+      checkInterval: 100
+    }
+  ))
+  .pipeThrough(new CSVRecordAssemblerTransformer(
+    {},
+    {
+      highWaterMark: 2048,            // 2048 tokens
+      size: (tokens) => tokens.length,
+      checkInterval: 20
+    },
+    {
+      highWaterMark: 512,             // 512 records
+      size: () => 1,
+      checkInterval: 10
+    }
+  ))
+  .pipeTo(yourRecordProcessor);
+```
+
+**Example - Slow consumer (API writes):**
+```typescript
+await csvStream
+  .pipeThrough(new CSVLexerTransformer())  // Use defaults
+  .pipeThrough(new CSVRecordAssemblerTransformer(
+    {},
+    { highWaterMark: 512, size: (t) => t.length, checkInterval: 5 },
+    { highWaterMark: 64, size: () => 1, checkInterval: 2 }  // Very responsive
+  ))
+  .pipeTo(new WritableStream({
+    async write(record) {
+      await fetch('/api/save', { method: 'POST', body: JSON.stringify(record) });
+    }
+  }));
+```
+
+**Benchmarking:**
+Use the provided benchmark tool to find optimal values for your use case:
+```bash
+pnpm --filter web-csv-toolbox-benchmark queuing-strategy
+```
+
+See `benchmark/queuing-strategy.bench.ts` for implementation details.
+
+### Experimental APIs 🧪
+
+These APIs are experimental and may change in the future.
+
+#### Parsing using WebAssembly for high performance.
+
+You can use WebAssembly to parse CSV data for high performance.
+
+- Parsing with WebAssembly is faster than parsing with JavaScript,
+but it takes time to load the WebAssembly module.
+- Supports only UTF-8 encoding csv data.
+- Quotation characters are only `"`. (Double quotation mark)
+  - If you pass a different character, it will throw an error.
+
+```ts
+import { loadWASM, parseStringWASM } from "web-csv-toolbox";
+
+// load WebAssembly module
+await loadWASM();
+
+const csv = "a,b,c\n1,2,3";
+
+// parse CSV string
+const result = parseStringToArraySyncWASM(csv);
+console.log(result);
+// Prints:
+// [{ a: "1", b: "2", c: "3" }]
+```
+
+- **`function loadWASM(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)
+  - Loads the WebAssembly module.
+- **`function parseStringToArraySyncWASM(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)
+  - Parses CSV strings into an array of records.
+
+## Options Configuration 🛠️
+
+### Common Options ⚙️
+
+| Option           | Description                           | Default      | Notes                                                                              |
+| ---------------- | ------------------------------------- | ------------ | ---------------------------------------------------------------------------------- |
+| `delimiter`      | Character to separate fields          | `,`          |                                                                                    |
+| `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
+| `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
+| `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
+| `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
+
+### Advanced Options (Binary-Specific) 🧬
+
+| Option                            | Description                                       | Default | Notes                                                                                                                                                     |
+| --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
+| `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
+| `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
+| `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
+>>>>>>> main
 
 ## Performance & Best Practices ⚡
 

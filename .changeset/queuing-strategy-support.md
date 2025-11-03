@@ -1,0 +1,146 @@
+---
+"web-csv-toolbox": minor
+---
+
+Add configurable queuing strategies to TransformStream classes
+
+Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` now support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments, similar to the standard `TransformStream`.
+
+## API Changes
+
+### Constructor Signature
+
+Queuing strategies are now passed as separate constructor arguments:
+
+```typescript
+// Before (if this was previously supported - this is a new feature)
+new CSVLexerTransformer(options)
+
+// After
+new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
+new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
+```
+
+### CSVLexerTransformer
+
+- **Parameter 1** `options`: CSV-specific options (delimiter, quotation, etc.)
+- **Parameter 2** `writableStrategy`: Controls buffering for incoming string chunks
+  - Default: `{ highWaterMark: 65536, size: (chunk) => chunk.length }`
+  - Counts by **character count** (string length)
+  - Default allows ~64KB of characters
+- **Parameter 3** `readableStrategy`: Controls buffering for outgoing token arrays
+  - Default: `{ highWaterMark: 1024, size: (tokens) => tokens.length }`
+  - Counts by **number of tokens** in each array
+  - Default allows 1024 tokens
+
+### CSVRecordAssemblerTransformer
+
+- **Parameter 1** `options`: CSV-specific options (header, maxFieldCount, etc.)
+- **Parameter 2** `writableStrategy`: Controls buffering for incoming token arrays
+  - Default: `{ highWaterMark: 1024, size: (tokens) => tokens.length }`
+  - Counts by **number of tokens** in each array
+  - Default allows 1024 tokens
+- **Parameter 3** `readableStrategy`: Controls buffering for outgoing CSV records
+  - Default: `{ highWaterMark: 256, size: () => 1 }`
+  - Counts each **record as 1**
+  - Default allows 256 records
+
+## Default Values Rationale
+
+**Important**: The default values are **theoretical starting points** based on data flow characteristics, **not empirical benchmarks**.
+
+### Size Counting Strategy
+
+Each transformer uses a **custom size algorithm** optimized for its data type:
+
+- **CSVLexerTransformer writable**: Counts by **string length** (characters). This provides accurate backpressure based on actual data volume.
+- **CSVLexerTransformer readable**: Counts by **number of tokens**. Prevents excessive token accumulation.
+- **CSVRecordAssemblerTransformer writable**: Counts by **number of tokens**. Matches the lexer's readable side for smooth pipeline flow.
+- **CSVRecordAssemblerTransformer readable**: Counts **each record as 1**. Simple and effective for record-based backpressure.
+
+### Why These Defaults?
+
+- Lexer typically produces multiple tokens per character (delimiters, quotes, fields)
+- Using character-based counting on writable side provides more predictable memory usage
+- Token-based counting between lexer and assembler ensures smooth data flow
+- Record-based counting on final output is intuitive and easy to reason about
+
+### Backpressure Handling
+
+Both transformers implement **cooperative backpressure handling** with configurable check intervals:
+
+- Periodically checks `controller.desiredSize` during processing
+- When backpressure is detected (`desiredSize ≤ 0`), yields to the event loop via `setTimeout(0)`
+- Prevents blocking the main thread during heavy CSV processing
+- Allows downstream consumers to catch up, avoiding memory buildup
+
+**Configurable Check Interval:**
+- Set via `checkInterval` property in `ExtendedQueuingStrategy`
+- Lower values = more responsive but slight overhead
+- Higher values = less overhead but slower response
+- Defaults: 100 tokens (lexer), 10 records (assembler)
+
+This is especially important for:
+- Large CSV files that generate many tokens/records
+- Slow downstream consumers (e.g., database writes, API calls)
+- Browser environments where UI responsiveness is critical
+
+Optimal values depend on your runtime environment (browser/Node.js/Deno), data size, memory constraints, and CPU performance. **You should profile your specific use case** to find the best values.
+
+## Benchmarking Tool
+
+A benchmark tool is provided to help you find optimal values for your use case:
+
+```bash
+pnpm --filter web-csv-toolbox-benchmark queuing-strategy
+```
+
+See `benchmark/queuing-strategy.bench.ts` for details.
+
+## Usage Examples
+
+```typescript
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+
+// Basic usage (with defaults)
+const lexer = new CSVLexerTransformer();
+
+// Custom strategies based on YOUR profiling results
+const lexer = new CSVLexerTransformer(
+  { delimiter: ',' },
+  {
+    highWaterMark: 131072,           // 128KB of characters
+    size: (chunk) => chunk.length,   // Count by character length
+    checkInterval: 200               // Check backpressure every 200 tokens
+  },
+  {
+    highWaterMark: 2048,             // 2048 tokens
+    size: (tokens) => tokens.length, // Count by token count
+    checkInterval: 50                // Check backpressure every 50 tokens
+  }
+);
+
+const assembler = new CSVRecordAssemblerTransformer(
+  {},
+  {
+    highWaterMark: 2048,             // 2048 tokens
+    size: (tokens) => tokens.length, // Count by token count
+    checkInterval: 20                // Check backpressure every 20 records
+  },
+  {
+    highWaterMark: 512,              // 512 records
+    size: () => 1,                   // Each record counts as 1
+    checkInterval: 5                 // Check backpressure every 5 records
+  }
+);
+```
+
+## When to Customize
+
+- **High-throughput servers**: Try higher values (e.g., 32-64) and benchmark
+- **Memory-constrained environments** (browsers, edge functions): Try lower values (e.g., 1-4) and monitor memory
+- **Custom pipelines**: Profile with representative data and iterate
+
+## Web Standards Compliance
+
+This API follows the Web Streams API pattern where `TransformStream` accepts queuing strategies as constructor arguments, making it consistent with standard web platform APIs.

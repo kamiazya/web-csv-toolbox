@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { RecordAssembler } from "./RecordAssembler.ts";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
@@ -23,7 +23,7 @@ const LOCATION_SHAPE = {
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
     expect(
-      () => new RecordAssembler({ header: [] }),
+      () => new CSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not be empty.]`,
@@ -32,7 +32,7 @@ describe("class RecordAssembler", () => {
 
   it("should throw an error for duplicate headers", () => {
     expect(
-      () => new RecordAssembler({ header: ["a", "a"] }),
+      () => new CSVRecordAssembler({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not contain duplicate fields.]`,
@@ -91,7 +91,7 @@ describe("class RecordAssembler", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const assembler = new RecordAssembler();
+          const assembler = new CSVRecordAssembler();
           const actual = [...assembler.assemble(tokens, true)];
           expect(actual).toEqual(expected);
         },
@@ -132,7 +132,7 @@ describe("class RecordAssembler", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const assembler = new RecordAssembler({ header });
+          const assembler = new CSVRecordAssembler({ header });
           const actual = [...assembler.assemble(tokens, true)];
           expect(actual).toEqual(expected);
         },
