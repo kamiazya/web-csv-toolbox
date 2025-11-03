@@ -72,8 +72,8 @@ What type of input do you have?
 - Building higher-level abstractions
 
 **APIs:**
-- `Lexer` / `LexerTransformer` - Tokenization
-- `RecordAssembler` / `RecordAssemblerTransformer` - Record assembly
+- `CSVLexer` / `CSVLexerTransformer` - Tokenization
+- `CSVRecordAssembler` / `CSVRecordAssemblerTransformer` - Record assembly
 
 **Trade-off:**
 - Maximum flexibility vs. complexity

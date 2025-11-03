@@ -418,7 +418,7 @@ const records = await parseUint8ArrayStream.toArray(stream);
 - Input stream chunks: Released after processing
 - Decompression buffer (if used): Small, constant size
 - Decoder buffer: Small, constant size
-- Lexer buffer: Small, constant size (~10MB max)
+- CSVLexer buffer: Small, constant size (~10MB max)
 - Record: Released after iteration
 - **Total:** Few MB maximum, regardless of file size
 
