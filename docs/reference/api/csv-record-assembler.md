@@ -731,6 +731,7 @@ type MyRecord = CSVRecord<MyHeader>;
 interface CSVRecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
+  skipEmptyLines?: boolean;
   signal?: AbortSignal;
 }
 ```
