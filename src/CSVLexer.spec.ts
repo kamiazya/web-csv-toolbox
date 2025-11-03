@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { Lexer } from "./Lexer.ts";
+import { CSVLexer } from "./CSVLexer.ts";
 import { FC, autoChunk } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { COMMA, DOUBLE_QUOTE } from "./constants.ts";
@@ -48,7 +48,7 @@ describe("class Lexer", () => {
           return { csv, expected };
         }),
         ({ csv, expected }) => {
-          const lexer = new Lexer();
+          const lexer = new CSVLexer();
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -67,8 +67,8 @@ describe("class Lexer", () => {
             .join(",");
           const expected = [
             ...row.flatMap((field, i) => [
-              // field should be escaped with double quote,
-              // so empty field should be escaped with double quote
+              // field should be escaped with double quote, so empty field should be
+              // escaped with double quote
               { type: Field, value: field, location: LOCATION_SHAPE },
               // if field is not last field, it should be followed by a field delimiter
               ...(row.length - 1 !== i
@@ -85,7 +85,7 @@ describe("class Lexer", () => {
           return { csv, expected };
         }),
         ({ csv, expected }) => {
-          const lexer = new Lexer();
+          const lexer = new CSVLexer();
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -126,7 +126,7 @@ describe("class Lexer", () => {
           return { delimiter, csv, expected };
         }),
         ({ delimiter, csv, expected }) => {
-          const lexer = new Lexer({ delimiter });
+          const lexer = new CSVLexer({ delimiter });
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -164,7 +164,7 @@ describe("class Lexer", () => {
           return { quotation, csv, expected };
         }),
         ({ quotation, csv, expected }) => {
-          const lexer = new Lexer({ quotation });
+          const lexer = new CSVLexer({ quotation });
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -202,7 +202,7 @@ describe("class Lexer", () => {
           return { options, row, csv, expected };
         }),
         ({ options, csv, expected }) => {
-          const lexer = new Lexer(options);
+          const lexer = new CSVLexer(options);
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -264,7 +264,7 @@ describe("class Lexer", () => {
           return { csv, data, options, expected };
         }),
         ({ options, csv, expected }) => {
-          const lexer = new Lexer(options);
+          const lexer = new CSVLexer(options);
           const actual = [...lexer.lex(csv)];
           expect(actual).toMatchObject(expected);
         },
@@ -298,16 +298,18 @@ describe("class Lexer", () => {
         }),
         ({ options, csv, chunks }) => {
           // lexer1 is used to compare with lexer2
-          const lexer1 = new Lexer(options);
+          const lexer1 = new CSVLexer(options);
           const expected = [...lexer1.lex(csv)];
 
           // lexer2 is used to lex chunked data
-          const lexer2 = new Lexer(options);
+          const lexer2 = new CSVLexer(options);
           const actual = [
             // lex chunked data
-            ...chunks.flatMap((chunk) => [...lexer2.lex(chunk, true)]),
+            ...chunks.flatMap((chunk) => [
+              ...lexer2.lex(chunk, { stream: true }),
+            ]),
             // flush lexer2
-            ...lexer2.flush(),
+            ...lexer2.lex(),
           ];
           expect(actual).toMatchObject(expected);
         },

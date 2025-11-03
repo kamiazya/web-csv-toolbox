@@ -306,17 +306,17 @@ export interface BinaryOptions {
 }
 
 /**
- * Lexer Transformer Options for CSV.
+ * CSV Lexer Transformer Options.
  * @category Types
  */
-export interface LexerTransformerOptions<
+export interface CSVLexerTransformerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     AbortSignalOptions {}
 
 /**
- * Record Assembler Options for CSV.
+ * CSV Record Assembler Options.
  * @category Types
  *
  * @remarks
@@ -326,7 +326,7 @@ export interface LexerTransformerOptions<
  * If you don't specify `header`,
  * the first record will be treated as a header.
  */
-export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
+export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
   extends AbortSignalOptions {
   /**
    * CSV header.
@@ -354,6 +354,14 @@ export interface RecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default 100000
    */
   maxFieldCount?: number;
+
+  /**
+   * When true, completely empty lines (with only delimiters or whitespace)
+   * will be skipped during parsing.
+   *
+   * @default false
+   */
+  skipEmptyLines?: boolean;
 }
 
 /**
@@ -649,7 +657,7 @@ export interface ParseOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    RecordAssemblerOptions<Header>,
+    CSVRecordAssemblerOptions<Header>,
     EngineOptions,
     AbortSignalOptions {}
 
@@ -707,6 +715,34 @@ export type CSVBinary =
   | Response
   | ArrayBuffer
   | Uint8Array;
+
+/**
+ * Backpressure monitoring options.
+ *
+ * @category Types
+ */
+export interface BackpressureOptions {
+  /**
+   * How often to check for backpressure (in number of items processed).
+   *
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * Default:
+   * - CSVLexerTransformer: 100 tokens
+   * - CSVRecordAssemblerTransformer: 10 records
+   */
+  checkInterval?: number;
+}
+
+/**
+ * Extended queuing strategy with backpressure monitoring options.
+ *
+ * @category Types
+ */
+export interface ExtendedQueuingStrategy<T>
+  extends QueuingStrategy<T>,
+    BackpressureOptions {}
 
 /**
  * CSV.
