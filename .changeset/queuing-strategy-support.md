@@ -61,6 +61,42 @@ stream
 
 No changes required. Functions like `parseString()`, `parseStringStream()`, etc. continue to work without modification.
 
+## Performance Improvements
+
+### CSVRecordAssembler Now Accepts Single Tokens
+
+`CSVRecordAssembler.assemble()` has been optimized to accept both single `Token` and `Iterable<Token>`, eliminating unnecessary array allocation in streaming scenarios.
+
+**Before:**
+```typescript
+// Had to wrap single tokens in an array
+for (const token of tokens) {
+  const records = assembler.assemble([token], { stream: true });  // Array allocation
+}
+```
+
+**After:**
+```typescript
+// Pass single tokens directly (backward compatible)
+for (const token of tokens) {
+  const records = assembler.assemble(token, { stream: true });  // No array allocation
+}
+
+// Iterable still works
+const records = assembler.assemble(tokens, { stream: true });
+```
+
+**Benefits:**
+- Zero-allocation token processing in streaming mode
+- Better memory efficiency for large CSV files
+- Backward compatible - existing code continues to work
+- Aligns with Web Standards (TextDecoder pattern)
+
+**Implementation Details:**
+- Uses lightweight `Symbol.iterator` check to detect iterables
+- Internal refactoring with private `#processToken()` and `#flush()` methods
+- Maintains single public method (`assemble`) following TextDecoder pattern
+
 ## New Feature: Configurable Queuing Strategies
 
 Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` now support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments, similar to the standard `TransformStream`.
