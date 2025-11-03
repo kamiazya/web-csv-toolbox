@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { DEFAULT_MAX_BUFFER_SIZE } from "../Lexer.ts";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../CSVLexer.ts";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
 import { CRLF, LF } from "../constants.ts";
 

@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { RecordAssembler } from "./RecordAssembler";
+import { CSVRecordAssembler } from "./CSVRecordAssembler";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
 import type { Token } from "./common/types";
 
-describe("RecordAssembler - Field Count Limit Protection", () => {
+describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("with default field count limit (100000)", () => {
-    let assembler: RecordAssembler<string[]>;
+    let assembler: CSVRecordAssembler<string[]>;
     beforeEach(() => {
-      assembler = new RecordAssembler();
+      assembler = new CSVRecordAssembler();
     });
 
     test("should not throw error for normal field counts", () => {
@@ -144,7 +144,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
 
   describe("with custom field count limit", () => {
     test("should allow exactly N fields when limit is N", () => {
-      const assembler = new RecordAssembler({ maxFieldCount: 10 });
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 10 });
       const tokens: Token[] = [];
 
       // Create exactly 10 fields (at the limit, should succeed)
@@ -191,7 +191,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should respect custom maxFieldCount option", () => {
-      const assembler = new RecordAssembler({ maxFieldCount: 10 });
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 10 });
       const tokens: Token[] = [];
 
       // Create 11 fields (exceeds limit of 10)
@@ -231,7 +231,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should allow Number.POSITIVE_INFINITY as maxFieldCount to disable limit", () => {
-      const assembler = new RecordAssembler({
+      const assembler = new CSVRecordAssembler({
         maxFieldCount: Number.POSITIVE_INFINITY,
       });
       const tokens: Token[] = [];
@@ -278,7 +278,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
     test("should throw RangeError when provided header exceeds limit", () => {
       const largeHeader = Array.from({ length: 100001 }, (_, i) => `field${i}`);
 
-      expect(() => new RecordAssembler({ header: largeHeader })).toThrow(
+      expect(() => new CSVRecordAssembler({ header: largeHeader })).toThrow(
         RangeError,
       );
     });
@@ -286,13 +286,15 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
     test("should accept header within limit", () => {
       const normalHeader = ["field1", "field2", "field3"];
 
-      expect(() => new RecordAssembler({ header: normalHeader })).not.toThrow();
+      expect(
+        () => new CSVRecordAssembler({ header: normalHeader }),
+      ).not.toThrow();
     });
   });
 
   describe("realistic attack scenarios", () => {
     test("should prevent DoS via CSV with excessive columns", () => {
-      const assembler = new RecordAssembler({ maxFieldCount: 1000 });
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 1000 });
       const tokens: Token[] = [];
 
       // Simulate attack with 2000 columns
@@ -323,7 +325,7 @@ describe("RecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should properly handle CSV within field count limits", () => {
-      const assembler = new RecordAssembler({ maxFieldCount: 100 });
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 100 });
       const tokens: Token[] = [];
 
       // Create 50 fields (within limit)
