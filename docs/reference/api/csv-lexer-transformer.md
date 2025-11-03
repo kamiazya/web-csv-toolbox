@@ -29,7 +29,11 @@ csvStream
 ## Constructor
 
 ```typescript
-new CSVLexerTransformer<Delimiter, Quotation>(options?: LexerTransformerOptions)
+new CSVLexerTransformer<Delimiter, Quotation>(
+  options?: CSVLexerTransformerOptions,
+  writableStrategy?: ExtendedQueuingStrategy<string>,
+  readableStrategy?: ExtendedQueuingStrategy<Token[]>
+)
 ```
 
 ### Type Parameters
@@ -37,10 +41,14 @@ new CSVLexerTransformer<Delimiter, Quotation>(options?: LexerTransformerOptions)
 - `Delimiter extends string = ','` - Field delimiter type (default: comma)
 - `Quotation extends string = '"'` - Quotation character type (default: double-quote)
 
-### Options
+### Parameters
+
+#### `options`
+
+CSV parsing options (same as [CSVLexer options](./csv-lexer.md#options)):
 
 ```typescript
-interface LexerTransformerOptions {
+interface CSVLexerTransformerOptions {
   delimiter?: string;
   quotation?: string;
   maxBufferSize?: number;
@@ -48,7 +56,76 @@ interface LexerTransformerOptions {
 }
 ```
 
-All options are the same as [CSVLexer options](./lexer.md#options).
+#### `writableStrategy`
+
+**Type:** `ExtendedQueuingStrategy<string>`
+**Default:** `{ highWaterMark: 65536, size: chunk => chunk.length, checkInterval: 100 }`
+
+Queuing strategy for the writable side (input stream).
+
+- `highWaterMark`: 65536 characters (≈64KB)
+- `size`: Counts by string length (characters)
+- `checkInterval`: Check backpressure every 100 tokens
+
+**Example:**
+```typescript
+// Increase buffer for high-throughput scenarios
+const transformer = new CSVLexerTransformer(
+  { delimiter: ',' },
+  { highWaterMark: 131072 }  // 128KB
+);
+
+// Decrease buffer for memory-constrained environments
+const transformer = new CSVLexerTransformer(
+  {},
+  { highWaterMark: 32768 }  // 32KB
+);
+
+// Custom size function and backpressure checking
+const transformer = new CSVLexerTransformer(
+  {},
+  {
+    highWaterMark: 65536,
+    size: (chunk) => chunk.length,
+    checkInterval: 200  // Check every 200 tokens
+  }
+);
+```
+
+#### `readableStrategy`
+
+**Type:** `ExtendedQueuingStrategy<Token[]>`
+**Default:** `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 100 }`
+
+Queuing strategy for the readable side (output token arrays).
+
+- `highWaterMark`: 1024 tokens
+- `size`: Counts by number of tokens in each array
+- `checkInterval`: Check backpressure every 100 tokens
+
+**Example:**
+```typescript
+const transformer = new CSVLexerTransformer(
+  { delimiter: ',' },
+  { highWaterMark: 65536 },    // writable
+  { highWaterMark: 2048 }      // readable
+);
+```
+
+### Queuing Strategy Notes
+
+**Default Rationale:**
+- Writable side counts by character length (64KB default)
+- Readable side counts by token count (1024 tokens default)
+- These defaults are starting points, not empirically optimized
+
+**When to adjust:**
+- ✅ Increase for server environments with large files
+- ✅ Decrease for browsers or edge functions with limited memory
+- ⚠️ Profile with your actual data before changing defaults
+
+**Backpressure Handling:**
+The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure is detected (desiredSize ≤ 0). The `checkInterval` option controls how often this check occurs.
 
 ---
 

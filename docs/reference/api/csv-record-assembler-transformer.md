@@ -29,24 +29,96 @@ csvStream
 ## Constructor
 
 ```typescript
-new CSVRecordAssemblerTransformer<Header>(options?: RecordAssemblerOptions)
+new CSVRecordAssemblerTransformer<Header>(
+  options?: CSVRecordAssemblerOptions<Header>,
+  writableStrategy?: ExtendedQueuingStrategy<Token[]>,
+  readableStrategy?: ExtendedQueuingStrategy<CSVRecord<Header>>
+)
 ```
 
 ### Type Parameters
 
 - `Header extends ReadonlyArray<string>` - Header field names type
 
-### Options
+### Parameters
+
+#### `options`
+
+CSV record assembly options (same as [CSVRecordAssembler options](./csv-record-assembler.md#options)):
 
 ```typescript
-interface RecordAssemblerOptions<Header> {
+interface CSVRecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
+  skipEmptyLines?: boolean;
   signal?: AbortSignal;
 }
 ```
 
-All options are the same as [CSVRecordAssembler options](./record-assembler.md#options).
+#### `writableStrategy`
+
+**Type:** `ExtendedQueuingStrategy<Token[]>`
+**Default:** `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 10 }`
+
+Queuing strategy for the writable side (input token arrays).
+
+- `highWaterMark`: 1024 tokens
+- `size`: Counts by number of tokens in each array
+- `checkInterval`: Check backpressure every 10 records
+
+**Example:**
+```typescript
+// Increase buffer for high-throughput scenarios
+const transformer = new CSVRecordAssemblerTransformer(
+  { header: ['name', 'age'] },
+  { highWaterMark: 2048 }  // writable
+);
+
+// Custom backpressure checking
+const transformer = new CSVRecordAssemblerTransformer(
+  {},
+  {
+    highWaterMark: 1024,
+    size: (tokens) => tokens.length,
+    checkInterval: 20  // Check every 20 records
+  }
+);
+```
+
+#### `readableStrategy`
+
+**Type:** `ExtendedQueuingStrategy<CSVRecord<Header>>`
+**Default:** `{ highWaterMark: 256, size: () => 1, checkInterval: 10 }`
+
+Queuing strategy for the readable side (output CSV records).
+
+- `highWaterMark`: 256 records
+- `size`: Each record counts as 1
+- `checkInterval`: Check backpressure every 10 records
+
+**Example:**
+```typescript
+const transformer = new CSVRecordAssemblerTransformer(
+  {},
+  { highWaterMark: 1024 },   // writable
+  { highWaterMark: 512 }     // readable
+);
+```
+
+### Queuing Strategy Notes
+
+**Default Rationale:**
+- Writable side counts by token count (1024 tokens default)
+- Readable side counts by record count (256 records default)
+- These defaults are starting points, not empirically optimized
+
+**When to adjust:**
+- ✅ Increase for server environments with large files
+- ✅ Decrease for browsers or edge functions with limited memory
+- 📊 Profile with your actual data before changing defaults
+
+**Backpressure Handling:**
+The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure is detected. The `checkInterval` option controls how often this check occurs.
 
 ---
 

@@ -44,6 +44,7 @@ const assembler = new CSVRecordAssembler<['name', 'age']>();
 interface RecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
+  skipEmptyLines?: boolean;
   signal?: AbortSignal;
 }
 ```
@@ -108,6 +109,52 @@ try {
 **When to adjust:**
 - ✅ Increase for legitimate wide CSV files (e.g., 200+ columns)
 - ❌ Don't set to `Number.POSITIVE_INFINITY` (DoS vulnerability)
+
+---
+
+#### `skipEmptyLines`
+
+**Type:** `boolean`
+**Default:** `false`
+
+Skip completely empty lines during parsing.
+
+When `true`, records that contain only empty fields or whitespace are skipped and not included in the output.
+
+**Example:**
+```typescript
+const csv = `name,age
+Alice,30
+
+Bob,25
+,,
+Charlie,35`;
+
+// Without skipEmptyLines (default)
+const assembler1 = new CSVRecordAssembler();
+const records1 = assembler1.assemble(tokens);
+// Returns: [
+//   { name: 'Alice', age: '30' },
+//   { name: '', age: '' },        // empty line
+//   { name: 'Bob', age: '25' },
+//   { name: '', age: '' },        // empty line
+//   { name: 'Charlie', age: '35' }
+// ]
+
+// With skipEmptyLines
+const assembler2 = new CSVRecordAssembler({ skipEmptyLines: true });
+const records2 = assembler2.assemble(tokens);
+// Returns: [
+//   { name: 'Alice', age: '30' },
+//   { name: 'Bob', age: '25' },
+//   { name: 'Charlie', age: '35' }
+// ]
+```
+
+**When to use:**
+- ✅ CSV files with blank lines for readability
+- ✅ Data exported from spreadsheets with empty rows
+- ❌ When empty records have semantic meaning
 
 ---
 
