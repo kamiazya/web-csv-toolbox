@@ -416,7 +416,7 @@ const records = await parseStringStream.toArray(stream);
 
 **Memory profile:**
 - Input stream chunks: Released after processing
-- Lexer buffer: Small, constant size
+- CSVLexer buffer: Small, constant size
 - Record: Released after iteration
 - **Total:** ~few KB regardless of file size
 

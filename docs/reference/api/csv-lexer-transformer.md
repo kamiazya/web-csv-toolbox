@@ -1,11 +1,11 @@
-# LexerTransformer API Reference
+# CSVLexerTransformer API Reference
 
-The **LexerTransformer** class is a TransformStream that wraps the [Lexer](./lexer.md) for use in streaming pipelines. It converts a stream of CSV string chunks into a stream of token arrays.
+The **CSVLexerTransformer** class is a TransformStream that wraps the [CSVLexer](./lexer.md) for use in streaming pipelines. It converts a stream of CSV string chunks into a stream of token arrays.
 
 ## Overview
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -16,7 +16,7 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       for (const token of tokens) {
@@ -29,7 +29,7 @@ csvStream
 ## Constructor
 
 ```typescript
-new LexerTransformer<Delimiter, Quotation>(options?: LexerTransformerOptions)
+new CSVLexerTransformer<Delimiter, Quotation>(options?: LexerTransformerOptions)
 ```
 
 ### Type Parameters
@@ -48,7 +48,7 @@ interface LexerTransformerOptions {
 }
 ```
 
-All options are the same as [Lexer options](./lexer.md#options).
+All options are the same as [CSVLexer options](./lexer.md#options).
 
 ---
 
@@ -56,15 +56,15 @@ All options are the same as [Lexer options](./lexer.md#options).
 
 ### `lexer`
 
-**Type:** `Lexer<Delimiter, Quotation>`
+**Type:** `CSVLexer<Delimiter, Quotation>`
 **Read-only:** Yes
 
-Access to the underlying Lexer instance.
+Access to the underlying CSVLexer instance.
 
 **Example:**
 ```typescript
-const transformer = new LexerTransformer();
-console.log(transformer.lexer); // Lexer instance
+const transformer = new CSVLexerTransformer();
+console.log(transformer.lexer); // CSVLexer instance
 ```
 
 **Use case:** Advanced debugging, accessing internal state
@@ -102,7 +102,7 @@ A stream of token arrays.
 ### Pattern 1: Basic Streaming
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -114,7 +114,7 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(`Received ${tokens.length} tokens`);
@@ -130,13 +130,13 @@ csvStream
 ### Pattern 2: File Reading
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 // Browser
 const file = document.querySelector('input[type="file"]').files[0];
 const stream = file.stream()
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new LexerTransformer());
+  .pipeThrough(new CSVLexerTransformer());
 
 for await (const tokens of stream) {
   console.log(tokens);
@@ -153,7 +153,7 @@ const fileStream = Readable.toWeb(
 );
 
 fileStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       for (const token of tokens) {
@@ -168,13 +168,13 @@ fileStream
 ### Pattern 3: Network Fetching
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
 
 response.body
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(tokens);
@@ -187,7 +187,7 @@ response.body
 ### Pattern 4: Pipeline Composition
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -198,8 +198,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record); // { name: 'Alice', age: '30' }
@@ -212,7 +212,7 @@ csvStream
 ### Pattern 5: Custom Transform
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 // Filter only Field tokens
 class FieldFilterTransform extends TransformStream {
@@ -229,7 +229,7 @@ class FieldFilterTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new FieldFilterTransform())
   .pipeTo(new WritableStream({
     write(fieldTokens) {
@@ -245,7 +245,7 @@ csvStream
 ### RangeError: Buffer Size Exceeded
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -255,7 +255,7 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer({ maxBufferSize: 10_000_000 }))
+  .pipeThrough(new CSVLexerTransformer({ maxBufferSize: 10_000_000 }))
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(tokens);
@@ -273,7 +273,7 @@ csvStream
 ### ParseError: Unclosed Quoted Field
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -283,7 +283,7 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(tokens);
@@ -302,7 +302,7 @@ csvStream
 ### AbortSignal
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const controller = new AbortController();
 const csvStream = getLargeCSVStream();
@@ -310,7 +310,7 @@ const csvStream = getLargeCSVStream();
 setTimeout(() => controller.abort(), 5000); // Abort after 5 seconds
 
 csvStream
-  .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+  .pipeThrough(new CSVLexerTransformer({ signal: controller.signal }))
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(tokens);
@@ -345,9 +345,9 @@ csvStream
 
 ---
 
-## Comparison: Lexer vs LexerTransformer
+## Comparison: CSVLexer vs CSVLexerTransformer
 
-| Feature | Lexer | LexerTransformer |
+| Feature | CSVLexer | CSVLexerTransformer |
 |---------|-------|------------------|
 | **API Style** | Imperative (method calls) | Declarative (streams) |
 | **Memory** | Manual buffering | Automatic backpressure |
@@ -355,7 +355,7 @@ csvStream
 | **Use Case** | Low-level control | Production streaming |
 | **Complexity** | Higher | Lower |
 
-**Recommendation:** Use `LexerTransformer` for production streaming applications.
+**Recommendation:** Use `CSVLexerTransformer` for production streaming applications.
 
 ---
 
@@ -364,7 +364,7 @@ csvStream
 ### Readable Stream Source
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -374,7 +374,7 @@ const csvStream = new ReadableStream({
   }
 });
 
-csvStream.pipeThrough(new LexerTransformer());
+csvStream.pipeThrough(new CSVLexerTransformer());
 ```
 
 ---
@@ -382,7 +382,7 @@ csvStream.pipeThrough(new LexerTransformer());
 ### Transform Stream Middleware
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 class UppercaseTransform extends TransformStream {
   constructor() {
@@ -399,7 +399,7 @@ class UppercaseTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new UppercaseTransform())
   .pipeTo(writable);
 ```
@@ -409,7 +409,7 @@ csvStream
 ### Writable Stream Sink
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 const writable = new WritableStream({
   write(tokens) {
@@ -426,7 +426,7 @@ const writable = new WritableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(writable);
 ```
 
@@ -434,7 +434,7 @@ csvStream
 
 ## Browser and Runtime Support
 
-LexerTransformer uses the Web Streams API, which is supported across all modern runtimes:
+CSVLexerTransformer uses the Web Streams API, which is supported across all modern runtimes:
 
 - ✅ Node.js LTS
 - ✅ Deno LTS
@@ -446,8 +446,8 @@ See: [Supported Environments](../supported-environments.md)
 
 ## Related APIs
 
-- **[Lexer](./lexer.md)** - Low-level lexing API
-- **[RecordAssemblerTransformer](./record-assembler-transformer.md)** - Converts tokens to records
+- **[CSVLexer](./lexer.md)** - Low-level lexing API
+- **[CSVRecordAssemblerTransformer](./record-assembler-transformer.md)** - Converts tokens to records
 - **[Parsing Architecture](../../explanation/parsing-architecture.md)** - Understanding the pipeline
 
 ---
@@ -457,12 +457,12 @@ See: [Supported Environments](../supported-environments.md)
 ### Example 1: Progress Tracking
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 let tokenCount = 0;
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new TransformStream({
     transform(tokens, controller) {
       tokenCount += tokens.length;
@@ -478,11 +478,11 @@ csvStream
 ### Example 2: Token Type Filtering
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 // Extract only field values
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeThrough(new TransformStream({
     transform(tokens, controller) {
       const fields = tokens
@@ -503,10 +503,10 @@ csvStream
 ### Example 3: Error Recovery
 
 ```typescript
-import { LexerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer } from 'web-csv-toolbox';
 
 csvStream
-  .pipeThrough(new LexerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
   .pipeTo(new WritableStream({
     write(tokens) {
       console.log(tokens);
@@ -519,7 +519,7 @@ csvStream
     if (error instanceof RangeError) {
       console.log('Retrying with larger buffer...');
       return csvStream
-        .pipeThrough(new LexerTransformer({ maxBufferSize: 50_000_000 }))
+        .pipeThrough(new CSVLexerTransformer({ maxBufferSize: 50_000_000 }))
         .pipeTo(writable);
     }
   });
@@ -531,8 +531,8 @@ csvStream
 
 ### ✅ Do
 
-- Use LexerTransformer for streaming CSV parsing
-- Combine with RecordAssemblerTransformer for complete pipeline
+- Use CSVLexerTransformer for streaming CSV parsing
+- Combine with CSVRecordAssemblerTransformer for complete pipeline
 - Handle errors in `.catch()` blocks
 - Use AbortSignal for cancelable operations
 - Set appropriate `maxBufferSize` for your use case
@@ -546,9 +546,9 @@ csvStream
 
 ---
 
-## When to Use LexerTransformer
+## When to Use CSVLexerTransformer
 
-**✅ Use LexerTransformer when:**
+**✅ Use CSVLexerTransformer when:**
 - Parsing large CSV files (>1MB)
 - Streaming data from network or disk
 - Building composable CSV processing pipelines

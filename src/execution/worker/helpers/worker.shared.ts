@@ -199,19 +199,19 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const req = request as ParseStringStreamRequest;
           if (req.stream) {
             // Process string stream with TransferableStream strategy
-            const { LexerTransformer } = await import(
-              "../../../LexerTransformer.ts"
+            const { CSVLexerTransformer } = await import(
+              "../../../CSVLexerTransformer.ts"
             );
-            const { RecordAssemblerTransformer } = await import(
-              "../../../RecordAssemblerTransformer.ts"
+            const { CSVRecordAssemblerTransformer } = await import(
+              "../../../CSVRecordAssemblerTransformer.ts"
             );
             const { convertStreamToAsyncIterableIterator } = await import(
               "../../../utils/convertStreamToAsyncIterableIterator.ts"
             );
 
             const resultStream = req.stream
-              .pipeThrough(new LexerTransformer(req.options))
-              .pipeThrough(new RecordAssemblerTransformer(req.options));
+              .pipeThrough(new CSVLexerTransformer(req.options))
+              .pipeThrough(new CSVRecordAssemblerTransformer(req.options));
 
             await streamRecordsToPort(
               resultPort,
@@ -226,11 +226,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const req = request as ParseUint8ArrayStreamRequest;
           if (req.stream) {
             // Process binary stream with TransferableStream strategy
-            const { LexerTransformer } = await import(
-              "../../../LexerTransformer.ts"
+            const { CSVLexerTransformer } = await import(
+              "../../../CSVLexerTransformer.ts"
             );
-            const { RecordAssemblerTransformer } = await import(
-              "../../../RecordAssemblerTransformer.ts"
+            const { CSVRecordAssemblerTransformer } = await import(
+              "../../../CSVRecordAssemblerTransformer.ts"
             );
 
             const { charset, fatal, ignoreBOM, decompression } =
@@ -262,8 +262,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             );
 
             const resultStream = textStream
-              .pipeThrough(new LexerTransformer(req.options))
-              .pipeThrough(new RecordAssemblerTransformer(req.options));
+              .pipeThrough(new CSVLexerTransformer(req.options))
+              .pipeThrough(new CSVRecordAssemblerTransformer(req.options));
 
             await streamRecordsToPort(
               resultPort,
@@ -321,19 +321,19 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseStringStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Stream processing (WASM not supported for streams)
-          const { LexerTransformer } = await import(
-            "../../../LexerTransformer.ts"
+          const { CSVLexerTransformer } = await import(
+            "../../../CSVLexerTransformer.ts"
           );
-          const { RecordAssemblerTransformer } = await import(
-            "../../../RecordAssemblerTransformer.ts"
+          const { CSVRecordAssemblerTransformer } = await import(
+            "../../../CSVRecordAssemblerTransformer.ts"
           );
           const { convertStreamToAsyncIterableIterator } = await import(
             "../../../utils/convertStreamToAsyncIterableIterator.ts"
           );
 
           const resultStream = req.data
-            .pipeThrough(new LexerTransformer(req.options))
-            .pipeThrough(new RecordAssemblerTransformer(req.options));
+            .pipeThrough(new CSVLexerTransformer(req.options))
+            .pipeThrough(new CSVRecordAssemblerTransformer(req.options));
 
           // Convert stream to async iterable and stream records incrementally
           await streamRecordsToMain(
@@ -348,11 +348,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseUint8ArrayStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Binary stream processing
-          const { LexerTransformer } = await import(
-            "../../../LexerTransformer.ts"
+          const { CSVLexerTransformer } = await import(
+            "../../../CSVLexerTransformer.ts"
           );
-          const { RecordAssemblerTransformer } = await import(
-            "../../../RecordAssemblerTransformer.ts"
+          const { CSVRecordAssemblerTransformer } = await import(
+            "../../../CSVRecordAssemblerTransformer.ts"
           );
 
           const { charset, fatal, ignoreBOM, decompression } =
@@ -384,8 +384,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           );
 
           const resultStream = textStream
-            .pipeThrough(new LexerTransformer(req.options))
-            .pipeThrough(new RecordAssemblerTransformer(req.options));
+            .pipeThrough(new CSVLexerTransformer(req.options))
+            .pipeThrough(new CSVRecordAssemblerTransformer(req.options));
 
           // Convert stream to async iterable and stream records incrementally
           await streamRecordsToMain(

@@ -1,11 +1,11 @@
-# RecordAssemblerTransformer API Reference
+# CSVRecordAssemblerTransformer API Reference
 
-The **RecordAssemblerTransformer** class is a TransformStream that wraps the [RecordAssembler](./record-assembler.md) for use in streaming pipelines. It converts a stream of token arrays into a stream of CSV records (JavaScript objects).
+The **CSVRecordAssemblerTransformer** class is a TransformStream that wraps the [CSVRecordAssembler](./record-assembler.md) for use in streaming pipelines. It converts a stream of token arrays into a stream of CSV records (JavaScript objects).
 
 ## Overview
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -16,8 +16,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -29,7 +29,7 @@ csvStream
 ## Constructor
 
 ```typescript
-new RecordAssemblerTransformer<Header>(options?: RecordAssemblerOptions)
+new CSVRecordAssemblerTransformer<Header>(options?: RecordAssemblerOptions)
 ```
 
 ### Type Parameters
@@ -46,7 +46,7 @@ interface RecordAssemblerOptions<Header> {
 }
 ```
 
-All options are the same as [RecordAssembler options](./record-assembler.md#options).
+All options are the same as [CSVRecordAssembler options](./record-assembler.md#options).
 
 ---
 
@@ -54,15 +54,15 @@ All options are the same as [RecordAssembler options](./record-assembler.md#opti
 
 ### `assembler`
 
-**Type:** `RecordAssembler<Header>`
+**Type:** `CSVRecordAssembler<Header>`
 **Read-only:** Yes
 
-Access to the underlying RecordAssembler instance.
+Access to the underlying CSVRecordAssembler instance.
 
 **Example:**
 ```typescript
-const transformer = new RecordAssemblerTransformer();
-console.log(transformer.assembler); // RecordAssembler instance
+const transformer = new CSVRecordAssemblerTransformer();
+console.log(transformer.assembler); // CSVRecordAssembler instance
 ```
 
 **Use case:** Advanced debugging, accessing internal state
@@ -75,7 +75,7 @@ console.log(transformer.assembler); // RecordAssembler instance
 
 **Type:** `ReadableStream<Token[]>`
 
-A stream of token arrays (typically from [LexerTransformer](./lexer-transformer.md)).
+A stream of token arrays (typically from [CSVLexerTransformer](./lexer-transformer.md)).
 
 ### Output
 
@@ -95,7 +95,7 @@ A stream of CSV record objects.
 ### Pattern 1: Basic Streaming
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -107,8 +107,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -123,7 +123,7 @@ csvStream
 ### Pattern 2: Pre-defined Header
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -134,8 +134,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer({
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer({
     header: ['name', 'age']
   }))
   .pipeTo(new WritableStream({
@@ -152,14 +152,14 @@ csvStream
 ### Pattern 3: File Reading
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Browser
 const file = document.querySelector('input[type="file"]').files[0];
 const stream = file.stream()
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer());
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer());
 
 for await (const record of stream) {
   console.log(record);
@@ -176,8 +176,8 @@ const fileStream = Readable.toWeb(
 );
 
 fileStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -190,14 +190,14 @@ fileStream
 ### Pattern 4: Network Fetching
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
 
 response.body
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -210,7 +210,7 @@ response.body
 ### Pattern 5: Data Transformation
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Convert age to number
 class AgeConverterTransform extends TransformStream {
@@ -227,8 +227,8 @@ class AgeConverterTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeThrough(new AgeConverterTransform())
   .pipeTo(new WritableStream({
     write(record) {
@@ -242,7 +242,7 @@ csvStream
 ### Pattern 6: Data Validation
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -267,8 +267,8 @@ class ValidationTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeThrough(new ValidationTransform())
   .pipeTo(writable);
 ```
@@ -278,13 +278,13 @@ csvStream
 ### Pattern 7: Progress Tracking
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 let recordCount = 0;
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeThrough(new TransformStream({
     transform(record, controller) {
       recordCount++;
@@ -304,7 +304,7 @@ csvStream
 ### ParseError: Empty Header
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -314,8 +314,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(writable)
   .catch(error => {
     if (error.name === 'ParseError') {
@@ -330,7 +330,7 @@ csvStream
 ### ParseError: Duplicate Header Fields
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -341,8 +341,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(writable)
   .catch(error => {
     if (error.name === 'ParseError') {
@@ -357,7 +357,7 @@ csvStream
 ### RangeError: Field Count Exceeded
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -369,8 +369,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer({ maxFieldCount: 100 }))
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer({ maxFieldCount: 100 }))
   .pipeTo(writable)
   .catch(error => {
     if (error instanceof RangeError) {
@@ -384,15 +384,15 @@ csvStream
 ### AbortSignal
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const controller = new AbortController();
 
 setTimeout(() => controller.abort(), 5000); // Abort after 5 seconds
 
 csvStream
-  .pipeThrough(new LexerTransformer({ signal: controller.signal }))
-  .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }))
+  .pipeThrough(new CSVLexerTransformer({ signal: controller.signal }))
+  .pipeThrough(new CSVRecordAssemblerTransformer({ signal: controller.signal }))
   .pipeTo(writable)
   .catch(error => {
     if (error.name === 'AbortError') {
@@ -426,7 +426,7 @@ csvStream
 ## Complete Pipeline Example
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Fetch CSV from network
 const response = await fetch('https://example.com/large-data.csv');
@@ -434,8 +434,8 @@ const response = await fetch('https://example.com/large-data.csv');
 // Process in streaming fashion
 await response.body
   .pipeThrough(new TextDecoderStream())           // Decode to text
-  .pipeThrough(new LexerTransformer())            // Tokenize
-  .pipeThrough(new RecordAssemblerTransformer())  // Assemble records
+  .pipeThrough(new CSVLexerTransformer())            // Tokenize
+  .pipeThrough(new CSVRecordAssemblerTransformer())  // Assemble records
   .pipeThrough(new TransformStream({              // Validate & transform
     transform(record, controller) {
       if (isValid(record)) {
@@ -454,9 +454,9 @@ console.log('Processing complete');
 
 ---
 
-## Comparison: RecordAssembler vs RecordAssemblerTransformer
+## Comparison: CSVRecordAssembler vs CSVRecordAssemblerTransformer
 
-| Feature | RecordAssembler | RecordAssemblerTransformer |
+| Feature | CSVRecordAssembler | CSVRecordAssemblerTransformer |
 |---------|-----------------|---------------------------|
 | **API Style** | Imperative (method calls) | Declarative (streams) |
 | **Memory** | Manual buffering | Automatic backpressure |
@@ -464,13 +464,13 @@ console.log('Processing complete');
 | **Use Case** | Low-level control | Production streaming |
 | **Complexity** | Higher | Lower |
 
-**Recommendation:** Use `RecordAssemblerTransformer` for production streaming applications.
+**Recommendation:** Use `CSVRecordAssemblerTransformer` for production streaming applications.
 
 ---
 
 ## Browser and Runtime Support
 
-RecordAssemblerTransformer uses the Web Streams API, which is supported across all modern runtimes:
+CSVRecordAssemblerTransformer uses the Web Streams API, which is supported across all modern runtimes:
 
 - ✅ Node.js LTS
 - ✅ Deno LTS
@@ -482,8 +482,8 @@ See: [Supported Environments](../supported-environments.md)
 
 ## Related APIs
 
-- **[RecordAssembler](./record-assembler.md)** - Low-level assembly API
-- **[LexerTransformer](./lexer-transformer.md)** - Converts CSV to tokens
+- **[CSVRecordAssembler](./record-assembler.md)** - Low-level assembly API
+- **[CSVLexerTransformer](./lexer-transformer.md)** - Converts CSV to tokens
 - **[Parsing Architecture](../../explanation/parsing-architecture.md)** - Understanding the pipeline
 
 ---
@@ -493,14 +493,14 @@ See: [Supported Environments](../supported-environments.md)
 ### Example 1: CSV to JSON
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 async function csvToJSON(csvStream: ReadableStream<string>): Promise<string> {
   const records: any[] = [];
 
   await csvStream
-    .pipeThrough(new LexerTransformer())
-    .pipeThrough(new RecordAssemblerTransformer())
+    .pipeThrough(new CSVLexerTransformer())
+    .pipeThrough(new CSVRecordAssemblerTransformer())
     .pipeTo(new WritableStream({
       write(record) {
         records.push(record);
@@ -519,7 +519,7 @@ console.log(json);
 ### Example 2: Filtering Records
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 class FilterTransform extends TransformStream {
   constructor(predicate: (record: any) => boolean) {
@@ -534,8 +534,8 @@ class FilterTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeThrough(new FilterTransform(
     (record) => Number(record.age) >= 18
   ))
@@ -551,14 +551,14 @@ csvStream
 ### Example 3: Record Aggregation
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 let totalAge = 0;
 let count = 0;
 
 await csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       totalAge += Number(record.age);
@@ -575,7 +575,7 @@ await csvStream
 ### Example 4: Error Recovery
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 class ErrorRecoveryTransform extends TransformStream {
   constructor() {
@@ -595,8 +595,8 @@ class ErrorRecoveryTransform extends TransformStream {
 }
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeThrough(new ErrorRecoveryTransform())
   .pipeTo(writable);
 ```
@@ -607,8 +607,8 @@ csvStream
 
 ### ✅ Do
 
-- Use RecordAssemblerTransformer for streaming CSV parsing
-- Combine with LexerTransformer for complete pipeline
+- Use CSVRecordAssemblerTransformer for streaming CSV parsing
+- Combine with CSVLexerTransformer for complete pipeline
 - Handle errors in `.catch()` blocks
 - Use AbortSignal for cancelable operations
 - Set appropriate `maxFieldCount` for your use case
@@ -624,9 +624,9 @@ csvStream
 
 ---
 
-## When to Use RecordAssemblerTransformer
+## When to Use CSVRecordAssemblerTransformer
 
-**✅ Use RecordAssemblerTransformer when:**
+**✅ Use CSVRecordAssemblerTransformer when:**
 - Parsing large CSV files (>1MB)
 - Streaming data from network or disk
 - Building composable CSV processing pipelines
@@ -653,7 +653,7 @@ type CSVRecord<Header extends ReadonlyArray<string>> = {
 };
 
 // Example with explicit types
-const transformer = new RecordAssemblerTransformer<['name', 'age']>();
+const transformer = new CSVRecordAssemblerTransformer<['name', 'age']>();
 
 // Records will have type:
 // { name: string | undefined; age: string | undefined; }
