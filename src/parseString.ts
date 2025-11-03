@@ -2,12 +2,12 @@ import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
+import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
-import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 import type { PickCSVHeader } from "./utils/types.ts";
 
@@ -113,7 +113,10 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
     if (engineConfig.hasWorker()) {
       // Worker execution
       const session = engineConfig.workerPool
-        ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+        ? await WorkerSession.create({
+            workerPool: engineConfig.workerPool,
+            workerURL: engineConfig.workerURL,
+          })
         : null;
 
       try {

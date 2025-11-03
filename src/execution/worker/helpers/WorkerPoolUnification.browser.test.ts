@@ -65,7 +65,9 @@ describe.skipIf(typeof window === "undefined")(
       ]);
 
       // Should be sequential like WorkerManager
-      console.log(`WorkerPool(maxWorkers=1) Duration: ${duration}ms (should be sequential)`);
+      console.log(
+        `WorkerPool(maxWorkers=1) Duration: ${duration}ms (should be sequential)`,
+      );
 
       // Pool should only have 1 worker
       expect(pool.size).toBe(1);
@@ -128,7 +130,9 @@ describe.skipIf(typeof window === "undefined")(
       expect(results).toHaveLength(3);
       expect(pool.size).toBe(3); // 3 workers created
 
-      console.log(`WorkerPool(maxWorkers=3) Duration: ${duration}ms (should be parallel, faster)`);
+      console.log(
+        `WorkerPool(maxWorkers=3) Duration: ${duration}ms (should be parallel, faster)`,
+      );
     });
-  }
+  },
 );

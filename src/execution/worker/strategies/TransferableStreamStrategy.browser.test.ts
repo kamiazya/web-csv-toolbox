@@ -181,9 +181,15 @@ describe("TransferableStreamStrategy in browser", () => {
 
   describe("Performance characteristics", () => {
     it("should handle concurrent parsing efficiently", async () => {
-      const csv1 = Array.from({ length: 100 }, (_, i) => `A${i},${i}`).join("\n");
-      const csv2 = Array.from({ length: 100 }, (_, i) => `B${i},${i}`).join("\n");
-      const csv3 = Array.from({ length: 100 }, (_, i) => `C${i},${i}`).join("\n");
+      const csv1 = Array.from({ length: 100 }, (_, i) => `A${i},${i}`).join(
+        "\n",
+      );
+      const csv2 = Array.from({ length: 100 }, (_, i) => `B${i},${i}`).join(
+        "\n",
+      );
+      const csv3 = Array.from({ length: 100 }, (_, i) => `C${i},${i}`).join(
+        "\n",
+      );
 
       const stream1 = new SingleValueReadableStream(`col1,col2\n${csv1}`);
       const stream2 = new SingleValueReadableStream(`col1,col2\n${csv2}`);

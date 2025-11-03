@@ -160,7 +160,8 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
     // If pool is not yet full, create a new worker
     if (totalWorkers < this.maxWorkers) {
       // Use the next worker index as the key for pending creation
-      const workerIndex = this.workers.length + this.pendingWorkerCreations.size;
+      const workerIndex =
+        this.workers.length + this.pendingWorkerCreations.size;
 
       // Check if this worker is already being created
       const existingCreation = this.pendingWorkerCreations.get(workerIndex);
@@ -169,15 +170,17 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
       }
 
       // Create a new worker and cache the promise
-      const workerPromise = createWorker(effectiveURL).then((worker) => {
-        this.workers.push(worker);
-        this.pendingWorkerCreations.delete(workerIndex);
-        return worker;
-      }).catch((error) => {
-        // Clean up on error
-        this.pendingWorkerCreations.delete(workerIndex);
-        throw error;
-      });
+      const workerPromise = createWorker(effectiveURL)
+        .then((worker) => {
+          this.workers.push(worker);
+          this.pendingWorkerCreations.delete(workerIndex);
+          return worker;
+        })
+        .catch((error) => {
+          // Clean up on error
+          this.pendingWorkerCreations.delete(workerIndex);
+          throw error;
+        });
 
       this.pendingWorkerCreations.set(workerIndex, workerPromise);
       return workerPromise;
@@ -191,7 +194,8 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
 
     // Use round-robin to select a worker
     const worker = this.workers[this.currentWorkerIndex];
-    this.currentWorkerIndex = (this.currentWorkerIndex + 1) % this.workers.length;
+    this.currentWorkerIndex =
+      (this.currentWorkerIndex + 1) % this.workers.length;
     return worker;
   }
 

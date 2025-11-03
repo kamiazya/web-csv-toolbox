@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ReusableWorkerPool } from "./ReusableWorkerPool.ts";
 import { parseString } from "../../../parseString.ts";
+import { ReusableWorkerPool } from "./ReusableWorkerPool.ts";
 
 /**
  * ReusableWorkerPool tests
@@ -283,22 +283,38 @@ describe.skipIf(typeof window === "undefined")("ReusableWorkerPool", () => {
             records.push(record);
           }
           return records;
-        })
+        }),
       );
 
       // All 4 workers should have been created
       expect(pool.size).toBe(4);
 
       // Verify all results
-      expect(results[0]).toEqual([{ a: "1", b: "2" }, { a: "3", b: "4" }]);
-      expect(results[1]).toEqual([{ x: "5", y: "6" }, { x: "7", y: "8" }]);
-      expect(results[2]).toEqual([{ p: "9", q: "10" }, { p: "11", q: "12" }]);
-      expect(results[3]).toEqual([{ m: "13", n: "14" }, { m: "15", n: "16" }]);
+      expect(results[0]).toEqual([
+        { a: "1", b: "2" },
+        { a: "3", b: "4" },
+      ]);
+      expect(results[1]).toEqual([
+        { x: "5", y: "6" },
+        { x: "7", y: "8" },
+      ]);
+      expect(results[2]).toEqual([
+        { p: "9", q: "10" },
+        { p: "11", q: "12" },
+      ]);
+      expect(results[3]).toEqual([
+        { m: "13", n: "14" },
+        { m: "15", n: "16" },
+      ]);
     });
 
     it("should throw error when maxWorkers < 1", () => {
-      expect(() => new ReusableWorkerPool({ maxWorkers: 0 })).toThrow("maxWorkers must be at least 1");
-      expect(() => new ReusableWorkerPool({ maxWorkers: -1 })).toThrow("maxWorkers must be at least 1");
+      expect(() => new ReusableWorkerPool({ maxWorkers: 0 })).toThrow(
+        "maxWorkers must be at least 1",
+      );
+      expect(() => new ReusableWorkerPool({ maxWorkers: -1 })).toThrow(
+        "maxWorkers must be at least 1",
+      );
     });
 
     it("should terminate all workers on disposal", async () => {

@@ -1,6 +1,6 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 

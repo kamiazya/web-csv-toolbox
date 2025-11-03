@@ -1,6 +1,6 @@
 import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import type { ParseBinaryOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseMime } from "./utils/parseMime.ts";
 
 /**
@@ -17,7 +17,11 @@ export function getOptionsFromResponse<
   Quotation extends string = '"',
 >(
   response: Response,
-  options: ParseBinaryOptions<Header, Delimiter, Quotation> = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+  options: ParseBinaryOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): ParseBinaryOptions<Header, Delimiter, Quotation> {
   const { headers } = response;
   const contentType = headers.get("content-type") ?? "text/csv";

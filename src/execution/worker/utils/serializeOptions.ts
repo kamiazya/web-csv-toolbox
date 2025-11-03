@@ -21,7 +21,9 @@ export function serializeOptions<
   options?:
     | ParseOptions<Header, Delimiter, Quotation>
     | ParseBinaryOptions<Header, Delimiter, Quotation>,
-): Omit<typeof options, "signal" | "engine" | "workerPool" | "workerURL"> | undefined {
+):
+  | Omit<typeof options, "signal" | "engine" | "workerPool" | "workerURL">
+  | undefined {
   if (!options) return undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

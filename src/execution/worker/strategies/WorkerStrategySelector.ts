@@ -9,9 +9,9 @@ import type {
 } from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
 import type { WorkerSession } from "../helpers/WorkerSession.ts";
-import type { WorkerStrategy } from "./WorkerStrategy.ts";
 import { MessageStreamingStrategy } from "./MessageStreamingStrategy.ts";
 import { TransferableStreamStrategy } from "./TransferableStreamStrategy.ts";
+import type { WorkerStrategy } from "./WorkerStrategy.ts";
 
 /**
  * Worker strategy selector.

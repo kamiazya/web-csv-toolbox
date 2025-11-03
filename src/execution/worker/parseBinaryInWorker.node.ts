@@ -1,4 +1,8 @@
-import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "../../common/types.ts";
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "../../common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
 import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";

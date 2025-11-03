@@ -8,10 +8,10 @@ import type {
   DEFAULT_QUOTATION,
 } from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
-import type { WorkerStrategy } from "./WorkerStrategy.ts";
 import { WorkerSession } from "../helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "../utils/messageHandler.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
+import type { WorkerStrategy } from "./WorkerStrategy.ts";
 
 /**
  * Message-based streaming strategy.
@@ -22,7 +22,7 @@ import { serializeOptions } from "../utils/serializeOptions.ts";
  * @internal
  */
 export class MessageStreamingStrategy implements WorkerStrategy {
-  readonly name = 'message-streaming';
+  readonly name = "message-streaming";
 
   async *execute<
     T,
@@ -40,10 +40,12 @@ export class MessageStreamingStrategy implements WorkerStrategy {
   ): AsyncIterableIterator<T> {
     // Use provided session or create a new one
     const useProvidedSession = session !== null;
-    const workerSession = session ?? await WorkerSession.create({
-      workerPool: engineConfig.workerPool,
-      workerURL: engineConfig.workerURL,
-    });
+    const workerSession =
+      session ??
+      (await WorkerSession.create({
+        workerPool: engineConfig.workerPool,
+        workerURL: engineConfig.workerURL,
+      }));
 
     try {
       const worker = workerSession.getWorker();
@@ -88,7 +90,10 @@ export class MessageStreamingStrategy implements WorkerStrategy {
           options: serializeOptions(options),
           useWASM: engineConfig.hasWasm(),
         },
-        options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
+        options as
+          | ParseOptions<Header>
+          | ParseBinaryOptions<Header>
+          | undefined,
         transfer,
       );
     } finally {

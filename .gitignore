@@ -131,3 +131,5 @@ dist
 
 doc
 tmp/
+__screenshots__
+target

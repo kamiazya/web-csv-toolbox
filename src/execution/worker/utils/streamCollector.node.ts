@@ -1,4 +1,7 @@
-import type { ParseBinaryOptions, ParseOptions } from "../../../common/types.ts";
+import type {
+  ParseBinaryOptions,
+  ParseOptions,
+} from "../../../common/types.ts";
 
 /**
  * Collect ReadableStream<string> into a single string.

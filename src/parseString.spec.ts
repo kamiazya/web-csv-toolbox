@@ -286,7 +286,9 @@ describe("parseString with execution strategies", () => {
     "should handle errors properly in worker execution",
     async () => {
       await expect(async () => {
-        for await (const _ of parseString('a\na"', { engine: { worker: true } })) {
+        for await (const _ of parseString('a\na"', {
+          engine: { worker: true },
+        })) {
           // Do nothing.
         }
       }).rejects.toThrow();

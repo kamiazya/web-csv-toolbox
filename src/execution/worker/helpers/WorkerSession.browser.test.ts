@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { WorkerSession } from "./WorkerSession.ts";
-import { ReusableWorkerPool as WorkerPool } from "./ReusableWorkerPool.ts";
 import { sendWorkerMessage } from "../utils/messageHandler.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
+import { ReusableWorkerPool as WorkerPool } from "./ReusableWorkerPool.ts";
+import { WorkerSession } from "./WorkerSession.ts";
 
 describe("WorkerSession", () => {
   describe("Disposable worker mode (no pool)", () => {
@@ -16,7 +16,11 @@ describe("WorkerSession", () => {
       using session = await WorkerSession.create();
 
       const csv = "a,b,c\n1,2,3\n4,5,6";
-      const recordsIterator = sendWorkerMessage<{ a: string; b: string; c: string }>(
+      const recordsIterator = sendWorkerMessage<{
+        a: string;
+        b: string;
+        c: string;
+      }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),
@@ -110,7 +114,11 @@ describe("WorkerSession", () => {
       using session = await WorkerSession.create({ workerPool: pool });
 
       const csv = "a,b,c\n1,2,3";
-      const recordsIterator = sendWorkerMessage<{ a: string; b: string; c: string }>(
+      const recordsIterator = sendWorkerMessage<{
+        a: string;
+        b: string;
+        c: string;
+      }>(
         session.getWorker(),
         {
           id: session.getNextRequestId(),

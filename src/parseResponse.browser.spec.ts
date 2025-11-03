@@ -156,7 +156,9 @@ describe("parseResponse with execution strategies", () => {
           },
         },
       );
-      for await (const _ of parseResponse(response, { engine: { wasm: true } })) {
+      for await (const _ of parseResponse(response, {
+        engine: { wasm: true },
+      })) {
         // Do nothing
       }
       throw new Error("Should have thrown an error");

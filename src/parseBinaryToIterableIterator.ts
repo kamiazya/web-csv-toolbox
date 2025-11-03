@@ -27,7 +27,11 @@ export function parseBinaryToIterableIterator<
   Quotation extends string = DEFAULT_QUOTATION,
 >(
   binary: Uint8Array | ArrayBuffer,
-  options: ParseBinaryOptions<Header, Delimiter, Quotation> = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+  options: ParseBinaryOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): IterableIterator<CSVRecord<Header>> {
   try {
     const csv = convertBinaryToString(binary, options);

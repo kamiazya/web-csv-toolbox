@@ -8,9 +8,9 @@ import type {
   DEFAULT_QUOTATION,
 } from "../../../constants.ts";
 import type { InternalEngineConfig } from "../../InternalEngineConfig.ts";
-import type { WorkerStrategy } from "./WorkerStrategy.ts";
 import { WorkerSession } from "../helpers/WorkerSession.ts";
 import { serializeOptions } from "../utils/serializeOptions.ts";
+import type { WorkerStrategy } from "./WorkerStrategy.ts";
 
 /**
  * TransferableStream-based strategy.
@@ -40,10 +40,12 @@ export class TransferableStreamStrategy implements WorkerStrategy {
   ): AsyncIterableIterator<T> {
     // Use provided session or create a new one
     const useProvidedSession = session !== null;
-    const workerSession = session ?? await WorkerSession.create({
-      workerPool: engineConfig.workerPool,
-      workerURL: engineConfig.workerURL,
-    });
+    const workerSession =
+      session ??
+      (await WorkerSession.create({
+        workerPool: engineConfig.workerPool,
+        workerURL: engineConfig.workerURL,
+      }));
 
     try {
       const worker = workerSession.getWorker();
@@ -52,7 +54,7 @@ export class TransferableStreamStrategy implements WorkerStrategy {
       // Ensure input is a ReadableStream
       if (!(input instanceof ReadableStream)) {
         throw new Error(
-          `TransferableStreamStrategy requires ReadableStream input, got ${typeof input}`
+          `TransferableStreamStrategy requires ReadableStream input, got ${typeof input}`,
         );
       }
 
@@ -78,17 +80,20 @@ export class TransferableStreamStrategy implements WorkerStrategy {
           controller.enqueue(firstChunk.value);
         },
         pull(controller) {
-          reader.read().then(({ done, value }) => {
-            if (done) {
-              controller.close();
-            } else {
-              controller.enqueue(value);
-            }
-          }).catch(error => controller.error(error));
+          reader
+            .read()
+            .then(({ done, value }) => {
+              if (done) {
+                controller.close();
+              } else {
+                controller.enqueue(value);
+              }
+            })
+            .catch((error) => controller.error(error));
         },
         cancel(reason) {
           reader.cancel(reason);
-        }
+        },
       });
 
       // Determine type based on first chunk
@@ -100,7 +105,7 @@ export class TransferableStreamStrategy implements WorkerStrategy {
         streamToTransfer = reconstructedStream;
       } else {
         throw new Error(
-          `Unsupported stream chunk type: ${typeof firstChunk.value}`
+          `Unsupported stream chunk type: ${typeof firstChunk.value}`,
         );
       }
 
@@ -119,12 +124,11 @@ export class TransferableStreamStrategy implements WorkerStrategy {
           useWASM: engineConfig.hasWasm(),
           resultPort: workerPort,
         },
-        [streamToTransfer as any, workerPort]
+        [streamToTransfer as any, workerPort],
       );
 
       // Listen for results from the worker
       yield* this.receiveResults<T>(resultPort, options?.signal);
-
     } finally {
       // Dispose session only if we created it
       if (!useProvidedSession) {
@@ -209,7 +213,7 @@ export class TransferableStreamStrategy implements WorkerStrategy {
           yield queue.shift()!;
         } else {
           // Wait for next message
-          await new Promise<void>(resolve => {
+          await new Promise<void>((resolve) => {
             resolveNext = resolve;
           });
         }

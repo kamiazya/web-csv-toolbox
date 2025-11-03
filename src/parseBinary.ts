@@ -1,12 +1,16 @@
-import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "./common/types.ts";
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
+import { parseBinaryInWASM } from "./execution/wasm/parseBinaryInWASM.ts";
 import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { parseBinaryToArraySync } from "./parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "./parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "./parseBinaryToStream.ts";
-import { parseBinaryInWASM } from "./execution/wasm/parseBinaryInWASM.ts";
 import { convertIterableIteratorToAsync } from "./utils/convertIterableIteratorToAsync.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
 
@@ -47,13 +51,19 @@ export async function* parseBinary<
   if (engineConfig.hasWorker()) {
     // Worker execution
     const session = engineConfig.workerPool
-      ? await WorkerSession.create({ workerPool: engineConfig.workerPool, workerURL: engineConfig.workerURL })
+      ? await WorkerSession.create({
+          workerPool: engineConfig.workerPool,
+          workerURL: engineConfig.workerURL,
+        })
       : null;
 
     try {
       yield* executeWithWorkerStrategy<CSVRecord<Header>>(
         bytes,
-        options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
+        options as
+          | ParseOptions<Header>
+          | ParseBinaryOptions<Header>
+          | undefined,
         session,
         engineConfig,
       );
@@ -63,7 +73,10 @@ export async function* parseBinary<
   } else {
     // Main thread execution
     if (engineConfig.hasWasm()) {
-      yield* parseBinaryInWASM(bytes, options as ParseBinaryOptions<Header> | undefined);
+      yield* parseBinaryInWASM(
+        bytes,
+        options as ParseBinaryOptions<Header> | undefined,
+      );
     } else {
       const iterator = parseBinaryToIterableIterator(bytes, options);
       yield* convertIterableIteratorToAsync(iterator);

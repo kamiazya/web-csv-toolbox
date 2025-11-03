@@ -62,7 +62,9 @@ describe.skipIf(typeof window === "undefined")(
       ]);
 
       // Single worker processes requests sequentially, but all complete successfully
-      console.log(`Duration: ${duration}ms (sequential processing with single worker)`);
+      console.log(
+        `Duration: ${duration}ms (sequential processing with single worker)`,
+      );
     });
-  }
+  },
 );
