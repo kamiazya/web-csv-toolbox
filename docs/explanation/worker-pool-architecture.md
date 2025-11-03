@@ -112,23 +112,81 @@ getWorker() → [Worker Pool] → releaseWorker()
 ### Implementation Details
 
 ```typescript
+interface WorkerEntry {
+  worker: Worker;
+  url: string;
+}
+
 class ReusableWorkerPool implements WorkerPool {
-  private workers: Worker[] = [];
+  private workers: WorkerEntry[] = [];
   private currentWorkerIndex = 0;
   private readonly maxWorkers: number;
+  private pendingWorkerCreations: Map<string, Promise<Worker>> = new Map();
+  private pendingCreationsByURL: Map<string, Set<string>> = new Map();
+  private disposed = false;
+  private nextPendingId = 0;
 
   async getWorker(workerURL?: string | URL): Promise<Worker> {
-    if (this.workers.length < this.maxWorkers) {
-      // Create new worker
-      const worker = await createWorker(workerURL);
-      this.workers.push(worker);
-      return worker;
+    if (this.disposed) {
+      throw new Error("Worker pool has been disposed");
     }
 
-    // Reuse existing worker (round-robin)
-    const worker = this.workers[this.currentWorkerIndex];
-    this.currentWorkerIndex = (this.currentWorkerIndex + 1) % this.workers.length;
-    return worker;
+    const urlKey = workerURL ? String(workerURL) : "default";
+
+    // Find workers matching the requested URL
+    const matchingWorkers = this.workers.filter(entry => entry.url === urlKey);
+
+    if (this.workers.length < this.maxWorkers) {
+      // Create new worker with unique ID
+      const pendingId = `${urlKey}-${this.nextPendingId++}`;
+      const workerPromise = createWorker(workerURL)
+        .then(worker => {
+          if (this.disposed) {
+            worker.terminate();
+            throw new Error("Worker pool was disposed during worker creation");
+          }
+          this.workers.push({ worker, url: urlKey });
+          // Cleanup pending maps
+          this.pendingWorkerCreations.delete(pendingId);
+          const urlPendings = this.pendingCreationsByURL.get(urlKey);
+          if (urlPendings) {
+            urlPendings.delete(pendingId);
+            if (urlPendings.size === 0) {
+              this.pendingCreationsByURL.delete(urlKey);
+            }
+          }
+          return worker;
+        });
+
+      this.pendingWorkerCreations.set(pendingId, workerPromise);
+      if (!this.pendingCreationsByURL.has(urlKey)) {
+        this.pendingCreationsByURL.set(urlKey, new Set());
+      }
+      this.pendingCreationsByURL.get(urlKey)!.add(pendingId);
+      return workerPromise;
+    }
+
+    // Pool is full - use round-robin among matching workers
+    if (matchingWorkers.length === 0) {
+      throw new Error(
+        `Worker pool is at maximum capacity and no worker with URL "${urlKey}" is available`
+      );
+    }
+
+    const matchingIndices = this.workers
+      .map((entry, index) => entry.url === urlKey ? index : -1)
+      .filter(index => index !== -1);
+
+    let selectedIndex = matchingIndices[0];
+    for (const index of matchingIndices) {
+      if (index >= this.currentWorkerIndex) {
+        selectedIndex = index;
+        break;
+      }
+    }
+
+    this.currentWorkerIndex = (selectedIndex + 1) % this.workers.length;
+    return this.workers[selectedIndex].worker;
   }
 
   releaseWorker(worker: Worker): void {
@@ -136,14 +194,142 @@ class ReusableWorkerPool implements WorkerPool {
   }
 
   terminate(): void {
-    // Terminate all workers
-    for (const worker of this.workers) {
-      worker.terminate();
+    this.disposed = true;
+
+    // Terminate all existing workers
+    for (const entry of this.workers) {
+      entry.worker.terminate();
     }
     this.workers = [];
+    this.currentWorkerIndex = 0;
+
+    // Clear all pending creations
+    this.pendingWorkerCreations.clear();
+    this.pendingCreationsByURL.clear();
   }
 }
 ```
+
+#### Disposed State Management
+
+The `disposed` flag prevents new worker creation after the pool has been terminated:
+
+**Problem:** Without disposal tracking, workers could be created during or after `terminate()`:
+```typescript
+const pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+// Start worker creation
+const promise1 = pool.getWorker(); // Worker creation in progress
+
+// Terminate pool
+pool.terminate();
+
+// This worker is created AFTER termination, causing resource leak
+const worker = await promise1; // ❌ Worker created but not tracked
+```
+
+**Solution:** Check `disposed` flag and terminate orphaned workers:
+```typescript
+async getWorker(workerURL?: string | URL): Promise<Worker> {
+  if (this.disposed) {
+    throw new Error("Worker pool has been disposed");
+  }
+
+  const workerPromise = createWorker(workerURL).then(worker => {
+    if (this.disposed) {
+      // Pool was disposed during worker creation
+      worker.terminate(); // Immediately terminate orphaned worker
+      throw new Error("Worker pool was disposed during worker creation");
+    }
+    // Safe to add worker to pool
+    this.workers.push({ worker, url: urlKey });
+    return worker;
+  });
+
+  return workerPromise;
+}
+```
+
+This ensures:
+1. No new requests are accepted after disposal
+2. Workers created during disposal are immediately terminated
+3. No resource leaks from race conditions
+
+#### URL-Based Worker Isolation
+
+Workers are tracked by their source URL to prevent URL mixing:
+
+**Problem:** Different worker URLs should create separate worker instances:
+```typescript
+const pool = new ReusableWorkerPool({ maxWorkers: 2 });
+
+// Worker from default URL
+const worker1 = await pool.getWorker(); // default URL
+
+// Worker from custom URL - should create NEW worker, not reuse worker1
+const worker2 = await pool.getWorker(new URL('./custom-worker.js', import.meta.url));
+```
+
+**Solution:** Track each worker's URL and match requests:
+```typescript
+interface WorkerEntry {
+  worker: Worker;
+  url: string; // Track worker's source URL
+}
+
+// Separate workers by URL
+private workers: WorkerEntry[] = [];
+private pendingCreationsByURL: Map<string, Set<string>> = new Map();
+
+async getWorker(workerURL?: string | URL): Promise<Worker> {
+  const urlKey = workerURL ? String(workerURL) : "default";
+
+  // Find workers matching the requested URL
+  const matchingWorkers = this.workers.filter(entry => entry.url === urlKey);
+
+  if (matchingWorkers.length === 0 && this.isFull()) {
+    // Pool is full but no matching URL workers exist
+    throw new Error(
+      `Worker pool is at maximum capacity and no worker with URL "${urlKey}" is available`
+    );
+  }
+
+  // Use round-robin ONLY among workers with matching URL
+  const matchingIndices = this.workers
+    .map((entry, index) => entry.url === urlKey ? index : -1)
+    .filter(index => index !== -1);
+
+  return this.workers[matchingIndices[selectedIndex]].worker;
+}
+```
+
+**Concurrent Creation Handling:**
+```typescript
+// Use unique IDs to allow multiple workers with same URL
+private nextPendingId = 0;
+
+async getWorker(workerURL?: string | URL): Promise<Worker> {
+  const urlKey = workerURL ? String(workerURL) : "default";
+  const pendingId = `${urlKey}-${this.nextPendingId++}`;
+
+  // Multiple concurrent requests with same URL each create a worker
+  this.pendingWorkerCreations.set(pendingId, workerPromise);
+
+  // Track by URL for matching logic
+  if (!this.pendingCreationsByURL.has(urlKey)) {
+    this.pendingCreationsByURL.set(urlKey, new Set());
+  }
+  this.pendingCreationsByURL.get(urlKey)!.add(pendingId);
+
+  return workerPromise;
+}
+```
+
+This ensures:
+1. Workers with different URLs are never mixed
+2. Multiple workers with the same URL can be created up to `maxWorkers`
+3. Concurrent requests for the same URL each create their own worker
+4. Pool capacity is correctly tracked including pending creations
 
 ### Use Cases
 
