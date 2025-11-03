@@ -59,67 +59,94 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
 
   /**
    * Assembles tokens into CSV records.
-   * @param tokens - The tokens to assemble. Omit to flush remaining data.
+   * @param input - A single token or an iterable of tokens. Omit to flush remaining data.
    * @param options - Assembler options.
    * @returns An iterable iterator of CSV records.
    */
   public *assemble(
-    tokens?: Iterable<Token>,
+    input?: Token | Iterable<Token>,
     options?: CSVRecordAssemblerAssembleOptions,
   ): IterableIterator<CSVRecord<Header>> {
     const stream = options?.stream ?? false;
 
-    if (tokens !== undefined) {
-      for (const token of tokens) {
-        this.#signal?.throwIfAborted();
-        switch (token.type) {
-          case FieldDelimiter:
-            this.#fieldIndex++;
-            this.#checkFieldCount();
-            this.#dirty = true;
-            break;
-          case RecordDelimiter:
-            if (this.#header === undefined) {
-              this.#setHeader(this.#row as unknown as Header);
-            } else {
-              if (this.#dirty) {
-                yield Object.fromEntries(
-                  this.#header.map((header, index) => [
-                    header,
-                    this.#row.at(index),
-                  ]),
-                ) as unknown as CSVRecord<Header>;
-              } else {
-                if (this.#skipEmptyLines) {
-                  continue;
-                }
-                yield Object.fromEntries(
-                  this.#header.map((header) => [header, ""]),
-                ) as CSVRecord<Header>;
-              }
-            }
-            // Reset the row fields buffer.
-            this.#fieldIndex = 0;
-            this.#row = new Array(this.#header?.length).fill("");
-            this.#dirty = false;
-            break;
-          default:
-            this.#dirty = true;
-            this.#row[this.#fieldIndex] = token.value;
-            break;
+    if (input !== undefined) {
+      // Check if input is iterable (has Symbol.iterator)
+      if (this.#isIterable(input)) {
+        for (const token of input) {
+          yield* this.#processToken(token);
         }
+      } else {
+        // Single token
+        yield* this.#processToken(input);
       }
     }
 
     if (!stream) {
-      if (this.#header !== undefined) {
-        if (this.#dirty) {
-          yield Object.fromEntries(
-            this.#header
-              .filter((v) => v)
-              .map((header, index) => [header, this.#row.at(index)]),
-          ) as unknown as CSVRecord<Header>;
+      yield* this.#flush();
+    }
+  }
+
+  /**
+   * Checks if a value is iterable.
+   */
+  #isIterable(value: any): value is Iterable<Token> {
+    return value != null && typeof value[Symbol.iterator] === "function";
+  }
+
+  /**
+   * Processes a single token and yields a record if one is completed.
+   */
+  *#processToken(token: Token): IterableIterator<CSVRecord<Header>> {
+    this.#signal?.throwIfAborted();
+
+    switch (token.type) {
+      case FieldDelimiter:
+        this.#fieldIndex++;
+        this.#checkFieldCount();
+        this.#dirty = true;
+        break;
+      case RecordDelimiter:
+        if (this.#header === undefined) {
+          this.#setHeader(this.#row as unknown as Header);
+        } else {
+          if (this.#dirty) {
+            yield Object.fromEntries(
+              this.#header.map((header, index) => [
+                header,
+                this.#row.at(index),
+              ]),
+            ) as unknown as CSVRecord<Header>;
+          } else {
+            if (!this.#skipEmptyLines) {
+              yield Object.fromEntries(
+                this.#header.map((header) => [header, ""]),
+              ) as CSVRecord<Header>;
+            }
+          }
         }
+        // Reset the row fields buffer.
+        this.#fieldIndex = 0;
+        this.#row = new Array(this.#header?.length).fill("");
+        this.#dirty = false;
+        break;
+      default:
+        this.#dirty = true;
+        this.#row[this.#fieldIndex] = token.value;
+        break;
+    }
+  }
+
+  /**
+   * Flushes any remaining buffered data as a final record.
+   */
+  *#flush(): IterableIterator<CSVRecord<Header>> {
+    if (this.#header !== undefined) {
+      if (this.#dirty) {
+        yield Object.fromEntries(
+          this.#header
+            .filter((v) => v)
+            .map((header, index) => [header, this.#row.at(index)]),
+        ) as unknown as CSVRecord<Header>;
       }
     }
   }

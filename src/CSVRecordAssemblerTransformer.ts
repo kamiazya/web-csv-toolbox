@@ -125,9 +125,8 @@ export class CSVRecordAssemblerTransformer<
         transform: async (token, controller) => {
           try {
             let recordCount = 0;
-            for (const record of assembler.assemble([token], {
-              stream: true,
-            })) {
+            // Pass single token directly to assemble (no array creation)
+            for (const record of assembler.assemble(token, { stream: true })) {
               controller.enqueue(record);
               recordCount++;
 
@@ -148,6 +147,7 @@ export class CSVRecordAssemblerTransformer<
         flush: async (controller) => {
           try {
             let recordCount = 0;
+            // Call assemble without arguments to flush
             for (const record of assembler.assemble()) {
               controller.enqueue(record);
               recordCount++;

@@ -176,20 +176,21 @@ Converts tokens into CSV records.
 
 ```typescript
 assemble(
-  tokens?: Iterable<Token>,
+  input?: Token | Iterable<Token>,
   options?: { stream?: boolean }
 ): IterableIterator<CSVRecord<Header>>
 ```
 
 #### Parameters
 
-##### `tokens`
+##### `input`
 
-**Type:** `Iterable<Token> | undefined`
+**Type:** `Token | Iterable<Token> | undefined`
 
 Tokens from the CSVLexer.
 
-- Pass token iterable to process tokens
+- Pass a single `Token` to process one token (efficient for streaming)
+- Pass an iterable of tokens to process multiple tokens
 - Omit or pass `undefined` to flush remaining data
 
 ##### `options.stream`
@@ -245,6 +246,31 @@ const tokens3 = lexer.lex();
 const records3 = assembler.assemble(tokens3);
 console.log([...records3]); // []
 ```
+
+#### Example: Single Token Processing
+
+```typescript
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
+
+// Process tokens one at a time (efficient for streaming)
+for (const token of lexer.lex('name,age\r\nAlice,30\r\n', { stream: true })) {
+  // Pass single token directly (no array wrapping needed)
+  const records = assembler.assemble(token, { stream: true });
+  for (const record of records) {
+    console.log(record);
+  }
+}
+
+// Flush remaining data
+const finalRecords = assembler.assemble();
+for (const record of finalRecords) {
+  console.log(record);
+}
+// { name: 'Alice', age: '30' }
+```
+
+**Use case:** Efficient token-by-token processing in streaming scenarios.
 
 **Migration from v0.11 and earlier:**
 ```typescript
