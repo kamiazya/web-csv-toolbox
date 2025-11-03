@@ -124,29 +124,31 @@ try {
 Lexes the given chunk of CSV data.
 
 ```typescript
-lex(chunk: string | null, buffering?: boolean): IterableIterator<Token>
+lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token>
 ```
 
 #### Parameters
 
 ##### `chunk`
 
-**Type:** `string | null`
+**Type:** `string | undefined`
 
 The chunk of CSV data to be lexed.
 
 - Pass `string` to add data to the buffer
-- Pass `null` to indicate no more data (equivalent to `buffering: false`)
+- Omit or pass `undefined` to flush remaining data
 
-##### `buffering`
+##### `options.stream`
 
 **Type:** `boolean`
 **Default:** `false`
 
-Indicates whether the lexer should buffer incomplete tokens.
+Indicates whether more chunks are coming (streaming mode).
 
 - `false`: Final chunk, flush all tokens including incomplete ones
 - `true`: More chunks coming, buffer incomplete tokens
+
+**Note:** This follows the TextDecoder pattern for consistency with Web Standards.
 
 #### Returns
 
@@ -156,7 +158,7 @@ Indicates whether the lexer should buffer incomplete tokens.
 
 ```typescript
 const lexer = new CSVLexer();
-const tokens = [...lexer.lex('Alice,30\r\n')]; // buffering=false (default)
+const tokens = [...lexer.lex('Alice,30\r\n')]; // stream=false (default)
 
 console.log(tokens);
 // [
@@ -167,17 +169,17 @@ console.log(tokens);
 // ]
 ```
 
-#### Example: Multiple Chunks
+#### Example: Multiple Chunks (Streaming)
 
 ```typescript
 const lexer = new CSVLexer();
 
 // First chunk - incomplete field
-const tokens1 = [...lexer.lex('"Hello', true)]; // buffering=true
+const tokens1 = [...lexer.lex('"Hello', { stream: true })];
 console.log(tokens1); // [] - waiting for closing quote
 
 // Second chunk - completes field
-const tokens2 = [...lexer.lex(' World",30\r\n', true)];
+const tokens2 = [...lexer.lex(' World",30\r\n', { stream: true })];
 console.log(tokens2);
 // [
 //   { type: 'Field', value: 'Hello World', location: {...} },
@@ -185,45 +187,22 @@ console.log(tokens2);
 //   { type: 'Field', value: '30', location: {...} }
 // ]
 
-// Final flush
-const tokens3 = [...lexer.lex(null)]; // or lexer.flush()
+// Final flush - call without arguments
+const tokens3 = [...lexer.lex()];
 console.log(tokens3);
 // [{ type: 'RecordDelimiter', value: '\r\n', location: {...} }]
 ```
 
----
-
-### `flush()`
-
-Flushes the lexer and returns any remaining tokens.
-
+**Migration from v0.11 and earlier:**
 ```typescript
-flush(): Token[]
+// Before (v0.11)
+lexer.lex(chunk, true);  // buffering mode
+lexer.flush();           // flush
+
+// After (v0.12+)
+lexer.lex(chunk, { stream: true });  // streaming mode
+lexer.lex();                         // flush
 ```
-
-#### Returns
-
-`Token[]` - Array of remaining tokens
-
-#### Example
-
-```typescript
-const lexer = new CSVLexer();
-
-lexer.lex('Alice,30', true); // buffering=true, returns nothing
-
-const tokens = lexer.flush(); // Force flush
-console.log(tokens);
-// [
-//   { type: 'Field', value: 'Alice', location: {...} },
-//   { type: 'FieldDelimiter', value: ',', location: {...} },
-//   { type: 'Field', value: '30', location: {...} }
-// ]
-```
-
-**When to use:**
-- End of streaming data (alternative to `lex(null)`)
-- Manual control over token emission
 
 ---
 
@@ -376,7 +355,7 @@ const lexer = new CSVLexer();
 
 try {
   lexer.lex('"Unclosed quote'); // No closing quote
-  lexer.flush(); // Triggers error
+  lexer.lex(); // Flush - triggers error
 } catch (error) {
   if (error.name === 'ParseError') {
     console.error(error.message);
@@ -437,14 +416,14 @@ const lexer = new CSVLexer();
 const chunks = ['name,age\r\n', 'Alice,30\r\n', 'Bob,25\r\n'];
 
 for (const chunk of chunks) {
-  const tokens = lexer.lex(chunk, true); // buffering=true
+  const tokens = lexer.lex(chunk, { stream: true });
   for (const token of tokens) {
     console.log(token);
   }
 }
 
 // Don't forget to flush!
-const remainingTokens = lexer.flush();
+const remainingTokens = lexer.lex();
 for (const token of remainingTokens) {
   console.log(token);
 }
@@ -623,8 +602,8 @@ console.log(tokensToJSON('Alice,30\r\n'));
 
 ### ✅ Do
 
-- Use `buffering: true` when processing streaming data
-- Always call `flush()` at the end of streaming
+- Use `{ stream: true }` when processing streaming data
+- Always call `lex()` or `assemble()` without arguments at the end of streaming
 - Set appropriate `maxBufferSize` for your use case
 - Use `AbortSignal` for long-running operations
 - Handle `ParseError` and `RangeError` gracefully

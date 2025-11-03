@@ -176,8 +176,8 @@ Converts tokens into CSV records.
 
 ```typescript
 assemble(
-  tokens: Iterable<Token>,
-  flush?: boolean
+  tokens?: Iterable<Token>,
+  options?: { stream?: boolean }
 ): IterableIterator<CSVRecord<Header>>
 ```
 
@@ -185,19 +185,24 @@ assemble(
 
 ##### `tokens`
 
-**Type:** `Iterable<Token>`
+**Type:** `Iterable<Token> | undefined`
 
-Tokens from the Lexer.
+Tokens from the CSVLexer.
 
-##### `flush`
+- Pass token iterable to process tokens
+- Omit or pass `undefined` to flush remaining data
+
+##### `options.stream`
 
 **Type:** `boolean`
-**Default:** `true`
+**Default:** `false`
 
-Whether to flush incomplete records.
+Indicates whether more tokens are coming (streaming mode).
 
-- `true`: Emit final incomplete record (if any)
-- `false`: Buffer incomplete record for next call
+- `false`: Final call, flush all records including incomplete ones
+- `true`: More tokens coming, buffer incomplete records
+
+**Note:** This follows the TextDecoder pattern for consistency with Web Standards.
 
 #### Returns
 
@@ -226,51 +231,31 @@ const lexer = new CSVLexer();
 const assembler = new CSVRecordAssembler();
 
 // First chunk
-const tokens1 = lexer.lex('name,age\r\nAlice,', true); // Incomplete record
-const records1 = assembler.assemble(tokens1, false); // flush=false
+const tokens1 = lexer.lex('name,age\r\nAlice,', { stream: true }); // Incomplete record
+const records1 = assembler.assemble(tokens1, { stream: true });
 console.log([...records1]); // [] - buffering incomplete record
 
 // Second chunk
-const tokens2 = lexer.lex('30\r\n', true);
-const records2 = assembler.assemble(tokens2, false);
+const tokens2 = lexer.lex('30\r\n', { stream: true });
+const records2 = assembler.assemble(tokens2, { stream: true });
 console.log([...records2]); // [{ name: 'Alice', age: '30' }]
 
 // Final flush
-const tokens3 = lexer.flush();
-const records3 = assembler.assemble(tokens3, true); // flush=true
+const tokens3 = lexer.lex();
+const records3 = assembler.assemble(tokens3);
 console.log([...records3]); // []
 ```
 
----
-
-### `flush()`
-
-Flushes any incomplete record.
-
+**Migration from v0.11 and earlier:**
 ```typescript
-flush(): Generator<CSVRecord<Header>>
+// Before (v0.11)
+assembler.assemble(tokens, false);  // don't flush
+assembler.flush();                  // flush
+
+// After (v0.12+)
+assembler.assemble(tokens, { stream: true });  // streaming mode
+assembler.assemble();                          // flush
 ```
-
-#### Returns
-
-`Generator<CSVRecord<Header>>` - Generator of remaining records
-
-#### Example
-
-```typescript
-const assembler = new CSVRecordAssembler();
-
-// Partial record
-assembler.assemble(tokens, false); // flush=false, returns nothing
-
-// Force flush
-const records = [...assembler.flush()];
-console.log(records); // [{ name: 'Alice', age: '30' }]
-```
-
-**When to use:**
-- End of streaming data (alternative to `assemble(tokens, true)`)
-- Manual control over record emission
 
 ---
 
@@ -466,8 +451,8 @@ for (const chunk of chunks) {
 }
 
 // Don't forget to flush!
-const finalTokens = lexer.flush();
-const finalRecords = assembler.assemble(finalTokens, true);
+const finalTokens = lexer.lex();
+const finalRecords = assembler.assemble(finalTokens);
 for (const record of finalRecords) {
   console.log(record);
 }
@@ -683,7 +668,7 @@ console.log(adults);
 ### ✅ Do
 
 - Use `flush: false` when processing streaming data
-- Always call `flush()` at the end of streaming
+- Always call `lex()` or `assemble()` without arguments at the end of streaming
 - Set appropriate `maxFieldCount` for your use case
 - Use `AbortSignal` for long-running operations
 - Validate data with schema libraries (Zod, Yup, etc.)
