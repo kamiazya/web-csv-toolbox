@@ -23,9 +23,6 @@ lib-cov
 coverage
 *.lcov
 
-# Vitest browser mode screenshots
-**/__screenshots__/
-
 # nyc test coverage
 .nyc_output
 
@@ -133,6 +130,4 @@ dist
 .pnp.*
 
 doc
-
-target
-test-build*.mjs
+tmp/

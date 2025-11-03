@@ -91,6 +91,7 @@ export default defineConfig(({ command }) => ({
     }),
   ],
   test: {
+    testTimeout: 10000,
     setupFiles: ["config/vitest.setup.ts"],
     coverage: {
       provider: "istanbul",

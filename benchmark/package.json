@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tsx main.ts"
+    "start": "tsx main.ts",
+    "queuing-strategy": "tsx queuing-strategy.bench.ts"
   },
   "license": "MIT",
   "dependencies": {

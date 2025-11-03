@@ -180,7 +180,7 @@ export function parseStringToArraySyncWASM<Header>(
 WASM respects the same `maxBufferSize` limit as JavaScript:
 
 ```typescript
-const lexer = new Lexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
+const lexer = new CSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
 ```
 
 **Why:**
@@ -237,7 +237,7 @@ Both implementations have similar memory usage:
 | Stage | JavaScript | WASM |
 |-------|-----------|------|
 | Input | String (in heap) | String (copied to linear memory) |
-| Parsing | Lexer buffer (~10MB max) | Parsing state (~10MB max) |
+| Parsing | CSVLexer buffer (~10MB max) | Parsing state (~10MB max) |
 | Output | Objects (in heap) | JSON string → Objects |
 
 **Total:** WASM uses ~2x input size temporarily, same as JavaScript.
@@ -370,7 +370,7 @@ WASM parser processes the entire CSV string at once (not streaming).
 For streaming, the JavaScript implementation supports chunk-by-chunk parsing:
 
 ```typescript
-const lexer = new Lexer();
+const lexer = new CSVLexer();
 
 for (const chunk of chunks) {
   for (const token of lexer.lex(chunk, true)) {
@@ -444,7 +444,7 @@ WASM respects the same resource limits as JavaScript:
 
 ```typescript
 // maxBufferSize applies to both JS and WASM
-const lexer = new Lexer({ maxBufferSize: 10 * 1024 * 1024 });
+const lexer = new CSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
 ```
 
 **Why:**

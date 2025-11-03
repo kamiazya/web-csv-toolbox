@@ -1,14 +1,14 @@
-# RecordAssembler API Reference
+# CSVRecordAssembler API Reference
 
-The **RecordAssembler** class converts tokens from the [Lexer](./lexer.md) into structured CSV records (JavaScript objects). This is the second stage of web-csv-toolbox's two-stage parsing pipeline.
+The **CSVRecordAssembler** class converts tokens from the [CSVLexer](./csv-lexer.md) into structured CSV records (JavaScript objects). This is the second stage of web-csv-toolbox's two-stage parsing pipeline.
 
 ## Overview
 
 ```typescript
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 const records = assembler.assemble(tokens);
@@ -22,7 +22,7 @@ for (const record of records) {
 ## Constructor
 
 ```typescript
-new RecordAssembler<Header>(options?: RecordAssemblerOptions)
+new CSVRecordAssembler<Header>(options?: CSVRecordAssemblerOptions)
 ```
 
 ### Type Parameters
@@ -32,18 +32,19 @@ new RecordAssembler<Header>(options?: RecordAssemblerOptions)
 **Example:**
 ```typescript
 // Inferred header
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 
 // Explicit header type
-const assembler = new RecordAssembler<['name', 'age']>();
+const assembler = new CSVRecordAssembler<['name', 'age']>();
 ```
 
 ### Options
 
 ```typescript
-interface RecordAssemblerOptions<Header> {
+interface CSVRecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
+  skipEmptyLines?: boolean;
   signal?: AbortSignal;
 }
 ```
@@ -58,12 +59,12 @@ Pre-defined header fields.
 **Example:**
 ```typescript
 // Extract header from CSV data
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 const records = assembler.assemble(tokens);
 // First record becomes header
 
 // Pre-define header
-const assembler = new RecordAssembler({
+const assembler = new CSVRecordAssembler({
   header: ['name', 'age']
 });
 const records = assembler.assemble(tokens);
@@ -91,7 +92,7 @@ Maximum number of fields allowed per record.
 
 **Example:**
 ```typescript
-const assembler = new RecordAssembler({
+const assembler = new CSVRecordAssembler({
   maxFieldCount: 1000 // Limit to 1000 fields
 });
 
@@ -111,6 +112,35 @@ try {
 
 ---
 
+#### `skipEmptyLines`
+
+**Type:** `boolean`
+**Default:** `false`
+
+When `true`, completely empty lines (with only delimiters or whitespace) will be skipped during parsing.
+
+**Example:**
+```typescript
+const csv = 'name,age\r\nAlice,30\r\n\r\nBob,25\r\n';
+
+// Without skipEmptyLines (default)
+const assembler1 = new CSVRecordAssembler();
+const records1 = [...assembler1.assemble(lexer.lex(csv))];
+// [{ name: 'Alice', age: '30' }, { name: '', age: '' }, { name: 'Bob', age: '25' }]
+
+// With skipEmptyLines
+const assembler2 = new CSVRecordAssembler({ skipEmptyLines: true });
+const records2 = [...assembler2.assemble(lexer.lex(csv))];
+// [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+```
+
+**When to use:**
+- ✅ CSV files with blank lines between records
+- ✅ Cleaning up poorly formatted CSV data
+- ❌ When empty records have semantic meaning
+
+---
+
 #### `signal`
 
 **Type:** `AbortSignal`
@@ -121,7 +151,7 @@ AbortSignal for canceling assembly operations.
 **Example:**
 ```typescript
 const controller = new AbortController();
-const assembler = new RecordAssembler({ signal: controller.signal });
+const assembler = new CSVRecordAssembler({ signal: controller.signal });
 
 setTimeout(() => controller.abort(), 5000);
 
@@ -146,8 +176,8 @@ Converts tokens into CSV records.
 
 ```typescript
 assemble(
-  tokens: Iterable<Token>,
-  flush?: boolean
+  tokens?: Iterable<Token>,
+  options?: { stream?: boolean }
 ): IterableIterator<CSVRecord<Header>>
 ```
 
@@ -155,19 +185,24 @@ assemble(
 
 ##### `tokens`
 
-**Type:** `Iterable<Token>`
+**Type:** `Iterable<Token> | undefined`
 
-Tokens from the Lexer.
+Tokens from the CSVLexer.
 
-##### `flush`
+- Pass token iterable to process tokens
+- Omit or pass `undefined` to flush remaining data
+
+##### `options.stream`
 
 **Type:** `boolean`
-**Default:** `true`
+**Default:** `false`
 
-Whether to flush incomplete records.
+Indicates whether more tokens are coming (streaming mode).
 
-- `true`: Emit final incomplete record (if any)
-- `false`: Buffer incomplete record for next call
+- `false`: Final call, flush all records including incomplete ones
+- `true`: More tokens coming, buffer incomplete records
+
+**Note:** This follows the TextDecoder pattern for consistency with Web Standards.
 
 #### Returns
 
@@ -176,8 +211,8 @@ Whether to flush incomplete records.
 #### Example: Basic Usage
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 const tokens = lexer.lex('name,age\r\nAlice,30\r\nBob,25\r\n');
 const records = assembler.assemble(tokens);
@@ -192,55 +227,35 @@ for (const record of records) {
 #### Example: Streaming with Buffering
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 // First chunk
-const tokens1 = lexer.lex('name,age\r\nAlice,', true); // Incomplete record
-const records1 = assembler.assemble(tokens1, false); // flush=false
+const tokens1 = lexer.lex('name,age\r\nAlice,', { stream: true }); // Incomplete record
+const records1 = assembler.assemble(tokens1, { stream: true });
 console.log([...records1]); // [] - buffering incomplete record
 
 // Second chunk
-const tokens2 = lexer.lex('30\r\n', true);
-const records2 = assembler.assemble(tokens2, false);
+const tokens2 = lexer.lex('30\r\n', { stream: true });
+const records2 = assembler.assemble(tokens2, { stream: true });
 console.log([...records2]); // [{ name: 'Alice', age: '30' }]
 
 // Final flush
-const tokens3 = lexer.flush();
-const records3 = assembler.assemble(tokens3, true); // flush=true
+const tokens3 = lexer.lex();
+const records3 = assembler.assemble(tokens3);
 console.log([...records3]); // []
 ```
 
----
-
-### `flush()`
-
-Flushes any incomplete record.
-
+**Migration from v0.11 and earlier:**
 ```typescript
-flush(): Generator<CSVRecord<Header>>
+// Before (v0.11)
+assembler.assemble(tokens, false);  // don't flush
+assembler.flush();                  // flush
+
+// After (v0.12+)
+assembler.assemble(tokens, { stream: true });  // streaming mode
+assembler.assemble();                          // flush
 ```
-
-#### Returns
-
-`Generator<CSVRecord<Header>>` - Generator of remaining records
-
-#### Example
-
-```typescript
-const assembler = new RecordAssembler();
-
-// Partial record
-assembler.assemble(tokens, false); // flush=false, returns nothing
-
-// Force flush
-const records = [...assembler.flush()];
-console.log(records); // [{ name: 'Alice', age: '30' }]
-```
-
-**When to use:**
-- End of streaming data (alternative to `assemble(tokens, true)`)
-- Manual control over record emission
 
 ---
 
@@ -252,7 +267,7 @@ Records are returned as JavaScript objects with header fields as keys.
 
 ```typescript
 // CSV: name,age\r\nAlice,30\r\n
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 const records = assembler.assemble(tokens);
 
 // First record: { name: 'Alice', age: '30' }
@@ -262,7 +277,7 @@ const records = assembler.assemble(tokens);
 
 ```typescript
 // CSV: Alice,30\r\n
-const assembler = new RecordAssembler({
+const assembler = new CSVRecordAssembler({
   header: ['name', 'age']
 });
 const records = assembler.assemble(tokens);
@@ -274,7 +289,7 @@ const records = assembler.assemble(tokens);
 
 ```typescript
 // CSV: name,age\r\nAlice\r\n
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 const records = assembler.assemble(tokens);
 
 // First record: { name: 'Alice', age: undefined }
@@ -286,7 +301,7 @@ const records = assembler.assemble(tokens);
 
 ```typescript
 // CSV: name,age\r\nAlice,30,Boston\r\n
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 const records = assembler.assemble(tokens);
 
 // First record: { name: 'Alice', age: '30' }
@@ -300,7 +315,7 @@ const records = assembler.assemble(tokens);
 ### ParseError: Empty Header
 
 ```typescript
-const assembler = new RecordAssembler({ header: [] });
+const assembler = new CSVRecordAssembler({ header: [] });
 
 try {
   const records = assembler.assemble(tokens);
@@ -317,8 +332,8 @@ try {
 ### ParseError: Duplicate Header Fields
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 // CSV with duplicate headers
 const tokens = lexer.lex('name,age,name\r\nAlice,30,Bob\r\n');
@@ -338,7 +353,7 @@ try {
 ### RangeError: Field Count Exceeded
 
 ```typescript
-const assembler = new RecordAssembler({ maxFieldCount: 10 });
+const assembler = new CSVRecordAssembler({ maxFieldCount: 10 });
 
 // Generate tokens for 20 fields
 const tokens = generateManyFieldTokens(20);
@@ -359,7 +374,7 @@ try {
 
 ```typescript
 const controller = new AbortController();
-const assembler = new RecordAssembler({ signal: controller.signal });
+const assembler = new CSVRecordAssembler({ signal: controller.signal });
 
 setTimeout(() => controller.abort(), 100);
 
@@ -381,8 +396,8 @@ try {
 ### Pattern 1: Automatic Header Extraction
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 const records = assembler.assemble(tokens);
@@ -400,8 +415,8 @@ for (const record of records) {
 ### Pattern 2: Pre-defined Header
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler({
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler({
   header: ['name', 'age']
 });
 
@@ -421,8 +436,8 @@ for (const record of records) {
 ### Pattern 3: Streaming Assembly
 
 ```typescript
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 const chunks = ['name,age\r\n', 'Alice,30\r\n', 'Bob,25\r\n'];
 
@@ -436,8 +451,8 @@ for (const chunk of chunks) {
 }
 
 // Don't forget to flush!
-const finalTokens = lexer.flush();
-const finalRecords = assembler.assemble(finalTokens, true);
+const finalTokens = lexer.lex();
+const finalRecords = assembler.assemble(finalTokens);
 for (const record of finalRecords) {
   console.log(record);
 }
@@ -450,7 +465,7 @@ for (const record of finalRecords) {
 ### Pattern 4: Type-Safe Headers
 
 ```typescript
-const assembler = new RecordAssembler<['name', 'age']>();
+const assembler = new CSVRecordAssembler<['name', 'age']>();
 
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 const records = assembler.assemble(tokens);
@@ -470,7 +485,7 @@ for (const record of records) {
 
 ```typescript
 const controller = new AbortController();
-const assembler = new RecordAssembler({ signal: controller.signal });
+const assembler = new CSVRecordAssembler({ signal: controller.signal });
 
 // Abort after 5 seconds
 const timeout = setTimeout(() => controller.abort(), 5000);
@@ -516,11 +531,11 @@ try {
 ### Complete Parsing Pipeline
 
 ```typescript
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseCSV(csv: string) {
-  const lexer = new Lexer();
-  const assembler = new RecordAssembler();
+  const lexer = new CSVLexer();
+  const assembler = new CSVRecordAssembler();
 
   const tokens = lexer.lex(csv);
   const records = assembler.assemble(tokens);
@@ -540,8 +555,8 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 
 ## Related APIs
 
-- **[Lexer](./lexer.md)** - Converts CSV text to tokens
-- **[RecordAssemblerTransformer](./record-assembler-transformer.md)** - TransformStream wrapper
+- **[CSVLexer](./csv-lexer.md)** - Converts CSV text to tokens
+- **[CSVRecordAssemblerTransformer](./csv-record-assembler-transformer.md)** - TransformStream wrapper
 - **[Parsing Architecture](../../explanation/parsing-architecture.md)** - Understanding the pipeline
 
 ---
@@ -551,7 +566,7 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 ### Example 1: Data Validation
 
 ```typescript
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -560,8 +575,8 @@ const schema = z.object({
 });
 
 function validateCSV(csv: string) {
-  const lexer = new Lexer();
-  const assembler = new RecordAssembler<['name', 'age']>();
+  const lexer = new CSVLexer();
+  const assembler = new CSVRecordAssembler<['name', 'age']>();
 
   const tokens = lexer.lex(csv);
   const records = assembler.assemble(tokens);
@@ -590,11 +605,11 @@ console.log(result.errors.length); // 1
 ### Example 2: Field Mapping
 
 ```typescript
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 
 function mapFields(csv: string, mapping: Record<string, string>) {
-  const lexer = new Lexer();
-  const assembler = new RecordAssembler();
+  const lexer = new CSVLexer();
+  const assembler = new CSVRecordAssembler();
 
   const tokens = lexer.lex(csv);
   const records = assembler.assemble(tokens);
@@ -622,14 +637,14 @@ console.log(result);
 ### Example 3: Row Filtering
 
 ```typescript
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 
 function filterRecords(
   csv: string,
   predicate: (record: Record<string, string | undefined>) => boolean
 ) {
-  const lexer = new Lexer();
-  const assembler = new RecordAssembler();
+  const lexer = new CSVLexer();
+  const assembler = new CSVRecordAssembler();
 
   const tokens = lexer.lex(csv);
   const records = assembler.assemble(tokens);
@@ -653,7 +668,7 @@ console.log(adults);
 ### ✅ Do
 
 - Use `flush: false` when processing streaming data
-- Always call `flush()` at the end of streaming
+- Always call `lex()` or `assemble()` without arguments at the end of streaming
 - Set appropriate `maxFieldCount` for your use case
 - Use `AbortSignal` for long-running operations
 - Validate data with schema libraries (Zod, Yup, etc.)
@@ -664,13 +679,13 @@ console.log(adults);
 - Don't store all records in memory (defeats streaming purpose)
 - Don't remove `maxFieldCount` limit (DoS vulnerability)
 - Don't ignore errors (silent failures are bad UX)
-- Don't use RecordAssembler directly for production (use high-level APIs)
+- Don't use CSVRecordAssembler directly for production (use high-level APIs)
 
 ---
 
-## When to Use RecordAssembler Directly
+## When to Use CSVRecordAssembler Directly
 
-**✅ Use RecordAssembler when:**
+**✅ Use CSVRecordAssembler when:**
 - Building custom CSV processing tools
 - Implementing custom validation logic
 - Debugging parsing issues
@@ -688,7 +703,7 @@ See: [parse()](../../tutorials/getting-started.md), [parseString()](../../tutori
 
 ## Browser and Runtime Support
 
-RecordAssembler works across all supported runtimes:
+CSVRecordAssembler works across all supported runtimes:
 
 - ✅ Node.js LTS
 - ✅ Deno LTS
@@ -701,7 +716,7 @@ See: [Supported Environments](../supported-environments.md)
 ## TypeScript Types
 
 ```typescript
-import type { CSVRecord, RecordAssemblerOptions } from 'web-csv-toolbox';
+import type { CSVRecord, CSVRecordAssemblerOptions } from 'web-csv-toolbox';
 
 // CSVRecord type (inferred from header)
 type CSVRecord<Header extends ReadonlyArray<string>> = {
@@ -713,7 +728,7 @@ type MyHeader = ['name', 'age'];
 type MyRecord = CSVRecord<MyHeader>;
 // { name: string | undefined; age: string | undefined; }
 
-interface RecordAssemblerOptions<Header> {
+interface CSVRecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
   signal?: AbortSignal;

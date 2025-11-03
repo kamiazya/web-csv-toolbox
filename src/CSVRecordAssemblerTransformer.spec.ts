@@ -1,10 +1,12 @@
 import fc from "fast-check";
-import { describe, expect, it } from "vitest";
-import { RecordAssembler } from "./RecordAssembler.ts";
-import { FC } from "./__tests__/helper.ts";
+import { describe as describe_, expect, it as it_, vi } from "vitest";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
+import { FC, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
-import { LF } from "./constants.ts";
+
+const describe = describe_.concurrent;
+const it = it_.concurrent;
 
 const LOCATION_SHAPE = {
   start: {
@@ -20,30 +22,29 @@ const LOCATION_SHAPE = {
   rowNumber: expect.any(Number),
 };
 
-describe("class RecordAssembler", () => {
-  it("should throw an error for empty headers", () => {
+describe("CSVRecordAssemblerTransformer", () => {
+  it("should throw error if header is empty", () => {
     expect(
-      () => new RecordAssembler({ header: [] }),
+      () => new CSVRecordAssemblerTransformer({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not be empty.]`,
     );
   });
 
-  it("should throw an error for duplicate headers", () => {
+  it("should throw error if header has duplicated fields", () => {
     expect(
-      () => new RecordAssembler({ header: ["a", "a"] }),
+      () => new CSVRecordAssemblerTransformer({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not contain duplicate fields.]`,
     );
   });
 
-  it("should parse a CSV with headers by data", () => {
+  it("should parse a CSV with headers by data", () =>
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -51,14 +52,14 @@ describe("class RecordAssembler", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
+          const tokens: Token[] = [
             // generate header tokens
             ...header.flatMap<Token>((field, i) => [
               { type: Field, value: field, location: LOCATION_SHAPE },
               i === header.length - 1
                 ? {
                     type: RecordDelimiter,
-                    value: EOL,
+                    value: "\n",
                     location: LOCATION_SHAPE,
                   }
                 : {
@@ -68,17 +69,21 @@ describe("class RecordAssembler", () => {
                   },
             ]),
             // generate rows tokens
-            ...rows.flatMap<Token>((row) =>
+            ...rows.flatMap((row) =>
               // generate row tokens
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field, location: LOCATION_SHAPE },
-                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                  location: LOCATION_SHAPE,
+                },
                 // generate record delimiter token
                 ...((j === row.length - 1
                   ? [
                       {
                         type: RecordDelimiter,
-                        value: LF,
+                        value: "\n",
                       },
                     ]
                   : []) as Token[]),
@@ -91,15 +96,15 @@ describe("class RecordAssembler", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const assembler = new RecordAssembler();
-          const actual = [...assembler.assemble(tokens, true)];
+          const actual = await transform(new CSVRecordAssemblerTransformer(), [
+            tokens,
+          ]);
           expect(actual).toEqual(expected);
         },
       ),
-    );
-  });
+    ));
 
-  it("should parse a CSV with headers by option", () => {
+  it("should parse a CSV with headers by option", () =>
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
@@ -110,16 +115,20 @@ describe("class RecordAssembler", () => {
               maxLength: header.length,
             },
           });
-          const tokens: Token[] = [
+          const tokens = [
             ...rows.flatMap<Token>((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field, location: LOCATION_SHAPE },
-                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
+                {
+                  type: FieldDelimiter,
+                  value: ",",
+                  location: LOCATION_SHAPE,
+                },
                 ...((j === row.length - 1
                   ? [
                       {
                         type: RecordDelimiter,
-                        value: LF,
+                        value: "\n",
                       },
                     ]
                   : []) as Token[]),
@@ -132,11 +141,50 @@ describe("class RecordAssembler", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const assembler = new RecordAssembler({ header });
-          const actual = [...assembler.assemble(tokens, true)];
+          const parser = new CSVRecordAssemblerTransformer({
+            header,
+          });
+          const actual = await transform(parser, [tokens]);
           expect(actual).toEqual(expected);
         },
       ),
+    ));
+
+  it("should throw an error if throws error on assemble", async () => {
+    const transformer = new CSVRecordAssemblerTransformer();
+    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
+      throw new Error("test");
+    });
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
+    );
+  });
+
+  it("should throw an error if throws error on flush", async () => {
+    const transformer = new CSVRecordAssemblerTransformer();
+    // Mock the assemble method to throw error during flush (when called without tokens)
+    const originalAssemble = transformer.assembler.assemble.bind(
+      transformer.assembler,
+    );
+    vi.spyOn(transformer.assembler, "assemble").mockImplementation(
+      function* (tokens, options) {
+        // If tokens are provided, use original implementation
+        if (tokens !== undefined) {
+          yield* originalAssemble(tokens, options);
+        } else {
+          // If no tokens (flush phase), throw error
+          throw new Error("test");
+        }
+      },
+    );
+    expect(async () => {
+      await transform(transformer, [[]]);
+    }).rejects.toThrowErrorMatchingInlineSnapshot(
+      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
+      `[Error: test]`,
     );
   });
 });

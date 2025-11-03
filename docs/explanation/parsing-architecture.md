@@ -7,7 +7,7 @@ This document explains the internal architecture of web-csv-toolbox's CSV parsin
 web-csv-toolbox uses a **two-stage pipeline architecture** for CSV parsing:
 
 ```
-CSV String → Lexer → Tokens → RecordAssembler → Records
+CSV String → CSVLexer → Tokens → CSVRecordAssembler → Records
 ```
 
 This separation of concerns provides:
@@ -18,17 +18,17 @@ This separation of concerns provides:
 
 ## The Two-Stage Pipeline
 
-### Stage 1: Lexical Analysis (Lexer)
+### Stage 1: Lexical Analysis (CSVLexer)
 
-The **Lexer** converts raw CSV text into a stream of **tokens**.
+The **CSVLexer** converts raw CSV text into a stream of **tokens**.
 
 **Input:** Raw CSV string chunks
 **Output:** Stream of tokens (Field, FieldDelimiter, RecordDelimiter)
 
 ```typescript
-import { Lexer } from 'web-csv-toolbox';
+import { CSVLexer } from 'web-csv-toolbox';
 
-const lexer = new Lexer({ delimiter: ',', quotation: '"' });
+const lexer = new CSVLexer({ delimiter: ',', quotation: '"' });
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 
 for (const token of tokens) {
@@ -50,17 +50,17 @@ for (const token of tokens) {
 - Enables syntax highlighting and validation tools
 - Separates parsing logic from semantic interpretation
 
-### Stage 2: Record Assembly (RecordAssembler)
+### Stage 2: Record Assembly (CSVRecordAssembler)
 
-The **RecordAssembler** converts tokens into structured CSV records (objects).
+The **CSVRecordAssembler** converts tokens into structured CSV records (objects).
 
 **Input:** Stream of tokens
 **Output:** Stream of CSV records (JavaScript objects)
 
 ```typescript
-import { RecordAssembler } from 'web-csv-toolbox';
+import { CSVRecordAssembler } from 'web-csv-toolbox';
 
-const assembler = new RecordAssembler<['name', 'age']>();
+const assembler = new CSVRecordAssembler<['name', 'age']>();
 const records = assembler.assemble(tokens);
 
 for (const record of records) {
@@ -80,7 +80,7 @@ for (const record of records) {
 Both stages support **streaming** through TransformStream implementations:
 
 ```typescript
-import { LexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -92,8 +92,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new LexerTransformer())
-  .pipeThrough(new RecordAssemblerTransformer())
+  .pipeThrough(new CSVLexerTransformer())
+  .pipeThrough(new CSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -109,7 +109,7 @@ csvStream
 
 ## Token Types
 
-The Lexer produces three types of tokens:
+The CSVLexer produces three types of tokens:
 
 ### Field Token
 
@@ -161,12 +161,12 @@ Represents a record separator (typically `\r\n` or `\n`).
 
 ## Buffering and Flushing
 
-Both Lexer and RecordAssembler use **buffering** to handle partial data:
+Both CSVLexer and CSVRecordAssembler use **buffering** to handle partial data:
 
-### Lexer Buffering
+### CSVLexer Buffering
 
 ```typescript
-const lexer = new Lexer();
+const lexer = new CSVLexer();
 
 // First chunk - incomplete quoted field
 const tokens1 = [...lexer.lex('"Hello', true)]; // buffering=true
@@ -180,10 +180,10 @@ console.log(tokens2); // [{ type: 'Field', value: 'Hello World' }]
 const tokens3 = lexer.flush();
 ```
 
-### RecordAssembler Buffering
+### CSVRecordAssembler Buffering
 
 ```typescript
-const assembler = new RecordAssembler();
+const assembler = new CSVRecordAssembler();
 
 // Partial record
 const records1 = [...assembler.assemble(tokens, false)]; // flush=false
@@ -203,7 +203,7 @@ console.log(records2); // [{ name: 'Alice', age: '30' }]
 
 Each stage provides detailed error information:
 
-### Lexer Errors
+### CSVLexer Errors
 
 ```typescript
 try {
@@ -217,11 +217,11 @@ try {
 }
 ```
 
-### RecordAssembler Errors
+### CSVRecordAssembler Errors
 
 ```typescript
 try {
-  const assembler = new RecordAssembler();
+  const assembler = new CSVRecordAssembler();
   // Duplicate headers
   const tokens = [
     { type: 'Field', value: 'name' },
@@ -239,10 +239,10 @@ try {
 
 Both stages enforce configurable resource limits to prevent DoS attacks:
 
-### Lexer Limits
+### CSVLexer Limits
 
 ```typescript
-const lexer = new Lexer({
+const lexer = new CSVLexer({
   maxBufferSize: 10 * 1024 * 1024 // 10MB (default)
 });
 
@@ -253,10 +253,10 @@ const lexer = new Lexer({
 - Extremely long fields (e.g., 100MB single field)
 - Unclosed quoted fields that consume memory
 
-### RecordAssembler Limits
+### CSVRecordAssembler Limits
 
 ```typescript
-const assembler = new RecordAssembler({
+const assembler = new CSVRecordAssembler({
   maxFieldCount: 100_000 // Default
 });
 
@@ -280,10 +280,10 @@ for await (const record of parse(csv)) {
 }
 
 // Equivalent low-level implementation
-import { Lexer, RecordAssembler } from 'web-csv-toolbox';
+import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
 
-const lexer = new Lexer();
-const assembler = new RecordAssembler();
+const lexer = new CSVLexer();
+const assembler = new CSVRecordAssembler();
 
 const tokens = lexer.lex(csv);
 for (const record of assembler.assemble(tokens)) {
@@ -319,17 +319,17 @@ for (const record of assembler.assemble(tokens)) {
 
 | Component | Memory | Notes |
 |-----------|--------|-------|
-| Lexer | O(1) | Constant buffer size (configurable) |
-| RecordAssembler | O(1) | Only stores current record |
-| LexerTransformer | O(1) | Stream-based, no accumulation |
-| RecordAssemblerTransformer | O(1) | Stream-based, no accumulation |
+| CSVLexer | O(1) | Constant buffer size (configurable) |
+| CSVRecordAssembler | O(1) | Only stores current record |
+| CSVLexerTransformer | O(1) | Stream-based, no accumulation |
+| CSVRecordAssemblerTransformer | O(1) | Stream-based, no accumulation |
 
 ### Processing Speed
 
 <!-- TODO: Add actual benchmarks -->
 
-- **Lexer**: Fastest stage (simple state machine)
-- **RecordAssembler**: Minimal overhead (object creation)
+- **CSVLexer**: Fastest stage (simple state machine)
+- **CSVRecordAssembler**: Minimal overhead (object creation)
 - **TransformStream overhead**: Negligible for medium+ files
 
 **Note:** Actual performance depends on CSV complexity, field count, and escaping frequency.
@@ -339,7 +339,7 @@ for (const record of assembler.assemble(tokens)) {
 ### web-csv-toolbox Architecture
 
 ```
-Input → Lexer → Tokens → Assembler → Records
+Input → CSVLexer → Tokens → Assembler → Records
 ```
 
 **Benefits:**
@@ -362,8 +362,8 @@ Input → Parser (combined) → Records
 
 ## Related Documentation
 
-- **[Lexer API Reference](../reference/api/lexer.md)**: Detailed API documentation
-- **[RecordAssembler API Reference](../reference/api/record-assembler.md)**: Detailed API documentation
+- **[CSVLexer API Reference](../reference/api/lexer.md)**: Detailed API documentation
+- **[CSVRecordAssembler API Reference](../reference/api/record-assembler.md)**: Detailed API documentation
 - **[Custom CSV Parser How-To](../how-to-guides/custom-csv-parser.md)**: Practical examples
 - **[Execution Strategies](./execution-strategies.md)**: Worker and WASM execution
 
