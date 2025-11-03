@@ -251,7 +251,7 @@ export interface BinaryOptions {
    * Allow experimental or non-standard compression formats not explicitly supported by this library.
    *
    * @remarks
-   * When `true`, compression formats from Content-Encoding headers that are not in the
+   * When `true`, compression formats that are not in the
    * default supported list will be passed to the runtime's DecompressionStream without
    * validation. This allows using compression formats that may not be universally supported
    * across all browsers.
