@@ -122,13 +122,21 @@ export interface ReusableWorkerPoolOptions {
  * }
  * ```
  */
+interface WorkerEntry {
+  worker: Worker;
+  url: string;
+}
+
 export class ReusableWorkerPool implements WorkerPool, Disposable {
-  private workers: Worker[] = [];
+  private workers: WorkerEntry[] = [];
   private requestId = 0;
   private currentWorkerIndex = 0;
   private readonly maxWorkers: number;
   private readonly customWorkerURL?: string | URL;
-  private pendingWorkerCreations: Map<number, Promise<Worker>> = new Map();
+  private pendingWorkerCreations: Map<string, Promise<Worker>> = new Map();
+  private pendingCreationsByURL: Map<string, Set<string>> = new Map();
+  private disposed = false;
+  private nextPendingId = 0;
 
   /**
    * Create a new ReusableWorkerPool.
@@ -152,51 +160,121 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
    * @internal
    */
   async getWorker(workerURL?: string | URL): Promise<Worker> {
+    if (this.disposed) {
+      throw new Error("Worker pool has been disposed");
+    }
+
     const effectiveURL = workerURL ?? this.customWorkerURL;
+    const urlKey = effectiveURL ? String(effectiveURL) : "default";
+
+    // Find workers that match the requested URL
+    const matchingWorkers = this.workers.filter(
+      (entry) => entry.url === urlKey,
+    );
 
     // Calculate total workers including pending creations
     const totalWorkers = this.workers.length + this.pendingWorkerCreations.size;
 
     // If pool is not yet full, create a new worker
     if (totalWorkers < this.maxWorkers) {
-      // Use the next worker index as the key for pending creation
-      const workerIndex =
-        this.workers.length + this.pendingWorkerCreations.size;
-
-      // Check if this worker is already being created
-      const existingCreation = this.pendingWorkerCreations.get(workerIndex);
-      if (existingCreation) {
-        return existingCreation;
-      }
+      // Generate unique key for this pending creation
+      const pendingId = `${urlKey}-${this.nextPendingId++}`;
 
       // Create a new worker and cache the promise
       const workerPromise = createWorker(effectiveURL)
         .then((worker) => {
-          this.workers.push(worker);
-          this.pendingWorkerCreations.delete(workerIndex);
+          if (this.disposed) {
+            // If disposed during creation, terminate the new worker immediately
+            worker.terminate();
+            throw new Error("Worker pool was disposed during worker creation");
+          }
+          this.workers.push({ worker, url: urlKey });
+          this.pendingWorkerCreations.delete(pendingId);
+          // Remove from URL-based tracking
+          const urlPendings = this.pendingCreationsByURL.get(urlKey);
+          if (urlPendings) {
+            urlPendings.delete(pendingId);
+            if (urlPendings.size === 0) {
+              this.pendingCreationsByURL.delete(urlKey);
+            }
+          }
           return worker;
         })
         .catch((error) => {
           // Clean up on error
-          this.pendingWorkerCreations.delete(workerIndex);
+          this.pendingWorkerCreations.delete(pendingId);
+          const urlPendings = this.pendingCreationsByURL.get(urlKey);
+          if (urlPendings) {
+            urlPendings.delete(pendingId);
+            if (urlPendings.size === 0) {
+              this.pendingCreationsByURL.delete(urlKey);
+            }
+          }
           throw error;
         });
 
-      this.pendingWorkerCreations.set(workerIndex, workerPromise);
+      this.pendingWorkerCreations.set(pendingId, workerPromise);
+      // Track by URL for future matching
+      if (!this.pendingCreationsByURL.has(urlKey)) {
+        this.pendingCreationsByURL.set(urlKey, new Set());
+      }
+      this.pendingCreationsByURL.get(urlKey)!.add(pendingId);
+
       return workerPromise;
     }
 
-    // Wait for any pending worker creations to complete
-    if (this.pendingWorkerCreations.size > 0) {
-      const pendingWorker = Array.from(this.pendingWorkerCreations.values())[0];
-      await pendingWorker;
+    // If pool is full and no matching workers exist, check for pending workers with this URL
+    if (matchingWorkers.length === 0) {
+      const urlPendings = this.pendingCreationsByURL.get(urlKey);
+      if (urlPendings && urlPendings.size > 0) {
+        // Wait for one of the pending workers with this URL
+        const pendingId = Array.from(urlPendings)[0];
+        const pendingWorker = this.pendingWorkerCreations.get(pendingId);
+        if (pendingWorker) {
+          return pendingWorker;
+        }
+      }
+
+      throw new Error(
+        `Worker pool is at maximum capacity (${this.maxWorkers}) and no worker with URL "${urlKey}" is available`,
+      );
     }
 
-    // Use round-robin to select a worker
-    const worker = this.workers[this.currentWorkerIndex];
-    this.currentWorkerIndex =
-      (this.currentWorkerIndex + 1) % this.workers.length;
-    return worker;
+    // Wait for any pending worker creations with this URL to complete
+    const urlPendings = this.pendingCreationsByURL.get(urlKey);
+    if (urlPendings && urlPendings.size > 0) {
+      const pendingId = Array.from(urlPendings)[0];
+      const pendingWorker = this.pendingWorkerCreations.get(pendingId);
+      if (pendingWorker) {
+        await pendingWorker;
+        // Re-fetch matching workers as the pending creation may have completed
+        const updatedMatchingWorkers = this.workers.filter(
+          (entry) => entry.url === urlKey,
+        );
+        if (updatedMatchingWorkers.length === 0) {
+          throw new Error(
+            `Worker pool was disposed or worker creation failed for URL "${urlKey}"`,
+          );
+        }
+      }
+    }
+
+    // Use round-robin among matching workers
+    const matchingIndices = this.workers
+      .map((entry, index) => (entry.url === urlKey ? index : -1))
+      .filter((index) => index !== -1);
+
+    // Find next matching worker in round-robin order
+    let selectedIndex = matchingIndices[0];
+    for (const index of matchingIndices) {
+      if (index >= this.currentWorkerIndex) {
+        selectedIndex = index;
+        break;
+      }
+    }
+
+    this.currentWorkerIndex = (selectedIndex + 1) % this.workers.length;
+    return this.workers[selectedIndex].worker;
   }
 
   /**
@@ -288,12 +366,19 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
    * ```
    */
   terminate(): void {
-    for (const worker of this.workers) {
-      worker.terminate();
+    this.disposed = true;
+
+    // Terminate all existing workers
+    for (const entry of this.workers) {
+      entry.worker.terminate();
     }
     this.workers = [];
     this.currentWorkerIndex = 0;
+
+    // Reject and clear all pending worker creations
+    // Note: The pending promises will handle cleanup via their catch blocks
     this.pendingWorkerCreations.clear();
+    this.pendingCreationsByURL.clear();
   }
 
   /**
