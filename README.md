@@ -302,13 +302,13 @@ try {
 
 ### Works on Browser
 
-| OS      | Chrome | FireFox | Default       |
+| OS      | Chrome | Firefox | Default       |
 | ------- | ------ | ------- | ------------- |
 | Windows | ✅     | ✅      | ✅ (Edge)     |
-| macos   | ✅     | ✅      | ⬜ (Safari *) |
+| macOS   | ✅     | ✅      | ⬜ (Safari *) |
 | Linux   | ✅     | ✅      | -             |
 
-> **\* To Be Tested**:  [I couldn't launch Safari in headless mode](https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41) on GitHub Actions, so I couldn't verify it, but it probably works.
+> **\* Safari**: Basic functionality is expected to work, but it is not yet automatically tested in our CI environment.
 
 ### Others
 
@@ -750,7 +750,7 @@ try {
 
 ## Star ⭐
 
-The easiest way to contribute is to use the library and star [repository](https://github.com/kamiazya/web-csv-toolbox/).
+The easiest way to contribute is to use the library and star the [repository](https://github.com/kamiazya/web-csv-toolbox/).
 
 ### Questions 💭
 
@@ -758,7 +758,7 @@ Feel free to ask questions on [GitHub Discussions](https://github.com/kamiazya/w
 
 ### Report bugs / request additional features 💡
 
-Please register at [GitHub Issues](https://github.com/kamiazya/web-csv-toolbox/issues/new/choose).
+Please create an issue at [GitHub Issues](https://github.com/kamiazya/web-csv-toolbox/issues/new/choose).
 
 ### Financial Support 💸
 
@@ -768,7 +768,7 @@ Please support [kamiazya](https://github.com/sponsors/kamiazya).
 
 ## License ⚖️
 
-This software is released under the MIT License, see [LICENSE](https://github.com/kamiazya/web-csv-toolbox?tab=MIT-1-ov-file).
+This software is released under the MIT License, see [LICENSE](https://github.com/kamiazya/web-csv-toolbox/blob/main/LICENSE).
 
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox?ref=badge_large)

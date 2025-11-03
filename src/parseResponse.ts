@@ -41,15 +41,25 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   response: Response,
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  try {
-    const options_ = getOptionsFromResponse(response, options);
-    if (response.body === null) {
-      throw new TypeError("Response body is null");
-    }
-    return parseUint8ArrayStream(response.body, options_);
-  } catch (error) {
-    commonParseErrorHandling(error);
+  // Validate synchronously before creating async generator
+  const options_ = getOptionsFromResponse(response, options);
+  if (response.body === null) {
+    throw new TypeError("Response body is null");
   }
+
+  // Return wrapper async generator for error handling
+  return (async function* () {
+    try {
+      const result = parseUint8ArrayStream(response.body!, options_);
+      if (result instanceof Promise) {
+        yield* await result;
+      } else {
+        yield* result;
+      }
+    } catch (error) {
+      commonParseErrorHandling(error);
+    }
+  })();
 }
 
 export declare namespace parseResponse {
@@ -102,7 +112,7 @@ export declare namespace parseResponse {
   export function toStream<Header extends ReadonlyArray<string>>(
     response: Response,
     options?: ParseOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>[]>;
+  ): ReadableStream<CSVRecord<Header>>;
 }
 
 Object.defineProperties(parseResponse, {

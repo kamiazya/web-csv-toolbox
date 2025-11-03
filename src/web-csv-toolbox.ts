@@ -13,3 +13,7 @@ export * from "./parseStringToArraySyncWASM.ts";
 export * from "./parseUint8ArrayStream.ts";
 export * from "./CSVRecordAssembler.ts";
 export * from "./CSVRecordAssemblerTransformer.ts";
+export type { WorkerPool } from "./execution/worker/helpers/WorkerPool.ts";
+export { ReusableWorkerPool } from "./execution/worker/helpers/ReusableWorkerPool.ts";
+export * from "./execution/worker/helpers/WorkerSession.ts";
+export * from "./execution/EnginePresets.ts";

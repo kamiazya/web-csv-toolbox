@@ -1,17 +1,7 @@
+import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
 import type { ParseBinaryOptions } from "./common/types.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseMime } from "./utils/parseMime.ts";
-
-/**
- * Supported compression formats for CSV decompression.
- * These correspond to the Web Standard CompressionFormat values.
- *
- * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/CompressionFormat | CompressionFormat}
- */
-const SUPPORTED_COMPRESSIONS: ReadonlySet<CompressionFormat> = new Set([
-  "gzip",
-  "deflate",
-  "deflate-raw",
-]);
 
 /**
  * Extracts the options from the response object.
@@ -21,10 +11,18 @@ const SUPPORTED_COMPRESSIONS: ReadonlySet<CompressionFormat> = new Set([
  * @returns The options extracted from the response.
  * @throws {TypeError} - The content type is not supported or the content-encoding is invalid.
  */
-export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
+export function getOptionsFromResponse<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   response: Response,
-  options: ParseBinaryOptions<Header> = {},
-): ParseBinaryOptions<Header> {
+  options: ParseBinaryOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+): ParseBinaryOptions<Header, Delimiter, Quotation> {
   const { headers } = response;
   const contentType = headers.get("content-type") ?? "text/csv";
   const mime = parseMime(contentType);
@@ -33,7 +31,7 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   }
 
   const contentEncoding = headers.get("content-encoding");
-  let decomposition: CompressionFormat | undefined;
+  let decompression: CompressionFormat | undefined;
 
   if (contentEncoding) {
     const normalizedEncoding = contentEncoding.trim().toLowerCase();
@@ -45,12 +43,12 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
     }
 
     if (SUPPORTED_COMPRESSIONS.has(normalizedEncoding as CompressionFormat)) {
-      decomposition = normalizedEncoding as CompressionFormat;
+      decompression = normalizedEncoding as CompressionFormat;
     } else if (normalizedEncoding) {
       // Unknown compression format
       if (options.allowExperimentalCompressions) {
         // Allow runtime to handle experimental/future formats
-        decomposition = normalizedEncoding as CompressionFormat;
+        decompression = normalizedEncoding as CompressionFormat;
       } else {
         throw new TypeError(
           `Unsupported content-encoding: "${contentEncoding}". Supported formats: ${Array.from(SUPPORTED_COMPRESSIONS).join(", ")}. To use experimental formats, set allowExperimentalCompressions: true`,
@@ -63,7 +61,7 @@ export function getOptionsFromResponse<Header extends ReadonlyArray<string>>(
   // TODO: Support header=present and header=absent
   // const header = mime.parameters.header ?? "present";
   return {
-    decomposition,
+    decompression,
     charset,
     ...options,
   };

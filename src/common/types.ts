@@ -196,7 +196,7 @@ export interface BinaryOptions {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility | DecompressionStream Compatibility}.
    */
-  decomposition?: CompressionFormat;
+  decompression?: CompressionFormat;
   /**
    * You can specify the character encoding of the binary.
    *
@@ -248,15 +248,34 @@ export interface BinaryOptions {
    */
   fatal?: boolean;
   /**
-   * Allow experimental or future compression formats not explicitly supported by this library.
+   * Allow experimental or non-standard compression formats not explicitly supported by this library.
    *
    * @remarks
-   * When `true`, unknown compression formats from Content-Encoding headers will be passed
-   * to the runtime's DecompressionStream without validation. This allows using newer
-   * compression formats (like Brotli) if your runtime supports them, even before this
-   * library is updated to explicitly support them.
+   * When `true`, compression formats from Content-Encoding headers that are not in the
+   * default supported list will be passed to the runtime's DecompressionStream without
+   * validation. This allows using compression formats that may not be universally supported
+   * across all browsers.
    *
-   * When `false` (default), only known formats are allowed: gzip, deflate, deflate-raw.
+   * ### Default Supported Formats (cross-browser compatible)
+   *
+   * When `false` (default), only universally supported formats are allowed:
+   * - **Node.js**: `gzip`, `deflate`, `br` (Brotli)
+   * - **Browsers**: `gzip`, `deflate`
+   *
+   * ### Experimental Formats (require this flag)
+   *
+   * Some compression formats are only supported in specific environments:
+   * - **`deflate-raw`**: Supported in Chromium-based browsers (Chrome, Edge) but may not work
+   *   in Firefox or Safari
+   * - **`br` (Brotli)**: Future browser support may vary
+   * - Other formats: Depends on runtime implementation
+   *
+   * ### Browser Compatibility Notes
+   *
+   * If you enable this option and use `deflate-raw`:
+   * - ✅ Works in Chrome, Edge (Chromium-based)
+   * - ❌ May fail in Firefox, Safari
+   * - Consider implementing fallback logic or detecting browser support at runtime
    *
    * **Use with caution**: Enabling this bypasses library validation and relies entirely
    * on runtime error handling. If the runtime doesn't support the format, you'll get
@@ -266,14 +285,21 @@ export interface BinaryOptions {
    *
    * @example
    * ```ts
-   * // Safe mode (default): Only known formats
+   * // Safe mode (default): Only universally supported formats
    * const response = await fetch('data.csv.gz');
-   * await parse(response); // ✓ Works
+   * await parse(response); // ✓ Works in all browsers
    *
-   * // Experimental mode: Allow future formats
-   * const response = await fetch('data.csv.br'); // Brotli
+   * // Experimental mode: Allow deflate-raw (Chromium-only)
+   * const response = await fetch('data.csv'); // Content-Encoding: deflate-raw
    * await parse(response, { allowExperimentalCompressions: true });
-   * // Works if runtime supports Brotli, otherwise throws runtime error
+   * // ✓ Works in Chrome/Edge
+   * // ✗ May fail in Firefox/Safari
+   *
+   * // Browser-aware usage
+   * const isChromium = navigator.userAgent.includes('Chrome');
+   * await parse(response, {
+   *   allowExperimentalCompressions: isChromium
+   * });
    * ```
    */
   allowExperimentalCompressions?: boolean;
@@ -339,6 +365,292 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
 }
 
 /**
+ * Worker communication strategy.
+ *
+ * Defines how data is communicated between the main thread and worker threads.
+ *
+ * @category Types
+ */
+export type WorkerCommunicationStrategy =
+  | "message-streaming"
+  | "stream-transfer";
+
+/**
+ * Engine fallback information.
+ *
+ * Provided when the requested engine configuration fails and falls back to a safer configuration.
+ *
+ * @category Types
+ */
+export interface EngineFallbackInfo {
+  /**
+   * Original requested configuration.
+   */
+  requestedConfig: EngineConfig;
+
+  /**
+   * Actual configuration after fallback.
+   */
+  actualConfig: EngineConfig;
+
+  /**
+   * Reason for fallback.
+   */
+  reason: string;
+
+  /**
+   * Original error if any.
+   */
+  error?: Error;
+}
+
+/**
+ * Engine configuration for CSV parsing.
+ *
+ * All parsing engine settings are unified in this interface.
+ *
+ * @category Types
+ */
+export interface EngineConfig {
+  /**
+   * Execute in Worker thread.
+   *
+   * @default false
+   *
+   * @example Worker execution
+   * ```ts
+   * parse(csv, { engine: { worker: true } })
+   * ```
+   */
+  worker?: boolean;
+
+  /**
+   * Custom Worker URL.
+   * Only applicable when `worker: true`.
+   *
+   * If not provided, uses the bundled worker.
+   *
+   * @remarks
+   * The custom worker must implement the same message protocol as the bundled worker.
+   *
+   * @example Custom worker
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerURL: new URL('./custom-worker.js', import.meta.url)
+   *   }
+   * })
+   * ```
+   */
+  workerURL?: string | URL;
+
+  /**
+   * Worker pool for managing worker lifecycle.
+   * Only applicable when `worker: true`.
+   *
+   * When provided, the parsing function will use this pool's worker instance
+   * instead of creating/reusing a module-level singleton worker.
+   *
+   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup.
+   *
+   * @example Using ReusableWorkerPool with automatic cleanup
+   * ```ts
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * async function processCSV(csv: string) {
+   *   using pool = new ReusableWorkerPool();
+   *
+   *   const records = [];
+   *   for await (const record of parseString(csv, {
+   *     engine: { worker: true, workerPool: pool }
+   *   })) {
+   *     records.push(record);
+   *   }
+   *
+   *   return records;
+   *   // Worker is automatically terminated when leaving this scope
+   * }
+   * ```
+   *
+   * @example Multiple operations with same pool
+   * ```ts
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * using pool = new ReusableWorkerPool();
+   *
+   * await parseString(csv1, { engine: { worker: true, workerPool: pool } });
+   * await parseString(csv2, { engine: { worker: true, workerPool: pool } });
+   * // Worker is reused for both operations
+   * ```
+   */
+  workerPool?: import("../execution/worker/helpers/WorkerPool.ts").WorkerPool;
+
+  /**
+   * Use WASM implementation.
+   *
+   * Requires prior initialization with {@link loadWASM}.
+   *
+   * @default false
+   *
+   * @example Main thread + WASM
+   * ```ts
+   * import { loadWASM, parse } from 'web-csv-toolbox';
+   *
+   * await loadWASM();
+   * parse(csv, { engine: { wasm: true } })
+   * ```
+   *
+   * @example Worker + WASM
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { engine: { worker: true, wasm: true } })
+   * ```
+   */
+  wasm?: boolean;
+
+  /**
+   * Worker communication strategy.
+   * Only applicable when `worker: true`.
+   *
+   * - `"message-streaming"` (default): Message-based streaming
+   *   - ✅ All browsers including Safari
+   *   - ✅ Stable and reliable
+   *   - Records are sent one-by-one via postMessage
+   *
+   * - `"stream-transfer"`: TransferableStreams
+   *   - ✅ Chrome 87+, Firefox 103+, Edge 87+
+   *   - ❌ Safari (not supported, will fallback unless strict mode)
+   *   - ⚡ Zero-copy transfer, more efficient
+   *   - Uses ReadableStream transfer
+   *
+   * @default "message-streaming"
+   *
+   * @see https://caniuse.com/mdn-api_readablestream_transferable
+   *
+   * @example Message streaming (default, safe)
+   * ```ts
+   * parse(csv, { engine: { worker: true } })
+   * // or explicitly
+   * parse(csv, { engine: { worker: true, workerStrategy: "message-streaming" } })
+   * ```
+   *
+   * @example Stream transfer (Chrome/Firefox/Edge, auto-fallback on Safari)
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer",
+   *     onFallback: (info) => {
+   *       console.warn(`Fallback to message-streaming: ${info.reason}`);
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  workerStrategy?: WorkerCommunicationStrategy;
+
+  /**
+   * Strict mode: disable automatic fallback.
+   * Only applicable when `workerStrategy: "stream-transfer"`.
+   *
+   * When enabled:
+   * - Throws error immediately if stream transfer fails
+   * - Does not fallback to message-streaming
+   * - `onFallback` is never called
+   *
+   * When disabled (default):
+   * - Automatically falls back to message-streaming on failure
+   * - Calls `onFallback` if provided
+   *
+   * @default false
+   *
+   * @example Strict mode (Chrome/Firefox/Edge only)
+   * ```ts
+   * try {
+   *   parse(csv, {
+   *     engine: {
+   *       worker: true,
+   *       workerStrategy: "stream-transfer",
+   *       strict: true
+   *     }
+   *   })
+   * } catch (error) {
+   *   // Safari will throw error here
+   *   console.error('Stream transfer not supported:', error);
+   * }
+   * ```
+   */
+  strict?: boolean;
+
+  /**
+   * Callback when engine configuration fallback occurs.
+   *
+   * Called when the requested configuration fails and falls back to a safer configuration.
+   * Not called if `strict: true` (throws error instead).
+   *
+   * Common fallback scenario:
+   * - `workerStrategy: "stream-transfer"` → `"message-streaming"` (Safari)
+   *
+   * @example Track fallback in analytics
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer",
+   *     onFallback: (info) => {
+   *       console.warn(`Fallback occurred: ${info.reason}`);
+   *       analytics.track('engine-fallback', {
+   *         reason: info.reason,
+   *         userAgent: navigator.userAgent
+   *       });
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  onFallback?: (info: EngineFallbackInfo) => void;
+}
+
+/**
+ * Engine configuration options.
+ *
+ * @category Types
+ */
+export interface EngineOptions {
+  /**
+   * Engine configuration for CSV parsing.
+   *
+   * @example Default (main thread)
+   * ```ts
+   * parse(csv)
+   * ```
+   *
+   * @example Worker
+   * ```ts
+   * parse(csv, { engine: { worker: true } })
+   * ```
+   *
+   * @example Worker + WASM
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { engine: { worker: true, wasm: true } })
+   * ```
+   *
+   * @example Worker + Stream transfer
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerStrategy: "stream-transfer"
+   *   }
+   * })
+   * ```
+   */
+  engine?: EngineConfig;
+}
+
+/**
  * Parse options for CSV string.
  * @category Types
  */
@@ -348,14 +660,18 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     CSVRecordAssemblerOptions<Header>,
+    EngineOptions,
     AbortSignalOptions {}
 
 /**
  * Parse options for CSV binary.
  * @category Types
  */
-export interface ParseBinaryOptions<Header extends ReadonlyArray<string>>
-  extends ParseOptions<Header>,
+export interface ParseBinaryOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends ParseOptions<Header, Delimiter, Quotation>,
     BinaryOptions {}
 
 /**

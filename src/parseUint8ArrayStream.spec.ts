@@ -133,7 +133,7 @@ describe("parseUint8ArrayStream function", () => {
         async ({ data, csv, decompression }) => {
           let i = 0;
           for await (const row of parseUint8ArrayStream(csv, {
-            decomposition: decompression,
+            decompression: decompression,
           })) {
             expect(data[i++]).toStrictEqual(row);
           }

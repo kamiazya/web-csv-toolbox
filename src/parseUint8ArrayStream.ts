@@ -1,5 +1,12 @@
-import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import { parseStringStream } from "./parseStringStream.ts";
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "./common/types.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
+import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
+import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 import { convertStreamToAsyncIterableIterator } from "./utils/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -33,17 +40,52 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  *   },
  * });
  *
- * for await (const record of parseUint8ArrayStream(csv)) {
+ * for await (const record of parseUint8ArrayStream(stream)) {
  *   console.log(record);
  * }
  * ```
  */
-export function parseUint8ArrayStream<Header extends ReadonlyArray<string>>(
+export async function* parseUint8ArrayStream<
+  Header extends ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = '"',
+>(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header>,
+  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const recordStream = parseUint8ArrayStreamToStream(stream, options);
-  return convertStreamToAsyncIterableIterator(recordStream);
+  // Parse engine configuration
+  const engineConfig = new InternalEngineConfig(options?.engine);
+
+  // Note: Worker execution with ReadableStream requires TransferableStream support
+  // which is not available in Safari. For now, always use main thread execution.
+  // TODO: Implement stream-transfer strategy for browsers that support it
+  if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
+    // Worker execution with stream-transfer strategy
+    const session = engineConfig.workerPool
+      ? await WorkerSession.create({
+          workerPool: engineConfig.workerPool,
+          workerURL: engineConfig.workerURL,
+        })
+      : null;
+
+    try {
+      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+        stream,
+        options as
+          | ParseOptions<Header>
+          | ParseBinaryOptions<Header>
+          | undefined,
+        session,
+        engineConfig,
+      );
+    } finally {
+      session?.[Symbol.dispose]();
+    }
+  } else {
+    // Main thread execution (default for streams)
+    const recordStream = parseUint8ArrayStreamToStream(stream, options);
+    yield* convertStreamToAsyncIterableIterator(recordStream);
+  }
 }
 
 export declare namespace parseUint8ArrayStream {
@@ -108,7 +150,7 @@ export declare namespace parseUint8ArrayStream {
   export function toStream<Header extends ReadonlyArray<string>>(
     stream: ReadableStream<Uint8Array>,
     options?: ParseBinaryOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>[]>;
+  ): ReadableStream<CSVRecord<Header>>;
 }
 Object.defineProperties(parseUint8ArrayStream, {
   toArray: {

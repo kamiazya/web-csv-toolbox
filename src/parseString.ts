@@ -1,7 +1,11 @@
 import type { CSVRecord, ParseOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
+import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";
+import { executeWithWorkerStrategy } from "./execution/worker/strategies/WorkerStrategySelector.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
+import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -23,6 +27,25 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * - **Suitable for**: Files of any size
  * - **Recommended for**: Large CSV strings (> 10MB) or memory-constrained environments
  *
+ * **Execution Strategies:**
+ * Control how parsing is executed using the `engine` option:
+ * - **Main thread** (default): `engine: { worker: false }` - No overhead, good for small files
+ * - **Worker thread**: `engine: { worker: true }` - Offloads parsing, good for large files
+ * - **WebAssembly**: `engine: { wasm: true }` - Fast parsing, limited to UTF-8 and double-quotes
+ * - **Combined**: `engine: { worker: true, wasm: true }` - Worker + WASM for maximum performance
+ *
+ * Use {@link EnginePresets} for convenient configurations:
+ * ```ts
+ * import { parseString, EnginePresets } from 'web-csv-toolbox';
+ *
+ * // Use fastest available execution method
+ * for await (const record of parseString(csv, {
+ *   engine: EnginePresets.fastest()
+ * })) {
+ *   console.log(record);
+ * }
+ * ```
+ *
  * @example Parsing CSV files from strings
  *
  * ```ts
@@ -38,6 +61,18 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * // Prints:
  * // { name: 'Alice', age: '42' }
  * // { name: 'Bob', age: '69' }
+ * ```
+ *
+ * @example Using worker execution for better performance
+ * ```ts
+ * import { parseString } from 'web-csv-toolbox';
+ *
+ * // Offload parsing to a worker thread
+ * for await (const record of parseString(largeCSV, {
+ *   engine: { worker: true }
+ * })) {
+ *   console.log(record);
+ * }
  * ```
  */
 export function parseString<const CSVSource extends string>(
@@ -72,7 +107,36 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
   options?: ParseOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   try {
-    yield* parseStringToIterableIterator(csv, options);
+    // Parse engine configuration
+    const engineConfig = new InternalEngineConfig(options?.engine);
+
+    if (engineConfig.hasWorker()) {
+      // Worker execution
+      const session = engineConfig.workerPool
+        ? await WorkerSession.create({
+            workerPool: engineConfig.workerPool,
+            workerURL: engineConfig.workerURL,
+          })
+        : null;
+
+      try {
+        yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+          csv,
+          options,
+          session,
+          engineConfig,
+        );
+      } finally {
+        session?.[Symbol.dispose]();
+      }
+    } else {
+      // Main thread execution
+      if (engineConfig.hasWasm()) {
+        yield* parseStringToArraySyncWASM(csv, options);
+      } else {
+        yield* parseStringToIterableIterator(csv, options);
+      }
+    }
   } catch (error) {
     commonParseErrorHandling(error);
   }
