@@ -1,4 +1,5 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
+import { CSVLexer } from "./CSVLexer.js";
 import { CSVRecordAssembler } from "./CSVRecordAssembler.js";
 import { Field } from "./common/constants";
 
@@ -130,5 +131,51 @@ describe("CSVRecordAssembler", () => {
       assert(error instanceof DOMException);
       expect(error.name).toBe("TimeoutError");
     }
+  });
+
+  describe("flush with filtered headers", () => {
+    test("should correctly map row values when header has trailing empty field", () => {
+      // This test verifies that flush preserves original header indices
+      // even after filtering out empty header fields
+      const lexer = new CSVLexer();
+      const assembler = new CSVRecordAssembler();
+
+      // CSV with trailing comma in header (creates empty field):
+      // name,age,
+      // Alice,30,extra
+      // Bob,25,extra2
+      const csv = "name,age,\r\nAlice,30,extra\r\nBob,25,extra2";
+
+      const tokens = lexer.lex(csv);
+      const records = [...assembler.assemble(tokens)];
+
+      // Should correctly map to non-empty headers
+      // Bug would cause last record (flushed): { name: 'Alice', age: '30' } (wrong index mapping)
+      // Expected: { name: 'Alice', age: '30' } and { name: 'Bob', age: '25' }
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual({ name: "Alice", age: "30" });
+      expect(records[1]).toEqual({ name: "Bob", age: "25" });
+    });
+
+    test("should correctly map row values when header has leading empty field", () => {
+      const lexer = new CSVLexer();
+      const assembler = new CSVRecordAssembler();
+
+      // CSV with leading comma in header (creates empty field):
+      // ,name,age
+      // skip,Alice,30
+      // skip2,Bob,25
+      const csv = ",name,age\r\nskip,Alice,30\r\nskip2,Bob,25";
+
+      const tokens = lexer.lex(csv);
+      const records = [...assembler.assemble(tokens)];
+
+      // Should correctly map to non-empty headers
+      // Bug would cause: { name: 'skip', age: 'Alice' } and { name: 'skip2', age: 'Bob' }
+      // Expected: { name: 'Alice', age: '30' } and { name: 'Bob', age: '25' }
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual({ name: "Alice", age: "30" });
+      expect(records[1]).toEqual({ name: "Bob", age: "25" });
+    });
   });
 });

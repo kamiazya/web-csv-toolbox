@@ -111,15 +111,17 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
         } else {
           if (this.#dirty) {
             yield Object.fromEntries(
-              this.#header.map((header, index) => [
-                header,
-                this.#row.at(index),
-              ]),
+              this.#header
+                .map((header, index) => [header, index] as const)
+                .filter(([header]) => header)
+                .map(([header, index]) => [header, this.#row.at(index)]),
             ) as unknown as CSVRecord<Header>;
           } else {
             if (!this.#skipEmptyLines) {
               yield Object.fromEntries(
-                this.#header.map((header) => [header, ""]),
+                this.#header
+                  .filter((header) => header)
+                  .map((header) => [header, ""]),
               ) as CSVRecord<Header>;
             }
           }
@@ -144,8 +146,9 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
       if (this.#dirty) {
         yield Object.fromEntries(
           this.#header
-            .filter((v) => v)
-            .map((header, index) => [header, this.#row.at(index)]),
+            .map((header, index) => [header, index] as const)
+            .filter(([header]) => header)
+            .map(([header, index]) => [header, this.#row.at(index)]),
         ) as unknown as CSVRecord<Header>;
       }
     }
