@@ -13,7 +13,7 @@ describe("Backpressure handling", () => {
       const lexer = new CSVLexerTransformer(
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length, checkInterval: 1 },
-        { highWaterMark: 1, size: (tokens) => tokens.length, checkInterval: 1 },
+        { highWaterMark: 1, size: () => 1, checkInterval: 1 },
       );
 
       // Don't mock - let it execute for coverage
@@ -41,7 +41,7 @@ describe("Backpressure handling", () => {
       const lexer = new CSVLexerTransformer(
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length, checkInterval: 1 },
-        { highWaterMark: 1, size: (tokens) => tokens.length, checkInterval: 1 },
+        { highWaterMark: 1, size: () => 1, checkInterval: 1 },
       );
 
       // Spy on the yieldToEventLoop method and mock it
@@ -138,7 +138,7 @@ describe("Backpressure handling", () => {
       const lexer = new CSVLexerTransformer(
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length, checkInterval: 1 },
-        { highWaterMark: 1, size: (tokens) => tokens.length, checkInterval: 1 },
+        { highWaterMark: 1, size: () => 1, checkInterval: 1 },
       );
 
       // Don't mock - let it execute for coverage
@@ -170,7 +170,7 @@ describe("Backpressure handling", () => {
         {},
         {
           highWaterMark: 1,
-          size: (tokens) => tokens.length,
+          size: () => 1,
           checkInterval: 1,
         },
         { highWaterMark: 1, size: () => 1, checkInterval: 1 },
@@ -208,7 +208,7 @@ describe("Backpressure handling", () => {
         {},
         {
           highWaterMark: 1,
-          size: (tokens) => tokens.length,
+          size: () => 1,
           checkInterval: 1,
         },
         { highWaterMark: 1, size: () => 1, checkInterval: 1 },
@@ -321,7 +321,7 @@ describe("Backpressure handling", () => {
         {},
         {
           highWaterMark: 1,
-          size: (tokens) => tokens.length,
+          size: () => 1,
           checkInterval: 1,
         },
         { highWaterMark: 1, size: () => 1, checkInterval: 1 },

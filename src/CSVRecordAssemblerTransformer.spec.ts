@@ -96,9 +96,10 @@ describe("CSVRecordAssemblerTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const actual = await transform(new CSVRecordAssemblerTransformer(), [
+          const actual = await transform(
+            new CSVRecordAssemblerTransformer(),
             tokens,
-          ]);
+          );
           expect(actual).toEqual(expected);
         },
       ),
@@ -144,44 +145,41 @@ describe("CSVRecordAssemblerTransformer", () => {
           const parser = new CSVRecordAssemblerTransformer({
             header,
           });
-          const actual = await transform(parser, [tokens]);
+          const actual = await transform(parser, tokens);
           expect(actual).toEqual(expected);
         },
       ),
     ));
 
-  it("should throw an error if throws error on assemble", async () => {
+  it("should throw an error if throws error during transform", async () => {
     const transformer = new CSVRecordAssemblerTransformer();
-    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(() => {
-      throw new Error("test");
-    });
-    expect(async () => {
-      await transform(transformer, [[]]);
+    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(
+      // biome-ignore lint/correctness/useYield: Test mock that throws error before yielding
+      function* () {
+        throw new Error("test");
+      },
+    );
+    await expect(async () => {
+      await transform(transformer, [
+        { type: Field, value: "test", location: LOCATION_SHAPE },
+      ]);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[Error: test]`,
     );
   });
 
-  it("should throw an error if throws error on flush", async () => {
+  it("should throw an error if throws error during flush", async () => {
     const transformer = new CSVRecordAssemblerTransformer();
-    // Mock the assemble method to throw error during flush (when called without tokens)
-    const originalAssemble = transformer.assembler.assemble.bind(
-      transformer.assembler,
-    );
-    vi.spyOn(transformer.assembler, "assemble").mockImplementation(
-      function* (tokens, options) {
-        // If tokens are provided, use original implementation
-        if (tokens !== undefined) {
-          yield* originalAssemble(tokens, options);
-        } else {
-          // If no tokens (flush phase), throw error
-          throw new Error("test");
-        }
+    // Mock the assemble method to throw error during flush
+    vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(
+      // biome-ignore lint/correctness/useYield: Test mock that throws error before yielding
+      function* () {
+        throw new Error("test");
       },
     );
-    expect(async () => {
-      await transform(transformer, [[]]);
+    await expect(async () => {
+      await transform(transformer, []);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[Error: test]`,

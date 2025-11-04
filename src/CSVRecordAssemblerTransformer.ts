@@ -11,7 +11,7 @@ import type {
  *
  * @template Header The type of the header row.
  * @param options - CSV-specific options (header, maxFieldCount, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: tokens => tokens.length, checkInterval: 10 }`)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1, checkInterval: 10 }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1, checkInterval: 10 }`)
  *
  * @category Low-level API
@@ -21,7 +21,7 @@ import type {
  * constructor arguments, similar to the standard `TransformStream`.
  *
  * **Default Queuing Strategy:**
- * - Writable side: Counts by number of tokens in each array. Default highWaterMark is 1024 tokens.
+ * - Writable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
  * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
  *
  * **Backpressure Handling:**
@@ -73,14 +73,14 @@ import type {
  * const transformer = new CSVRecordAssemblerTransformer(
  *   {},
  *   {
- *     highWaterMark: 2048,             // 2048 tokens
- *     size: (tokens) => tokens.length, // Count by token count
- *     checkInterval: 20                // Check backpressure every 20 records
+ *     highWaterMark: 2048,  // 2048 tokens
+ *     size: () => 1,        // Each token counts as 1
+ *     checkInterval: 20     // Check backpressure every 20 records
  *   },
  *   {
- *     highWaterMark: 512,              // 512 records
- *     size: () => 1,                   // Each record counts as 1
- *     checkInterval: 5                 // Check backpressure every 5 records
+ *     highWaterMark: 512,   // 512 records
+ *     size: () => 1,        // Each record counts as 1
+ *     checkInterval: 5      // Check backpressure every 5 records
  *   }
  * );
  *
@@ -91,7 +91,7 @@ import type {
  */
 export class CSVRecordAssemblerTransformer<
   Header extends ReadonlyArray<string>,
-> extends TransformStream<Token[], CSVRecord<Header>> {
+> extends TransformStream<Token, CSVRecord<Header>> {
   public readonly assembler: CSVRecordAssembler<Header>;
 
   /**
@@ -105,9 +105,9 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
-    writableStrategy: ExtendedQueuingStrategy<Token[]> = {
+    writableStrategy: ExtendedQueuingStrategy<Token> = {
       highWaterMark: 1024, // 1024 tokens
-      size: (tokens) => tokens.length, // Count by number of tokens in array
+      size: () => 1, // Each token counts as 1
       checkInterval: 10, // Check backpressure every 10 records
     },
     readableStrategy: ExtendedQueuingStrategy<CSVRecord<Header>> = {
@@ -122,10 +122,11 @@ export class CSVRecordAssemblerTransformer<
 
     super(
       {
-        transform: async (tokens, controller) => {
+        transform: async (token, controller) => {
           try {
             let recordCount = 0;
-            for (const record of assembler.assemble(tokens, { stream: true })) {
+            // Pass single token directly to assemble (no array creation)
+            for (const record of assembler.assemble(token, { stream: true })) {
               controller.enqueue(record);
               recordCount++;
 
@@ -146,6 +147,7 @@ export class CSVRecordAssemblerTransformer<
         flush: async (controller) => {
           try {
             let recordCount = 0;
+            // Call assemble without arguments to flush
             for (const record of assembler.assemble()) {
               controller.enqueue(record);
               recordCount++;
