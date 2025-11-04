@@ -191,14 +191,13 @@ export interface CommonOptions<
    * - Smaller values: More frequent cleanup, lower memory usage, higher CPU overhead
    * - Larger values: Less frequent cleanup, higher memory usage, lower CPU overhead
    *
-   * The optimal value may depend on:
-   * - Average token size
-   * - TransformStream queuing strategy
-   * - Available memory
+   * Based on comprehensive benchmarking, 4KB provides optimal performance
+   * for most use cases. You may adjust this value based on your specific needs:
+   * - Very small fields (< 100 bytes): Consider 1-2KB
+   * - Mixed field sizes: 4KB (default, recommended)
+   * - Very large fields (> 10KB): Consider 16-64KB
    *
-   * Consider benchmarking to find the optimal value for your use case.
-   *
-   * @default 10 * 1024 (10KB)
+   * @default 4 * 1024 (4KB)
    */
   bufferCleanupThreshold?: number;
 }

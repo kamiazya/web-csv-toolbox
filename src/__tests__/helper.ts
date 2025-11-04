@@ -225,7 +225,7 @@ export namespace FC {
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
         maxBufferSize: fc.constant(DEFAULT_MAX_BUFFER_SIZE),
-        bufferCleanupThreshold: fc.constant(10 * 1024),
+        bufferCleanupThreshold: fc.constant(4 * 1024),
       })
       .filter(
         ({ delimiter, quotation, maxBufferSize, bufferCleanupThreshold }) => {

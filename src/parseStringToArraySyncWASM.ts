@@ -98,7 +98,7 @@ export function parseStringToArraySyncWASM<
     delimiter = DEFAULT_DELIMITER,
     quotation = DEFAULT_QUOTATION,
     maxBufferSize = 10485760,
-    bufferCleanupThreshold = 10240,
+    bufferCleanupThreshold = 4096,
   } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(

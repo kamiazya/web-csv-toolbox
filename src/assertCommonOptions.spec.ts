@@ -11,7 +11,7 @@ describe("function assertCommonOptions", () => {
         quotation: "",
         delimiter: DOUBLE_QUOTE,
         maxBufferSize: 1024,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -25,7 +25,7 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: "",
         maxBufferSize: 1024,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -45,7 +45,7 @@ describe("function assertCommonOptions", () => {
               quotation: value,
               delimiter: value,
               maxBufferSize: 1024,
-              bufferCleanupThreshold: 10240,
+              bufferCleanupThreshold: 4096,
             }),
           ).toThrowErrorMatchingInlineSnapshot(
             // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -63,7 +63,7 @@ describe("function assertCommonOptions", () => {
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
           maxBufferSize: 1024,
-          bufferCleanupThreshold: 10240,
+          bufferCleanupThreshold: 4096,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -76,7 +76,7 @@ describe("function assertCommonOptions", () => {
           quotation: COMMA,
           delimiter: delimiter,
           maxBufferSize: 1024,
-          bufferCleanupThreshold: 10240,
+          bufferCleanupThreshold: 4096,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -91,7 +91,7 @@ describe("function assertCommonOptions", () => {
         quotation: 1 as unknown as string,
         delimiter: DOUBLE_QUOTE,
         maxBufferSize: 1024,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -105,7 +105,7 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: 1 as unknown as string,
         maxBufferSize: 1024,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -120,7 +120,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: -1,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrow(RangeError);
 
@@ -130,7 +130,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: 0,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrow(RangeError);
 
@@ -140,7 +140,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: 1.5,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrow(RangeError);
 
@@ -150,7 +150,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: Number.NaN,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).toThrow(RangeError);
   });
@@ -161,7 +161,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: Number.POSITIVE_INFINITY,
-        bufferCleanupThreshold: 10240,
+        bufferCleanupThreshold: 4096,
       }),
     ).not.toThrow();
   });
