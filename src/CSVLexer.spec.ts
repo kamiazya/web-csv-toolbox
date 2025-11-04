@@ -373,7 +373,7 @@ describe("class Lexer", () => {
 
       // Verify the last row is parsed correctly
       const lastRowTokens = tokens.slice(-19); // 10 fields + 9 delimiters
-      const fields = lastRowTokens.filter(t => t.type === Field);
+      const fields = lastRowTokens.filter((t) => t.type === Field);
       expect(fields[fields.length - 1]?.value).toBe("field_999_9");
     });
   });
