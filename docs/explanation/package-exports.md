@@ -80,53 +80,19 @@ const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url); // Webpack
 
 ### Node.js (worker.node.js)
 
-```typescript
-import { parentPort } from 'node:worker_threads';
-import { createMessageHandler } from './worker.shared.js';
-
-if (!parentPort) {
-  throw new Error("This module must be run in a Worker Thread context");
-}
-
-const messageHandler = createMessageHandler(parentPort);
-parentPort.on("message", (message) => {
-  messageHandler(message);
-});
-```
-
 **Key characteristics:**
-- Requires `node:worker_threads` module
-- Uses `parentPort.on()` for message handling
+- Uses `node:worker_threads` module
+- Listens via `parentPort.on("message", ...)`
 - Throws error if not run in Worker Thread context
 
 ### Browser (worker.web.js)
 
-```typescript
-import { createMessageHandler } from './worker.shared.js';
-
-const workerContext = self;
-const messageHandler = createMessageHandler(workerContext);
-
-workerContext.addEventListener("message", (event) => {
-  messageHandler(event.data);
-});
-```
-
 **Key characteristics:**
 - Uses global `self` as worker context
-- Uses `addEventListener()` for message handling
+- Listens via `self.addEventListener("message", ...)`
 - Compatible with Web Workers standard
 
-### Shared Logic (worker.shared.js)
-
-Both implementations use the same `createMessageHandler()` function, which contains:
-
-- CSV parsing logic
-- Message routing
-- Error handling
-- Stream processing
-
-This ensures consistent behavior across environments.
+Both implementations share the same parsing logic and behavior, ensuring consistent results across environments.
 
 ## Bundler Compatibility
 

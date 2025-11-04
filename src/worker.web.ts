@@ -9,7 +9,10 @@ if (typeof globalThis !== "undefined") {
   }
 }
 
-import { type ParseRequest, createMessageHandler } from "./execution/worker/helpers/worker.shared.ts";
+import {
+  type ParseRequest,
+  createMessageHandler,
+} from "./execution/worker/helpers/worker.shared.ts";
 
 /**
  * Web Worker implementation for CSV parsing.
