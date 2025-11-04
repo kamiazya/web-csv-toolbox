@@ -188,12 +188,13 @@ export interface CommonOptions<
    * the buffer is sliced to reduce memory usage.
    *
    * This value affects the balance between performance and memory usage:
-   * - Smaller values: More frequent cleanup, lower memory usage, higher CPU overhead
-   * - Larger values: Less frequent cleanup, higher memory usage, lower CPU overhead
+   * - 0: Disables buffer cleanup (maximum memory usage, best performance for small files)
+   * - Smaller values (512B-2KB): More frequent cleanup, lower memory usage, higher CPU overhead
+   * - Larger values (16KB-64KB): Less frequent cleanup, higher memory usage, lower CPU overhead
    *
    * Based on comprehensive benchmarking, 4KB provides optimal performance
    * for most use cases. You may adjust this value based on your specific needs:
-   * - Very small fields (< 100 bytes): Consider 1-2KB
+   * - Small files or low memory constraints: 0 (disabled) or 1-2KB
    * - Mixed field sizes: 4KB (default, recommended)
    * - Very large fields (> 10KB): Consider 16-64KB
    *

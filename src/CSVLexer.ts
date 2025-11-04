@@ -169,10 +169,16 @@ export class CSVLexer<
   /**
    * Cleans up processed portion of the buffer to reduce memory usage.
    * Called periodically when buffer offset exceeds a threshold.
+   *
+   * @remarks
+   * If bufferCleanupThreshold is 0, cleanup is disabled.
    */
   #cleanupBuffer(): void {
-    // Only cleanup if we've processed a significant amount
-    if (this.#bufferOffset > this.#bufferCleanupThreshold) {
+    // Only cleanup if threshold is positive and we've processed a significant amount
+    if (
+      this.#bufferCleanupThreshold > 0 &&
+      this.#bufferOffset > this.#bufferCleanupThreshold
+    ) {
       this.#buffer = this.#buffer.slice(this.#bufferOffset);
       this.#bufferOffset = 0;
     }

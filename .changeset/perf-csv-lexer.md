@@ -37,6 +37,11 @@ The 4KB threshold offers the best balance between memory usage, CPU overhead, an
 const lexer = new CSVLexer({
   bufferCleanupThreshold: 4096 // default: 4KB, configurable for specific use cases
 });
+
+// Set to 0 to disable buffer cleanup (maximum memory usage, best for small files)
+const lexerNoCleanup = new CSVLexer({
+  bufferCleanupThreshold: 0 // disables periodic buffer cleanup
+});
 ```
 
 **Performance Impact:**

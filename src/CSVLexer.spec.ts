@@ -316,4 +316,65 @@ describe("class Lexer", () => {
       ),
     );
   });
+
+  describe("bufferCleanupThreshold option", () => {
+    it("should work correctly when bufferCleanupThreshold is 0 (disabled)", () => {
+      fc.assert(
+        fc.property(
+          fc.gen().map((g) => {
+            const optionsBase = g(FC.commonOptions);
+            const eol = g(FC.eol);
+            const data = g(FC.csvData);
+            const quote = g(FC.quote);
+
+            const options = { ...optionsBase, bufferCleanupThreshold: 0 };
+            const csv = data
+              .map((row) =>
+                row
+                  .map((field) => escapeField(field, { ...options, quote }))
+                  .join(options.delimiter),
+              )
+              .join(eol);
+
+            return { options, csv };
+          }),
+          ({ options, csv }) => {
+            // With threshold=0 (disabled), lexer should work correctly
+            // and produce same results as with threshold enabled
+            const lexerWithDisabled = new CSVLexer(options);
+            const lexerWithEnabled = new CSVLexer({
+              ...options,
+              bufferCleanupThreshold: 4096,
+            });
+
+            const resultDisabled = [...lexerWithDisabled.lex(csv)];
+            const resultEnabled = [...lexerWithEnabled.lex(csv)];
+
+            // Results should be identical regardless of cleanup setting
+            expect(resultDisabled).toMatchObject(resultEnabled);
+          },
+        ),
+      );
+    });
+
+    it("should handle large data correctly with bufferCleanupThreshold=0", () => {
+      // Create a CSV with large amount of data to ensure buffer cleanup
+      // would normally be triggered multiple times
+      const largeData = Array.from({ length: 1000 }, (_, i) =>
+        Array.from({ length: 10 }, (_, j) => `field_${i}_${j}`).join(","),
+      ).join("\n");
+
+      const lexer = new CSVLexer({ bufferCleanupThreshold: 0 });
+      const tokens = [...lexer.lex(largeData)];
+
+      // Should successfully parse all data
+      // Expected: 1000 rows * (10 fields + 9 delimiters) + 999 record delimiters = 19999 tokens
+      expect(tokens.length).toBeGreaterThan(0);
+
+      // Verify the last row is parsed correctly
+      const lastRowTokens = tokens.slice(-19); // 10 fields + 9 delimiters
+      const fields = lastRowTokens.filter(t => t.type === Field);
+      expect(fields[fields.length - 1]?.value).toBe("field_999_9");
+    });
+  });
 });
