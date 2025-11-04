@@ -212,6 +212,8 @@ console.log('  14. Engine comparison at scale - identifies optimal engine for da
 console.log('  15. Memory allocation patterns - compares allocation strategies');
 console.log('  16. Low-level API performance - measures lexer and assembler separately');
 console.log('  17. Buffer cleanup threshold optimization (0-256KB) - finds optimal memory/CPU balance');
+console.log('  18. MaxBufferSize optimization (1MB-Infinity) - finds optimal security/performance tradeoff');
+console.log('  19. Combined optimization (maxBufferSize + bufferCleanupThreshold) - finds optimal parameter combination');
 console.log('\nNote: Any WASM initialization warnings can be safely ignored.');
 console.log('CodSpeed will use tinybench for local execution (this is expected behavior).');
 if (!isWorkerAvailable) {
@@ -778,6 +780,83 @@ bench = bench
     for (const _ of lexer.lex(csv5000rows)) {
       // noop
     }
+  })
+  // MaxBufferSize optimization tests
+  .add('MaxBufferSize: 1MB (1000 rows)', () => {
+    const lexer = new CSVLexer({ maxBufferSize: 1024 * 1024 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('MaxBufferSize: 5MB (1000 rows)', () => {
+    const lexer = new CSVLexer({ maxBufferSize: 5 * 1024 * 1024 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('MaxBufferSize: 10MB - default (1000 rows)', () => {
+    const lexer = new CSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('MaxBufferSize: 50MB (1000 rows)', () => {
+    const lexer = new CSVLexer({ maxBufferSize: 50 * 1024 * 1024 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('MaxBufferSize: Infinity (1000 rows)', () => {
+    const lexer = new CSVLexer({ maxBufferSize: Number.POSITIVE_INFINITY });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  // Combined optimization: maxBufferSize + bufferCleanupThreshold
+  .add('Combined: 1MB + 1KB (1000 rows)', () => {
+    const lexer = new CSVLexer({
+      maxBufferSize: 1024 * 1024,
+      bufferCleanupThreshold: 1024
+    });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Combined: 1MB + 4KB (1000 rows)', () => {
+    const lexer = new CSVLexer({
+      maxBufferSize: 1024 * 1024,
+      bufferCleanupThreshold: 4096
+    });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Combined: 10MB + 4KB - default (1000 rows)', () => {
+    const lexer = new CSVLexer({
+      maxBufferSize: 10 * 1024 * 1024,
+      bufferCleanupThreshold: 4096
+    });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Combined: 10MB + 16KB (1000 rows)', () => {
+    const lexer = new CSVLexer({
+      maxBufferSize: 10 * 1024 * 1024,
+      bufferCleanupThreshold: 16384
+    });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Combined: Infinity + 4KB (1000 rows)', () => {
+    const lexer = new CSVLexer({
+      maxBufferSize: Number.POSITIVE_INFINITY,
+      bufferCleanupThreshold: 4096
+    });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
   });
 
 
@@ -807,6 +886,8 @@ console.log('✓ Engine comparison at scale completed');
 console.log('✓ Memory allocation pattern tests completed');
 console.log('✓ Low-level API performance tests completed');
 console.log('✓ Buffer cleanup threshold optimization tests (0-256KB) completed');
+console.log('✓ MaxBufferSize optimization tests (1MB-Infinity) completed');
+console.log('✓ Combined optimization tests (maxBufferSize + bufferCleanupThreshold) completed');
 console.log('\n=== Bottleneck Detection Guide ===');
 console.log('Review the benchmark results to identify bottlenecks:');
 console.log('  • Row count scaling: Check if performance degrades linearly (O(n))');
@@ -818,5 +899,13 @@ console.log('  • Buffer cleanup threshold: Find optimal balance between memory
 console.log('    - Lower values (1-2KB): Lower memory, slightly higher CPU overhead');
 console.log('    - Optimal value (4KB): Best performance for most use cases (default)');
 console.log('    - Higher values (16-256KB): Higher memory, similar performance');
+console.log('  • MaxBufferSize: Find optimal security/performance tradeoff');
+console.log('    - Lower values (1-5MB): Stricter memory limits, potential RangeErrors');
+console.log('    - Default (10MB): Balanced security and usability');
+console.log('    - Higher values/Infinity: Maximum flexibility, higher memory risk');
+console.log('  • Combined optimization: Verify parameter interaction effects');
+console.log('    - bufferCleanupThreshold affects actual memory usage');
+console.log('    - maxBufferSize sets hard limits but rarely reached in normal use');
+console.log('    - Best combination depends on your data characteristics');
 console.log('\nFor detailed analysis, review the ops/sec values in the table above.');
 console.log('Higher ops/sec = better performance\n');
