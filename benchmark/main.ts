@@ -712,8 +712,6 @@ bench = bench
   });
 
 
-await bench.warmup();
-
 await bench.run();
 
 console.log('\n=== Benchmark Results ===\n');
