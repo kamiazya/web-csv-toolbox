@@ -21,9 +21,10 @@ export async function createWorker(workerURL?: string | URL): Promise<Worker> {
 
   // Compute worker.node.js path relative to this module
   // In Node.js, import.meta.url is a file:// URL pointing to this module
+  // Worker file is at dist/worker.node.js, this file is at dist/execution/worker/helpers/createWorker.node.js
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = dirname(currentFilePath);
-  const workerPath = join(currentDir, "worker.node.js");
+  const workerPath = join(currentDir, "..", "..", "..", "worker.node.js");
 
   // @ts-ignore
   return new Worker(workerPath, { type: "module" });

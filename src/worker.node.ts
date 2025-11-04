@@ -3,7 +3,7 @@ import { parentPort } from "node:worker_threads";
 import {
   type ParseRequest,
   createMessageHandler,
-} from "./execution/worker/helpers/worker.shared.ts";
+} from "#execution/worker/worker.shared.js";
 
 /**
  * Node.js Worker Threads implementation for CSV parsing.
