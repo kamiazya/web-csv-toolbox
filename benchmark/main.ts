@@ -211,6 +211,7 @@ console.log('  13. Line ending comparison (LF vs CRLF) - detects line ending pro
 console.log('  14. Engine comparison at scale - identifies optimal engine for data size');
 console.log('  15. Memory allocation patterns - compares allocation strategies');
 console.log('  16. Low-level API performance - measures lexer and assembler separately');
+console.log('  17. Buffer cleanup threshold optimization (0-256KB) - finds optimal memory/CPU balance');
 console.log('\nNote: Any WASM initialization warnings can be safely ignored.');
 console.log('CodSpeed will use tinybench for local execution (this is expected behavior).');
 if (!isWorkerAvailable) {
@@ -709,6 +710,62 @@ bench = bench
     for (const _ of assembler.assemble(tokens)) {
       // noop
     }
+  })
+  // Buffer cleanup threshold optimization tests
+  .add('Cleanup threshold: 0 (disabled) (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 0 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 1KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 1024 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 4KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 10KB - default (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 10240 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 16KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 16384 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 64KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 65536 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 256KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 262144 } as any);
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  // Large CSV tests with different thresholds
+  .add('Cleanup threshold: 10KB - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 10240 } as any);
+    for (const _ of lexer.lex(csv5000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 64KB - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 65536 } as any);
+    for (const _ of lexer.lex(csv5000rows)) {
+      // noop
+    }
   });
 
 
@@ -737,6 +794,7 @@ console.log('✓ Line ending comparison (LF vs CRLF) completed');
 console.log('✓ Engine comparison at scale completed');
 console.log('✓ Memory allocation pattern tests completed');
 console.log('✓ Low-level API performance tests completed');
+console.log('✓ Buffer cleanup threshold optimization tests (0-256KB) completed');
 console.log('\n=== Bottleneck Detection Guide ===');
 console.log('Review the benchmark results to identify bottlenecks:');
 console.log('  • Row count scaling: Check if performance degrades linearly (O(n))');
@@ -744,5 +802,9 @@ console.log('  • Field length: Identify string processing limits');
 console.log('  • Quote ratio: Measure quote handling overhead');
 console.log('  • Engine comparison: Find optimal engine for your data size');
 console.log('  • Memory patterns: Compare allocation strategies');
+console.log('  • Buffer cleanup threshold: Find optimal balance between memory and CPU');
+console.log('    - Lower values (1-4KB): Lower memory, higher CPU overhead');
+console.log('    - Higher values (64-256KB): Higher memory, lower CPU overhead');
+console.log('    - Default (10KB): Balanced approach');
 console.log('\nFor detailed analysis, review the ops/sec values in the table above.');
 console.log('Higher ops/sec = better performance\n');
