@@ -50,26 +50,17 @@ const csv50colsQuoted = generateCSV(50, 50, true);
 const csv100colsQuoted = generateCSV(100, 50, true);
 const csv10000colsQuoted = generateCSV(10000, 10, true);
 
-// Generate TSV (Tab-Separated Values) for custom delimiter test
-function generateTSV(rows: number): string {
-  const header = 'name\tage\temail';
+// Generate delimited values with custom delimiter
+function generateDelimitedValues(rows: number, delimiter: string): string {
+  const header = `name${delimiter}age${delimiter}email`;
   const dataRows = Array.from({length: rows}, (_, i) =>
-    `User${i}\t${20 + i}\tuser${i}@example.com`
+    `User${i}${delimiter}${20 + i}${delimiter}user${i}@example.com`
   );
   return [header, ...dataRows].join('\n');
 }
 
-// Generate Pipe-Separated Values for custom delimiter test
-function generatePSV(rows: number): string {
-  const header = 'name|age|email';
-  const dataRows = Array.from({length: rows}, (_, i) =>
-    `User${i}|${20 + i}|user${i}@example.com`
-  );
-  return [header, ...dataRows].join('\n');
-}
-
-const tsv100 = generateTSV(100);
-const psv100 = generatePSV(100);
+const tsv100 = generateDelimitedValues(100, '\t');
+const psv100 = generateDelimitedValues(100, '|');
 
 // Generate CSVs with different field lengths to detect string processing bottlenecks
 function generateCSVWithFieldLength(rows: number, fieldLength: number): string {
@@ -135,11 +126,14 @@ export async function getAsBinaryStream() {
   return new Blob([csv], { type: 'text/csv' }).stream();
 }
 
-// Load WASM module before benchmarks
-await loadWASM().catch(() => {
-  // Silently ignore WASM loading errors in benchmark
-  console.warn('WASM module not available, some benchmarks may be skipped');
-});
+// Load WASM module before benchmarks and track availability
+let wasmAvailable = false;
+try {
+  await loadWASM();
+  wasmAvailable = true;
+} catch {
+  console.warn('WASM module not available, WASM-dependent benchmarks will be skipped');
+}
 
 let binaryCSV: Uint8Array = await getAsBinary()
 let stringCSV: string = await getAsString();
@@ -168,10 +162,12 @@ const largeWorkerCSV = generateWorkerTestCSV(10000);
 
 // Generate CSVs for concurrent execution tests
 function generateConcurrentCSV(rows: number, seed: number): string {
+  // Use deterministic timestamp for reproducible benchmarks
+  const baseTimestamp = 1704067200000; // Fixed timestamp: 2024-01-01 00:00:00 UTC
   return [
     'id,name,value,timestamp',
     ...Array.from({ length: rows }, (_, i) =>
-      `${i + seed},Item${i + seed},${(i + seed) * 1.5},${Date.now() + i}`
+      `${i + seed},Item${i + seed},${(i + seed) * 1.5},${baseTimestamp + seed * 1000 + i}`
     ),
   ].join('\n');
 }
@@ -182,13 +178,11 @@ const concurrentDatasets = Array.from({ length: NUM_CONCURRENT }, (_, i) =>
   generateConcurrentCSV(ROWS_PER_CONCURRENT_CSV, i * 1000)
 );
 
-// Generate CSVs for queuing strategy tests
+// Generate CSVs for queuing strategy tests (reuses generateCSV)
 function generateQueuingTestCSV(rows: number, cols: number = 10): string {
-  const header = Array.from({ length: cols }, (_, i) => `col${i}`).join(',');
-  const bodyRows = Array.from({ length: rows }, (_, i) =>
-    Array.from({ length: cols }, (_, j) => `value${i}_${j}`).join(',')
-  );
-  return [header, ...bodyRows].join('\n');
+  // Reuse generateCSV and remove trailing newline
+  const csv = generateCSV(cols, rows);
+  return csv.endsWith('\n') ? csv.slice(0, -1) : csv;
 }
 
 const smallQueuingCSV = generateQueuingTestCSV(100);    // ~3KB
@@ -202,7 +196,7 @@ console.log('=== CSV Parsing Performance Benchmark ===\n');
 console.log('Running comprehensive benchmarks for bottleneck detection...');
 console.log('\nBenchmark Categories:');
 console.log('  1. Basic parsing APIs (parseString, parseBinary, parseStringStream)');
-console.log('  2. Engine presets (mainThread, wasm, worker, workerStreamTransfer, workerWasm, balanced, fastest)');
+console.log('  2. Engine presets (mainThread, wasm, worker, workerStreamTransfer, workerWasm, balanced, fastest, strict)');
 console.log('  3. Column variations (10-10,000 columns)');
 console.log('  4. Quoted vs unquoted fields');
 console.log('  5. Worker performance (different data sizes)');
@@ -223,6 +217,10 @@ if (!isWorkerAvailable) {
   console.log('\n⚠️  Worker API not available - worker-based benchmarks will be skipped.');
   console.log('Run benchmarks in a browser environment to test worker performance.');
 }
+if (!wasmAvailable) {
+  console.log('\n⚠️  WASM module not available - WASM-dependent benchmarks will be skipped.');
+  console.log('Run benchmarks with WASM support to test WASM performance.');
+}
 console.log();
 
 let bench = withCodSpeed(new Bench({
@@ -230,10 +228,16 @@ let bench = withCodSpeed(new Bench({
 }))
   .add('parseString.toArraySync(50 rows)', () => {
     parseString.toArraySync(stringCSV);
-  })
-  .add('parseStringToArraySyncWASM(50 rows)', () => {
+  });
+
+// Conditionally add WASM benchmark
+if (wasmAvailable) {
+  bench = bench.add('parseStringToArraySyncWASM(50 rows)', () => {
     parseStringToArraySyncWASM(stringCSV);
-  })
+  });
+}
+
+bench = bench
   .add('parseString.toIterableIterator(50 rows)', async () => {
     for await (const _ of parseString.toIterableIterator(stringCSV)) {
       // noop
@@ -263,90 +267,105 @@ let bench = withCodSpeed(new Bench({
   })
   // Engine preset benchmarks (50 rows)
   .add('parseString engine:mainThread (50 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(stringCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(stringCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   });
 
 // WASM preset benchmark (50 rows)
-bench = bench
-  .add('parseString engine:wasm (50 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(stringCSV, { engine: EnginePresets.wasm() })) {
-      records.push(record);
-    }
-  });
+if (wasmAvailable) {
+  bench = bench
+    .add('parseString engine:wasm (50 rows)', async () => {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.wasm() })) {
+        // noop
+      }
+    });
+}
 
 // Conditionally add worker benchmarks (50 rows)
 if (isWorkerAvailable) {
   bench = bench
+    .add('parseString engine:strict (50 rows)', async () => {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.strict() })) {
+        // noop
+      }
+    })
     .add('parseString engine:worker (50 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(stringCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('parseString engine:workerStreamTransfer (50 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(stringCSV, { engine: EnginePresets.workerStreamTransfer() })) {
-        records.push(record);
-      }
-    })
-    .add('parseString engine:workerWasm (50 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(stringCSV, { engine: EnginePresets.workerWasm() })) {
-        records.push(record);
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.workerStreamTransfer() })) {
+        // noop
       }
     });
+
+  // workerWasm requires both Worker and WASM
+  if (wasmAvailable) {
+    bench = bench.add('parseString engine:workerWasm (50 rows)', async () => {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.workerWasm() })) {
+        // noop
+      }
+    });
+  }
 }
 
 bench = bench
   // Engine preset benchmarks (1000 rows)
   .add('parseString engine:mainThread (1000 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(largeCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
-    }
-  })
-  .add('parseString engine:wasm (1000 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(largeCSV, { engine: EnginePresets.wasm() })) {
-      records.push(record);
+    for await (const _ of parseString(largeCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   });
+
+// WASM preset benchmark (1000 rows)
+if (wasmAvailable) {
+  bench = bench
+    .add('parseString engine:wasm (1000 rows)', async () => {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.wasm() })) {
+        // noop
+      }
+    });
+}
 
 // Conditionally add worker benchmarks (1000 rows)
 if (isWorkerAvailable) {
   bench = bench
+    .add('parseString engine:strict (1000 rows)', async () => {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.strict() })) {
+        // noop
+      }
+    })
     .add('parseString engine:worker (1000 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(largeCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('parseString engine:workerStreamTransfer (1000 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(largeCSV, { engine: EnginePresets.workerStreamTransfer() })) {
-        records.push(record);
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.workerStreamTransfer() })) {
+        // noop
       }
-    })
-    .add('parseString engine:workerWasm (1000 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(largeCSV, { engine: EnginePresets.workerWasm() })) {
-        records.push(record);
+    });
+
+  // workerWasm requires both Worker and WASM
+  if (wasmAvailable) {
+    bench = bench.add('parseString engine:workerWasm (1000 rows)', async () => {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.workerWasm() })) {
+        // noop
       }
-    })
+    });
+  }
+
+  bench = bench
     .add('parseString engine:balanced (1000 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(largeCSV, { engine: EnginePresets.balanced() })) {
-        records.push(record);
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.balanced() })) {
+        // noop
       }
     })
     .add('parseString engine:fastest (1000 rows)', async () => {
-      const records = [];
-      for await (const record of parseString(largeCSV, { engine: EnginePresets.fastest() })) {
-        records.push(record);
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.fastest() })) {
+        // noop
       }
     });
 }
@@ -380,27 +399,23 @@ bench = bench
   })
   // Worker performance tests (different sizes) - comparing presets
   .add('Worker perf: tiny (10 rows) - mainThread', async () => {
-    const records = [];
-    for await (const record of parseString(tinyCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(tinyCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   })
   .add('Worker perf: small (100 rows) - mainThread', async () => {
-    const records = [];
-    for await (const record of parseString(smallWorkerCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(smallWorkerCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   })
   .add('Worker perf: medium (1000 rows) - mainThread', async () => {
-    const records = [];
-    for await (const record of parseString(mediumWorkerCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   })
   .add('Worker perf: large (10000 rows) - mainThread', async () => {
-    const records = [];
-    for await (const record of parseString(largeWorkerCSV, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
   });
 
@@ -408,33 +423,28 @@ bench = bench
 if (isWorkerAvailable) {
   bench = bench
     .add('Worker perf: tiny (10 rows) - worker', async () => {
-      const records = [];
-      for await (const record of parseString(tinyCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(tinyCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('Worker perf: small (100 rows) - worker', async () => {
-      const records = [];
-      for await (const record of parseString(smallWorkerCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(smallWorkerCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('Worker perf: medium (1000 rows) - worker', async () => {
-      const records = [];
-      for await (const record of parseString(mediumWorkerCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('Worker perf: large (10000 rows) - worker', async () => {
-      const records = [];
-      for await (const record of parseString(largeWorkerCSV, { engine: EnginePresets.worker() })) {
-        records.push(record);
+      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.worker() })) {
+        // noop
       }
     })
     .add('Worker perf: large (10000 rows) - fastest', async () => {
-      const records = [];
-      for await (const record of parseString(largeWorkerCSV, { engine: EnginePresets.fastest() })) {
-        records.push(record);
+      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.fastest() })) {
+        // noop
       }
     });
 }
@@ -443,18 +453,16 @@ bench = bench
   // Concurrent execution tests - comparing strategies
   .add('Concurrent: Sequential mainThread', async () => {
     for (const csv of concurrentDatasets) {
-      const records = [];
-      for await (const record of parseString(csv, { engine: EnginePresets.mainThread() })) {
-        records.push(record);
+      for await (const _ of parseString(csv, { engine: EnginePresets.mainThread() })) {
+        // noop
       }
     }
   })
   .add('Concurrent: Parallel mainThread', async () => {
     await Promise.all(
       concurrentDatasets.map(async (csv) => {
-        const records = [];
-        for await (const record of parseString(csv, { engine: EnginePresets.mainThread() })) {
-          records.push(record);
+        for await (const _ of parseString(csv, { engine: EnginePresets.mainThread() })) {
+          // noop
         }
       })
     );
@@ -465,18 +473,16 @@ if (isWorkerAvailable) {
   bench = bench
     .add('Concurrent: Sequential worker', async () => {
       for (const csv of concurrentDatasets) {
-        const records = [];
-        for await (const record of parseString(csv, { engine: EnginePresets.worker() })) {
-          records.push(record);
+        for await (const _ of parseString(csv, { engine: EnginePresets.worker() })) {
+          // noop
         }
       }
     })
     .add('Concurrent: Parallel worker', async () => {
       await Promise.all(
         concurrentDatasets.map(async (csv) => {
-          const records = [];
-          for await (const record of parseString(csv, { engine: EnginePresets.worker() })) {
-            records.push(record);
+          for await (const _ of parseString(csv, { engine: EnginePresets.worker() })) {
+            // noop
           }
         })
       );
@@ -484,9 +490,8 @@ if (isWorkerAvailable) {
     .add('Concurrent: Parallel fastest', async () => {
       await Promise.all(
         concurrentDatasets.map(async (csv) => {
-          const records = [];
-          for await (const record of parseString(csv, { engine: EnginePresets.fastest() })) {
-            records.push(record);
+          for await (const _ of parseString(csv, { engine: EnginePresets.fastest() })) {
+            // noop
           }
         })
       );
@@ -499,13 +504,17 @@ bench = bench
     const lexer = new CSVLexer({ delimiter: '\t' });
     const tokens = lexer.lex(tsv100);
     const assembler = new CSVRecordAssembler();
-    const records = [...assembler.assemble(tokens)];
+    for (const _ of assembler.assemble(tokens)) {
+      // noop
+    }
   })
   .add('Custom delimiter: PSV (100 rows)', () => {
     const lexer = new CSVLexer({ delimiter: '|' });
     const tokens = lexer.lex(psv100);
     const assembler = new CSVRecordAssembler();
-    const records = [...assembler.assemble(tokens)];
+    for (const _ of assembler.assemble(tokens)) {
+      // noop
+    }
   })
   // parseStringStream tests (from choosing-the-right-api.md)
   .add('parseStringStream: small (100 rows)', async () => {
@@ -515,9 +524,8 @@ bench = bench
         controller.close();
       }
     });
-    const records = [];
-    for await (const record of parseStringStream(stream)) {
-      records.push(record);
+    for await (const _ of parseStringStream(stream)) {
+      // noop
     }
   })
   .add('parseStringStream: medium (1000 rows)', async () => {
@@ -527,28 +535,20 @@ bench = bench
         controller.close();
       }
     });
-    const records = [];
-    for await (const record of parseStringStream(stream)) {
-      records.push(record);
+    for await (const _ of parseStringStream(stream)) {
+      // noop
     }
   })
   // Data transformation overhead (from custom-csv-parser.md)
   .add('Data transformation: type conversion (100 rows)', async () => {
-    const records = [];
     for await (const record of parseString(smallWorkerCSV)) {
       // Type conversion overhead
-      records.push({
-        name: record.name,
-        age: Number(record.age),
-        email: record.email
-      });
+      Number(record.age);
     }
   })
   .add('Data transformation: no conversion (100 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(smallWorkerCSV)) {
-      // No transformation
-      records.push(record);
+    for await (const _ of parseString(smallWorkerCSV)) {
+      // noop
     }
   })
   // Queuing strategy tests (default HWM)
@@ -654,49 +654,61 @@ bench = bench
   })
   // Engine comparison at different scales (bottleneck detection for engine overhead)
   .add('Engine comparison: mainThread (500 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(csv500rows, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(csv500rows, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
-  })
-  .add('Engine comparison: wasm (500 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(csv500rows, { engine: EnginePresets.wasm() })) {
-      records.push(record);
-    }
-  })
+  });
+
+// Engine comparison: WASM benchmarks (conditionally add)
+if (wasmAvailable) {
+  bench = bench
+    .add('Engine comparison: wasm (500 rows)', async () => {
+      for await (const _ of parseString(csv500rows, { engine: EnginePresets.wasm() })) {
+        // noop
+      }
+    });
+}
+
+bench = bench
   .add('Engine comparison: mainThread (5000 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(csv5000rows, { engine: EnginePresets.mainThread() })) {
-      records.push(record);
+    for await (const _ of parseString(csv5000rows, { engine: EnginePresets.mainThread() })) {
+      // noop
     }
-  })
-  .add('Engine comparison: wasm (5000 rows)', async () => {
-    const records = [];
-    for await (const record of parseString(csv5000rows, { engine: EnginePresets.wasm() })) {
-      records.push(record);
-    }
-  })
+  });
+
+if (wasmAvailable) {
+  bench = bench
+    .add('Engine comparison: wasm (5000 rows)', async () => {
+      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.wasm() })) {
+        // noop
+      }
+    });
+}
+
+bench = bench
   // Memory allocation pattern tests
   .add('Memory: toArraySync (allocate all at once)', () => {
-    const result = parseString.toArraySync(csv1000rows);
+    parseString.toArraySync(csv1000rows);
   })
   .add('Memory: toIterableIterator (streaming)', () => {
-    const records = [];
-    for (const record of parseString.toIterableIterator(csv1000rows)) {
-      records.push(record);
+    for (const _ of parseString.toIterableIterator(csv1000rows)) {
+      // noop
     }
   })
   // Low-level API performance comparison
   .add('Low-level: CSVLexer only (1000 rows)', () => {
     const lexer = new CSVLexer();
-    const tokens = [...lexer.lex(csv1000rows)];
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
   })
   .add('Low-level: CSVLexer + CSVRecordAssembler (1000 rows)', () => {
     const lexer = new CSVLexer();
     const tokens = lexer.lex(csv1000rows);
     const assembler = new CSVRecordAssembler();
-    const records = [...assembler.assemble(tokens)];
+    for (const _ of assembler.assemble(tokens)) {
+      // noop
+    }
   });
 
 
@@ -709,7 +721,7 @@ console.table(bench.table());
 
 console.log('\n=== Performance Summary ===');
 console.log('✓ Basic parsing operations completed');
-console.log('✓ Engine preset tests (mainThread, wasm, worker variants) completed');
+console.log('✓ Engine preset tests (mainThread, wasm, strict, worker variants) completed');
 console.log('✓ Column variation tests (10-10000 columns) completed');
 console.log('✓ Quoted vs unquoted field tests completed');
 console.log('✓ Worker performance tests completed');
