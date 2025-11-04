@@ -2,6 +2,8 @@
 
 This guide shows you how to maximize CSV parsing performance using WebAssembly in web-csv-toolbox.
 
+> **Note for Bundler Users**: When using WASM with bundlers (Vite, Webpack, etc.), you must explicitly configure WASM file loading. When combining WASM with Workers (e.g., `EnginePresets.workerWasm()`), you also need to specify the `workerURL` option. See [How to Use with Bundlers](./use-with-bundlers.md) for detailed configuration.
+
 ## Prerequisites
 
 - Completed [Using WebAssembly](../tutorials/using-webassembly.md) tutorial

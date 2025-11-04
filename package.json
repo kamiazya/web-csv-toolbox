@@ -15,6 +15,20 @@
       "types": "./dist/web-csv-toolbox.d.ts",
       "default": "./dist/web-csv-toolbox.js"
     },
+    "./worker": {
+      "node": {
+        "types": "./dist/worker.node.d.ts",
+        "default": "./dist/worker.node.js"
+      },
+      "browser": {
+        "types": "./dist/worker.web.d.ts",
+        "default": "./dist/worker.web.js"
+      },
+      "default": {
+        "types": "./dist/worker.web.d.ts",
+        "default": "./dist/worker.web.js"
+      }
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"
