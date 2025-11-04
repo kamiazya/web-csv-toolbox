@@ -51,10 +51,6 @@
       "browser": "./dist/execution/worker/helpers/createWorker.web.js",
       "default": "./dist/execution/worker/helpers/createWorker.web.js"
     },
-    "#execution/worker/worker.shared.js": {
-      "types": "./dist/execution/worker/helpers/worker.shared.d.ts",
-      "default": "./dist/execution/worker/helpers/worker.shared.js"
-    },
     "#getOptionsFromResponse.constants.js": {
       "types": "./dist/getOptionsFromResponse.constants.d.ts",
       "node": "./dist/getOptionsFromResponse.constants.node.js",
