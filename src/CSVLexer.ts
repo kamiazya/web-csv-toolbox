@@ -197,19 +197,23 @@ export class CSVLexer<
     }
     // Buffer is Record Delimiter, defer to the next iteration.
     if (this.#flush === false) {
-      if (remainingLength === 2 &&
-          this.#buffer[this.#bufferOffset] === '\r' &&
-          this.#buffer[this.#bufferOffset + 1] === '\n') {
+      if (
+        remainingLength === 2 &&
+        this.#buffer[this.#bufferOffset] === "\r" &&
+        this.#buffer[this.#bufferOffset + 1] === "\n"
+      ) {
         return null;
       }
-      if (remainingLength === 1 && this.#buffer[this.#bufferOffset] === '\n') {
+      if (remainingLength === 1 && this.#buffer[this.#bufferOffset] === "\n") {
         return null;
       }
     }
 
     // Check for CRLF
-    if (this.#buffer[this.#bufferOffset] === '\r' &&
-        this.#buffer[this.#bufferOffset + 1] === '\n') {
+    if (
+      this.#buffer[this.#bufferOffset] === "\r" &&
+      this.#buffer[this.#bufferOffset + 1] === "\n"
+    ) {
       this.#bufferOffset += 2;
       const start: Position = { ...this.#cursor };
       this.#cursor.line++;
@@ -228,7 +232,7 @@ export class CSVLexer<
     }
 
     // Check for LF
-    if (this.#buffer[this.#bufferOffset] === '\n') {
+    if (this.#buffer[this.#bufferOffset] === "\n") {
       this.#bufferOffset += 1;
       const start: Position = { ...this.#cursor };
       this.#cursor.line++;
@@ -292,7 +296,8 @@ export class CSVLexer<
 
       // Define variables
       let cur: string = this.#buffer[this.#bufferOffset + offset];
-      let next: string | undefined = this.#buffer[this.#bufferOffset + offset + 1];
+      let next: string | undefined =
+        this.#buffer[this.#bufferOffset + offset + 1];
       do {
         // If the current character is a quote, check the next characters for closing quotes.
         if (cur === this.#quotation) {
