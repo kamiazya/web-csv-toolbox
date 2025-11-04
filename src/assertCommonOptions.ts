@@ -74,4 +74,12 @@ export function assertCommonOptions<
       "maxBufferSize must be a positive integer (in characters) or Number.POSITIVE_INFINITY",
     );
   }
+
+  // Validate bufferCleanupThreshold
+  const bct = options.bufferCleanupThreshold;
+  if (!Number.isFinite(bct) || bct < 0 || !Number.isInteger(bct)) {
+    throw new RangeError(
+      "bufferCleanupThreshold must be a non-negative integer (in characters)",
+    );
+  }
 }

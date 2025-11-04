@@ -18,6 +18,25 @@ import { escapeRegExp } from "./utils/escapeRegExp.ts";
 export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
 /**
+ * Default buffer cleanup threshold in characters.
+ * When the processed buffer offset exceeds this threshold,
+ * the buffer is sliced to reduce memory usage.
+ *
+ * @remarks
+ * This value affects the balance between performance and memory usage:
+ * - Smaller values: More frequent cleanup, lower memory usage, higher CPU overhead
+ * - Larger values: Less frequent cleanup, higher memory usage, lower CPU overhead
+ *
+ * The optimal value may depend on:
+ * - Average token size
+ * - TransformStream queuing strategy
+ * - Available memory
+ *
+ * @default 10240 (10KB)
+ */
+export const DEFAULT_BUFFER_CLEANUP_THRESHOLD = 10 * 1024;
+
+/**
  * Options for the CSVLexer.lex method.
  */
 export interface CSVLexerLexOptions {
@@ -45,6 +64,7 @@ export class CSVLexer<
   #matcher: RegExp;
   #fieldDelimiterLength: number;
   #maxBufferSize: number;
+  #bufferCleanupThreshold: number;
 
   #cursor: Position = {
     line: 1,
@@ -66,13 +86,20 @@ export class CSVLexer<
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
       maxBufferSize = DEFAULT_MAX_BUFFER_SIZE,
+      bufferCleanupThreshold = DEFAULT_BUFFER_CLEANUP_THRESHOLD,
       signal,
     } = options;
-    assertCommonOptions({ delimiter, quotation, maxBufferSize });
+    assertCommonOptions({
+      delimiter,
+      quotation,
+      maxBufferSize,
+      bufferCleanupThreshold,
+    });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
     this.#fieldDelimiterLength = delimiter.length;
     this.#maxBufferSize = maxBufferSize;
+    this.#bufferCleanupThreshold = bufferCleanupThreshold;
     const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
@@ -144,8 +171,8 @@ export class CSVLexer<
    * Called periodically when buffer offset exceeds a threshold.
    */
   #cleanupBuffer(): void {
-    // Only cleanup if we've processed a significant amount (10KB threshold)
-    if (this.#bufferOffset > 10240) {
+    // Only cleanup if we've processed a significant amount
+    if (this.#bufferOffset > this.#bufferCleanupThreshold) {
       this.#buffer = this.#buffer.slice(this.#bufferOffset);
       this.#bufferOffset = 0;
     }

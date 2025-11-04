@@ -225,15 +225,23 @@ export namespace FC {
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
         maxBufferSize: fc.constant(DEFAULT_MAX_BUFFER_SIZE),
+        bufferCleanupThreshold: fc.constant(10 * 1024),
       })
-      .filter(({ delimiter, quotation, maxBufferSize }) => {
-        try {
-          assertCommonOptions({ delimiter, quotation, maxBufferSize });
-          return true;
-        } catch {
-          return false;
-        }
-      });
+      .filter(
+        ({ delimiter, quotation, maxBufferSize, bufferCleanupThreshold }) => {
+          try {
+            assertCommonOptions({
+              delimiter,
+              quotation,
+              maxBufferSize,
+              bufferCleanupThreshold,
+            });
+            return true;
+          } catch {
+            return false;
+          }
+        },
+      );
   }
 
   export function quote() {

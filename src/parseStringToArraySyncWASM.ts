@@ -98,6 +98,7 @@ export function parseStringToArraySyncWASM<
     delimiter = DEFAULT_DELIMITER,
     quotation = DEFAULT_QUOTATION,
     maxBufferSize = 10485760,
+    bufferCleanupThreshold = 10240,
   } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(
@@ -107,7 +108,12 @@ export function parseStringToArraySyncWASM<
   if (quotation !== DOUBLE_QUOTE) {
     throw new RangeError("Invalid quotation, must be double quote on WASM.");
   }
-  assertCommonOptions({ delimiter, quotation, maxBufferSize });
+  assertCommonOptions({
+    delimiter,
+    quotation,
+    maxBufferSize,
+    bufferCleanupThreshold,
+  });
   const demiliterCode = delimiter.charCodeAt(0);
   return JSON.parse(parseStringToArraySync(csv, demiliterCode));
 }

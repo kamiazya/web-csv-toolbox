@@ -11,6 +11,7 @@ describe("function assertCommonOptions", () => {
         quotation: "",
         delimiter: DOUBLE_QUOTE,
         maxBufferSize: 1024,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -24,6 +25,7 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: "",
         maxBufferSize: 1024,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -43,6 +45,7 @@ describe("function assertCommonOptions", () => {
               quotation: value,
               delimiter: value,
               maxBufferSize: 1024,
+              bufferCleanupThreshold: 10240,
             }),
           ).toThrowErrorMatchingInlineSnapshot(
             // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -60,6 +63,7 @@ describe("function assertCommonOptions", () => {
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
           maxBufferSize: 1024,
+          bufferCleanupThreshold: 10240,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -72,6 +76,7 @@ describe("function assertCommonOptions", () => {
           quotation: COMMA,
           delimiter: delimiter,
           maxBufferSize: 1024,
+          bufferCleanupThreshold: 10240,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -86,6 +91,7 @@ describe("function assertCommonOptions", () => {
         quotation: 1 as unknown as string,
         delimiter: DOUBLE_QUOTE,
         maxBufferSize: 1024,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -99,6 +105,7 @@ describe("function assertCommonOptions", () => {
         quotation: COMMA,
         delimiter: 1 as unknown as string,
         maxBufferSize: 1024,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
       // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
@@ -113,6 +120,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: -1,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrow(RangeError);
 
@@ -122,6 +130,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: 0,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrow(RangeError);
 
@@ -131,6 +140,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: 1.5,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrow(RangeError);
 
@@ -140,6 +150,7 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: Number.NaN,
+        bufferCleanupThreshold: 10240,
       }),
     ).toThrow(RangeError);
   });
@@ -150,6 +161,60 @@ describe("function assertCommonOptions", () => {
         quotation: DOUBLE_QUOTE,
         delimiter: COMMA,
         maxBufferSize: Number.POSITIVE_INFINITY,
+        bufferCleanupThreshold: 10240,
+      }),
+    ).not.toThrow();
+  });
+
+  it("should throw an error if bufferCleanupThreshold is invalid", () => {
+    // Test negative value
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1024,
+        bufferCleanupThreshold: -1,
+      }),
+    ).toThrow(RangeError);
+
+    // Test non-integer
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1024,
+        bufferCleanupThreshold: 1.5,
+      }),
+    ).toThrow(RangeError);
+
+    // Test NaN
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1024,
+        bufferCleanupThreshold: Number.NaN,
+      }),
+    ).toThrow(RangeError);
+
+    // Test Infinity (should be rejected)
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1024,
+        bufferCleanupThreshold: Number.POSITIVE_INFINITY,
+      }),
+    ).toThrow(RangeError);
+  });
+
+  it("should accept 0 as bufferCleanupThreshold to disable cleanup", () => {
+    expect(() =>
+      assertCommonOptions({
+        quotation: DOUBLE_QUOTE,
+        delimiter: COMMA,
+        maxBufferSize: 1024,
+        bufferCleanupThreshold: 0,
       }),
     ).not.toThrow();
   });

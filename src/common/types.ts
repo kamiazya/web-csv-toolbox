@@ -180,6 +180,27 @@ export interface CommonOptions<
    * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
+  /**
+   * Buffer cleanup threshold in characters.
+   *
+   * @remarks
+   * When the processed buffer offset exceeds this threshold,
+   * the buffer is sliced to reduce memory usage.
+   *
+   * This value affects the balance between performance and memory usage:
+   * - Smaller values: More frequent cleanup, lower memory usage, higher CPU overhead
+   * - Larger values: Less frequent cleanup, higher memory usage, lower CPU overhead
+   *
+   * The optimal value may depend on:
+   * - Average token size
+   * - TransformStream queuing strategy
+   * - Available memory
+   *
+   * Consider benchmarking to find the optimal value for your use case.
+   *
+   * @default 10 * 1024 (10KB)
+   */
+  bufferCleanupThreshold?: number;
 }
 
 /**
