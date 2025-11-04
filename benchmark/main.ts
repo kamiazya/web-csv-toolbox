@@ -713,9 +713,15 @@ bench = bench
       // noop
     }
   })
-  // Buffer cleanup threshold optimization tests
+  // Buffer cleanup threshold optimization tests (fine-grained)
   .add('Cleanup threshold: 0 (disabled) (1000 rows)', () => {
     const lexer = new CSVLexer({ bufferCleanupThreshold: 0 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 512B (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 512 });
     for (const _ of lexer.lex(csv1000rows)) {
       // noop
     }
@@ -726,14 +732,32 @@ bench = bench
       // noop
     }
   })
-  .add('Cleanup threshold: 4KB (1000 rows)', () => {
-    const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 });
+  .add('Cleanup threshold: 2KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 2048 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 3KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 3072 });
     for (const _ of lexer.lex(csv1000rows)) {
       // noop
     }
   })
   .add('Cleanup threshold: 4KB - default (1000 rows)', () => {
     const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 6KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 6144 });
+    for (const _ of lexer.lex(csv1000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 8KB (1000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 8192 });
     for (const _ of lexer.lex(csv1000rows)) {
       // noop
     }
@@ -762,15 +786,95 @@ bench = bench
       // noop
     }
   })
-  // Large CSV tests with different thresholds
+  // Small CSV (50 rows) - verify optimal threshold for small data
+  .add('Cleanup threshold: 512B - small CSV (50 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 512 });
+    for (const _ of lexer.lex(csv50rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 2KB - small CSV (50 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 2048 });
+    for (const _ of lexer.lex(csv50rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 4KB - small CSV (50 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 });
+    for (const _ of lexer.lex(csv50rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 8KB - small CSV (50 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 8192 });
+    for (const _ of lexer.lex(csv50rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 16KB - small CSV (50 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 16384 });
+    for (const _ of lexer.lex(csv50rows)) {
+      // noop
+    }
+  })
+  // Medium CSV (500 rows)
+  .add('Cleanup threshold: 512B - medium CSV (500 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 512 });
+    for (const _ of lexer.lex(csv500rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 2KB - medium CSV (500 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 2048 });
+    for (const _ of lexer.lex(csv500rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 4KB - medium CSV (500 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 });
+    for (const _ of lexer.lex(csv500rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 8KB - medium CSV (500 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 8192 });
+    for (const _ of lexer.lex(csv500rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 16KB - medium CSV (500 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 16384 });
+    for (const _ of lexer.lex(csv500rows)) {
+      // noop
+    }
+  })
+  // Large CSV (5000 rows)
+  .add('Cleanup threshold: 512B - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 512 });
+    for (const _ of lexer.lex(csv5000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 2KB - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 2048 });
+    for (const _ of lexer.lex(csv5000rows)) {
+      // noop
+    }
+  })
   .add('Cleanup threshold: 4KB - large CSV (5000 rows)', () => {
     const lexer = new CSVLexer({ bufferCleanupThreshold: 4096 });
     for (const _ of lexer.lex(csv5000rows)) {
       // noop
     }
   })
-  .add('Cleanup threshold: 10KB - large CSV (5000 rows)', () => {
-    const lexer = new CSVLexer({ bufferCleanupThreshold: 10240 });
+  .add('Cleanup threshold: 8KB - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 8192 });
+    for (const _ of lexer.lex(csv5000rows)) {
+      // noop
+    }
+  })
+  .add('Cleanup threshold: 16KB - large CSV (5000 rows)', () => {
+    const lexer = new CSVLexer({ bufferCleanupThreshold: 16384 });
     for (const _ of lexer.lex(csv5000rows)) {
       // noop
     }
