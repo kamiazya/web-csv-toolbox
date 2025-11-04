@@ -110,19 +110,26 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
           this.#setHeader(this.#row as unknown as Header);
         } else {
           if (this.#dirty) {
-            yield Object.fromEntries(
-              this.#header
-                .map((header, index) => [header, index] as const)
-                .filter(([header]) => header)
-                .map(([header, index]) => [header, this.#row.at(index)]),
-            ) as unknown as CSVRecord<Header>;
+            // Optimize: single loop instead of map().filter().map()
+            const entries: [string, string | undefined][] = [];
+            for (let i = 0; i < this.#header.length; i++) {
+              const header = this.#header[i];
+              if (header) {
+                entries.push([header, this.#row[i]]);
+              }
+            }
+            yield Object.fromEntries(entries) as unknown as CSVRecord<Header>;
           } else {
             if (!this.#skipEmptyLines) {
-              yield Object.fromEntries(
-                this.#header
-                  .filter((header) => header)
-                  .map((header) => [header, ""]),
-              ) as CSVRecord<Header>;
+              // Optimize: single loop instead of filter().map()
+              const entries: [string, string][] = [];
+              for (let i = 0; i < this.#header.length; i++) {
+                const header = this.#header[i];
+                if (header) {
+                  entries.push([header, ""]);
+                }
+              }
+              yield Object.fromEntries(entries) as CSVRecord<Header>;
             }
           }
         }
@@ -144,12 +151,15 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   *#flush(): IterableIterator<CSVRecord<Header>> {
     if (this.#header !== undefined) {
       if (this.#dirty) {
-        yield Object.fromEntries(
-          this.#header
-            .map((header, index) => [header, index] as const)
-            .filter(([header]) => header)
-            .map(([header, index]) => [header, this.#row.at(index)]),
-        ) as unknown as CSVRecord<Header>;
+        // Optimize: single loop instead of map().filter().map()
+        const entries: [string, string | undefined][] = [];
+        for (let i = 0; i < this.#header.length; i++) {
+          const header = this.#header[i];
+          if (header) {
+            entries.push([header, this.#row[i]]);
+          }
+        }
+        yield Object.fromEntries(entries) as unknown as CSVRecord<Header>;
       }
     }
   }
