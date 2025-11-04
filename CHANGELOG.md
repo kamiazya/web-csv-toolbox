@@ -1,5 +1,728 @@
 # web-csv-toolbox
 
+## 0.13.0
+
+### Minor Changes
+
+- [#545](https://github.com/kamiazya/web-csv-toolbox/pull/545) [`43a6812`](https://github.com/kamiazya/web-csv-toolbox/commit/43a68127cfe4433ac3c4542933b22f7acbcd93be) Thanks [@kamiazya](https://github.com/kamiazya)! - Add comprehensive memory protection to prevent memory exhaustion attacks
+
+  This release introduces new security features to prevent unbounded memory growth during CSV parsing. The parser now enforces configurable limits on both buffer size and field count to protect against denial-of-service attacks via malformed or malicious CSV data.
+
+  **New Features:**
+
+  - Added `maxBufferSize` option to `CommonOptions` (default: `10 * 1024 * 1024` characters)
+  - Added `maxFieldCount` option to `RecordAssemblerOptions` (default: 100,000 fields)
+  - Throws `RangeError` when buffer exceeds size limit
+  - Throws `RangeError` when field count exceeds limit
+  - Comprehensive memory safety protection against DoS attacks
+
+  **Note:** `maxBufferSize` is measured in UTF-16 code units (JavaScript string length), not bytes. This is approximately 10MB for ASCII text, but may vary for non-ASCII characters.
+
+  **Breaking Changes:**
+  None. This is a backward-compatible enhancement with sensible defaults.
+
+  **Security:**
+  This change addresses three potential security vulnerabilities:
+
+  1. **Unbounded buffer growth via streaming input**: Attackers could exhaust system memory by streaming large amounts of malformed CSV data that cannot be tokenized. The `maxBufferSize` limit prevents this by throwing `RangeError` when the internal buffer exceeds `10 * 1024 * 1024` characters (approximately 10MB for ASCII).
+
+  2. **Quoted field parsing memory exhaustion**: Attackers could exploit the quoted field parsing logic by sending strategically crafted CSV with unclosed quotes or excessive escaped quotes, causing the parser to accumulate unbounded data in the buffer. The `maxBufferSize` limit protects against this attack vector.
+
+  3. **Excessive column count attacks**: Attackers could send CSV files with an enormous number of columns to exhaust memory during header parsing and record assembly. The `maxFieldCount` limit (default: 100,000 fields per record) prevents this by throwing `RangeError` when exceeded.
+
+  Users processing untrusted CSV input are encouraged to use the default limits or configure appropriate `maxBufferSize` and `maxFieldCount` values for their use case.
+
+- [#546](https://github.com/kamiazya/web-csv-toolbox/pull/546) [`76eec90`](https://github.com/kamiazya/web-csv-toolbox/commit/76eec9027400dc77264be2be8a252d284f00dc6a) Thanks [@kamiazya](https://github.com/kamiazya)! - **BREAKING CHANGE**: Change error types from RangeError to TypeError for consistency with Web Standards
+
+  - Change all `RangeError` to `TypeError` for consistency
+  - This affects error handling in:
+    - `getOptionsFromResponse()`: Invalid MIME type, unsupported/multiple content-encodings
+    - `parseResponse()`: Null response body
+    - `parseResponseToStream()`: Null response body
+  - Aligns with Web Standard APIs behavior (DecompressionStream throws TypeError)
+  - Improves consistency for error handling with `catch (error instanceof TypeError)`
+
+  **Migration guide:**
+  If you were catching `RangeError` from `getOptionsFromResponse()`, update to catch `TypeError` instead:
+
+  ```diff
+  - } catch (error) {
+  -   if (error instanceof RangeError) {
+  + } catch (error) {
+  +   if (error instanceof TypeError) {
+        // Handle invalid content type or encoding
+      }
+    }
+  ```
+
+  ### New feature: Experimental compression format support
+
+  - Add `allowExperimentalCompressions` option to enable experimental/non-standard compression formats
+  - **Browsers**: By default, only `gzip` and `deflate` are supported (cross-browser compatible)
+  - **Node.js**: By default, `gzip`, `deflate`, and `br` (Brotli) are supported
+  - When enabled, allows platform-specific formats like `deflate-raw` (Chrome/Edge only)
+  - Provides flexibility for environment-specific compression formats
+  - See documentation for browser compatibility details and usage examples
+
+  **Other improvements in this release:**
+
+  - Add Content-Encoding header validation with RFC 7231 compliance
+  - Normalize Content-Encoding header: convert to lowercase, trim whitespace
+  - Ignore empty or whitespace-only Content-Encoding headers
+  - Add comprehensive tests for Content-Encoding validation (23 tests)
+  - Add security documentation with TransformStream size limit example
+  - Error messages now guide users to `allowExperimentalCompressions` option when needed
+
+- [#551](https://github.com/kamiazya/web-csv-toolbox/pull/551) [`b21b6d8`](https://github.com/kamiazya/web-csv-toolbox/commit/b21b6d89a7a3f18dcbf79ec04ffefde0d7ff4c4c) Thanks [@kamiazya](https://github.com/kamiazya)! - Add comprehensive documentation for supported environments and versioning policy
+
+  This release adds two new reference documents to clarify the library's support policies and version management strategy.
+
+  **New Documentation:**
+
+  - **[Supported Environments](./docs/reference/supported-environments.md)**: Comprehensive documentation of runtime environment support tiers
+  - **[Versioning Policy](./docs/reference/versioning-policy.md)**: Detailed versioning strategy and semantic versioning rules
+
+- [#551](https://github.com/kamiazya/web-csv-toolbox/pull/551) [`b21b6d8`](https://github.com/kamiazya/web-csv-toolbox/commit/b21b6d89a7a3f18dcbf79ec04ffefde0d7ff4c4c) Thanks [@kamiazya](https://github.com/kamiazya)! - Add environment-specific compression format support for better cross-browser and Node.js compatibility
+
+  This release adjusts the supported compression formats based on the runtime environment to ensure reliability and prevent errors across different browsers and Node.js versions.
+
+  **Changes:**
+
+  - **Browser environments**: Support `gzip` and `deflate` only (universal cross-browser support)
+  - **Node.js 20+ environments**: Support `gzip`, `deflate`, and `br` (Brotli)
+
+  **Rationale:**
+
+  Previously, browser builds included `deflate-raw` in the default supported formats. However, `deflate-raw` is only supported in Chromium-based browsers (Chrome, Edge) and not in Firefox or Safari. To ensure the library works reliably across all modern browsers by default, we now only include universally supported formats.
+
+  **Browser Compatibility:**
+
+  | Format        | Chrome/Edge | Firefox | Safari | Included by Default  |
+  | ------------- | ----------- | ------- | ------ | -------------------- |
+  | `gzip`        | ✅          | ✅      | ✅     | ✅ Yes               |
+  | `deflate`     | ✅          | ✅      | ✅     | ✅ Yes               |
+  | `deflate-raw` | ✅          | ❌      | ❌     | ❌ No (experimental) |
+
+  **Using Experimental Compressions:**
+
+  If you need to use `deflate-raw` or other non-standard compression formats in Chromium-based browsers, you can enable them with the `allowExperimentalCompressions` option:
+
+  ```typescript
+  // Use deflate-raw in Chrome/Edge (may fail in Firefox/Safari)
+  const response = await fetch("data.csv"); // Content-Encoding: deflate-raw
+  await parseResponse(response, {
+    allowExperimentalCompressions: true,
+  });
+  ```
+
+  You can also detect browser support at runtime:
+
+  ```typescript
+  // Browser-aware usage
+  const isChromium = navigator.userAgent.includes("Chrome");
+  await parseResponse(response, {
+    allowExperimentalCompressions: isChromium,
+  });
+  ```
+
+  **Migration Guide:**
+
+  For users who were relying on `deflate-raw` in browser environments:
+
+  1. **Option 1**: Use `gzip` or `deflate` compression instead (recommended for cross-browser compatibility)
+
+     ```typescript
+     // Server-side: Use gzip instead of deflate-raw
+     response.headers.set("content-encoding", "gzip");
+     ```
+
+  2. **Option 2**: Enable experimental compressions for Chromium-only deployments
+
+     ```typescript
+     await parseResponse(response, {
+       allowExperimentalCompressions: true,
+     });
+     // Works in Chrome/Edge, may fail in Firefox/Safari
+     ```
+
+  3. **Option 3**: Detect browser support and handle fallbacks
+     ```typescript
+     try {
+       await parseResponse(response, {
+         allowExperimentalCompressions: true,
+       });
+     } catch (error) {
+       // Fallback for browsers that don't support the format
+       console.warn("Compression format not supported, using uncompressed");
+     }
+     ```
+
+  **Implementation:**
+
+  The supported compressions are now determined at build time using package.json `imports` field:
+
+  - Browser/Web builds use `getOptionsFromResponse.constants.web.js`
+  - Node.js builds use `getOptionsFromResponse.constants.node.js`
+
+  This ensures type-safe, environment-appropriate compression support.
+
+  **No changes required** for users already using `gzip` or `deflate` compression in browsers, or `gzip`, `deflate`, or `br` in Node.js.
+
+- [#563](https://github.com/kamiazya/web-csv-toolbox/pull/563) [`7d51d52`](https://github.com/kamiazya/web-csv-toolbox/commit/7d51d5285be9cffa5103de58469d8de0c98959d7) Thanks [@kamiazya](https://github.com/kamiazya)! - Optimize streaming API design for better performance and consistency
+
+  ## Breaking Changes
+
+  ### Token Stream Output Changed from Batch to Individual
+
+  `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` now emit/accept individual tokens instead of token arrays for improved streaming performance and API consistency.
+
+  **Before:**
+
+  ```typescript
+  CSVLexerTransformer: TransformStream<string, Token[]>;
+  CSVRecordAssemblerTransformer: TransformStream<Token[], CSVRecord>;
+  ```
+
+  **After:**
+
+  ```typescript
+  CSVLexerTransformer: TransformStream<string, Token>;
+  CSVRecordAssemblerTransformer: TransformStream<Token, CSVRecord>;
+  ```
+
+  ### Why This Change?
+
+  1. **Consistent API Design**: RecordAssembler already emits individual records. Lexer now matches this pattern.
+  2. **Better Backpressure**: Fine-grained token-by-token flow control instead of batch-based.
+  3. **Memory Efficiency**: Eliminates temporary token array allocation.
+  4. **Simpler Queuing Strategy**: Uniform `size: () => 1` across the pipeline.
+
+  ### Migration Guide
+
+  **For Low-Level API Users:**
+
+  If you directly use `CSVLexerTransformer` or `CSVRecordAssemblerTransformer`:
+
+  ```typescript
+  // Before: Process token arrays
+  stream.pipeThrough(new CSVLexerTransformer()).pipeTo(
+    new WritableStream({
+      write(tokens) {
+        // tokens is Token[]
+        for (const token of tokens) {
+          console.log(token);
+        }
+      },
+    })
+  );
+
+  // After: Process individual tokens
+  stream.pipeThrough(new CSVLexerTransformer()).pipeTo(
+    new WritableStream({
+      write(token) {
+        // token is Token
+        console.log(token);
+      },
+    })
+  );
+  ```
+
+  **For High-Level API Users:**
+
+  No changes required. Functions like `parseString()`, `parseStringStream()`, etc. continue to work without modification.
+
+  ## Performance Improvements
+
+  ### CSVRecordAssembler Now Accepts Single Tokens
+
+  `CSVRecordAssembler.assemble()` has been optimized to accept both single `Token` and `Iterable<Token>`, eliminating unnecessary array allocation in streaming scenarios.
+
+  **Before:**
+
+  ```typescript
+  // Had to wrap single tokens in an array
+  for (const token of tokens) {
+    const records = assembler.assemble([token], { stream: true }); // Array allocation
+  }
+  ```
+
+  **After:**
+
+  ```typescript
+  // Pass single tokens directly (backward compatible)
+  for (const token of tokens) {
+    const records = assembler.assemble(token, { stream: true }); // No array allocation
+  }
+
+  // Iterable still works
+  const records = assembler.assemble(tokens, { stream: true });
+  ```
+
+  **Benefits:**
+
+  - Zero-allocation token processing in streaming mode
+  - Better memory efficiency for large CSV files
+  - Backward compatible - existing code continues to work
+  - Aligns with Web Standards (TextDecoder pattern)
+
+  **Implementation Details:**
+
+  - Uses lightweight `Symbol.iterator` check to detect iterables
+  - Internal refactoring with private `#processToken()` and `#flush()` methods
+  - Maintains single public method (`assemble`) following TextDecoder pattern
+
+  ## New Feature: Configurable Queuing Strategies
+
+  Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` now support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments, similar to the standard `TransformStream`.
+
+  ## API Changes
+
+  ### Constructor Signature
+
+  Queuing strategies are now passed as separate constructor arguments:
+
+  ```typescript
+  // Before (if this was previously supported - this is a new feature)
+  new CSVLexerTransformer(options)
+
+  // After
+  new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
+  new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
+  ```
+
+  ### CSVLexerTransformer
+
+  - **Parameter 1** `options`: CSV-specific options (delimiter, quotation, etc.)
+  - **Parameter 2** `writableStrategy`: Controls buffering for incoming string chunks
+    - Default: `{ highWaterMark: 65536, size: (chunk) => chunk.length }`
+    - Counts by **character count** (string length)
+    - Default allows ~64KB of characters
+  - **Parameter 3** `readableStrategy`: Controls buffering for outgoing tokens
+    - Default: `{ highWaterMark: 1024, size: () => 1 }`
+    - Counts each **token as 1**
+    - Default allows 1024 tokens
+
+  ### CSVRecordAssemblerTransformer
+
+  - **Parameter 1** `options`: CSV-specific options (header, maxFieldCount, etc.)
+  - **Parameter 2** `writableStrategy`: Controls buffering for incoming tokens
+    - Default: `{ highWaterMark: 1024, size: () => 1 }`
+    - Counts each **token as 1**
+    - Default allows 1024 tokens
+  - **Parameter 3** `readableStrategy`: Controls buffering for outgoing CSV records
+    - Default: `{ highWaterMark: 256, size: () => 1 }`
+    - Counts each **record as 1**
+    - Default allows 256 records
+
+  ## Default Values Rationale
+
+  **Important**: The default values are **theoretical starting points** based on data flow characteristics, **not empirical benchmarks**.
+
+  ### Size Counting Strategy
+
+  Each transformer uses a **simple and consistent size algorithm**:
+
+  - **CSVLexerTransformer writable**: Counts by **string length** (characters). This provides accurate backpressure based on actual data volume.
+  - **CSVLexerTransformer readable**: Counts **each token as 1**. Simple and consistent with downstream.
+  - **CSVRecordAssemblerTransformer writable**: Counts **each token as 1**. Matches the lexer's readable side for smooth pipeline flow.
+  - **CSVRecordAssemblerTransformer readable**: Counts **each record as 1**. Simple and effective for record-based backpressure.
+
+  ### Why These Defaults?
+
+  - **Uniform counting**: Token and record stages all use `size: () => 1` for simplicity
+  - **Character-based input**: Only the initial string input uses character counting for predictable memory usage
+  - **Predictable pipeline**: Consistent token-by-token and record-by-record flow throughout
+  - **Natural backpressure**: Fine-grained control allows responsive backpressure handling
+
+  ### Backpressure Handling
+
+  Both transformers implement **cooperative backpressure handling** with configurable check intervals:
+
+  - Periodically checks `controller.desiredSize` during processing
+  - When backpressure is detected (`desiredSize ≤ 0`), yields to the event loop via `setTimeout(0)`
+  - Prevents blocking the main thread during heavy CSV processing
+  - Allows downstream consumers to catch up, avoiding memory buildup
+
+  **Configurable Check Interval:**
+
+  - Set via `checkInterval` property in `ExtendedQueuingStrategy`
+  - Lower values = more responsive but slight overhead
+  - Higher values = less overhead but slower response
+  - Defaults: 100 tokens (lexer), 10 records (assembler)
+
+  This is especially important for:
+
+  - Large CSV files that generate many tokens/records
+  - Slow downstream consumers (e.g., database writes, API calls)
+  - Browser environments where UI responsiveness is critical
+
+  Optimal values depend on your runtime environment (browser/Node.js/Deno), data size, memory constraints, and CPU performance. **You should profile your specific use case** to find the best values.
+
+  ## Benchmarking Tool
+
+  A benchmark tool is provided to help you find optimal values for your use case:
+
+  ```bash
+  pnpm --filter web-csv-toolbox-benchmark queuing-strategy
+  ```
+
+  See `benchmark/queuing-strategy.bench.ts` for details.
+
+  ## Usage Examples
+
+  ```typescript
+  import {
+    CSVLexerTransformer,
+    CSVRecordAssemblerTransformer,
+  } from "web-csv-toolbox";
+
+  // Basic usage (with defaults)
+  const lexer = new CSVLexerTransformer();
+
+  // Custom strategies based on YOUR profiling results
+  const lexer = new CSVLexerTransformer(
+    { delimiter: "," },
+    {
+      highWaterMark: 131072, // 128KB of characters
+      size: (chunk) => chunk.length, // Count by character length
+      checkInterval: 200, // Check backpressure every 200 tokens
+    },
+    {
+      highWaterMark: 2048, // 2048 tokens
+      size: () => 1, // Each token counts as 1
+      checkInterval: 50, // Check backpressure every 50 tokens
+    }
+  );
+
+  const assembler = new CSVRecordAssemblerTransformer(
+    {},
+    {
+      highWaterMark: 2048, // 2048 tokens
+      size: () => 1, // Each token counts as 1
+      checkInterval: 20, // Check backpressure every 20 records
+    },
+    {
+      highWaterMark: 512, // 512 records
+      size: () => 1, // Each record counts as 1
+      checkInterval: 5, // Check backpressure every 5 records
+    }
+  );
+  ```
+
+  ## When to Customize
+
+  - **High-throughput servers**: Try higher values (e.g., 32-64) and benchmark
+  - **Memory-constrained environments** (browsers, edge functions): Try lower values (e.g., 1-4) and monitor memory
+  - **Custom pipelines**: Profile with representative data and iterate
+
+  ## Web Standards Compliance
+
+  This API follows the Web Streams API pattern where `TransformStream` accepts queuing strategies as constructor arguments, making it consistent with standard web platform APIs.
+
+- [#562](https://github.com/kamiazya/web-csv-toolbox/pull/562) [`bd865d6`](https://github.com/kamiazya/web-csv-toolbox/commit/bd865d6ddb1cf9691d7b9a83d0790651f074dd47) Thanks [@kamiazya](https://github.com/kamiazya)! - **BREAKING CHANGE**: Refactor low-level API to align with Web Standards (TextDecoder pattern)
+
+  This release introduces breaking changes to make the API more consistent with Web Standard APIs like `TextDecoder`.
+
+  ## Class Renames
+
+  All core classes have been renamed with `CSV` prefix for clarity:
+
+  - `Lexer` → `CSVLexer`
+  - `RecordAssembler` → `CSVRecordAssembler`
+  - `LexerTransformer` → `CSVLexerTransformer`
+  - `RecordAssemblerTransformer` → `CSVRecordAssemblerTransformer`
+
+  ## API Changes
+
+  The streaming API now follows the `TextDecoder` pattern using `options.stream` instead of positional boolean parameters:
+
+  ### CSVLexer
+
+  ```ts
+  // Before
+  lexer.lex(chunk, true); // buffering mode
+  lexer.flush(); // flush remaining data
+
+  // After
+  lexer.lex(chunk, { stream: true }); // streaming mode
+  lexer.lex(); // flush remaining data
+  ```
+
+  ### CSVRecordAssembler
+
+  ```ts
+  // Before
+  assembler.assemble(tokens, false); // don't flush
+  assembler.flush(); // flush remaining data
+
+  // After
+  assembler.assemble(tokens, { stream: true }); // streaming mode
+  assembler.assemble(); // flush remaining data
+  ```
+
+  ## Removed Methods
+
+  - `CSVLexer.flush()` - Use `lex()` without arguments instead
+  - `CSVRecordAssembler.flush()` - Use `assemble()` without arguments instead
+
+  ## Migration Guide
+
+  1. Update class names: Add `CSV` prefix to `Lexer`, `RecordAssembler`, `LexerTransformer`, and `RecordAssemblerTransformer`
+  2. Replace `lex(chunk, buffering)` with `lex(chunk, { stream: !buffering })`
+  3. Replace `assemble(tokens, flush)` with `assemble(tokens, { stream: !flush })`
+  4. Replace `flush()` calls with parameter-less `lex()` or `assemble()` calls
+
+- [#551](https://github.com/kamiazya/web-csv-toolbox/pull/551) [`b21b6d8`](https://github.com/kamiazya/web-csv-toolbox/commit/b21b6d89a7a3f18dcbf79ec04ffefde0d7ff4c4c) Thanks [@kamiazya](https://github.com/kamiazya)! - Add experimental worker thread execution support for CSV parsing
+
+  This release introduces experimental worker thread execution support, enabling CSV parsing to be offloaded to a separate thread. This keeps the main thread responsive, particularly beneficial for large CSV files in browser environments.
+
+  **New Features:**
+
+  - Added `engine` configuration object to all parsing functions (`parseString`, `parseBinary`, `parseStringStream`, `parseUint8ArrayStream`, `parseResponse`)
+  - Support for `engine: { worker: true }` to run parsing in a Web Worker (browser) or Worker Thread (Node.js)
+  - Support for `engine: { wasm: true }` to use WebAssembly for high-performance parsing
+  - Support for `engine: { worker: true, wasm: true }` to combine both strategies
+  - Cross-platform worker support for browsers, Node.js (20+), and Deno
+  - Automatic worker strategy selection: Transferable Streams (Chrome/Firefox/Edge) or Message Streaming (Safari/fallback)
+  - Concurrent request handling: WorkerPool manages multiple CSV parsing requests efficiently
+
+  **Implementation Details:**
+
+  - **Execution Routing Layer**: Dynamic imports route parsing to appropriate execution strategy (main thread, worker, or WASM)
+  - **Cross-Platform Compatibility**:
+    - Browsers: Web Workers with Transferable Streams (zero-copy)
+    - Node.js: Worker Threads with message passing
+    - Deno: Web Workers API
+  - **Worker Context Abstraction**: Unified message handling across `self` (Web Workers) and `parentPort` (Node.js Worker Threads)
+  - **Smart Stream Handling**:
+    - Browser: Transfer ReadableStream directly to worker
+    - Node.js: Collect stream data first, then transfer to worker
+
+  **API Usage:**
+
+  ```typescript
+  import { parseString } from "web-csv-toolbox";
+
+  // Parse in main thread (default)
+  for await (const record of parseString(csv)) {
+    console.log(record);
+  }
+
+  // Parse in worker thread (experimental)
+  for await (const record of parseString(csv, { engine: { worker: true } })) {
+    console.log(record);
+  }
+
+  // Parse with WASM (experimental)
+  for await (const record of parseString(csv, { engine: { wasm: true } })) {
+    console.log(record);
+  }
+
+  // Parse with both Worker and WASM (experimental)
+  for await (const record of parseString(csv, {
+    engine: { worker: true, wasm: true },
+  })) {
+    console.log(record);
+  }
+  ```
+
+  **Performance Considerations:**
+
+  - Worker initialization has overhead (~5-20ms depending on environment)
+  - Best suited for:
+    - Large CSV files (>1000 rows)
+    - Maintaining UI responsiveness during parsing
+    - Processing multiple CSVs concurrently
+  - For small CSV files (<100 rows), main thread execution is typically faster
+
+  **Known Limitations:**
+
+  - Engine configuration is experimental and subject to change
+  - Safari does not support Transferable Streams (automatically falls back to Message Streaming)
+  - WASM only supports UTF-8 encoding and double-quote (`"`) as quotation character
+
+  **Breaking Changes:**
+
+  None. This is a backward-compatible addition. Existing code continues to work without changes.
+
+  **Migration Guide:**
+
+  No migration required. To use worker execution, simply add the `engine` option:
+
+  ```typescript
+  // Before (still works)
+  parseString(csv);
+
+  // After (with worker)
+  parseString(csv, { engine: { worker: true } });
+
+  // With WASM
+  parseString(csv, { engine: { wasm: true } });
+
+  // With both
+  parseString(csv, { engine: { worker: true, wasm: true } });
+  ```
+
+  **Security Considerations:**
+
+  - **Resource Protection**: When deploying applications that accept user-uploaded CSV files, it is strongly recommended to use `WorkerPool` with a limited `maxWorkers` setting to prevent resource exhaustion attacks
+  - Malicious users could attempt to overwhelm the application by uploading multiple large CSV files simultaneously
+  - Setting a reasonable `maxWorkers` limit (e.g., 2-4) helps protect against such attacks while maintaining good performance
+  - Example secure configuration:
+
+    ```typescript
+    // Recommended: Limit concurrent workers to protect against attacks
+    using pool = new WorkerPool({ maxWorkers: 4 });
+
+    for await (const record of parseString(userUploadedCSV, {
+      engine: { worker: true, workerPool: pool }
+    })) {
+      // Process records safely
+    }
+    ```
+
+### Patch Changes
+
+- [#547](https://github.com/kamiazya/web-csv-toolbox/pull/547) [`cec6905`](https://github.com/kamiazya/web-csv-toolbox/commit/cec6905200814e21efa17adbb4a6652519dd1e74) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix AbortSignal propagation in Transform Stream components
+
+  This release fixes a security vulnerability where AbortSignal was not properly propagated through the Transform Stream pipeline, allowing processing to continue even after abort requests.
+
+  **Fixed Issues:**
+
+  - Fixed `LexerTransformer` to accept and propagate `AbortSignal` to internal `Lexer` instance
+  - Fixed `RecordAssemblerTransformer` to properly propagate `AbortSignal` to internal `RecordAssembler` instance
+  - Added comprehensive tests for AbortSignal propagation in Transform Stream components
+  - Added `waitAbort` helper function to handle race conditions in AbortSignal tests
+  - Improved constructor initialization order in both Transformer classes for better code clarity
+
+  **Code Quality Improvements:**
+
+  - Added `LexerTransformerOptions` type definition for better type consistency across Transformer classes
+  - Refactored constructors to initialize local variables before `super()` calls, improving code readability
+  - Removed redundant type intersections in `RecordAssemblerTransformer`
+  - Eliminated code duplication by moving test helpers to shared location
+
+  **Security Impact:**
+
+  This fix addresses a medium-severity security issue where attackers could bypass abort signals in streaming CSV processing. Without this fix, malicious actors could send large CSV payloads and continue consuming system resources (CPU, memory) even after cancellation attempts, potentially causing service degradation or temporary resource exhaustion.
+
+  **Before this fix:**
+
+  ```ts
+  const controller = new AbortController();
+  const stream = largeCSVStream
+    .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+    .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }));
+
+  controller.abort(); // Signal was ignored - processing continued!
+  ```
+
+  **After this fix:**
+
+  ```ts
+  const controller = new AbortController();
+  const stream = largeCSVStream
+    .pipeThrough(new LexerTransformer({ signal: controller.signal }))
+    .pipeThrough(new RecordAssemblerTransformer({ signal: controller.signal }));
+
+  controller.abort(); // Processing stops immediately with AbortError
+  ```
+
+  Users processing untrusted CSV streams should ensure they implement proper timeout and abort signal handling to prevent resource exhaustion.
+
+- [#548](https://github.com/kamiazya/web-csv-toolbox/pull/548) [`3946273`](https://github.com/kamiazya/web-csv-toolbox/commit/3946273aa1c59a7b4a9fae6c2dbfae0d80999761) Thanks [@kamiazya](https://github.com/kamiazya)! - Add binary size limit protection to prevent memory exhaustion attacks
+
+  - Add `maxBinarySize` option (default: 100MB) for ArrayBuffer/Uint8Array inputs
+  - Throw `RangeError` when binary size exceeds the limit
+  - Update documentation with security considerations for large file handling
+  - Add comprehensive tests for binary size validation
+
+- [#550](https://github.com/kamiazya/web-csv-toolbox/pull/550) [`7565212`](https://github.com/kamiazya/web-csv-toolbox/commit/756521231cde231531fdb74f1a3eeee8400b17f8) Thanks [@VaishnaviOnPC](https://github.com/VaishnaviOnPC)! - docs: Add headerless csv example
+
+- [#566](https://github.com/kamiazya/web-csv-toolbox/pull/566) [`9da8ea2`](https://github.com/kamiazya/web-csv-toolbox/commit/9da8ea20512f2a1e07c4d78092cecedb63cd5455) Thanks [@kamiazya](https://github.com/kamiazya)! - Fix header index mismatch when filtering empty header fields
+
+  Fixed a critical bug in `CSVRecordAssembler` where empty header fields caused incorrect mapping of row values to headers during record assembly.
+
+  ## The Bug
+
+  When CSV headers contained empty fields (e.g., from trailing or leading commas), the record assembler would incorrectly map row values to header fields. This affected both the `#processToken()` method (for records with `RecordDelimiter`) and the `#flush()` method (for incomplete records at the end of streaming).
+
+  **Example:**
+
+  ```typescript
+  // CSV with empty first header field:
+  // ,name,age
+  // skip,Alice,30
+
+  // Before (incorrect):
+  { name: 'skip', age: 'Alice' }
+
+  // After (correct):
+  { name: 'Alice', age: '30' }
+  ```
+
+  ## Root Cause
+
+  The implementation filtered out empty headers first, then used the filtered array's indices to access `this.#row` values:
+
+  ```typescript
+  // Buggy code
+  this.#header
+    .filter((v) => v) // Filter creates new array with new indices
+    .map((header, index) => [
+      // 'index' is wrong - it's the filtered index
+      header,
+      this.#row.at(index), // Accesses wrong position in original row
+    ]);
+  ```
+
+  ## The Fix
+
+  Changed to preserve original indices before filtering:
+
+  ```typescript
+  // Fixed code
+  this.#header
+    .map((header, index) => [header, index] as const) // Capture original index
+    .filter(([header]) => header) // Filter with index preserved
+    .map(([header, index]) => [header, this.#row.at(index)]); // Use original index
+  ```
+
+  This fix is applied to both:
+
+  - `#processToken()` - for records ending with `RecordDelimiter`
+  - `#flush()` - for incomplete records at end of stream
+
+  ## Impact
+
+  This bug affected any CSV with empty header fields, which can occur from:
+
+  - Trailing commas in headers: `name,age,`
+  - Leading commas in headers: `,name,age`
+  - Multiple consecutive commas: `name,,age`
+
+  All such cases now correctly map row values to their corresponding headers.
+
+- [#542](https://github.com/kamiazya/web-csv-toolbox/pull/542) [`b317547`](https://github.com/kamiazya/web-csv-toolbox/commit/b317547d6764b326a27bccaf7719abab968317bd) Thanks [@kamiazya](https://github.com/kamiazya)! - Add GMO Security Program badge to README.md
+
+- [#560](https://github.com/kamiazya/web-csv-toolbox/pull/560) [`a520d54`](https://github.com/kamiazya/web-csv-toolbox/commit/a520d54311834d80163dfd1b4be0162ac4d22908) Thanks [@VaishnaviOnPC](https://github.com/VaishnaviOnPC)! - Add skipEmptyLines option to ParseOptions and parsing functions.
+
+- [#561](https://github.com/kamiazya/web-csv-toolbox/pull/561) [`c3f786a`](https://github.com/kamiazya/web-csv-toolbox/commit/c3f786a4e480ec1609f1e5d305b955e18f6a1ac4) Thanks [@kamiazya](https://github.com/kamiazya)! - Improve ReadableStream to AsyncIterableIterator conversion with native async iteration support
+
+  **Performance Improvements:**
+
+  - `convertStreamToAsyncIterableIterator` now preferentially uses native `Symbol.asyncIterator` when available
+  - Provides better performance in modern browsers and runtimes
+  - Falls back to manual reader-based iteration for Safari and older environments
+  - Improved condition check to verify async iterator is actually callable
+
+  **Resource Management Improvements:**
+
+  - Added proper error handling with `reader.cancel(error)` to release underlying resources on error
+  - Cancel errors are gracefully ignored when already in error state
+  - `reader.releaseLock()` is always called in `finally` block for reliable cleanup
+  - Prevents potential memory leaks from unreleased stream locks
+
 ## 0.12.0
 
 ### Minor Changes
