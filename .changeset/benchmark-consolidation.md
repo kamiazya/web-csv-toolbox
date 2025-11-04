@@ -31,13 +31,6 @@ This changeset focuses on benchmark organization and expansion:
 - Added parseStringStream tests
 - Added data transformation overhead tests
 
-**Visualizations:**
-- Created 11 Mermaid xychart visualization files in ./tmp:
-  - Comprehensive summary dashboard
-  - Individual category charts (8 files)
-  - Visual guide for chart interpretation
-  - Navigation README
-
 **Key Findings:**
 - Column count is the most critical bottleneck (99.7% slower at 10k columns)
 - Field length has non-linear behavior at 1KB threshold
