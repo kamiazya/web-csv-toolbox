@@ -2,6 +2,8 @@
 
 This document explains how worker pool management works in web-csv-toolbox and why two different pool implementations exist.
 
+> **Note for Bundler Users**: When using Workers with bundlers, you must specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) for configuration details.
+
 ## Background
 
 Web Workers are asynchronous resources that, if not properly terminated, can prevent Node.js processes from exiting. This creates a critical challenge for library design:

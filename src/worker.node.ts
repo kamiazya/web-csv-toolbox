@@ -1,6 +1,9 @@
 // @ts-nocheck - Node.js-specific file, skip in tsc --noEmit
 import { parentPort } from "node:worker_threads";
-import { type ParseRequest, createMessageHandler } from "./worker.shared.ts";
+import {
+  type ParseRequest,
+  createMessageHandler,
+} from "./execution/worker/helpers/worker.shared.js";
 
 /**
  * Node.js Worker Threads implementation for CSV parsing.

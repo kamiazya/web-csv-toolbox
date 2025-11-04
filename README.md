@@ -115,6 +115,8 @@ import { parse } from "npm:web-csv-toolbox";
 
 ## Usage 📘
 
+> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.worker()`, `EnginePresets.workerWasm()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/use-with-bundlers.md) for configuration details.
+
 ### Parsing CSV files from strings
 
 ```js

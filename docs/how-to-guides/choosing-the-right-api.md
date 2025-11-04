@@ -2,6 +2,8 @@
 
 This guide helps you select the appropriate API for your CSV parsing needs in web-csv-toolbox.
 
+> **Note for Bundler Users**: When using Worker-based engines (e.g., `EnginePresets.worker()`), you must specify the `workerURL` option with bundlers. See [How to Use with Bundlers](./use-with-bundlers.md).
+
 ## Quick Decision Tree
 
 ```

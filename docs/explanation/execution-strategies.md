@@ -2,6 +2,8 @@
 
 This document explains how different execution strategies work and when to use each one.
 
+> **Note for Bundler Users**: When using Worker-based strategies (worker, workerWasm, etc.) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) for details.
+
 ## Background
 
 CSV parsing can be a performance bottleneck, especially when dealing with large files. The performance requirements vary significantly depending on the runtime environment:
