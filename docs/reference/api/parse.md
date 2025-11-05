@@ -60,13 +60,31 @@ function parse<Header>(
 ): AsyncIterableIterator<CSVRecord<Header>>
 ```
 
+### Parse HTTP Request
+
+```typescript
+function parse<Header>(
+  csv: Request,
+  options?: ParseBinaryOptions<Header>
+): AsyncIterableIterator<CSVRecord<Header>>
+```
+
+### Parse Blob/File
+
+```typescript
+function parse<Header>(
+  csv: Blob,
+  options?: ParseBinaryOptions<Header>
+): AsyncIterableIterator<CSVRecord<Header>>
+```
+
 ---
 
 ## Parameters
 
 ### `csv`
 
-**Type:** `string | Uint8Array | ArrayBuffer | ReadableStream | Response`
+**Type:** `string | Uint8Array | ArrayBuffer | ReadableStream | Response | Request | Blob`
 
 The CSV data to parse.
 
@@ -77,6 +95,8 @@ The CSV data to parse.
 - `ReadableStream<string>` - Stream of CSV text
 - `ReadableStream<Uint8Array>` - Stream of binary CSV data
 - `Response` - HTTP response containing CSV
+- `Request` - HTTP request containing CSV (server-side)
+- `Blob` - Blob or File containing CSV data
 
 ### `options`
 
@@ -731,11 +751,14 @@ ReadableStream                         Response
 
 ## Related APIs
 
-- **[parseString()](./parse-string.md)** - Parse CSV string
-- **[parseResponse()](./parse-response.md)** - Parse HTTP response
-- **[parseBinary()](./parse-binary.md)** - Parse binary data
-- **[parseStringStream()](./parse-string-stream.md)** - Parse string stream
-- **[parseUint8ArrayStream()](./parse-uint8array-stream.md)** - Parse binary stream
+- **[parseString()](./parseString.md)** - Parse CSV string
+- **[parseResponse()](./parseResponse.md)** - Parse HTTP response
+- **[parseRequest()](./parseRequest.md)** - Parse HTTP request
+- **[parseBlob()](./parseBlob.md)** - Parse Blob/File
+- **[parseFile()](./parseFile.md)** - Parse File (alias for parseBlob)
+- **[parseBinary()](./parseBinary.md)** - Parse binary data
+- **[parseStringStream()](./parseStringStream.md)** - Parse string stream
+- **[parseUint8ArrayStream()](./parseUint8ArrayStream.md)** - Parse binary stream
 
 ---
 

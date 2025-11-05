@@ -56,13 +56,13 @@ A CSV Toolbox utilizing Web Standard APIs.
   - ⏳ Use [`AbortSignal.timeout`](https://developer.mozilla.org/docs/Web/API/AbortSignal/timeout_static) to automatically cancel operations that exceed a specified time limit.
 - 🛡️ **Memory Safety Protection**: Built-in limits prevent memory exhaustion attacks.
   - 🔒 Configurable maximum buffer size (default: 10M characters) to prevent DoS attacks via unbounded input.
-  - 🚨 Throws `RangeError` when buffer exceeds the limit.
+    - 🚨 Throws `RangeError` when buffer exceeds the limit.
   - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
-  - ⚠️ Throws `RangeError` when field count exceeds the limit.
+    - ⚠️ Throws `RangeError` when field count exceeds the limit.
   - 💾 Configurable maximum binary size (default: 100MB bytes) for ArrayBuffer/Uint8Array inputs.
-  - 🛑 Throws `RangeError` when binary size exceeds the limit.
+    - 🛑 Throws `RangeError` when binary size exceeds the limit.
 - 🎨 **Flexible Source Support**
-  - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, or `Response` objects.
+  - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, `Response` objects, `Blob`/`File` objects, or `Request` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
   - 🔄 Defaults to `,` and `"` respectively.
 - 💾 **Specialized Binary CSV Parsing**: Leverage Stream-based processing for versatility and strength.
@@ -171,6 +171,47 @@ for await (const record of parse(response)) {
 // Prints:
 // { name: 'Alice', age: '42' }
 // { name: 'Bob', age: '69' }
+```
+
+### Parsing CSV files from `Blob` or `File` objects
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// From file input
+const fileInput = document.querySelector('input[type="file"]');
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+
+  for await (const record of parse(file)) {
+    console.log(record);
+  }
+  // Prints:
+  // { name: 'Alice', age: '42' }
+  // { name: 'Bob', age: '69' }
+});
+```
+
+### Parsing CSV files from `Request` objects (Server-side)
+
+```js
+import { parse } from 'web-csv-toolbox';
+
+// Cloudflare Workers / Service Workers
+export default {
+  async fetch(request) {
+    if (request.method === 'POST') {
+      for await (const record of parse(request)) {
+        console.log(record);
+      }
+      // Prints:
+      // { name: 'Alice', age: '42' }
+      // { name: 'Bob', age: '69' }
+
+      return new Response('OK', { status: 200 });
+    }
+  }
+};
 ```
 
 ### Parsing CSV files with different delimiters and quotation characters
@@ -316,6 +357,19 @@ try {
 
 - Verify that JavaScript is executable on the Deno. [![Deno CI](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml/badge.svg)](https://github.com/kamiazya/web-csv-toolbox/actions/workflows/deno.yaml)
 
+### Platform-Specific Usage Guide 📚
+
+For detailed examples and best practices for your specific runtime environment, see:
+
+**[Platform-Specific Usage Guide](./docs/how-to-guides/platform-usage/)**
+
+This guide covers:
+- 🌐 **Browser**: File input, drag-and-drop, Clipboard API, FormData, Fetch API
+- 🟢 **Node.js**: Buffer, fs.ReadStream, HTTP requests, stdin/stdout
+- 🦕 **Deno**: Deno.readFile, Deno.open, fetch API
+- ⚡ **Edge**: Cloudflare Workers, Deno Deploy, Vercel Edge Functions
+- 🐰 **Bun**: File API, HTTP server
+
 ## APIs 🧑‍💻
 
 ### High-level APIs 🚀
@@ -328,11 +382,14 @@ providing an intuitive and straightforward experience for users.
 - **`function parse.toArray(input[, options]): Promise<CSVRecord[]>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parse.toArray.html)
   - Parses CSV input into an array of records, ideal for smaller data sets.
 
-The `input` paramater can be a `string`, a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream)
-of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s,
-or a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object,
-or a [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object,
-or a [Response](https://developer.mozilla.org/docs/Web/API/Response) object.
+The `input` paramater can be:
+- a `string`
+- a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream) of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s
+- a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object
+- an [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object
+- a [Response](https://developer.mozilla.org/docs/Web/API/Response) object
+- a [Blob](https://developer.mozilla.org/docs/Web/API/Blob) or [File](https://developer.mozilla.org/docs/Web/API/File) object
+- a [Request](https://developer.mozilla.org/docs/Web/API/Request) object (server-side)
 
 ### Middle-level APIs 🧱
 
@@ -345,6 +402,12 @@ catering to users who need more detailed and fine-tuned functionality.
   - Parse CSV Binary of ArrayBuffer or Uint8Array.
 - **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
   - Customized parsing directly from `Response` objects.
+- **`function parseRequest(request[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseRequest-1.html)
+  - Server-side parsing from `Request` objects (Cloudflare Workers, Service Workers, etc.).
+- **`function parseBlob(blob[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBlob-1.html)
+  - Parse CSV data from `Blob` or `File` objects.
+- **`function parseFile(file[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseFile-1.html)
+  - Alias for `parseBlob`, semantically clearer for `File` objects.
 - **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
   - Stream-based parsing for larger or continuous data.
 - **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)

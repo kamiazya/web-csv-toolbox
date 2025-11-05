@@ -54,9 +54,7 @@ describe("parseUint8ArrayStream with execution strategies", () => {
             const stream = new SingleValueReadableStream(csv).pipeThrough(
               new TextEncoderStream(),
             );
-            const result = parseUint8ArrayStream(stream, { engine });
-            const iterator = result instanceof Promise ? await result : result;
-            for await (const row of iterator) {
+            for await (const row of parseUint8ArrayStream(stream, { engine })) {
               expect(data[i++]).toStrictEqual(row);
             }
           },
@@ -102,10 +100,9 @@ describe("parseUint8ArrayStream with execution strategies", () => {
               const stream = new SingleValueReadableStream(csv).pipeThrough(
                 new TextEncoderStream(),
               );
-              const result = parseUint8ArrayStream(stream, { engine });
-              const iterator =
-                result instanceof Promise ? await result : result;
-              for await (const record of iterator) {
+              for await (const record of parseUint8ArrayStream(stream, {
+                engine,
+              })) {
                 records.push(record);
               }
               return records;
@@ -127,10 +124,10 @@ describe("parseUint8ArrayStream with execution strategies", () => {
     const stream = new SingleValueReadableStream("a,b\n1,2").pipeThrough(
       new TextEncoderStream(),
     );
-    const result = parseUint8ArrayStream(stream, { engine: { wasm: true } });
-    const iterator = result instanceof Promise ? await result : result;
     const records = [];
-    for await (const record of iterator) {
+    for await (const record of parseUint8ArrayStream(stream, {
+      engine: { wasm: true },
+    })) {
       records.push(record);
     }
     expect(records).toHaveLength(1);

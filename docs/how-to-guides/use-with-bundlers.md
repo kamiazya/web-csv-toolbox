@@ -273,13 +273,14 @@ const files = [csv1, csv2, csv3];
 
 await Promise.all(
   files.map(async (csv) => {
-    const records = [];
+    let count = 0;
     for await (const record of parseString(csv, {
       engine: EnginePresets.worker({ workerPool: pool })
     })) {
-      records.push(record);
+      // Process record
+      count++;
     }
-    return records;
+    return count;
   })
 );
 
