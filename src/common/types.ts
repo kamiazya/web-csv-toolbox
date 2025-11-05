@@ -715,6 +715,8 @@ export type CSVString<
 export type CSVBinary =
   | ReadableStream<Uint8Array>
   | Response
+  | Request
+  | Blob
   | ArrayBuffer
   | Uint8Array;
 

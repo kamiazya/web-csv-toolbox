@@ -24,8 +24,15 @@ What type of input do you have?
 ├─ ReadableStream<Uint8Array> (binary stream)
 │  └─ Use parseUint8ArrayStream() ✅
 │
-└─ Response (fetch result)
-   └─ Use parseResponse() ✅
+├─ Response (fetch result)
+│  └─ Use parseResponse() ✅
+│
+├─ Request (server-side)
+│  └─ Use parseRequest() ✅
+│
+└─ Blob or File (file upload, drag-and-drop)
+   ├─ Generic: Use parseBlob() ✅
+   └─ File-specific: Use parseFile() ✅
 ```
 
 ---
@@ -60,6 +67,9 @@ What type of input do you have?
 - `parseBinary()` - Parse binary data (Uint8Array/ArrayBuffer)
 - `parseUint8ArrayStream()` - Parse binary stream
 - `parseResponse()` - Parse HTTP Response
+- `parseRequest()` - Parse HTTP Request (server-side)
+- `parseBlob()` - Parse Blob or File
+- `parseFile()` - Parse File (alias for parseBlob)
 
 **Trade-off:**
 - Optimal performance vs. need to know input type
@@ -305,41 +315,142 @@ for await (const record of parseResponse(response)) {
 
 ---
 
+### parseRequest() - HTTP Request Parser (Server-Side)
+
+**Input:** `Request`
+
+**Use Cases:**
+```typescript
+import { parseRequest } from 'web-csv-toolbox';
+
+// ✅ Perfect for: Server-side request handling
+// Cloudflare Workers
+export default {
+  async fetch(request: Request) {
+    if (request.method === 'POST') {
+      for await (const record of parseRequest(request)) {
+        await database.insert(record);
+      }
+      return Response.json({ success: true });
+    }
+  }
+};
+
+// ✅ Service Workers
+self.addEventListener('fetch', async (event) => {
+  const request = event.request;
+  if (request.url.endsWith('/upload-csv')) {
+    const records = [];
+    for await (const record of parseRequest(request)) {
+      records.push(record);
+    }
+    event.respondWith(Response.json({ records }));
+  }
+});
+```
+
+**Best for:**
+- Cloudflare Workers
+- Service Workers
+- Deno Deploy
+- Edge computing platforms
+- Any server-side Request handling
+
+**Performance:**
+- Streaming request processing
+- Automatic Content-Type and Content-Encoding handling
+
+---
+
+### parseBlob() / parseFile() - Blob/File Parser
+
+**Input:** `Blob` (including `File`)
+
+**Use Cases:**
+```typescript
+import { parseBlob, parseFile } from 'web-csv-toolbox';
+
+// ✅ Perfect for: File input elements
+const input = document.querySelector('input[type="file"]');
+input.addEventListener('change', async (event) => {
+  const file = event.target.files[0];
+
+  // Use parseFile for semantic clarity with File objects
+  for await (const record of parseFile(file)) {
+    console.log(record);
+  }
+});
+
+// ✅ Perfect for: Drag-and-drop
+dropZone.addEventListener('drop', async (event) => {
+  event.preventDefault();
+  const file = event.dataTransfer.files[0];
+
+  for await (const record of parseFile(file)) {
+    console.log(record);
+  }
+});
+
+// ✅ Good for: Blob objects
+const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
+for await (const record of parseBlob(blob)) {
+  console.log(record);
+}
+```
+
+**Best for:**
+- File input elements (`<input type="file">`)
+- Drag-and-drop file uploads
+- Blob objects with charset in type parameter
+- Browser file handling
+
+**Performance:**
+- Streaming for large files
+- Automatic charset detection from Blob type
+
+---
+
 ## Common Scenarios
 
 ### Scenario 1: User File Upload (Browser)
 
 ```typescript
-import { parseBinary } from 'web-csv-toolbox';
+import { parseFile } from 'web-csv-toolbox';
 
 async function handleFileUpload(file: File) {
-  const buffer = await file.arrayBuffer();
-
-  for await (const record of parseBinary(buffer, {
-    charset: 'utf-8' // Adjust based on file encoding
-  })) {
+  for await (const record of parseFile(file)) {
     console.log(record);
   }
 }
 ```
 
-**Why `parseBinary()`?**
-- File API provides ArrayBuffer
-- Handles BOM and charset
-- Good for files up to ~100MB
+**Why `parseFile()`?**
+- Direct File object support
+- Automatic charset detection from file.type
+- Streaming for large files
+- Clean and simple API
 
-**Alternative for large files:**
+**With validation:**
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseFile } from 'web-csv-toolbox';
 
-async function handleLargeFileUpload(file: File) {
-  const stream = file.stream(); // ReadableStream<Uint8Array>
-
-  for await (const record of parseUint8ArrayStream(stream, {
-    charset: 'utf-8'
-  })) {
-    console.log(record);
+async function handleFileUpload(file: File) {
+  // Validate file type
+  if (!file.type.includes('csv') && !file.name.endsWith('.csv')) {
+    throw new Error('Please upload a CSV file');
   }
+
+  // Validate file size (10MB limit)
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('File too large (max 10MB)');
+  }
+
+  const records = [];
+  for await (const record of parseFile(file)) {
+    records.push(record);
+  }
+
+  return records;
 }
 ```
 
@@ -433,37 +544,66 @@ async function processRealtimeCSV(stream: ReadableStream<string>) {
 ### Scenario 6: API Endpoint (Server)
 
 ```typescript
-import { Hono } from 'hono';
-import { parseStringStream, EnginePresets, WorkerPool } from 'web-csv-toolbox';
+import { parseRequest } from 'web-csv-toolbox';
 
-const app = new Hono();
-const pool = new WorkerPool({ maxWorkers: 4 });
+// Cloudflare Workers
+export default {
+  async fetch(request: Request) {
+    if (request.method === 'POST' &&
+        request.headers.get('content-type')?.includes('text/csv')) {
 
-app.post('/validate-csv', async (c) => {
-  const textStream = c.req.raw.body
-    ?.pipeThrough(new TextDecoderStream());
+      const results = [];
+      for await (const record of parseRequest(request)) {
+        results.push(record);
+      }
 
-  if (!textStream) {
-    return c.json({ error: 'No body' }, 400);
+      return Response.json({
+        success: true,
+        count: results.length,
+        data: results
+      });
+    }
+
+    return new Response('Not Found', { status: 404 });
   }
-
-  const results = [];
-  for await (const record of parseStringStream(textStream, {
-    engine: EnginePresets.balanced({
-      workerPool: pool
-    })
-  })) {
-    results.push(record);
-  }
-
-  return c.json({ success: true, data: results });
-});
+};
 ```
 
-**Why `parseStringStream()` + `WorkerPool`?**
-- Non-blocking request handling
-- Resource limits prevent DoS
+**Why `parseRequest()`?**
+- Automatic header processing (Content-Type, Content-Encoding)
 - Streaming for large uploads
+- Built for server-side environments
+- Resource limits prevent DoS
+
+**With validation:**
+```typescript
+import { parseRequest } from 'web-csv-toolbox';
+
+export default {
+  async fetch(request: Request) {
+    if (request.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    const contentType = request.headers.get('content-type');
+    if (!contentType?.includes('text/csv')) {
+      return new Response('Content-Type must be text/csv', {
+        status: 400
+      });
+    }
+
+    const records = [];
+    for await (const record of parseRequest(request, {
+      maxFieldCount: 1000,  // Security limit
+      maxBufferSize: 10 * 1024 * 1024  // 10MB limit
+    })) {
+      records.push(record);
+    }
+
+    return Response.json({ success: true, records });
+  }
+};
+```
 
 ---
 
@@ -537,6 +677,8 @@ for await (const record of parseString(csv, {
 | `Uint8Array` | Main thread | Worker | Worker | Any | `parseBinary()` |
 | `ReadableStream<Uint8Array>` | Main thread | Main thread | Main thread | Any | `parseUint8ArrayStream()` |
 | `Response` | Auto | Auto | Auto | Auto | `parseResponse()` |
+| `Request` | Auto | Auto | Auto | Auto | `parseRequest()` |
+| `Blob` / `File` | Main thread | Main thread | Main thread | Auto | `parseBlob()` / `parseFile()` |
 
 ---
 
@@ -597,6 +739,9 @@ for await (const record of parseResponse(response)) {
 - **[parse() API Reference](../reference/api/parse.md)** - High-level universal API
 - **[parseString() API Reference](../reference/api/parseString.md)** - String parser
 - **[parseResponse() API Reference](../reference/api/parseResponse.md)** - Response parser
+- **[parseRequest() API Reference](../reference/api/parseRequest.md)** - Request parser (server-side)
+- **[parseBlob() API Reference](../reference/api/parseBlob.md)** - Blob/File parser
+- **[parseFile() API Reference](../reference/api/parseFile.md)** - File parser (alias)
 - **[Execution Strategies](../explanation/execution-strategies.md)** - Understanding execution modes
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 
@@ -608,9 +753,11 @@ for await (const record of parseResponse(response)) {
 
 1. **Learning/Prototyping:** Use `parse()` for simplicity
 2. **Production (known input type):** Use specialized middle-level APIs
-3. **HTTP responses:** Use `parseResponse()` for automatic header handling
-4. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
-5. **Performance-critical:** Use `EnginePresets.fastest()` with WASM + Worker
-6. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
+3. **HTTP responses (client):** Use `parseResponse()` for automatic header handling
+4. **HTTP requests (server):** Use `parseRequest()` for server-side request handling
+5. **File uploads:** Use `parseFile()` or `parseBlob()` for file inputs and drag-and-drop
+6. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
+7. **Performance-critical:** Use `EnginePresets.fastest()` with WASM + Worker
+8. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
 
 **Remember:** The best API depends on your specific use case. Consider input type, file size, encoding, and performance requirements when choosing.

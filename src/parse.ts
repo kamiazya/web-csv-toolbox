@@ -8,6 +8,8 @@ import type {
 } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseBinary } from "./parseBinary.ts";
+import { parseBlob } from "./parseBlob.ts";
+import { parseRequest } from "./parseRequest.ts";
 import { parseResponse } from "./parseResponse.ts";
 import { parseString } from "./parseString.ts";
 import { parseStringStream } from "./parseStringStream.ts";
@@ -18,7 +20,7 @@ import type { PickCSVHeader } from "./utils/types.ts";
 /**
  * Parse CSV to records.
  *
- * {@link !String}, {@link !ReadableStream}<string | {@link !Uint8Array}> and {@link !Response} are supported.
+ * {@link !String}, {@link !ReadableStream}<string | {@link !Uint8Array}>, {@link !Response}, {@link !Request}, {@link !Blob}, and {@link !File} are supported.
  *
  *
  * @typeParam Header Header type like `['name', 'age']`.
@@ -32,7 +34,7 @@ import type { PickCSVHeader } from "./utils/types.ts";
  *
  * @remarks
  * {@link parseString}, {@link parseBinary}, {@link parseUint8ArrayStream},
- * {@link parseStringStream} and {@link parseResponse} are used internally.
+ * {@link parseStringStream}, {@link parseResponse}, {@link parseRequest}, and {@link parseBlob} are used internally.
  *
  * If you known the type of the CSV, it performs better to use them directly.
  *
@@ -43,6 +45,8 @@ import type { PickCSVHeader } from "./utils/types.ts";
  * | {@link !Uint8Array} \| {@link !ArrayBuffer}  | {@link parseBinary}           | {@link ParseBinaryOptions} |
  * | {@link !ReadableStream}<{@link !Uint8Array}> | {@link parseUint8ArrayStream} | {@link ParseBinaryOptions} |
  * | {@link !Response}                            | {@link parseResponse}         | {@link ParseBinaryOptions} |
+ * | {@link !Request}                             | {@link parseRequest}          | {@link ParseBinaryOptions} |
+ * | {@link !Blob} \| {@link !File}               | {@link parseBlob}             | {@link ParseBinaryOptions} |
  *
  * **Performance Characteristics:**
  * - **Memory usage**: O(1) - constant per record (streaming approach)
@@ -236,6 +240,22 @@ export async function* parse<const Header extends ReadonlyArray<string>>(
     }
   } else if (csv instanceof Response) {
     const iterator = parseResponse(csv, options);
+    // Check if it's a Promise
+    if (iterator instanceof Promise) {
+      yield* await iterator;
+    } else {
+      yield* iterator;
+    }
+  } else if (csv instanceof Request) {
+    const iterator = parseRequest(csv, options);
+    // Check if it's a Promise
+    if (iterator instanceof Promise) {
+      yield* await iterator;
+    } else {
+      yield* iterator;
+    }
+  } else if (csv instanceof Blob) {
+    const iterator = parseBlob(csv, options);
     // Check if it's a Promise
     if (iterator instanceof Promise) {
       yield* await iterator;
