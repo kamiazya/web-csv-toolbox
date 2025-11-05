@@ -420,7 +420,9 @@ describe("parse function", () => {
             csv: new Request("https://example.com", {
               method: "POST",
               headers: { "content-type": "text/csv" },
-              body: new SingleValueReadableStream(new TextEncoder().encode(csv)),
+              body: new SingleValueReadableStream(
+                new TextEncoder().encode(csv),
+              ),
               // @ts-expect-error - duplex is required in Node.js but not in the types yet
               duplex: "half",
             }),
