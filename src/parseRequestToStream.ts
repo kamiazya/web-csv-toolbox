@@ -1,4 +1,4 @@
-import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { getOptionsFromRequest } from "./getOptionsFromRequest.ts";
 import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.ts";
 
@@ -13,9 +13,9 @@ import { parseUint8ArrayStreamToStream } from "./parseUint8ArrayStreamToStream.t
  */
 export function parseRequestToStream<Header extends ReadonlyArray<string>>(
   request: Request,
-  options?: ParseOptions<Header>,
+  options?: ParseBinaryOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {
-  const options_ = getOptionsFromRequest(request, options);
+  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(request, options);
   if (request.body === null) {
     throw new TypeError("Request body is null");
   }

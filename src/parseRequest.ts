@@ -1,4 +1,4 @@
-import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import { getOptionsFromRequest } from "./getOptionsFromRequest.ts";
 import { parseRequestToStream } from "./parseRequestToStream.ts";
@@ -71,10 +71,10 @@ import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
  */
 export function parseRequest<Header extends ReadonlyArray<string>>(
   request: Request,
-  options?: ParseOptions<Header>,
+  options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Validate synchronously before creating async generator
-  const options_ = getOptionsFromRequest(request, options);
+  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(request, options);
   if (request.body === null) {
     throw new TypeError("Request body is null");
   }
@@ -117,7 +117,7 @@ export declare namespace parseRequest {
    */
   export function toArray<Header extends ReadonlyArray<string>>(
     request: Request,
-    options?: ParseOptions<Header>,
+    options?: ParseBinaryOptions<Header>,
   ): Promise<CSVRecord<Header>[]>;
   /**
    * Parse CSV Request to stream of records.
@@ -151,7 +151,7 @@ export declare namespace parseRequest {
    */
   export function toStream<Header extends ReadonlyArray<string>>(
     request: Request,
-    options?: ParseOptions<Header>,
+    options?: ParseBinaryOptions<Header>,
   ): ReadableStream<CSVRecord<Header>>;
 }
 
