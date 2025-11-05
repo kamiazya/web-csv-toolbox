@@ -54,8 +54,3 @@ for await (const record of parseUint8ArrayStream(stdinStream)) {
 
 console.error(`Processed ${count} records`);
 ```
-
----
-
-## Deno Environments
-

@@ -247,21 +247,9 @@ export async function* parse<const Header extends ReadonlyArray<string>>(
       yield* iterator;
     }
   } else if (csv instanceof Request) {
-    const iterator = parseRequest(csv, options);
-    // Check if it's a Promise
-    if (iterator instanceof Promise) {
-      yield* await iterator;
-    } else {
-      yield* iterator;
-    }
+    yield* parseRequest(csv, options);
   } else if (csv instanceof Blob) {
-    const iterator = parseBlob(csv, options);
-    // Check if it's a Promise
-    if (iterator instanceof Promise) {
-      yield* await iterator;
-    } else {
-      yield* iterator;
-    }
+    yield* parseBlob(csv, options);
   }
 }
 

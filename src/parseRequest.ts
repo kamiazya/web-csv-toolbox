@@ -74,7 +74,10 @@ export function parseRequest<Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Validate synchronously before creating async generator
-  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(request, options);
+  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(
+    request,
+    options,
+  );
   if (request.body === null) {
     throw new TypeError("Request body is null");
   }

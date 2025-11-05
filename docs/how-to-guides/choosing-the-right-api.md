@@ -340,11 +340,12 @@ export default {
 self.addEventListener('fetch', async (event) => {
   const request = event.request;
   if (request.url.endsWith('/upload-csv')) {
-    const records = [];
+    let count = 0;
     for await (const record of parseRequest(request)) {
-      records.push(record);
+      // Process record
+      count++;
     }
-    event.respondWith(Response.json({ records }));
+    event.respondWith(Response.json({ count }));
   }
 });
 ```
@@ -445,12 +446,13 @@ async function handleFileUpload(file: File) {
     throw new Error('File too large (max 10MB)');
   }
 
-  const records = [];
+  let count = 0;
   for await (const record of parseFile(file)) {
-    records.push(record);
+    // Process record (e.g., validate, save to database)
+    count++;
   }
 
-  return records;
+  return count;
 }
 ```
 
@@ -592,15 +594,16 @@ export default {
       });
     }
 
-    const records = [];
+    let count = 0;
     for await (const record of parseRequest(request, {
       maxFieldCount: 1000,  // Security limit
       maxBufferSize: 10 * 1024 * 1024  // 10MB limit
     })) {
-      records.push(record);
+      // Process record (e.g., validate, save to database)
+      count++;
     }
 
-    return Response.json({ success: true, records });
+    return Response.json({ success: true, count });
   }
 };
 ```

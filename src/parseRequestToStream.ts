@@ -15,7 +15,10 @@ export function parseRequestToStream<Header extends ReadonlyArray<string>>(
   request: Request,
   options?: ParseBinaryOptions<Header>,
 ): ReadableStream<CSVRecord<Header>> {
-  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(request, options);
+  const options_: ParseBinaryOptions<Header> = getOptionsFromRequest(
+    request,
+    options,
+  );
   if (request.body === null) {
     throw new TypeError("Request body is null");
   }

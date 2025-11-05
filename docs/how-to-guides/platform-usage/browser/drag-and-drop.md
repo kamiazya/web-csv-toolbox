@@ -23,27 +23,11 @@ import { parseFile } from 'web-csv-toolbox';
 const dropZone = document.getElementById('drop-zone');
 const status = document.getElementById('status');
 
-// Handle drag over
-dropZone.addEventListener('dragover', (e) => {
-  e.preventDefault();
-  dropZone.style.borderColor = '#4CAF50';
-});
-
-dropZone.addEventListener('dragleave', () => {
-  dropZone.style.borderColor = '#ccc';
-});
-
-// Handle drop
-dropZone.addEventListener('drop', async (e) => {
-  e.preventDefault();
-  dropZone.style.borderColor = '#ccc';
-
-  const file = e.dataTransfer.files[0];
-  if (!file) return;
-
+// Shared file processing logic
+async function processFile(file: File) {
   // Validate file type
   if (!file.type.includes('csv') && !file.name.endsWith('.csv')) {
-    status.textContent = 'Please drop a CSV file';
+    status.textContent = 'Please select a CSV file';
     return;
   }
 
@@ -61,6 +45,27 @@ dropZone.addEventListener('drop', async (e) => {
   } catch (error) {
     status.textContent = `✗ Error: ${error.message}`;
   }
+}
+
+// Handle drag over
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#4CAF50';
+});
+
+dropZone.addEventListener('dragleave', () => {
+  dropZone.style.borderColor = '#ccc';
+});
+
+// Handle drop
+dropZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  dropZone.style.borderColor = '#ccc';
+
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    await processFile(file);
+  }
 });
 
 // Also support click to select
@@ -71,10 +76,7 @@ dropZone.addEventListener('click', () => {
   input.onchange = async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
     if (file) {
-      // Trigger drop handler logic
-      dropZone.dispatchEvent(new DragEvent('drop', {
-        dataTransfer: new DataTransfer()
-      }));
+      await processFile(file);
     }
   };
   input.click();

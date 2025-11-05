@@ -217,12 +217,14 @@ async function handleFileUpload(file: File) {
     throw new Error('File too large (max 10MB)');
   }
 
-  const records = [];
+  let validCount = 0;
   for await (const record of parseFile(file)) {
-    records.push(record);
+    // Process record (e.g., validate, send to API, save to database)
+    console.log(record);
+    validCount++;
   }
 
-  return records;
+  return validCount;
 }
 ```
 
@@ -254,12 +256,14 @@ input.addEventListener('change', async (event) => {
     // Note: deflate compression is rarely used in file formats
     // It's mainly used in HTTP Content-Encoding
 
-    const records = [];
+    let count = 0;
     for await (const record of parseFile(file, options)) {
-      records.push(record);
+      // Process record (e.g., display, save to database, etc.)
+      console.log(record);
+      count++;
     }
 
-    console.log(`Loaded ${records.length} records from compressed file`);
+    console.log(`Loaded ${count} records from compressed file`);
   } catch (error) {
     console.error('Failed to parse compressed CSV:', error);
   }

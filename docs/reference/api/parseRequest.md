@@ -173,12 +173,14 @@ export default {
     if (request.method === 'POST' &&
         request.headers.get('content-type')?.includes('text/csv')) {
 
-      const records = [];
+      let count = 0;
       for await (const record of parseRequest(request)) {
-        records.push(record);
+        // Process record (e.g., save to database, validate, etc.)
+        console.log(record);
+        count++;
       }
 
-      return new Response(JSON.stringify(records), {
+      return new Response(JSON.stringify({ count }), {
         headers: { 'Content-Type': 'application/json' }
       });
     }
@@ -201,16 +203,17 @@ self.addEventListener('fetch', (event) => {
   if (request.method === 'POST' && request.url.endsWith('/upload-csv')) {
     event.respondWith(
       (async () => {
-        const records = [];
+        let count = 0;
 
         for await (const record of parseRequest(request)) {
-          records.push(record);
+          // Process record (e.g., save to database, cache, etc.)
+          console.log(record);
+          count++;
         }
 
         return new Response(JSON.stringify({
           success: true,
-          count: records.length,
-          data: records
+          count
         }), {
           headers: { 'Content-Type': 'application/json' }
         });
@@ -232,15 +235,16 @@ Deno.serve(async (request) => {
       new URL(request.url).pathname === '/api/csv') {
 
     try {
-      const records = [];
+      let count = 0;
       for await (const record of parseRequest(request)) {
-        // Process record
-        records.push(record);
+        // Process record (e.g., save to database, validate, etc.)
+        console.log(record);
+        count++;
       }
 
       return new Response(JSON.stringify({
         success: true,
-        records
+        count
       }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -279,7 +283,7 @@ export default {
       });
     }
 
-    const records = [];
+    let validCount = 0;
     const errors = [];
 
     for await (const record of parseRequest(request)) {
@@ -287,12 +291,13 @@ export default {
       if (!record.email?.includes('@')) {
         errors.push(`Invalid email: ${record.email}`);
       } else {
-        records.push(record);
+        // Process valid record (e.g., save to database)
+        validCount++;
       }
     }
 
     return new Response(JSON.stringify({
-      records,
+      validCount,
       errors
     }), {
       headers: { 'Content-Type': 'application/json' }
@@ -377,15 +382,16 @@ export default {
     if (request.method === 'POST') {
       // Content-Encoding header is automatically detected
       // No need to manually specify decompression option
-      const records = [];
+      let count = 0;
 
       for await (const record of parseRequest(request)) {
-        records.push(record);
+        // Process record (e.g., save to database)
+        count++;
       }
 
       return Response.json({
         success: true,
-        count: records.length,
+        count,
         encoding: request.headers.get('content-encoding') || 'none'
       });
     }
@@ -575,11 +581,12 @@ import { parseRequest } from 'web-csv-toolbox';
 export default {
   async fetch(request: Request) {
     try {
-      const records = [];
+      let count = 0;
       for await (const record of parseRequest(request)) {
-        records.push(record);
+        // Process record
+        count++;
       }
-      return Response.json({ records });
+      return Response.json({ count });
     } catch (error) {
       if (error.name === 'ParseError') {
         return new Response(JSON.stringify({
@@ -623,7 +630,7 @@ export default {
     if (request.method === 'POST' &&
         new URL(request.url).pathname === '/api/upload') {
 
-      const records = [];
+      let count = 0;
       const timestamp = Date.now();
 
       try {
@@ -632,12 +639,12 @@ export default {
             'INSERT INTO records (data, created_at) VALUES (?, ?)'
           ).bind(JSON.stringify(record), timestamp).run();
 
-          records.push(record);
+          count++;
         }
 
         return Response.json({
           success: true,
-          count: records.length
+          count
         });
       } catch (error) {
         return Response.json({

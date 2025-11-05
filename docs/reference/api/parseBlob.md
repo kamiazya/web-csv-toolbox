@@ -237,14 +237,17 @@ console.log(records);
 import { parseBlob } from 'web-csv-toolbox';
 
 const file = input.files[0];
-const totalSize = file.size;
-let processed = 0;
+let count = 0;
 
 for await (const record of parseBlob(file)) {
-  processed++;
-  const progress = (processed * 100 / totalSize).toFixed(1);
-  console.log(`Progress: ${progress}% (${processed} records)`);
+  count++;
+  // Update progress display every 100 records
+  if (count % 100 === 0) {
+    console.log(`Processing... ${count} records`);
+  }
 }
+
+console.log(`Completed: ${count} records processed`);
 ```
 
 ---
@@ -279,13 +282,14 @@ input.addEventListener('change', async (event) => {
     // Note: deflate compression is rarely used in file formats
     // It's mainly used in HTTP Content-Encoding
 
-    const records = [];
+    let count = 0;
     for await (const record of parseBlob(file, options)) {
-      records.push(record);
+      // Process record (e.g., display, save to database, etc.)
+      console.log(record);
+      count++;
     }
 
-    status.textContent = `Loaded ${records.length} records`;
-    console.log(records);
+    status.textContent = `Loaded ${count} records`;
   } catch (error) {
     status.textContent = `Error: ${error.message}`;
   }
@@ -437,7 +441,7 @@ async function validateCSVFile(file: File) {
     throw new Error('Please upload a CSV file');
   }
 
-  const records = [];
+  let validCount = 0;
   const errors = [];
 
   for await (const record of parseBlob(file)) {
@@ -445,20 +449,21 @@ async function validateCSVFile(file: File) {
     if (!record.email?.includes('@')) {
       errors.push(`Invalid email: ${record.email}`);
     } else {
-      records.push(record);
+      // Process valid record (e.g., send to API, save to database)
+      validCount++;
     }
   }
 
-  return { records, errors };
+  return { validCount, errors };
 }
 
 // Usage
 document.getElementById('csv-upload').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (file) {
-    const { records, errors } = await validateCSVFile(file);
+    const { validCount, errors } = await validateCSVFile(file);
     document.getElementById('results').textContent =
-      `Valid: ${records.length}, Errors: ${errors.length}`;
+      `Valid: ${validCount}, Errors: ${errors.length}`;
   }
 });
 ```
