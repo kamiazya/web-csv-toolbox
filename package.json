@@ -104,7 +104,7 @@
     "check:type": "tsc --noEmit",
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
-    "test:browser": "vitest --browser",
+    "test:browser": "vitest --browser --project browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
     "build": "pnpm build:wasm && pnpm build:js",

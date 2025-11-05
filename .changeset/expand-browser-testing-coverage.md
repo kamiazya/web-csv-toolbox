@@ -16,6 +16,9 @@ Expand browser testing coverage and improve documentation
 - **Dynamic Browser Configuration**: Browser instances automatically determined by platform
   - Uses `process.platform` to select appropriate browsers
   - Eliminates need for environment variables
+- **Explicit Browser Project Targeting**: Updated `test:browser` script to explicitly run only browser tests
+  - Added `--project browser` flag to prevent running Node.js tests during browser test execution
+  - Ensures CI jobs run only their intended test suites
 
 **Documentation Improvements:**
 
