@@ -121,16 +121,34 @@ Content-Type: text/csv; charset=shift-jis
 **Behavior:**
 - Auto-detects compression from `Content-Encoding` header
 - Automatically decompresses using DecompressionStream
+- Only single encoding values are supported (comma-separated values will throw an error)
 
 **Supported values:**
 - `gzip`
 - `deflate`
-- Multiple encodings (e.g., `gzip, deflate`)
+- `deflate-raw` (experimental, requires `allowExperimentalCompressions: true`)
 
-**Example headers:**
-```
-Content-Encoding: gzip
-Content-Encoding: deflate
+**Example:**
+```typescript
+// Single encoding only
+const request = new Request('https://example.com', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'text/csv',
+    'Content-Encoding': 'gzip'  // ✓ Supported
+  },
+  body: compressedData
+});
+
+// Multiple encodings are NOT supported
+const request = new Request('https://example.com', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'text/csv',
+    'Content-Encoding': 'gzip, deflate'  // ✗ Throws TypeError
+  },
+  body: compressedData
+});
 ```
 
 ---
