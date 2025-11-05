@@ -81,12 +81,6 @@ jobs:
 
   test_linux_browser:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          - firefox
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Setup
@@ -94,43 +88,24 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: npm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - name: Run browser tests (Chrome, Firefox in parallel)
+        run: pnpm test:browser
 
-  # TODO: Consider alternatives to unstable macos browser testing.
-  # test_macos_browser:
-  #   runs-on: macos-latest
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       browsers:
-  #         - chrome
-  #         # TODO: Consider alternatives to frequent rate limit restrictions.
-  #         # - firefox
-  #         # NOTE: Headless Safari is currentry not supported
-  #         # https://github.com/vitest-dev/vitest/blob/main/packages/browser/src/node/providers/webdriver.ts#L39-L41
-  #         # - safari
-  #   steps:
-  #     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-  #     - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-  #     - name: Setup
-  #       uses: ./.github/actions/setup
-  #       with:
-  #         skip-rust-setup: 'true'
-  #     # - if: matrix.browsers == 'safari'
-  #     #   run: sudo safaridriver --enable
-  #     - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-  #     - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+  test_macos_browser:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          skip-rust-setup: 'true'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run browser tests (Chrome, Firefox in parallel)
+        run: pnpm test:browser
 
 
   test_windows_browser:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        browsers:
-          - chrome
-          - firefox
-          - edge
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
       - name: Setup
@@ -138,4 +113,5 @@ jobs:
         with:
           skip-rust-setup: 'true'
       - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - run: pnpm test run -- --browser.name=${{ matrix.browsers }} --browser.headless
+      - name: Run browser tests (Chrome, Firefox, Edge in parallel)
+        run: pnpm test:browser
