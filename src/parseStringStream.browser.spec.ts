@@ -44,9 +44,7 @@ describe("parseStringStream with execution strategies", () => {
           }),
           async ({ data, csv }) => {
             let i = 0;
-            const result = parseStringStream(csv, { engine });
-            const iterator = result instanceof Promise ? await result : result;
-            for await (const row of iterator) {
+            for await (const row of parseStringStream(csv, { engine })) {
               expect(data[i++]).toEqual(row);
             }
           },
@@ -82,13 +80,10 @@ describe("parseStringStream with execution strategies", () => {
           const results = await Promise.all(
             strategies.map(async ({ engine }) => {
               const records = [];
-              const result = parseStringStream(
+              for await (const record of parseStringStream(
                 new SingleValueReadableStream(csv),
                 { engine },
-              );
-              const iterator =
-                result instanceof Promise ? await result : result;
-              for await (const record of iterator) {
+              )) {
                 records.push(record);
               }
               return records;
@@ -107,13 +102,11 @@ describe("parseStringStream with execution strategies", () => {
   // Test that WASM with streams falls back to main thread execution
   it("should work with WASM by falling back to main thread for streams", async () => {
     // WASM doesn't support streams, so it automatically falls back to main thread
-    const result = parseStringStream(
+    const records = [];
+    for await (const record of parseStringStream(
       new SingleValueReadableStream("a,b\n1,2"),
       { engine: { wasm: true } },
-    );
-    const iterator = result instanceof Promise ? await result : result;
-    const records = [];
-    for await (const record of iterator) {
+    )) {
       records.push(record);
     }
     expect(records).toHaveLength(1);

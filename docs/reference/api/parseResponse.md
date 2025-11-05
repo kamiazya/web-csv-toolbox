@@ -705,12 +705,14 @@ async function fetchWithRetry(url: string, maxRetries = 3) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      const records = [];
+      let count = 0;
       for await (const record of parseResponse(response)) {
-        records.push(record);
+        // Process record (e.g., save to database, cache, etc.)
+        console.log(record);
+        count++;
       }
 
-      return records;
+      return count;
     } catch (error) {
       lastError = error as Error;
       console.log(`Attempt ${i + 1} failed:`, error.message);

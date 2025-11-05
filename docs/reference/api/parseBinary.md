@@ -386,13 +386,14 @@ async function parseWithEncodingDetection(buffer: ArrayBuffer) {
 
   for (const charset of encodings) {
     try {
-      const records = [];
+      let count = 0;
       for await (const record of parseBinary(buffer, { charset })) {
-        records.push(record);
+        // Process record
+        count++;
       }
 
       console.log(`Successfully parsed with ${charset}`);
-      return { charset, records };
+      return { charset, count };
     } catch (error) {
       console.log(`Failed with ${charset}:`, error.message);
     }

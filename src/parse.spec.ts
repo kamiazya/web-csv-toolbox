@@ -368,6 +368,138 @@ describe("parse function", () => {
       ),
     ));
 
+  it("should parse CSV Request", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const header = g(FC.header, {
+            fieldConstraints: {
+              kindExcludes: ["string16bits"],
+            },
+          });
+          const EOL = g(FC.eol);
+          const EOF = g(fc.boolean);
+          const csvData = [
+            ...g(FC.csvData, {
+              rowsConstraints: {
+                minLength: 1,
+              },
+              columnsConstraints: {
+                minLength: header.length,
+                maxLength: header.length,
+              },
+              fieldConstraints: {
+                kindExcludes: ["string16bits"],
+              },
+            }),
+            // Last row is not empty for testing.
+            g(FC.row, {
+              fieldConstraints: {
+                minLength: 1,
+                kindExcludes: ["string16bits"],
+              },
+              columnsConstraints: {
+                minLength: header.length,
+                maxLength: header.length,
+              },
+            }),
+          ];
+          const csv = [
+            header.map((v) => escapeField(v)).join(","),
+            EOL,
+            ...csvData.flatMap((row, i) => [
+              ...row.map((v) => escapeField(v)).join(","),
+              ...(EOF || csvData.length - 1 !== i ? [EOL] : []),
+            ]),
+          ].join("");
+          const data = csvData.map((row) =>
+            Object.fromEntries(row.map((v, i) => [header[i], v])),
+          );
+          return {
+            data,
+            csv: new Request("https://example.com", {
+              method: "POST",
+              headers: { "content-type": "text/csv" },
+              body: new SingleValueReadableStream(
+                new TextEncoder().encode(csv),
+              ),
+              // @ts-expect-error - duplex is required in Node.js but not in the types yet
+              duplex: "half",
+            }),
+          };
+        }),
+        async ({ data, csv }) => {
+          let i = 0;
+          for await (const row of parse(csv)) {
+            expect(row).toEqual(data[i++]);
+          }
+        },
+      ),
+    ));
+
+  it("should parse CSV Blob", () =>
+    fc.assert(
+      fc.asyncProperty(
+        fc.gen().map((g) => {
+          const header = g(FC.header, {
+            fieldConstraints: {
+              kindExcludes: ["string16bits"],
+            },
+          });
+          const EOL = g(FC.eol);
+          const EOF = g(fc.boolean);
+          const csvData = [
+            ...g(FC.csvData, {
+              rowsConstraints: {
+                minLength: 1,
+              },
+              columnsConstraints: {
+                minLength: header.length,
+                maxLength: header.length,
+              },
+              fieldConstraints: {
+                kindExcludes: ["string16bits"],
+              },
+            }),
+            // Last row is not empty for testing.
+            g(FC.row, {
+              fieldConstraints: {
+                minLength: 1,
+                kindExcludes: ["string16bits"],
+              },
+              columnsConstraints: {
+                minLength: header.length,
+                maxLength: header.length,
+              },
+            }),
+          ];
+          const csv = [
+            header.map((v) => escapeField(v)).join(","),
+            EOL,
+            ...csvData.flatMap((row, i) => [
+              ...row.map((v) => escapeField(v)).join(","),
+              ...(EOF || csvData.length - 1 !== i ? [EOL] : []),
+            ]),
+          ].join("");
+          const data = csvData.map((row) =>
+            Object.fromEntries(row.map((v, i) => [header[i], v])),
+          );
+          return {
+            data,
+            csv: new Blob([new TextEncoder().encode(csv)], {
+              type: "text/csv",
+            }),
+          };
+        }),
+        async ({ data, csv }) => {
+          let i = 0;
+          for await (const row of parse(csv)) {
+            expect(row).toEqual(data[i++]);
+          }
+        },
+      ),
+    ));
+
   it("should handle skipEmptyLines option correctly", () =>
     fc.assert(
       fc.asyncProperty(
