@@ -69,12 +69,7 @@ export function parseBlob<Header extends ReadonlyArray<string>>(
   // Return wrapper async generator for error handling
   return (async function* () {
     try {
-      const result = parseUint8ArrayStream(blob.stream(), options_);
-      if (result instanceof Promise) {
-        yield* await result;
-      } else {
-        yield* result;
-      }
+      yield* parseUint8ArrayStream(blob.stream(), options_);
     } catch (error) {
       commonParseErrorHandling(error);
     }

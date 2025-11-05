@@ -200,52 +200,24 @@ export async function* parse<const Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {
-    const iterator = parseString(csv, options);
-    yield* iterator;
+    yield* parseString(csv, options);
   } else if (csv instanceof Uint8Array || csv instanceof ArrayBuffer) {
-    const iterator = parseBinary(csv, options);
-    // Check if it's a Promise
-    if (iterator instanceof Promise) {
-      yield* await iterator;
-    } else {
-      yield* iterator;
-    }
+    yield* parseBinary(csv, options);
   } else if (csv instanceof ReadableStream) {
     const [branch1, branch2] = csv.tee();
     const reader1 = branch1.getReader();
     const { value: firstChunk } = await reader1.read();
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
-      const iterator = parseStringStream(
-        branch2 as ReadableStream<string>,
-        options,
-      );
-      // Check if it's a Promise
-      if (iterator instanceof Promise) {
-        yield* await iterator;
-      } else {
-        yield* iterator;
-      }
+      yield* parseStringStream(branch2 as ReadableStream<string>, options);
     } else if (firstChunk instanceof Uint8Array) {
-      const iterator = parseUint8ArrayStream(
+      yield* parseUint8ArrayStream(
         branch2 as ReadableStream<Uint8Array>,
         options,
       );
-      // Check if it's a Promise
-      if (iterator instanceof Promise) {
-        yield* await iterator;
-      } else {
-        yield* iterator;
-      }
     }
   } else if (csv instanceof Response) {
-    const iterator = parseResponse(csv, options);
-    // Check if it's a Promise
-    if (iterator instanceof Promise) {
-      yield* await iterator;
-    } else {
-      yield* iterator;
-    }
+    yield* parseResponse(csv, options);
   } else if (csv instanceof Request) {
     yield* parseRequest(csv, options);
   } else if (csv instanceof Blob) {
