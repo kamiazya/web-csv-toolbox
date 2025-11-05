@@ -110,6 +110,8 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
           this.#setHeader(this.#row as unknown as Header);
         } else {
           if (this.#dirty) {
+            // SAFETY: Object.fromEntries() is safe from prototype pollution.
+            // See CSVRecordAssembler.prototype-safety.test.ts for details.
             yield Object.fromEntries(
               this.#header
                 .map((header, index) => [header, index] as const)
@@ -118,6 +120,8 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
             ) as unknown as CSVRecord<Header>;
           } else {
             if (!this.#skipEmptyLines) {
+              // SAFETY: Object.fromEntries() is safe from prototype pollution.
+              // See CSVRecordAssembler.prototype-safety.test.ts for details.
               yield Object.fromEntries(
                 this.#header
                   .filter((header) => header)
@@ -140,10 +144,27 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
 
   /**
    * Flushes any remaining buffered data as a final record.
+   *
+   * @remarks
+   * Prototype Pollution Safety:
+   * This method uses Object.fromEntries() to create record objects from CSV data.
+   * Object.fromEntries() is safe from prototype pollution because it creates
+   * own properties (not prototype properties) even when keys like "__proto__",
+   * "constructor", or "prototype" are used.
+   *
+   * For example, Object.fromEntries([["__proto__", "value"]]) creates an object
+   * with an own property "__proto__" set to "value", which does NOT pollute
+   * Object.prototype and does NOT affect other objects.
+   *
+   * This safety is verified by regression tests in:
+   * CSVRecordAssembler.prototype-safety.test.ts
    */
   *#flush(): IterableIterator<CSVRecord<Header>> {
     if (this.#header !== undefined) {
       if (this.#dirty) {
+        // SAFETY: Object.fromEntries() creates own properties, preventing prototype pollution
+        // even when CSV headers contain dangerous property names like __proto__, constructor, etc.
+        // See CSVRecordAssembler.prototype-safety.test.ts for verification tests.
         yield Object.fromEntries(
           this.#header
             .map((header, index) => [header, index] as const)
