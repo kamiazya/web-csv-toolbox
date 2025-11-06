@@ -237,8 +237,3 @@ new CSVLexerTransformer({}, customWritable, customReadable);
 3. **Self-Documenting**: Type system enforces valid configurations
 4. **Catch Errors Early**: TypeScript catches configuration mistakes at compile time
 5. **Standards Compliance**: Uses `CountQueuingStrategy` from Web Streams API
-
-## Related Changes
-
-- See `array-buffer-threshold.md` for `arrayBufferThreshold` feature
-- See `experimental-performance-tuning.md` for `backpressureCheckInterval` and `queuingStrategy` features
