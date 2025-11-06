@@ -175,13 +175,40 @@ export interface AbortSignalOptions {
 }
 
 /**
+ * Source identifier option for error reporting.
+ * @category Types
+ */
+export interface SourceOption {
+  /**
+   * Source identifier for error reporting (e.g., filename, description).
+   *
+   * @remarks
+   * This option allows you to specify a human-readable identifier for the CSV source
+   * that will be included in error messages. This is particularly useful when parsing
+   * multiple files or streams to help identify which source caused an error.
+   *
+   * **Security Note**: Do not include sensitive information (API keys, tokens, full URLs)
+   * in this field as it may be exposed in error messages and logs.
+   *
+   * @example
+   * ```ts
+   * parseString(csv, { source: "users.csv" });
+   * // Error: Field count exceeded at row 5 in "users.csv"
+   * ```
+   *
+   * @default undefined
+   */
+  source?: string;
+}
+
+/**
  * CSV Common Options.
  * @category Types
  */
 export interface CommonOptions<
   Delimiter extends string,
   Quotation extends string,
-> {
+> extends SourceOption {
   /**
    * CSV field delimiter.
    * If you want to parse TSV, specify `'\t'`.
@@ -218,26 +245,6 @@ export interface CommonOptions<
    * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
-  /**
-   * Source identifier for error reporting (e.g., filename, description).
-   *
-   * @remarks
-   * This option allows you to specify a human-readable identifier for the CSV source
-   * that will be included in error messages. This is particularly useful when parsing
-   * multiple files or streams to help identify which source caused an error.
-   *
-   * **Security Note**: Do not include sensitive information (API keys, tokens, full URLs)
-   * in this field as it may be exposed in error messages and logs.
-   *
-   * @example
-   * ```ts
-   * parseString(csv, { source: "users.csv" });
-   * // Error: Field count exceeded at row 5 in "users.csv"
-   * ```
-   *
-   * @default undefined
-   */
-  source?: string;
 }
 
 /**
@@ -438,7 +445,8 @@ export interface CSVLexerTransformerOptions<
  * the first record will be treated as a header.
  */
 export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
-  extends AbortSignalOptions {
+  extends SourceOption,
+    AbortSignalOptions {
   /**
    * CSV header.
    *
@@ -473,21 +481,6 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default false
    */
   skipEmptyLines?: boolean;
-
-  /**
-   * Source identifier for error reporting (e.g., filename, description).
-   *
-   * @remarks
-   * This option allows you to specify a human-readable identifier for the CSV source
-   * that will be included in error messages. This is particularly useful when parsing
-   * multiple files or streams to help identify which source caused an error.
-   *
-   * **Security Note**: Do not include sensitive information (API keys, tokens, full URLs)
-   * in this field as it may be exposed in error messages and logs.
-   *
-   * @default undefined
-   */
-  source?: string;
 
   /**
    * How often to check for backpressure (in number of records processed).
