@@ -53,7 +53,9 @@ describe("parseMime security tests", () => {
   });
 
   it("should trim whitespace from parameters", () => {
-    const result = parseMime("text/csv;  charset = utf-8  ;  header = present ");
+    const result = parseMime(
+      "text/csv;  charset = utf-8  ;  header = present ",
+    );
     expect(result.parameters.charset).toBe("utf-8");
     expect(result.parameters.header).toBe("present");
   });

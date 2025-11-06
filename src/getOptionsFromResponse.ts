@@ -1,5 +1,5 @@
-import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
 import { SUPPORTED_CHARSETS } from "#getCharsetValidation.constants.js";
+import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
 import type { ParseBinaryOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { parseMime } from "./utils/parseMime.ts";

@@ -79,7 +79,9 @@ describe("charset validation in getOptionsFromResponse", () => {
       });
 
       expect(() => getOptionsFromResponse(response)).toThrow(TypeError);
-      expect(() => getOptionsFromResponse(response)).toThrow(/Unsupported charset/);
+      expect(() => getOptionsFromResponse(response)).toThrow(
+        /Unsupported charset/,
+      );
     });
 
     it("should reject arbitrary charset value", () => {
@@ -90,7 +92,9 @@ describe("charset validation in getOptionsFromResponse", () => {
       });
 
       expect(() => getOptionsFromResponse(response)).toThrow(TypeError);
-      expect(() => getOptionsFromResponse(response)).toThrow(/Unsupported charset/);
+      expect(() => getOptionsFromResponse(response)).toThrow(
+        /Unsupported charset/,
+      );
     });
 
     it("should reject path-like charset value", () => {
@@ -222,7 +226,9 @@ describe("charset validation in getOptionsFromResponse", () => {
       });
 
       expect(() => getOptionsFromResponse(response)).toThrow(TypeError);
-      expect(() => getOptionsFromResponse(response)).toThrow(/Unsupported charset/);
+      expect(() => getOptionsFromResponse(response)).toThrow(
+        /Unsupported charset/,
+      );
     });
 
     it("should allow both experimental compression and non-standard charset with flags", () => {

@@ -37,7 +37,9 @@ describe("convertBinaryToString security tests", () => {
         expect.fail("Should have thrown error");
       } catch (error) {
         expect(error).toBeInstanceOf(RangeError);
-        expect((error as Error).message).toContain("Invalid or unsupported charset");
+        expect((error as Error).message).toContain(
+          "Invalid or unsupported charset",
+        );
         expect((error as Error).message).toContain("attacker-controlled");
       }
     });
