@@ -40,7 +40,7 @@ export function convertBinaryToString(
     );
   }
 
-  // Try to create TextDecoder with error handling and fallback to UTF-8
+  // Try to create TextDecoder with error handling for invalid charsets
   let decoder: TextDecoder;
   try {
     decoder = new TextDecoder(options?.charset, {
@@ -51,7 +51,7 @@ export function convertBinaryToString(
     // If charset is invalid, provide clear error message
     if (error instanceof RangeError || error instanceof TypeError) {
       throw new RangeError(
-        `Invalid or unsupported charset: "${options?.charset}". Falling back to UTF-8 failed. Please specify a valid charset or enable allowNonStandardCharsets option.`,
+        `Invalid or unsupported charset: "${options?.charset}". Please specify a valid charset or enable allowNonStandardCharsets option.`,
       );
     }
     throw error;

@@ -88,5 +88,4 @@ export const SUPPORTED_CHARSETS: ReadonlySet<string> = new Set([
   // Other
   "ascii",
   "us-ascii",
-  "iso-8859-1",
 ]);
