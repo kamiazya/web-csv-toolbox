@@ -32,7 +32,7 @@ This document outlines the environments where web-csv-toolbox is supported and t
 
 | Tier | Level | Environments | CI/CD Testing | Issue Priority |
 |------|-------|--------------|---------------|----------------|
-| **Tier 1** | Full Support | 9 combinations | Comprehensive | High |
+| **Tier 1** | Full Support | 10 combinations | Comprehensive | High |
 | **Tier 2** | Active Support | 3 platforms (Deno) | Basic | Medium |
 | **Tier 3** | Community Support | Various | None | Best-effort |
 
