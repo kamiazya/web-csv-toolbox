@@ -113,7 +113,8 @@ describe("InternalEngineConfig", () => {
   describe("Validation", () => {
     it("should throw error if workerStrategy is set without worker", () => {
       expect(() => {
-        new InternalEngineConfig({ workerStrategy: "stream-transfer" });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new InternalEngineConfig({ workerStrategy: "stream-transfer" } as any);
       }).toThrow("workerStrategy requires worker: true in engine config");
     });
 
@@ -131,7 +132,8 @@ describe("InternalEngineConfig", () => {
 
     it("should throw error if strict is set without worker", () => {
       expect(() => {
-        new InternalEngineConfig({ strict: true });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new InternalEngineConfig({ strict: true } as any);
       }).toThrow('strict requires workerStrategy: "stream-transfer"');
     });
 
@@ -281,7 +283,7 @@ describe("InternalEngineConfig", () => {
       const config = new InternalEngineConfig({ wasm: true });
       const engineConfig = config.toConfig();
 
-      expect(engineConfig.worker).toBeUndefined();
+      expect(engineConfig.worker).toBe(false);
       expect(engineConfig.wasm).toBe(true);
     });
 
@@ -310,10 +312,11 @@ describe("InternalEngineConfig", () => {
       const config = new InternalEngineConfig();
       const engineConfig = config.toConfig();
 
-      expect(engineConfig.worker).toBeUndefined();
+      expect(engineConfig.worker).toBe(false);
       expect(engineConfig.wasm).toBeUndefined();
-      expect(engineConfig.workerStrategy).toBeUndefined();
-      expect(engineConfig.strict).toBeUndefined();
+      // workerStrategy and strict are not accessible in MainThreadEngineConfig
+      expect("workerStrategy" in engineConfig).toBe(false);
+      expect("strict" in engineConfig).toBe(false);
     });
   });
 

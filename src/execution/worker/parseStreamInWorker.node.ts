@@ -32,10 +32,9 @@ export async function* parseStreamInWorker<
   // Node.js: Collect stream into string first
   const csvString = await collectStringStream(stream, options?.signal);
 
-  using session = await WorkerSession.create({
-    workerPool: options?.engine?.workerPool,
-    workerURL: options?.engine?.workerURL,
-  });
+  using session = await WorkerSession.create(
+    options?.engine?.worker === true ? options.engine : undefined,
+  );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),
