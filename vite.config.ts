@@ -125,11 +125,22 @@ export default defineConfig(({ command }) => ({
           browser: {
             enabled: true,
             provider: webdriverio(),
-            instances: [
-              { browser: "chrome" },
-              { browser: "firefox" },
-              { browser: "edge" },
-            ],
+            instances: (() => {
+              // Windows: Chrome, Firefox, Edge
+              if (process.platform === 'win32') {
+                return [
+                  { browser: "chrome" },
+                  { browser: "firefox" },
+                  { browser: "edge" },
+                ];
+              }
+              // Default (Linux/macOS): Chrome, Firefox
+              // Edge not supported on Linux, Safari headless not supported on macOS
+              return [
+                { browser: "chrome" },
+                { browser: "firefox" },
+              ];
+            })(),
             headless: true,
           },
         },
