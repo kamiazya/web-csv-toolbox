@@ -1,5 +1,6 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../constants.ts";
-import type { Join } from "../utils/types.ts";
+import type { WorkerPool } from "../execution/worker/helpers/WorkerPool.ts";
+import type { JoinCSVFields } from "../utils/types.ts";
 import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
 
 /**
@@ -36,12 +37,49 @@ export interface TokenLocation {
    */
   end: Position;
   /**
-   * Row number.
+   * Row number in the CSV (includes header if present).
    * Starts from 1.
    *
    * @remarks
-   * This represents the logical row number in the CSV,
-   * counting from 1 for the first row, whether it is a header or not.
+   * This represents the logical CSV row number, not the physical line number.
+   * A single CSV row may span multiple lines if fields contain newline
+   * characters within quotes.
+   *
+   * **Important distinction**:
+   * - `line`: Physical line number (incremented by `\n` characters)
+   * - `rowNumber`: Logical CSV row (incremented by record delimiters)
+   *
+   * The header row (if present) is counted as row 1. This corresponds to
+   * the physical row position in the file, making it easy to locate in editors.
+   *
+   * For physical line numbers, use `start.line` or `end.line`.
+   *
+   * **Primary use case**: Error reporting. This field allows errors to be
+   * reported with both physical position (`line`, `column`) and logical
+   * row context (`rowNumber`), making it easier for users to locate
+   * issues in their CSV data.
+   *
+   * @example
+   * ```csv
+   * name,description       <- rowNumber: 1 (header)
+   * Alice,"Lives in
+   * New York"              <- rowNumber: 2 (spans line 2-3)
+   * Bob,"Works"            <- rowNumber: 3 (line 4)
+   * ```
+   * - Header: `rowNumber: 1`
+   * - Alice's row: `start.line: 2, end.line: 3, rowNumber: 2`
+   * - Bob's row: `start.line: 4, end.line: 4, rowNumber: 3`
+   *
+   * @example Error reporting
+   * ```ts
+   * try {
+   *   await parseString(csv);
+   * } catch (error) {
+   *   if (error instanceof ParseError) {
+   *     console.error(`Error at row ${error.rowNumber}, line ${error.position?.line}`);
+   *   }
+   * }
+   * ```
    */
   rowNumber: number;
 }
@@ -180,6 +218,26 @@ export interface CommonOptions<
    * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
+  /**
+   * Source identifier for error reporting (e.g., filename, description).
+   *
+   * @remarks
+   * This option allows you to specify a human-readable identifier for the CSV source
+   * that will be included in error messages. This is particularly useful when parsing
+   * multiple files or streams to help identify which source caused an error.
+   *
+   * **Security Note**: Do not include sensitive information (API keys, tokens, full URLs)
+   * in this field as it may be exposed in error messages and logs.
+   *
+   * @example
+   * ```ts
+   * parseString(csv, { source: "users.csv" });
+   * // Error: Field count exceeded at row 5 in "users.csv"
+   * ```
+   *
+   * @default undefined
+   */
+  source?: string;
 }
 
 /**
@@ -356,7 +414,17 @@ export interface CSVLexerTransformerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    AbortSignalOptions {}
+    AbortSignalOptions {
+  /**
+   * How often to check for backpressure (in number of tokens processed).
+   *
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * @default 100
+   */
+  backpressureCheckInterval?: number;
+}
 
 /**
  * CSV Record Assembler Options.
@@ -405,6 +473,31 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default false
    */
   skipEmptyLines?: boolean;
+
+  /**
+   * Source identifier for error reporting (e.g., filename, description).
+   *
+   * @remarks
+   * This option allows you to specify a human-readable identifier for the CSV source
+   * that will be included in error messages. This is particularly useful when parsing
+   * multiple files or streams to help identify which source caused an error.
+   *
+   * **Security Note**: Do not include sensitive information (API keys, tokens, full URLs)
+   * in this field as it may be exposed in error messages and logs.
+   *
+   * @default undefined
+   */
+  source?: string;
+
+  /**
+   * How often to check for backpressure (in number of records processed).
+   *
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * @default 10
+   */
+  backpressureCheckInterval?: number;
 }
 
 /**
@@ -448,28 +541,180 @@ export interface EngineFallbackInfo {
 }
 
 /**
- * Engine configuration for CSV parsing.
+ * Backpressure monitoring intervals (count-based).
  *
- * All parsing engine settings are unified in this interface.
+ * Controls how frequently the internal parsers check for backpressure
+ * during streaming operations, based on the number of tokens/records processed.
+ *
+ * @experimental This API may change in future versions based on performance research.
+ * @category Types
+ */
+export interface BackpressureCheckInterval {
+  /**
+   * Check interval for the lexer stage (number of tokens processed).
+   *
+   * Lower values provide better responsiveness to backpressure but may have
+   * slight performance overhead.
+   *
+   * @default 100
+   */
+  lexer?: number;
+
+  /**
+   * Check interval for the assembler stage (number of records processed).
+   *
+   * Lower values provide better responsiveness to backpressure but may have
+   * slight performance overhead.
+   *
+   * @default 10
+   */
+  assembler?: number;
+}
+
+/**
+ * Internal streaming queuing strategies configuration.
+ *
+ * Controls the internal queuing behavior of the CSV parser's streaming pipeline.
+ * This affects memory usage and backpressure handling for large streaming operations.
+ *
+ * @remarks
+ * The CSV parser uses a two-stage pipeline:
+ * 1. **Lexer**: String → Token
+ * 2. **Assembler**: Token → CSVRecord
+ *
+ * Each stage has both writable (input) and readable (output) sides.
+ *
+ * @experimental This API may change in future versions based on performance research.
+ * @category Types
+ */
+export interface QueuingStrategyConfig {
+  /**
+   * Queuing strategy for the lexer's writable side (string input).
+   *
+   * Controls how string chunks are buffered before being processed by the lexer.
+   *
+   * @default `{ highWaterMark: 65536 }` (≈64KB of characters)
+   */
+  lexerWritable?: QueuingStrategy<string>;
+
+  /**
+   * Queuing strategy for the lexer's readable side (token output).
+   *
+   * Controls how tokens are buffered after being produced by the lexer
+   * before being consumed by the assembler.
+   *
+   * @default `{ highWaterMark: 1024 }` (1024 tokens)
+   */
+  lexerReadable?: QueuingStrategy<Token>;
+
+  /**
+   * Queuing strategy for the assembler's writable side (token input).
+   *
+   * Controls how tokens are buffered before being processed by the assembler.
+   * This is the input side of the assembler, receiving tokens from the lexer.
+   *
+   * @default `{ highWaterMark: 1024 }` (1024 tokens)
+   */
+  assemblerWritable?: QueuingStrategy<Token>;
+
+  /**
+   * Queuing strategy for the assembler's readable side (record output).
+   *
+   * Controls how CSV records are buffered after being assembled.
+   *
+   * @default `{ highWaterMark: 256 }` (256 records)
+   */
+  assemblerReadable?: QueuingStrategy<CSVRecord<any>>;
+}
+
+/**
+ * Base engine configuration shared by all execution modes.
  *
  * @category Types
  */
-export interface EngineConfig {
+interface BaseEngineConfig {
+  /**
+   * Use WASM implementation.
+   *
+   * Requires prior initialization with {@link loadWASM}.
+   *
+   * @default false
+   *
+   * @example Main thread + WASM
+   * ```ts
+   * import { loadWASM, parse } from 'web-csv-toolbox';
+   *
+   * await loadWASM();
+   * parse(csv, { engine: { wasm: true } })
+   * ```
+   *
+   * @example Worker + WASM
+   * ```ts
+   * await loadWASM();
+   * parse(csv, { engine: { worker: true, wasm: true } })
+   * ```
+   */
+  wasm?: boolean;
+
+  /**
+   * Blob reading strategy threshold (in bytes).
+   * Only applicable for `parseBlob()` and `parseFile()`.
+   *
+   * Determines when to use `blob.arrayBuffer()` vs `blob.stream()`:
+   * - Files smaller than threshold: Use `blob.arrayBuffer()` + `parseBinary()`
+   *   - ✅ Faster for small files
+   *   - ❌ Loads entire file into memory
+   * - Files equal to or larger than threshold: Use `blob.stream()` + `parseUint8ArrayStream()`
+   *   - ✅ Memory-efficient for large files
+   *   - ❌ Slight streaming overhead
+   *
+   * @default 1_048_576 (1MB)
+   */
+  arrayBufferThreshold?: number;
+
+  /**
+   * Backpressure monitoring intervals (count-based: number of tokens/records processed).
+   *
+   * @default { lexer: 100, assembler: 10 }
+   * @experimental
+   */
+  backpressureCheckInterval?: BackpressureCheckInterval;
+
+  /**
+   * Internal streaming queuing strategies.
+   *
+   * @experimental
+   */
+  queuingStrategy?: QueuingStrategyConfig;
+}
+
+/**
+ * Engine configuration for main thread execution.
+ *
+ * @category Types
+ */
+export interface MainThreadEngineConfig extends BaseEngineConfig {
   /**
    * Execute in Worker thread.
    *
    * @default false
-   *
-   * @example Worker execution
-   * ```ts
-   * parse(csv, { engine: { worker: true } })
-   * ```
    */
-  worker?: boolean;
+  worker?: false;
+}
+
+/**
+ * Engine configuration for worker thread execution.
+ *
+ * @category Types
+ */
+export interface WorkerEngineConfig extends BaseEngineConfig {
+  /**
+   * Execute in Worker thread.
+   */
+  worker: true;
 
   /**
    * Custom Worker URL.
-   * Only applicable when `worker: true`.
    *
    * If not provided, uses the bundled worker.
    *
@@ -490,7 +735,6 @@ export interface EngineConfig {
 
   /**
    * Worker pool for managing worker lifecycle.
-   * Only applicable when `worker: true`.
    *
    * When provided, the parsing function will use this pool's worker instance
    * instead of creating/reusing a module-level singleton worker.
@@ -527,34 +771,10 @@ export interface EngineConfig {
    * // Worker is reused for both operations
    * ```
    */
-  workerPool?: import("../execution/worker/helpers/WorkerPool.ts").WorkerPool;
-
-  /**
-   * Use WASM implementation.
-   *
-   * Requires prior initialization with {@link loadWASM}.
-   *
-   * @default false
-   *
-   * @example Main thread + WASM
-   * ```ts
-   * import { loadWASM, parse } from 'web-csv-toolbox';
-   *
-   * await loadWASM();
-   * parse(csv, { engine: { wasm: true } })
-   * ```
-   *
-   * @example Worker + WASM
-   * ```ts
-   * await loadWASM();
-   * parse(csv, { engine: { worker: true, wasm: true } })
-   * ```
-   */
-  wasm?: boolean;
+  workerPool?: WorkerPool;
 
   /**
    * Worker communication strategy.
-   * Only applicable when `worker: true`.
    *
    * - `"message-streaming"` (default): Message-based streaming
    *   - ✅ All browsers including Safari
@@ -595,7 +815,6 @@ export interface EngineConfig {
 
   /**
    * Strict mode: disable automatic fallback.
-   * Only applicable when `workerStrategy: "stream-transfer"`.
    *
    * When enabled:
    * - Throws error immediately if stream transfer fails
@@ -654,6 +873,16 @@ export interface EngineConfig {
    */
   onFallback?: (info: EngineFallbackInfo) => void;
 }
+
+/**
+ * Engine configuration for CSV parsing.
+ *
+ * All parsing engine settings are unified in this type.
+ * Use discriminated union to ensure type-safe configuration based on worker mode.
+ *
+ * @category Types
+ */
+export type EngineConfig = MainThreadEngineConfig | WorkerEngineConfig;
 
 /**
  * Engine configuration options.
@@ -746,8 +975,8 @@ export type CSVString<
   Quotation extends string = DEFAULT_QUOTATION,
 > = Header extends readonly [string, ...string[]]
   ?
-      | Join<Header, Delimiter, Quotation>
-      | ReadableStream<Join<Header, Delimiter, Quotation>>
+      | JoinCSVFields<Header, Delimiter, Quotation>
+      | ReadableStream<JoinCSVFields<Header, Delimiter, Quotation>>
   : string | ReadableStream<string>;
 
 /**
@@ -763,33 +992,6 @@ export type CSVBinary =
   | ArrayBuffer
   | Uint8Array;
 
-/**
- * Backpressure monitoring options.
- *
- * @category Types
- */
-export interface BackpressureOptions {
-  /**
-   * How often to check for backpressure (in number of items processed).
-   *
-   * Lower values = more responsive to backpressure but slight performance overhead.
-   * Higher values = less overhead but slower backpressure response.
-   *
-   * Default:
-   * - CSVLexerTransformer: 100 tokens
-   * - CSVRecordAssemblerTransformer: 10 records
-   */
-  checkInterval?: number;
-}
-
-/**
- * Extended queuing strategy with backpressure monitoring options.
- *
- * @category Types
- */
-export interface ExtendedQueuingStrategy<T>
-  extends QueuingStrategy<T>,
-    BackpressureOptions {}
 
 /**
  * CSV.

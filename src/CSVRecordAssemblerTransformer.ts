@@ -2,17 +2,32 @@ import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import type {
   CSVRecord,
   CSVRecordAssemblerOptions,
-  ExtendedQueuingStrategy,
   Token,
 } from "./common/types.ts";
+
+/**
+ * Default queuing strategy for the writable side (token input).
+ * @internal
+ */
+const DEFAULT_WRITABLE_STRATEGY = new CountQueuingStrategy({
+  highWaterMark: 1024, // 1024 tokens
+});
+
+/**
+ * Default queuing strategy for the readable side (record output).
+ * @internal
+ */
+const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
+  highWaterMark: 256, // 256 records
+});
 
 /**
  * A transform stream that converts a stream of tokens into a stream of CSV records.
  *
  * @template Header The type of the header row.
- * @param options - CSV-specific options (header, maxFieldCount, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1, checkInterval: 10 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1, checkInterval: 10 }`)
+ * @param options - CSV-specific options (header, maxFieldCount, checkInterval, etc.)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  *
  * @category Low-level API
  *
@@ -71,17 +86,11 @@ import type {
  * @example Custom queuing strategies with backpressure tuning
  * ```ts
  * const transformer = new CSVRecordAssemblerTransformer(
- *   {},
  *   {
- *     highWaterMark: 2048,  // 2048 tokens
- *     size: () => 1,        // Each token counts as 1
- *     checkInterval: 20     // Check backpressure every 20 records
+ *     backpressureCheckInterval: 20  // Check backpressure every 20 records
  *   },
- *   {
- *     highWaterMark: 512,   // 512 records
- *     size: () => 1,        // Each record counts as 1
- *     checkInterval: 5      // Check backpressure every 5 records
- *   }
+ *   new CountQueuingStrategy({ highWaterMark: 2048 }),  // 2048 tokens
+ *   new CountQueuingStrategy({ highWaterMark: 512 })    // 512 records
  * );
  *
  * await tokenStream
@@ -105,20 +114,11 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
-    writableStrategy: ExtendedQueuingStrategy<Token> = {
-      highWaterMark: 1024, // 1024 tokens
-      size: () => 1, // Each token counts as 1
-      checkInterval: 10, // Check backpressure every 10 records
-    },
-    readableStrategy: ExtendedQueuingStrategy<CSVRecord<Header>> = {
-      highWaterMark: 256, // 256 records
-      size: () => 1, // Each record counts as 1
-      checkInterval: 10, // Check backpressure every 10 records
-    },
+    writableStrategy: QueuingStrategy<Token> = DEFAULT_WRITABLE_STRATEGY,
+    readableStrategy: QueuingStrategy<CSVRecord<Header>> = DEFAULT_READABLE_STRATEGY,
   ) {
     const assembler = new CSVRecordAssembler(options);
-    const checkInterval =
-      writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 10;
+    const checkInterval = options.backpressureCheckInterval ?? 10;
 
     super(
       {

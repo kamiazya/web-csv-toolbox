@@ -399,4 +399,168 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
       expect(Object.keys(records[0] as object)).toHaveLength(50);
     });
   });
+
+  describe("error message details", () => {
+    test("should include row number in error message", () => {
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 5 });
+      const tokens: Token[] = [];
+
+      // Create 6 fields (exceeds limit of 5)
+      for (let i = 0; i < 6; i++) {
+        tokens.push({
+          type: Field,
+          value: `field${i}`,
+          location: {
+            start: { line: 1, column: i * 2 + 1, offset: i * 2 },
+            end: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
+            rowNumber: 3,
+          },
+        });
+        if (i < 5) {
+          tokens.push({
+            type: FieldDelimiter,
+            value: ",",
+            location: {
+              start: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
+              end: { line: 1, column: i * 2 + 3, offset: i * 2 + 2 },
+              rowNumber: 3,
+            },
+          });
+        }
+      }
+
+      try {
+        [...assembler.assemble(tokens)];
+        expect.fail("Should have thrown RangeError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        expect((error as RangeError).message).toContain("at row 3");
+      }
+    });
+
+    test("should include source in error message when provided", () => {
+      const assembler = new CSVRecordAssembler({
+        maxFieldCount: 5,
+        source: "data.csv",
+      });
+      const tokens: Token[] = [];
+
+      // Create 6 fields (exceeds limit of 5)
+      for (let i = 0; i < 6; i++) {
+        tokens.push({
+          type: Field,
+          value: `field${i}`,
+          location: {
+            start: { line: 1, column: i * 2 + 1, offset: i * 2 },
+            end: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
+            rowNumber: 2,
+          },
+        });
+        if (i < 5) {
+          tokens.push({
+            type: FieldDelimiter,
+            value: ",",
+            location: {
+              start: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
+              end: { line: 1, column: i * 2 + 3, offset: i * 2 + 2 },
+              rowNumber: 2,
+            },
+          });
+        }
+      }
+
+      try {
+        [...assembler.assemble(tokens)];
+        expect.fail("Should have thrown RangeError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        expect((error as RangeError).message).toContain('in "data.csv"');
+      }
+    });
+
+    test("should include both row number and source in error message", () => {
+      const assembler = new CSVRecordAssembler({
+        maxFieldCount: 3,
+        source: "users.csv",
+      });
+      const tokens: Token[] = [];
+
+      // Create 4 fields (exceeds limit of 3)
+      for (let i = 0; i < 4; i++) {
+        tokens.push({
+          type: Field,
+          value: `col${i}`,
+          location: {
+            start: { line: 1, column: 1, offset: 0 },
+            end: { line: 1, column: 2, offset: 1 },
+            rowNumber: 10,
+          },
+        });
+        if (i < 3) {
+          tokens.push({
+            type: FieldDelimiter,
+            value: ",",
+            location: {
+              start: { line: 1, column: 1, offset: 0 },
+              end: { line: 1, column: 2, offset: 1 },
+              rowNumber: 10,
+            },
+          });
+        }
+      }
+
+      try {
+        [...assembler.assemble(tokens)];
+        expect.fail("Should have thrown RangeError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        const message = (error as RangeError).message;
+        expect(message).toContain("at row 10");
+        expect(message).toContain('in "users.csv"');
+        expect(message).toContain("Field count (4) exceeded maximum allowed count of 3");
+      }
+    });
+
+    test("should only include field count info when source is not provided", () => {
+      const assembler = new CSVRecordAssembler({ maxFieldCount: 2 });
+      const tokens: Token[] = [];
+
+      // Create 3 fields (exceeds limit of 2)
+      for (let i = 0; i < 3; i++) {
+        tokens.push({
+          type: Field,
+          value: `f${i}`,
+          location: {
+            start: { line: 1, column: 1, offset: 0 },
+            end: { line: 1, column: 2, offset: 1 },
+            rowNumber: 1,
+          },
+        });
+        if (i < 2) {
+          tokens.push({
+            type: FieldDelimiter,
+            value: ",",
+            location: {
+              start: { line: 1, column: 1, offset: 0 },
+              end: { line: 1, column: 2, offset: 1 },
+              rowNumber: 1,
+            },
+          });
+        }
+      }
+
+      try {
+        [...assembler.assemble(tokens)];
+        expect.fail("Should have thrown RangeError");
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        const message = (error as RangeError).message;
+        // Should not include source when not provided
+        expect(message).not.toContain('in "');
+        // Should include row number
+        expect(message).toContain("at row 1");
+        expect(message).toContain("Field count (3) exceeded maximum allowed count of 2");
+      }
+    });
+  });
 });

@@ -407,7 +407,7 @@ catering to users who need more detailed and fine-tuned functionality.
 - **`function parseBlob(blob[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBlob-1.html)
   - Parse CSV data from `Blob` or `File` objects.
 - **`function parseFile(file[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseFile-1.html)
-  - Alias for `parseBlob`, semantically clearer for `File` objects.
+  - Parse `File` objects with automatic filename tracking in error messages.
 - **`function parseStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStream-1.html)
   - Stream-based parsing for larger or continuous data.
 - **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
@@ -440,28 +440,21 @@ new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?
 **Default queuing strategies (starting points, not benchmarked):**
 ```typescript
 // CSVLexerTransformer defaults
-writableStrategy: {
-  highWaterMark: 65536,           // 64KB of characters
-  size: (chunk) => chunk.length,  // Count by string length
-  checkInterval: 100              // Check backpressure every 100 tokens
-}
-readableStrategy: {
-  highWaterMark: 1024,              // 1024 tokens
-  size: (tokens) => tokens.length,  // Count by number of tokens
-  checkInterval: 100                // Check backpressure every 100 tokens
-}
+new CSVLexerTransformer(
+  { backpressureCheckInterval: 100 },  // Check every 100 tokens
+  {
+    highWaterMark: 65536,              // 64KB of characters
+    size: (chunk) => chunk.length,     // Count by string length
+  },
+  new CountQueuingStrategy({ highWaterMark: 1024 })  // 1024 tokens
+)
 
 // CSVRecordAssemblerTransformer defaults
-writableStrategy: {
-  highWaterMark: 1024,              // 1024 tokens
-  size: (tokens) => tokens.length,  // Count by number of tokens
-  checkInterval: 10                 // Check backpressure every 10 records
-}
-readableStrategy: {
-  highWaterMark: 256,     // 256 records
-  size: () => 1,          // Each record counts as 1
-  checkInterval: 10       // Check backpressure every 10 records
-}
+new CSVRecordAssemblerTransformer(
+  { backpressureCheckInterval: 10 },  // Check every 10 records
+  new CountQueuingStrategy({ highWaterMark: 1024 }),  // 1024 tokens
+  new CountQueuingStrategy({ highWaterMark: 256 })    // 256 records
+)
 ```
 
 **Key Features:**
@@ -477,8 +470,8 @@ readableStrategy: {
 - Prevents blocking the main thread
 - Critical for browser UI responsiveness
 
-🔧 **Tunable Check Interval:**
-- `checkInterval`: How often to check for backpressure
+🔧 **Tunable Backpressure Check Interval:**
+- `backpressureCheckInterval` (in options): How often to check for backpressure (count-based)
 - Lower values (5-25): More responsive, slight overhead
 - Higher values (100-500): Less overhead, slower response
 - Customize based on downstream consumer speed
@@ -486,9 +479,9 @@ readableStrategy: {
 > ⚠️ **Important**: These defaults are theoretical starting points based on data flow characteristics, **not empirical benchmarks**. Optimal values vary by runtime (browser/Node.js/Deno), file size, memory constraints, and CPU performance. **Profile your specific use case** to find the best values.
 
 **When to customize:**
-- 🚀 **High-throughput servers**: Higher `highWaterMark` (128KB+, 2048+ tokens), higher `checkInterval` (200-500)
-- 📱 **Memory-constrained environments**: Lower `highWaterMark` (16KB, 256 tokens), lower `checkInterval` (10-25)
-- 🐌 **Slow consumers** (DB writes, API calls): Lower `highWaterMark`, lower `checkInterval` for responsive backpressure
+- 🚀 **High-throughput servers**: Higher `highWaterMark` (128KB+, 2048+ tokens), higher `backpressureCheckInterval` (200-500)
+- 📱 **Memory-constrained environments**: Lower `highWaterMark` (16KB, 256 tokens), lower `backpressureCheckInterval` (10-25)
+- 🐌 **Slow consumers** (DB writes, API calls): Lower `highWaterMark`, lower `backpressureCheckInterval` for responsive backpressure
 - 🏃 **Fast processing**: Higher values to reduce overhead
 
 **Example - High-throughput server:**
@@ -499,30 +492,17 @@ const response = await fetch('large-dataset.csv');
 await response.body
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(new CSVLexerTransformer(
-    {},
+    { backpressureCheckInterval: 200 },  // Less frequent checks
     {
-      highWaterMark: 131072,          // 128KB
+      highWaterMark: 131072,             // 128KB
       size: (chunk) => chunk.length,
-      checkInterval: 200              // Less frequent checks
     },
-    {
-      highWaterMark: 2048,            // 2048 tokens
-      size: (tokens) => tokens.length,
-      checkInterval: 100
-    }
+    new CountQueuingStrategy({ highWaterMark: 2048 })  // 2048 tokens
   ))
   .pipeThrough(new CSVRecordAssemblerTransformer(
-    {},
-    {
-      highWaterMark: 2048,            // 2048 tokens
-      size: (tokens) => tokens.length,
-      checkInterval: 20
-    },
-    {
-      highWaterMark: 512,             // 512 records
-      size: () => 1,
-      checkInterval: 10
-    }
+    { backpressureCheckInterval: 20 },  // Less frequent checks
+    new CountQueuingStrategy({ highWaterMark: 2048 }),  // 2048 tokens
+    new CountQueuingStrategy({ highWaterMark: 512 })    // 512 records
   ))
   .pipeTo(yourRecordProcessor);
 ```
@@ -532,9 +512,9 @@ await response.body
 await csvStream
   .pipeThrough(new CSVLexerTransformer())  // Use defaults
   .pipeThrough(new CSVRecordAssemblerTransformer(
-    {},
-    { highWaterMark: 512, size: (t) => t.length, checkInterval: 5 },
-    { highWaterMark: 64, size: () => 1, checkInterval: 2 }  // Very responsive
+    { backpressureCheckInterval: 2 },  // Very responsive
+    new CountQueuingStrategy({ highWaterMark: 512 }),
+    new CountQueuingStrategy({ highWaterMark: 64 })
   ))
   .pipeTo(new WritableStream({
     async write(record) {

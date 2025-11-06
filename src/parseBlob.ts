@@ -1,6 +1,8 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
+import { DEFAULT_ARRAY_BUFFER_THRESHOLD } from "./constants.ts";
 import { getOptionsFromBlob } from "./getOptionsFromBlob.ts";
+import { parseBinary } from "./parseBinary.ts";
 import { parseBlobToStream } from "./parseBlobToStream.ts";
 import { parseUint8ArrayStream } from "./parseUint8ArrayStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
@@ -66,10 +68,22 @@ export function parseBlob<Header extends ReadonlyArray<string>>(
   // Extract options from blob
   const options_ = getOptionsFromBlob(blob, options);
 
+  // Get threshold from engine config or use default
+  const threshold =
+    options_?.engine?.arrayBufferThreshold ?? DEFAULT_ARRAY_BUFFER_THRESHOLD;
+
   // Return wrapper async generator for error handling
   return (async function* () {
     try {
-      yield* parseUint8ArrayStream(blob.stream(), options_);
+      // Choose strategy based on blob size and threshold
+      if (blob.size < threshold) {
+        // Small file: use arrayBuffer for better performance
+        const buffer = await blob.arrayBuffer();
+        yield* parseBinary(new Uint8Array(buffer), options_);
+      } else {
+        // Large file: use streaming for memory efficiency
+        yield* parseUint8ArrayStream(blob.stream(), options_);
+      }
     } catch (error) {
       commonParseErrorHandling(error);
     }

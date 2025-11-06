@@ -1,6 +1,11 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { CR, CRLF, LF } from "../constants";
-import type { ExtractCSVHeader, Join, PickCSVHeader, Split } from "./types";
+import type {
+  ExtractCSVHeader,
+  JoinCSVFields,
+  PickCSVHeader,
+  SplitCSVFields,
+} from "./types";
 
 const case1csv1 = '"na\nme,",age,city,zip';
 
@@ -81,56 +86,62 @@ const case2csv8 =
 const case2csv9 =
   "name@quotationa\ngequotation@city@zip\naa@quotationbb\nquotation@cc@dd\nee@quotationffquotation@gg@hh";
 
-describe("Join", () => {
-  describe("Generate new string by concatenating all of the elements in array", () => {
+describe("JoinCSVFields", () => {
+  describe("Join CSV field array into a CSV-formatted string with proper escaping", () => {
     it("Default", () => {
-      expectTypeOf<Join<[]>>().toEqualTypeOf<"">();
+      expectTypeOf<JoinCSVFields<[]>>().toEqualTypeOf<"">();
       expectTypeOf<
-        Join<["name", "age", "city", "zip"]>
+        JoinCSVFields<["name", "age", "city", "zip"]>
       >().toEqualTypeOf<"name,age,city,zip">();
     });
 
     it("With different delimiter and quotation", () => {
-      expectTypeOf<Join<[], "@", "$">>().toEqualTypeOf<"">();
+      expectTypeOf<JoinCSVFields<[], "@", "$">>().toEqualTypeOf<"">();
       expectTypeOf<
-        Join<["name", "age", "city", "zip"], "@", "$">
+        JoinCSVFields<["name", "age", "city", "zip"], "@", "$">
       >().toEqualTypeOf<"name@age@city@zip">();
     });
 
     it("Escape newlines and delimiters and quotation", () => {
-      expectTypeOf<Join<[], "@", "$">>().toEqualTypeOf<"">();
+      expectTypeOf<JoinCSVFields<[], "@", "$">>().toEqualTypeOf<"">();
       expectTypeOf<
-        Join<["name", "a\nge", "ci,ty", 'zi"p']>
+        JoinCSVFields<["name", "a\nge", "ci,ty", 'zi"p']>
       >().toEqualTypeOf<'name,"a\nge","ci,ty","zi"p"'>();
     });
   });
 });
 
-describe("Split", () => {
-  describe("Generate a delimiter-separated tuple from a string", () => {
+describe("SplitCSVFields", () => {
+  describe("Split CSV-formatted string into field array with proper unescaping", () => {
     it("Default", () => {
-      expectTypeOf<Split<"">>().toEqualTypeOf<readonly string[]>();
-      expectTypeOf<Split<"name,age,city,zip">>().toEqualTypeOf<
+      expectTypeOf<SplitCSVFields<"">>().toEqualTypeOf<readonly string[]>();
+      expectTypeOf<SplitCSVFields<"name,age,city,zip">>().toEqualTypeOf<
         readonly ["name", "age", "city", "zip"]
       >();
-      expectTypeOf<Split<'"na"me","ag\ne",city,"zip""'>>().toEqualTypeOf<
-        readonly ['na"me', "ag\ne", "city", 'zip"']
-      >();
+      expectTypeOf<
+        SplitCSVFields<'"na"me","ag\ne",city,"zip""'>
+      >().toEqualTypeOf<readonly ['na"me', "ag\ne", "city", 'zip"']>();
     });
 
     it("With different delimiter and quotation", () => {
-      expectTypeOf<Split<"", "@", "$">>().toEqualTypeOf<readonly string[]>();
+      expectTypeOf<SplitCSVFields<"", "@", "$">>().toEqualTypeOf<
+        readonly string[]
+      >();
       expectTypeOf<
-        Split<"$na$me$@$ag\ne$@city@$zip$$", "@", "$">
+        SplitCSVFields<"$na$me$@$ag\ne$@city@$zip$$", "@", "$">
       >().toEqualTypeOf<readonly ["na$me", "ag\ne", "city", "zip$"]>();
       expectTypeOf<
-        Split<'"name\r\n"\r\nage\r\ncity\r\nzip', "\r\n">
+        SplitCSVFields<'"name\r\n"\r\nage\r\ncity\r\nzip', "\r\n">
       >().toEqualTypeOf<readonly ["name\r\n", "age", "city", "zip"]>();
       expectTypeOf<
-        Split<"namedelimiteragedelimitercitydelimiterzip", "delimiter">
+        SplitCSVFields<"namedelimiteragedelimitercitydelimiterzip", "delimiter">
       >().toEqualTypeOf<readonly ["name", "age", "city", "zip"]>();
       expectTypeOf<
-        Split<"name,quotationa\ngequotation,city,zip", ",", "quotation">
+        SplitCSVFields<
+          "name,quotationa\ngequotation,city,zip",
+          ",",
+          "quotation"
+        >
       >().toEqualTypeOf<readonly ["name", "a\nge", "city", "zip"]>();
     });
   });

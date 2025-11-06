@@ -51,4 +51,41 @@ describe("ParseError", () => {
       new Error(),
     );
   });
+
+  it("should have a rowNumber property", () => {
+    // The ParseError class should have
+    // a rowNumber property equal to undefined.
+    expect(new ParseError().rowNumber).toStrictEqual(undefined);
+
+    // The ParseError class should have
+    // a rowNumber property equal to the provided value.
+    expect(new ParseError("", { rowNumber: 5 }).rowNumber).toStrictEqual(5);
+  });
+
+  it("should have a source property", () => {
+    // The ParseError class should have
+    // a source property equal to undefined.
+    expect(new ParseError().source).toStrictEqual(undefined);
+
+    // The ParseError class should have
+    // a source property equal to the provided value.
+    expect(
+      new ParseError("", { source: "data.csv" }).source,
+    ).toStrictEqual("data.csv");
+  });
+
+  it("should include all optional properties together", () => {
+    const error = new ParseError("Test error", {
+      position: { line: 2, column: 3, offset: 10 },
+      rowNumber: 5,
+      source: "test.csv",
+      cause: new Error("Underlying cause"),
+    });
+
+    expect(error.message).toStrictEqual("Test error");
+    expect(error.position).toStrictEqual({ line: 2, column: 3, offset: 10 });
+    expect(error.rowNumber).toStrictEqual(5);
+    expect(error.source).toStrictEqual("test.csv");
+    expect(error.cause).toBeInstanceOf(Error);
+  });
 });

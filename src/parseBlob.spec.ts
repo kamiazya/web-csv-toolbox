@@ -113,4 +113,98 @@ describe("parseBlob function", () => {
     const records = await parseBlob.toArray(blob);
     expect(records).toStrictEqual(expected);
   });
+
+  describe("source handling", () => {
+    it("should not automatically set source from File.name", async () => {
+      // Create CSV with field count exceeding limit
+      const headers = Array.from({ length: 10 }, (_, i) => `field${i}`).join(
+        ",",
+      );
+      const file = new File([headers], "data.csv", { type: "text/csv" });
+
+      try {
+        for await (const _ of parseBlob(file, { maxFieldCount: 5 })) {
+          // Should throw before reaching here
+        }
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        // Should NOT include filename in error message
+        expect((error as RangeError).message).not.toContain("data.csv");
+        expect((error as RangeError).message).not.toContain("in");
+      }
+    });
+
+    it("should respect manually provided source option", async () => {
+      const headers = Array.from({ length: 10 }, (_, i) => `field${i}`).join(
+        ",",
+      );
+      const blob = new Blob([headers], { type: "text/csv" });
+
+      try {
+        for await (const _ of parseBlob(blob, {
+          maxFieldCount: 5,
+          source: "custom-source.csv",
+        })) {
+          // Should throw before reaching here
+        }
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        // Should include manually provided source
+        expect((error as RangeError).message).toContain(
+          'in "custom-source.csv"',
+        );
+      }
+    });
+
+    it("should allow manual source even with File objects", async () => {
+      const headers = Array.from({ length: 10 }, (_, i) => `field${i}`).join(
+        ",",
+      );
+      const file = new File([headers], "actual-filename.csv", {
+        type: "text/csv",
+      });
+
+      try {
+        for await (const _ of parseBlob(file, {
+          maxFieldCount: 5,
+          source: "custom-source.csv",
+        })) {
+          // Should throw before reaching here
+        }
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        // Should include manually provided source, not file.name
+        expect((error as RangeError).message).toContain(
+          'in "custom-source.csv"',
+        );
+        expect((error as RangeError).message).not.toContain(
+          "actual-filename.csv",
+        );
+      }
+    });
+
+    it("should handle Blob without source gracefully", async () => {
+      const headers = Array.from({ length: 10 }, (_, i) => `field${i}`).join(
+        ",",
+      );
+      const blob = new Blob([headers], { type: "text/csv" });
+
+      try {
+        for await (const _ of parseBlob(blob, { maxFieldCount: 5 })) {
+          // Should throw before reaching here
+        }
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(RangeError);
+        const message = (error as RangeError).message;
+        // Should have proper error message without source
+        expect(message).toContain("Field count");
+        expect(message).toContain("exceeded maximum allowed count");
+        expect(message).not.toContain("in");
+      }
+    });
+  });
 });
