@@ -69,11 +69,18 @@ export class InternalEngineConfig {
     // (TypeScript discriminated union prevents this at compile time)
     const anyConfig = config as any;
     if (!config.worker) {
-      if (anyConfig.workerStrategy !== undefined && anyConfig.workerStrategy !== false) {
-        throw new Error("workerStrategy requires worker: true in engine config");
+      if (
+        anyConfig.workerStrategy !== undefined &&
+        anyConfig.workerStrategy !== false
+      ) {
+        throw new Error(
+          "workerStrategy requires worker: true in engine config",
+        );
       }
       if (anyConfig.strict !== undefined && anyConfig.strict !== false) {
-        throw new Error('strict requires workerStrategy: "stream-transfer" in engine config');
+        throw new Error(
+          'strict requires workerStrategy: "stream-transfer" in engine config',
+        );
       }
     }
 
