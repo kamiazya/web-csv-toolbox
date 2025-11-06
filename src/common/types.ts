@@ -180,6 +180,27 @@ export interface CommonOptions<
    * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
+  /**
+   * Buffer cleanup threshold in characters.
+   *
+   * @remarks
+   * When the processed buffer offset exceeds this threshold,
+   * the buffer is sliced to reduce memory usage.
+   *
+   * This value affects the balance between performance and memory usage:
+   * - 0: Disables buffer cleanup (maximum memory usage, best performance for small files)
+   * - Smaller values (512B-2KB): More frequent cleanup, lower memory usage, higher CPU overhead
+   * - Larger values (16KB-64KB): Less frequent cleanup, higher memory usage, lower CPU overhead
+   *
+   * Based on comprehensive benchmarking, 4KB provides optimal performance
+   * for most use cases. You may adjust this value based on your specific needs:
+   * - Small files or low memory constraints: 0 (disabled) or 1-2KB
+   * - Mixed field sizes: 4KB (default, recommended)
+   * - Very large fields (> 10KB): Consider 16-64KB
+   *
+   * @default 4 * 1024 (4KB)
+   */
+  bufferCleanupThreshold?: number;
 }
 
 /**
