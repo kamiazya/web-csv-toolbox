@@ -33,7 +33,9 @@ describe("parseFileToArray", () => {
 
   it("should respect parsing options", async () => {
     const csv = "name\tage\nAlice\t42\nBob\t69";
-    const file = new File([csv], "test.tsv", { type: "text/tab-separated-values" });
+    const file = new File([csv], "test.tsv", {
+      type: "text/tab-separated-values",
+    });
 
     const records = await parseFileToArray(file, { delimiter: "\t" });
 

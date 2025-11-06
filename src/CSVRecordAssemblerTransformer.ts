@@ -115,7 +115,9 @@ export class CSVRecordAssemblerTransformer<
   constructor(
     options: CSVRecordAssemblerOptions<Header> = {},
     writableStrategy: QueuingStrategy<Token> = DEFAULT_WRITABLE_STRATEGY,
-    readableStrategy: QueuingStrategy<CSVRecord<Header>> = DEFAULT_READABLE_STRATEGY,
+    readableStrategy: QueuingStrategy<
+      CSVRecord<Header>
+    > = DEFAULT_READABLE_STRATEGY,
   ) {
     const assembler = new CSVRecordAssembler(options);
     const checkInterval = options.backpressureCheckInterval ?? 10;

@@ -992,7 +992,6 @@ export type CSVBinary =
   | ArrayBuffer
   | Uint8Array;
 
-
 /**
  * CSV.
  *

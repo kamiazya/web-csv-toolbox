@@ -1,8 +1,5 @@
 import { CSVLexer } from "./CSVLexer.ts";
-import type {
-  CSVLexerTransformerOptions,
-  Token,
-} from "./common/types.ts";
+import type { CSVLexerTransformerOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 
 /**

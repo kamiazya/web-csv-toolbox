@@ -69,9 +69,9 @@ describe("ParseError", () => {
 
     // The ParseError class should have
     // a source property equal to the provided value.
-    expect(
-      new ParseError("", { source: "data.csv" }).source,
-    ).toStrictEqual("data.csv");
+    expect(new ParseError("", { source: "data.csv" }).source).toStrictEqual(
+      "data.csv",
+    );
   });
 
   it("should include all optional properties together", () => {

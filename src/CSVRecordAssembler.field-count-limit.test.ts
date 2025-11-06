@@ -517,7 +517,9 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
         const message = (error as RangeError).message;
         expect(message).toContain("at row 10");
         expect(message).toContain('in "users.csv"');
-        expect(message).toContain("Field count (4) exceeded maximum allowed count of 3");
+        expect(message).toContain(
+          "Field count (4) exceeded maximum allowed count of 3",
+        );
       }
     });
 
@@ -559,7 +561,9 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
         expect(message).not.toContain('in "');
         // Should include row number
         expect(message).toContain("at row 1");
-        expect(message).toContain("Field count (3) exceeded maximum allowed count of 2");
+        expect(message).toContain(
+          "Field count (3) exceeded maximum allowed count of 2",
+        );
       }
     });
   });

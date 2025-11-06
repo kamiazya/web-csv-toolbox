@@ -45,7 +45,9 @@ describe("parseFileToStream", () => {
 
   it("should respect parsing options", async () => {
     const csv = "name\tage\nAlice\t42";
-    const file = new File([csv], "test.tsv", { type: "text/tab-separated-values" });
+    const file = new File([csv], "test.tsv", {
+      type: "text/tab-separated-values",
+    });
 
     const stream = parseFileToStream(file, { delimiter: "\t" });
     const reader = stream.getReader();
@@ -144,7 +146,10 @@ describe("parseFileToStream", () => {
     const reader = stream.getReader();
 
     const record1 = await reader.read();
-    expect(record1.value).toStrictEqual({ name: "Alice", message: "Hello, World" });
+    expect(record1.value).toStrictEqual({
+      name: "Alice",
+      message: "Hello, World",
+    });
 
     const record2 = await reader.read();
     expect(record2.value).toStrictEqual({ name: "Bob", message: "Hi there" });
