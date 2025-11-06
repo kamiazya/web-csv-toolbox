@@ -303,6 +303,49 @@ export interface BinaryOptions {
    * ```
    */
   allowExperimentalCompressions?: boolean;
+  /**
+   * Allow non-standard character encodings not in the common charset list.
+   *
+   * @remarks
+   * When `true`, charset values from Content-Type headers that are not in the
+   * default supported list will be passed to the runtime's TextDecoder without
+   * validation. This allows using character encodings that may not be universally
+   * supported across all environments.
+   *
+   * ### Default Supported Charsets (commonly used)
+   *
+   * When `false` (default), only commonly used charsets are allowed, including:
+   * - **UTF**: `utf-8`, `utf-16le`, `utf-16be`
+   * - **ISO-8859**: `iso-8859-1` through `iso-8859-16`
+   * - **Windows**: `windows-1250` through `windows-1258`
+   * - **Asian**: `shift_jis`, `euc-jp`, `gb18030`, `euc-kr`, etc.
+   *
+   * ### Security Considerations
+   *
+   * **Use with caution**: Enabling this bypasses library validation and relies entirely
+   * on runtime error handling. Invalid or malicious charset values could cause:
+   * - Runtime exceptions from TextDecoder
+   * - Unexpected character decoding behavior
+   * - Potential security vulnerabilities
+   *
+   * It's recommended to validate charset values against your expected inputs before
+   * enabling this option.
+   *
+   * @default false
+   *
+   * @example
+   * ```ts
+   * // Safe mode (default): Only commonly supported charsets
+   * const response = await fetch('data.csv');
+   * await parse(response); // charset must be in SUPPORTED_CHARSETS
+   *
+   * // Allow non-standard charset
+   * const response = await fetch('data.csv'); // Content-Type: text/csv; charset=custom-encoding
+   * await parse(response, { allowNonStandardCharsets: true });
+   * // ⚠️ May throw error if runtime doesn't support the charset
+   * ```
+   */
+  allowNonStandardCharsets?: boolean;
 }
 
 /**

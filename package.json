@@ -57,6 +57,12 @@
       "browser": "./dist/getOptionsFromResponse.constants.web.js",
       "default": "./dist/getOptionsFromResponse.constants.web.js"
     },
+    "#getCharsetValidation.constants.js": {
+      "types": "./dist/getCharsetValidation.constants.d.ts",
+      "node": "./dist/getCharsetValidation.constants.node.js",
+      "browser": "./dist/getCharsetValidation.constants.web.js",
+      "default": "./dist/getCharsetValidation.constants.web.js"
+    },
     "#execution/worker/parseStringInWorker.js": {
       "types": "./dist/execution/worker/parseStringInWorker.d.ts",
       "node": "./dist/execution/worker/parseStringInWorker.node.js",
