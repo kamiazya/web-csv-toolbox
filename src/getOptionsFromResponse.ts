@@ -1,3 +1,4 @@
+import { SUPPORTED_CHARSETS } from "#getCharsetValidation.constants.js";
 import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
 import type { ParseBinaryOptions } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
@@ -57,7 +58,27 @@ export function getOptionsFromResponse<
     }
   }
 
-  const charset = mime.parameters.charset ?? "utf-8";
+  // Validate and normalize charset
+  const rawCharset = mime.parameters.charset ?? "utf-8";
+  const normalizedCharset = rawCharset.trim().toLowerCase();
+
+  let charset: string;
+  if (SUPPORTED_CHARSETS.has(normalizedCharset)) {
+    charset = normalizedCharset;
+  } else if (normalizedCharset) {
+    // Unknown charset
+    if (options.allowNonStandardCharsets) {
+      // Allow runtime to handle non-standard charsets
+      charset = normalizedCharset;
+    } else {
+      throw new TypeError(
+        `Unsupported charset: "${rawCharset}". Commonly supported charsets include: utf-8, utf-16le, iso-8859-1, windows-1252, shift_jis, gb18030, euc-kr, etc. To use non-standard charsets, set allowNonStandardCharsets: true`,
+      );
+    }
+  } else {
+    charset = "utf-8";
+  }
+
   // TODO: Support header=present and header=absent
   // const header = mime.parameters.header ?? "present";
   return {

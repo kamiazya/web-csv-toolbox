@@ -18,6 +18,7 @@ export default defineConfig(({ command }) => ({
       // Note: In tests (Node.js environment), use node version
       // In production, package.json "imports" handles browser/node resolution
       "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
+      "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.web.ts",
     },
   },
   build: {
@@ -44,6 +45,8 @@ export default defineConfig(({ command }) => ({
         "src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
         "src/getOptionsFromResponse.constants.web.ts",
         "src/getOptionsFromResponse.constants.node.ts",
+        "src/getCharsetValidation.constants.web.ts",
+        "src/getCharsetValidation.constants.node.ts",
       ],
       name: "CSV",
       formats: ["es"],
@@ -114,6 +117,7 @@ export default defineConfig(({ command }) => ({
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
+            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -154,6 +158,7 @@ export default defineConfig(({ command }) => ({
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
+            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.web.ts",
           },
         },
       },
@@ -177,6 +182,7 @@ export default defineConfig(({ command }) => ({
             "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
             "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
             "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
+            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.node.ts",
           },
         },
       },

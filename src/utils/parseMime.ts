@@ -13,7 +13,10 @@ export function parseMime(contentType: string) {
   };
   for (const paramator of parameters) {
     const [key, value] = paramator.split("=");
-    result.parameters[key.trim()] = value.trim();
+    // Skip parameters without values to prevent undefined.trim() errors
+    if (value !== undefined) {
+      result.parameters[key.trim()] = value.trim();
+    }
   }
   return result;
 }

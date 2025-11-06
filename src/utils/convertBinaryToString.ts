@@ -40,8 +40,24 @@ export function convertBinaryToString(
     );
   }
 
-  return new TextDecoder(options?.charset, {
-    ignoreBOM: options?.ignoreBOM,
-    fatal: options?.fatal,
-  }).decode(binary instanceof ArrayBuffer ? new Uint8Array(binary) : binary);
+  // Try to create TextDecoder with error handling for invalid charsets
+  let decoder: TextDecoder;
+  try {
+    decoder = new TextDecoder(options?.charset, {
+      ignoreBOM: options?.ignoreBOM,
+      fatal: options?.fatal,
+    });
+  } catch (error) {
+    // If charset is invalid, provide clear error message
+    if (error instanceof RangeError || error instanceof TypeError) {
+      throw new RangeError(
+        `Invalid or unsupported charset: "${options?.charset}". Please specify a valid charset or enable allowNonStandardCharsets option.`,
+      );
+    }
+    throw error;
+  }
+
+  return decoder.decode(
+    binary instanceof ArrayBuffer ? new Uint8Array(binary) : binary,
+  );
 }
