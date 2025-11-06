@@ -32,6 +32,7 @@ interface EngineConfig {
   queuingStrategy?: {
     lexerWritable?: QueuingStrategy<string>;
     lexerReadable?: QueuingStrategy<Token>;
+    assemblerWritable?: QueuingStrategy<Token>;
     assemblerReadable?: QueuingStrategy<CSVRecord<any>>;
   };
 }
