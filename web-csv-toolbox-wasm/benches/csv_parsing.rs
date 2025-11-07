@@ -52,7 +52,13 @@ fn benchmark_complex_csv(c: &mut Criterion) {
 fn benchmark_large_csv(c: &mut Criterion) {
     let mut lines = vec!["name,age,email,city".to_string()];
     for i in 0..1000 {
-        lines.push(format!("User{},{},user{}@example.com,City{}", i, 20 + (i % 50), i, i % 100));
+        lines.push(format!(
+            "User{},{},user{}@example.com,City{}",
+            i,
+            20 + (i % 50),
+            i,
+            i % 100
+        ));
     }
     let input = lines.join("\n");
 
