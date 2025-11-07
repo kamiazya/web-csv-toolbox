@@ -6,10 +6,10 @@ export interface ParseMimeResult {
 }
 
 export function parseMime(contentType: string) {
-  const [type, ...parameters] = contentType.split(";");
-  if (type === undefined) {
-    throw new Error("Invalid content type");
-  }
+  const parts = contentType.split(";");
+  // split() always returns at least one element, so parts[0] is guaranteed to be a string
+  const type = parts[0]!;
+  const parameters = parts.slice(1);
   const trimmedType = type.trim();
   if (trimmedType === "") {
     throw new Error("Invalid content type");
