@@ -1,4 +1,4 @@
-import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
@@ -9,7 +9,6 @@ import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.ts";
 import { parseStringToIterableIterator } from "./parseStringToIterableIterator.ts";
 import { parseStringToStream } from "./parseStringToStream.ts";
 import * as internal from "./utils/convertThisAsyncIterableIteratorToArray.ts";
-import type { PickCSVHeader } from "./utils/types.ts";
 
 /**
  * Parse CSV string to records.

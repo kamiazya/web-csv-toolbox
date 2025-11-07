@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { CSVLexer } from "./CSVLexer";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
+import { CSVLexer } from "./CSVLexer.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 
 describe("CSVLexer", () => {
   let lexer: CSVLexer;

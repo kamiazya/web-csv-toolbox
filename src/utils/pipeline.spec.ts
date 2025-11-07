@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pipeline } from "./pipeline";
+import { pipeline } from "./pipeline.ts";
 
 async function streamToArray<T>(stream: ReadableStream<T>): Promise<T[]> {
   const reader = stream.getReader();
