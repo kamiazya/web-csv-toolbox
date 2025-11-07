@@ -1,7 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
-import {
-  type CSVRecord,
-  type ParseOptions,
+import type {
+  CSVRecord,
+  ParseOptions,
   parseStringStream,
 } from "./web-csv-toolbox.ts";
 
