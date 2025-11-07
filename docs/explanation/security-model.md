@@ -1,3 +1,8 @@
+---
+title: Security Model
+group: Explanation
+---
+
 # Security Model
 
 This document explains the security architecture of web-csv-toolbox and the reasoning behind its design decisions.

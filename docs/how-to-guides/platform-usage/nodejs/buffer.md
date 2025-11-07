@@ -1,3 +1,8 @@
+---
+title: Node.js - Buffer
+group: Platform Usage
+---
+
 # Buffer
 
 Node.js `Buffer` objects are automatically supported (Buffer extends Uint8Array).

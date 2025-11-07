@@ -1,3 +1,8 @@
+---
+title: Use with Bundlers
+group: How-to Guides
+---
+
 # How to Use with Bundlers
 
 This guide shows how to use `web-csv-toolbox` with popular JavaScript bundlers when using Worker-based or WebAssembly execution.

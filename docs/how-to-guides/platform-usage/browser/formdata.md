@@ -1,3 +1,8 @@
+---
+title: Browser - FormData
+group: Platform Usage
+---
+
 # FormData
 
 Parse CSV files submitted through forms.

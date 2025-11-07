@@ -1,3 +1,8 @@
+---
+title: Build a Custom CSV Parser
+group: How-to Guides
+---
+
 # How to Build a Custom CSV Parser
 
 This guide shows you how to use web-csv-toolbox's low-level APIs to build custom CSV parsers for specialized use cases.

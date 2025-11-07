@@ -1,3 +1,8 @@
+---
+title: Browser - File Input
+group: Platform Usage
+---
+
 # File Input Elements
 
 Parse CSV files selected by users through file input elements.

@@ -1,3 +1,8 @@
+---
+title: WASM Performance Optimization
+group: How-to Guides
+---
+
 # WASM Performance Optimization
 
 This guide shows you how to maximize CSV parsing performance using WebAssembly in web-csv-toolbox.

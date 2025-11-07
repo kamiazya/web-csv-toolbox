@@ -1,3 +1,8 @@
+---
+title: Execution Strategies
+group: Explanation
+---
+
 # Execution Strategies
 
 This document explains how different execution strategies work and when to use each one.
