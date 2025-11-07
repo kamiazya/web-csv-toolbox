@@ -75,13 +75,49 @@ cargo test
 cargo test -- --nocapture
 ```
 
+### Run benchmarks
+
+```bash
+# From project root
+pnpm bench:rust
+
+# Or directly with cargo
+cargo bench
+```
+
+### Generate coverage report
+
+```bash
+# Install cargo-llvm-cov first
+cargo install cargo-llvm-cov
+
+# From project root
+pnpm coverage:rust
+
+# Or directly with cargo
+cargo llvm-cov --lcov --output-path lcov-rust.info
+```
+
 ## Project Structure
 
 - `src/lib.rs` - Main WebAssembly module implementation
+- `benches/` - Benchmark tests using Criterion
 - `Cargo.toml` - Rust dependencies and project configuration
 - `rustfmt.toml` - Code formatting rules
 - `clippy.toml` - Linter configuration
 - `pkg/` - Generated WebAssembly output (after build)
+
+## CI Integration
+
+### Codecov (Coverage Reports)
+- Rust tests coverage is automatically uploaded to Codecov
+- Separate from TypeScript coverage with `rust` flag
+- View at: https://codecov.io/gh/kamiazya/web-csv-toolbox
+
+### CodSpeed (Performance Tracking)
+- Rust benchmarks run on every PR
+- Performance regressions are automatically detected
+- View at: https://codspeed.io/kamiazya/web-csv-toolbox
 
 ## VS Code Setup
 

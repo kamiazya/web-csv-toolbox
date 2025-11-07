@@ -110,6 +110,8 @@
     "test:rust": "cargo test --manifest-path web-csv-toolbox-wasm/Cargo.toml",
     "test:all": "pnpm test:rust && pnpm test",
     "test:typecheck": "vitest --typecheck.only --project typecheck --run",
+    "bench:rust": "cargo bench --manifest-path web-csv-toolbox-wasm/Cargo.toml",
+    "coverage:rust": "cargo llvm-cov --manifest-path web-csv-toolbox-wasm/Cargo.toml --lcov --output-path lcov-rust.info",
     "check:type": "tsc --noEmit",
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",

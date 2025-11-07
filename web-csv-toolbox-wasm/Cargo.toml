@@ -16,3 +16,13 @@ wasm-bindgen = "0.2.105"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0"
 web-sys = { version = "0.3.82", features = ["console"] }
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "csv_parsing"
+harness = false
+
+[profile.bench]
+debug = true
