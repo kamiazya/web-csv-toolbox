@@ -30,12 +30,12 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 
     for result in rdr.records() {
         let record = result.map_err(|e| format!("Failed to read record: {}", e))?;
-        let mut json_record = json!({});
-        for (i, field) in record.iter().enumerate() {
-            if let Some(header) = headers.get(i) {
-                json_record[header] = json!(field);
-            }
-        }
+        let json_record: serde_json::Value = headers
+            .iter()
+            .zip(record.iter())
+            .map(|(header, field)| (header.to_string(), json!(field)))
+            .collect::<serde_json::Map<String, serde_json::Value>>()
+            .into();
         records.push(json_record);
     }
 
