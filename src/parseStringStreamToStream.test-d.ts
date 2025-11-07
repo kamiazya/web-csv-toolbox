@@ -16,13 +16,17 @@ describe("parseStringStreamToStream function", () => {
 
 describe("string ReadableStream parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
-    expectTypeOf(parseStringStreamToStream({} as ReadableStream)).toEqualTypeOf<
+    type Result1 = ReturnType<typeof parseStringStreamToStream<ReadableStream>>;
+    expectTypeOf<Result1>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly string[]>>
     >();
 
-    expectTypeOf(
-      parseStringStreamToStream({} as ReadableStream<string>),
-    ).toEqualTypeOf<ReadableStream<CSVRecord<readonly string[]>>>();
+    type Result2 = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<string>>
+    >;
+    expectTypeOf<Result2>().toEqualTypeOf<
+      ReadableStream<CSVRecord<readonly string[]>>
+    >();
   });
 });
 
@@ -32,9 +36,10 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseStringStreamToStream(new ReadableStream<typeof csv1>()),
-    ).toEqualTypeOf<
+    type Result = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<typeof csv1>>
+    >;
+    expectTypeOf<Result>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
@@ -51,12 +56,10 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseStringStreamToStream(new ReadableStream<typeof csv1>(), {
-        delimiter: "*",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+    type Result = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<typeof csv1>, "*", "$">
+    >;
+    expectTypeOf<Result>().toEqualTypeOf<
       ReadableStream<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
       >
@@ -66,65 +69,67 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    expectTypeOf(
-      parseStringStreamToStream<readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream,
-      ),
-    ).toEqualTypeOf<
-      ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parseStringStreamToStream<readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream<string>,
-      ),
-    ).toEqualTypeOf<
-      ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parseStringStreamToStream<
+    type Result1 = ReturnType<
+      typeof parseStringStreamToStream<
         ReadableStream,
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result1>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStreamToStream<
+    type Result2 = ReturnType<
+      typeof parseStringStreamToStream<
         ReadableStream<string>,
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream<string>),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result2>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStreamToStream<
+    type Result3 = ReturnType<
+      typeof parseStringStreamToStream<
+        ReadableStream,
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
+    expectTypeOf<Result3>().toEqualTypeOf<
+      ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+
+    type Result4 = ReturnType<
+      typeof parseStringStreamToStream<
+        ReadableStream<string>,
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
+    expectTypeOf<Result4>().toEqualTypeOf<
+      ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+
+    type Result5 = ReturnType<
+      typeof parseStringStreamToStream<
         ReadableStream,
         "#",
         "$",
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream, {
-        delimiter: "#",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result5>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStreamToStream<
+    type Result6 = ReturnType<
+      typeof parseStringStreamToStream<
         ReadableStream<string>,
         "#",
         "$",
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream<string>, {
-        delimiter: "#",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result6>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });

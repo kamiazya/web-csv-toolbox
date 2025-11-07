@@ -107,6 +107,7 @@
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
+    "test:typecheck": "vitest --typecheck.only --project typecheck --run",
     "check:type": "tsc --noEmit",
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",

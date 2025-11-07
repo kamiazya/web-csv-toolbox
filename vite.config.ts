@@ -186,6 +186,15 @@ export default defineConfig(({ command }) => ({
           },
         },
       },
+      {
+        test: {
+          name: "typecheck",
+          include: ["src/**/*.test-d.ts"],
+          typecheck: {
+            enabled: true,
+          },
+        },
+      },
     ],
   },
 }));
