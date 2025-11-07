@@ -1,5 +1,6 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import { parseFile } from "./parseFile.ts";
+import { getOptionsFromFile } from "./getOptionsFromFile.ts";
+import { parseBlob } from "./parseBlob.ts";
 
 /**
  * Parse CSV from a {@link !File} to array of records.
@@ -31,7 +32,8 @@ export async function parseFileToArray<Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): Promise<CSVRecord<Header>[]> {
   const rows: CSVRecord<Header>[] = [];
-  for await (const row of parseFile(file, options)) {
+  const options_ = getOptionsFromFile(file, options);
+  for await (const row of parseBlob(file, options_)) {
     rows.push(row);
   }
   return rows;

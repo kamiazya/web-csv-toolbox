@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { CSVLexer } from "./CSVLexer";
-import { Field } from "./common/constants";
+import { CSVLexer } from "./CSVLexer.ts";
+import { Field } from "./common/constants.ts";
 
 describe("CSVLexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {

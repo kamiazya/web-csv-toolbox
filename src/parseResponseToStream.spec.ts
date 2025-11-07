@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "./__tests__/helper";
-import { escapeField } from "./escapeField";
-import { parseResponse } from "./parseResponse";
-import { parseResponseToStream } from "./parseResponseToStream";
-import { SingleValueReadableStream } from "./utils/SingleValueReadableStream";
+import { FC } from "./__tests__/helper.ts";
+import { escapeField } from "./escapeField.ts";
+import { parseResponse } from "./parseResponse.ts";
+import { parseResponseToStream } from "./parseResponseToStream.ts";
+import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";
 
 describe("parseResponseToStream", () => {
   it("should parse a response to a stream", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ParseError } from "./common/errors";
-import { commonParseErrorHandling } from "./commonParseErrorHandling";
+import { ParseError } from "./common/errors.ts";
+import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
 
 describe("function commonParseErrorHandling", () => {
   it("should throws ParseError for ParseError instance", () => {

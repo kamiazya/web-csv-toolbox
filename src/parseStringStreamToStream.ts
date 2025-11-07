@@ -1,9 +1,8 @@
 import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
-import type { CSVRecord, ParseOptions } from "./common/types.ts";
+import type { CSVRecord, ParseOptions, PickCSVHeader } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
 import { pipeline } from "./utils/pipeline.ts";
-import type { PickCSVHeader } from "./utils/types.ts";
 
 export function parseStringStreamToStream<
   const CSVSource extends ReadableStream<string>,

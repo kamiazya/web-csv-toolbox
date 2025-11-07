@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { CSVRecordAssembler } from "./CSVRecordAssembler";
-import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants";
-import type { Token } from "./common/types";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
+import type { Token } from "./common/types.ts";
 
 describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("with default field count limit (100000)", () => {

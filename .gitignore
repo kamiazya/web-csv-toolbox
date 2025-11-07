@@ -133,3 +133,6 @@ doc
 tmp/
 __screenshots__
 target
+
+# Madge dependency graphs
+graph*.svg
