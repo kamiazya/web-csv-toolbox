@@ -51,13 +51,16 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 ///
 /// # Returns
 ///
-/// JsValue containing the JSON string representation of parsed CSV data.
-/// Returns an empty array "[]" if parsing fails.
+/// Result containing JsValue with the JSON string representation of parsed CSV data.
+///
+/// # Errors
+///
+/// Returns a JsError if parsing fails, which will be thrown as a JavaScript error.
 #[wasm_bindgen(js_name = parseStringToArraySync)]
-pub fn parse_string_to_array_sync(input: &str, delimiter: u8) -> JsValue {
+pub fn parse_string_to_array_sync(input: &str, delimiter: u8) -> Result<JsValue, wasm_bindgen::JsError> {
     parse_csv_to_json(input, delimiter)
         .map(|json_str| JsValue::from_str(&json_str))
-        .unwrap_or_else(|_| JsValue::from_str("[]"))
+        .map_err(|err| wasm_bindgen::JsError::new(&err))
 }
 
 #[cfg(test)]
