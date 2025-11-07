@@ -112,12 +112,12 @@ cargo llvm-cov --lcov --output-path lcov-rust.info
 ### Codecov (Coverage Reports)
 - Rust tests coverage is automatically uploaded to Codecov
 - Separate from TypeScript coverage with `rust` flag
-- View at: https://codecov.io/gh/kamiazya/web-csv-toolbox
+- View at: <https://codecov.io/gh/kamiazya/web-csv-toolbox>
 
 ### CodSpeed (Performance Tracking)
 - Rust benchmarks run on every PR
 - Performance regressions are automatically detected
-- View at: https://codspeed.io/kamiazya/web-csv-toolbox
+- View at: <https://codspeed.io/kamiazya/web-csv-toolbox>
 
 ## VS Code Setup
 
