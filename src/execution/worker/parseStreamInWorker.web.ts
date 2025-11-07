@@ -27,7 +27,12 @@ export async function* parseStreamInWorker<
   options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   using session = await WorkerSession.create(
-    options?.engine?.worker === true ? options.engine : undefined,
+    options?.engine?.worker === true
+      ? {
+          workerURL: options.engine.workerURL,
+          workerPool: options.engine.workerPool,
+        }
+      : undefined,
   );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(

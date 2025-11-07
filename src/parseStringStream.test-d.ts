@@ -1,9 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
-import {
-  type CSVRecord,
-  type ParseOptions,
-  parseStringStream,
-} from "./web-csv-toolbox.ts";
+import { parseStringStream } from "./parseStringStream.ts";
+import type { CSVRecord, ParseOptions } from "./web-csv-toolbox.ts";
 
 describe("parseStringStream function", () => {
   it("parseStringStream should be a function with expected parameter types", () => {
@@ -19,11 +16,13 @@ describe("parseStringStream function", () => {
 
 describe("string ReadableStream parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
-    expectTypeOf(parseStringStream({} as ReadableStream)).toEqualTypeOf<
+    type Result1 = ReturnType<typeof parseStringStream<ReadableStream>>;
+    expectTypeOf<Result1>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly string[]>>
     >();
 
-    expectTypeOf(parseStringStream({} as ReadableStream<string>)).toEqualTypeOf<
+    type Result2 = ReturnType<typeof parseStringStream<ReadableStream<string>>>;
+    expectTypeOf<Result2>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly string[]>>
     >();
   });
@@ -35,9 +34,10 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseStringStream(new ReadableStream<typeof csv1>()),
-    ).toEqualTypeOf<
+    type Result = ReturnType<
+      typeof parseStringStream<ReadableStream<typeof csv1>>
+    >;
+    expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
@@ -54,12 +54,10 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseStringStream(new ReadableStream<typeof csv1>(), {
-        delimiter: "*",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+    type Result = ReturnType<
+      typeof parseStringStream<ReadableStream<typeof csv1>, "*", "$">
+    >;
+    expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
       >
@@ -69,65 +67,67 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    expectTypeOf(
-      parseStringStream<readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream,
-      ),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parseStringStream<readonly ["name", "age", "city", "zip"]>(
-        {} as ReadableStream<string>,
-      ),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parseStringStream<
+    type Result1 = ReturnType<
+      typeof parseStringStream<
         ReadableStream,
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result1>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStream<
+    type Result2 = ReturnType<
+      typeof parseStringStream<
         ReadableStream<string>,
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream<string>),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result2>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStream<
+    type Result3 = ReturnType<
+      typeof parseStringStream<
+        ReadableStream,
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
+    expectTypeOf<Result3>().toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+
+    type Result4 = ReturnType<
+      typeof parseStringStream<
+        ReadableStream<string>,
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
+    expectTypeOf<Result4>().toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+
+    type Result5 = ReturnType<
+      typeof parseStringStream<
         ReadableStream,
         "#",
         "$",
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream, {
-        delimiter: "#",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result5>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseStringStream<
+    type Result6 = ReturnType<
+      typeof parseStringStream<
         ReadableStream<string>,
         "#",
         "$",
         readonly ["name", "age", "city", "zip"]
-      >({} as ReadableStream<string>, {
-        delimiter: "#",
-        quotation: "$",
-      }),
-    ).toEqualTypeOf<
+      >
+    >;
+    expectTypeOf<Result6>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });

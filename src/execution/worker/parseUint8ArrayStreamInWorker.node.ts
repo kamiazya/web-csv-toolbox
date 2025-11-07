@@ -30,7 +30,12 @@ export async function* parseUint8ArrayStreamInWorker<
   const combined = await collectUint8ArrayStream(stream, options?.signal);
 
   using session = await WorkerSession.create(
-    options?.engine?.worker === true ? options.engine : undefined,
+    options?.engine?.worker === true
+      ? {
+          workerURL: options.engine.workerURL,
+          workerPool: options.engine.workerPool,
+        }
+      : undefined,
   );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(

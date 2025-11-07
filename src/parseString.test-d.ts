@@ -1,9 +1,10 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { type CSVRecord, parseString } from "./web-csv-toolbox.ts";
+import type { CSVRecord, parseString } from "./web-csv-toolbox.ts";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
-    expectTypeOf(parseString("" as string)).toEqualTypeOf<
+    type Result = ReturnType<typeof parseString<string>>;
+    expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly string[]>>
     >();
   });
@@ -15,7 +16,8 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(parseString(csv1)).toEqualTypeOf<
+    type Result = ReturnType<typeof parseString<typeof csv1>>;
+    expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
@@ -32,9 +34,8 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseString(csv1, { delimiter: "*", quotation: "$" }),
-    ).toEqualTypeOf<
+    type Result = ReturnType<typeof parseString<typeof csv1, "*", "$">>;
+    expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
       >
@@ -44,19 +45,22 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    expectTypeOf(parseString<["name", "age", "city", "zip"]>("")).toEqualTypeOf<
+    type Result1 = ReturnType<
+      typeof parseString<string, ",", '"', ["name", "age", "city", "zip"]>
+    >;
+    expectTypeOf<Result1>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parseString<string, "#", "$", readonly ["name", "age", "city", "zip"]>(
-        "",
-        {
-          delimiter: "#",
-          quotation: "$",
-        },
-      ),
-    ).toEqualTypeOf<
+    type Result2 = ReturnType<
+      typeof parseString<
+        string,
+        "#",
+        "$",
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
+    expectTypeOf<Result2>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
