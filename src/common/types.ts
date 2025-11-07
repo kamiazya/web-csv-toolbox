@@ -1111,12 +1111,11 @@ export type CSV<
   ? CSVString | CSVBinary
   : CSVString<Header, Delimiter, Quotation>;
 
-type ExtractString<Source extends CSVString> = Source extends
-  | `${infer S}`
-  // biome-ignore lint/suspicious/noRedeclare: <explanation>
-  | ReadableStream<infer S>
+type ExtractString<Source extends CSVString> = Source extends `${infer S}`
   ? S
-  : string;
+  : Source extends ReadableStream<infer R>
+    ? R
+    : string;
 
 type ExtractCSVBody<
   CSVSource extends CSVString,

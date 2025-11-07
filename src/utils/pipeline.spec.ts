@@ -51,7 +51,7 @@ const createErrorTransformer = () =>
 
 const createErrorControllerTransformer = () =>
   new TransformStream({
-    transform(chunk, controller) {
+    transform(_chunk, controller) {
       controller.error(new Error("test error"));
     },
   });

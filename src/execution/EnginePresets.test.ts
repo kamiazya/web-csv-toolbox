@@ -17,7 +17,6 @@ describe("EnginePresets", () => {
   it("should throw when attempting to delete presets", () => {
     expect(() => {
       // @ts-expect-error - Intentionally trying to mutate frozen object
-      // biome-ignore lint/performance/noDelete: Testing immutability
       delete EnginePresets.fastest;
     }).toThrow(TypeError);
   });

@@ -3,13 +3,6 @@ import { CSVLexer } from "./CSVLexer.js";
 import { CSVRecordAssembler } from "./CSVRecordAssembler.js";
 
 /**
- * Helper function to check if an object has an own property
- */
-function hasOwn(obj: any, prop: string): boolean {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
-}
-
-/**
  * Regression tests to ensure that CSVRecordAssembler does not cause prototype pollution.
  *
  * These tests verify that using dangerous property names like __proto__, constructor,
@@ -43,7 +36,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     expect((testObject as any).malicious_value).toBeUndefined();
 
     // Verify __proto__ is an own property of the record, not inherited
-    expect(hasOwn(records[0], "__proto__")).toBe(true);
+    expect(Object.hasOwn(records[0], "__proto__")).toBe(true);
   });
 
   test("should not pollute when constructor is used as CSV header", () => {
@@ -63,7 +56,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     expect(typeof records[0].constructor).toBe("string");
 
     // Verify constructor is an own property
-    expect(hasOwn(records[0], "constructor")).toBe(true);
+    expect(Object.hasOwn(records[0], "constructor")).toBe(true);
 
     // Verify Object.constructor is not affected
     const testObject = {};
@@ -84,7 +77,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     expect(records[0].name).toBe("Alice");
 
     // Verify prototype is an own property
-    expect(hasOwn(records[0], "prototype")).toBe(true);
+    expect(Object.hasOwn(records[0], "prototype")).toBe(true);
   });
 
   test("should handle multiple dangerous property names together", () => {
@@ -163,8 +156,8 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     const obj = Object.fromEntries(dangerousEntries);
 
     // Verify properties are set as own properties
-    expect(hasOwn(obj, "__proto__")).toBe(true);
-    expect(hasOwn(obj, "constructor")).toBe(true);
+    expect(Object.hasOwn(obj, "__proto__")).toBe(true);
+    expect(Object.hasOwn(obj, "constructor")).toBe(true);
     expect(obj.__proto__).toBe("polluted");
     expect(obj.constructor).toBe("malicious");
 

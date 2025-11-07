@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_, vi } from "vitest";
-import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import { FC, transform } from "./__tests__/helper.ts";
+import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
 
@@ -27,7 +27,6 @@ describe("CSVRecordAssemblerTransformer", () => {
     expect(
       () => new CSVRecordAssemblerTransformer({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not be empty.]`,
     );
   });
@@ -36,7 +35,6 @@ describe("CSVRecordAssemblerTransformer", () => {
     expect(
       () => new CSVRecordAssemblerTransformer({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not contain duplicate fields.]`,
     );
   });
@@ -163,10 +161,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       await transform(transformer, [
         { type: Field, value: "test", location: LOCATION_SHAPE },
       ]);
-    }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[Error: test]`,
-    );
+    }).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: test]`);
   });
 
   it("should throw an error if throws error during flush", async () => {
@@ -180,9 +175,6 @@ describe("CSVRecordAssemblerTransformer", () => {
     );
     await expect(async () => {
       await transform(transformer, []);
-    }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[Error: test]`,
-    );
+    }).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: test]`);
   });
 });

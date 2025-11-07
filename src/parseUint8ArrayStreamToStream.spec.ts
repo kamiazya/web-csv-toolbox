@@ -38,7 +38,6 @@ test("throws an error if the CSV is invalid", async () => {
       }),
     );
   }).rejects.toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
     `[ParseError: Unexpected EOF while parsing quoted field.]`,
   );
 });

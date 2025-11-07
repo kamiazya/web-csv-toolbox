@@ -2,16 +2,16 @@
 // Workaround for Vitest browser mode: ensure wrapDynamicImport is available
 // See: https://github.com/vitest-dev/vitest/issues/6552
 if (typeof globalThis !== "undefined") {
-  // @ts-ignore - Vitest browser mode global
+  // @ts-expect-error - Vitest browser mode global
   if (!globalThis.__vitest_browser_runner__) {
-    // @ts-ignore
+    // @ts-expect-error
     globalThis.__vitest_browser_runner__ = { wrapDynamicImport: (f) => f() };
   }
 }
 
 import {
-  type ParseRequest,
   createMessageHandler,
+  type ParseRequest,
 } from "./execution/worker/helpers/worker.shared.js";
 
 /**

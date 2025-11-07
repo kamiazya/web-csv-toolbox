@@ -1,6 +1,6 @@
 import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
 import type { ParseBinaryOptions } from "./common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
 import { parseMime } from "./utils/parseMime.ts";
 
 /**

@@ -45,7 +45,7 @@ describe("Backpressure handling", () => {
       );
 
       // Spy on the yieldToEventLoop method and mock it
-      const yieldSpy = vi
+      const _yieldSpy = vi
         .spyOn(lexer, "yieldToEventLoop" as any)
         .mockResolvedValue(undefined);
 

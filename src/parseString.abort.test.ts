@@ -33,7 +33,7 @@ describe.skipIf(typeof window === "undefined")(
       setTimeout(() => controller.abort(), 10);
 
       await expect(async () => {
-        for await (const record of parseString(csv, {
+        for await (const _record of parseString(csv, {
           execution: ["worker"],
           signal: controller.signal,
         })) {

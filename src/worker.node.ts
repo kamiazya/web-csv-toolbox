@@ -1,8 +1,8 @@
 // @ts-nocheck - Node.js-specific file, skip in tsc --noEmit
 import { parentPort } from "node:worker_threads";
 import {
-  type ParseRequest,
   createMessageHandler,
+  type ParseRequest,
 } from "./execution/worker/helpers/worker.shared.js";
 
 /**

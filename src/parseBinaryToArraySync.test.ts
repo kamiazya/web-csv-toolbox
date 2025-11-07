@@ -29,7 +29,6 @@ test("throws RangeError if binary size exceeds maxBinarySize", () => {
       maxBinarySize: 500,
     }),
   ).toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
     `[RangeError: Binary size (1000 bytes) exceeded maximum allowed size of 500 bytes]`,
   );
 });
@@ -60,7 +59,6 @@ test("throws RangeError for invalid maxBinarySize", () => {
       maxBinarySize: -1,
     }),
   ).toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
     `[RangeError: maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY]`,
   );
   expect(() =>
@@ -68,7 +66,6 @@ test("throws RangeError for invalid maxBinarySize", () => {
       maxBinarySize: Number.NaN,
     }),
   ).toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
     `[RangeError: maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY]`,
   );
 });

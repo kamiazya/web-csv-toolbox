@@ -1,4 +1,5 @@
 import type {
+  CSVBinary,
   ParseBinaryOptions,
   ParseOptions,
 } from "../../../common/types.ts";
@@ -7,8 +8,6 @@ import type {
   DEFAULT_QUOTATION,
 } from "../../../constants.ts";
 import { addListener, removeListener } from "./workerUtils.ts";
-
-import type { CSVBinary } from "../../../common/types.ts";
 
 /**
  * Message to send to worker.

@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import { FC } from "./__tests__/helper.ts";
+import { CSVRecordAssembler } from "./CSVRecordAssembler.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import type { Token } from "./common/types.ts";
 import { LF } from "./constants.ts";
@@ -25,7 +25,6 @@ describe("class RecordAssembler", () => {
     expect(
       () => new CSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not be empty.]`,
     );
   });
@@ -34,7 +33,6 @@ describe("class RecordAssembler", () => {
     expect(
       () => new CSVRecordAssembler({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: The header must not contain duplicate fields.]`,
     );
   });

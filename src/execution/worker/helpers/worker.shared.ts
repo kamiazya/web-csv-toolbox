@@ -291,7 +291,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 parseStringToArraySyncWASM(req.data, req.options),
               );
               return;
-            } catch (error) {
+            } catch (_error) {
               // Fall back to regular parser if WASM is not available
               const { parseStringToIterableIterator } = await import(
                 "../../../parseStringToIterableIterator.ts"
@@ -450,7 +450,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               parseStringToArraySyncWASM(decoded, req.options),
             );
             return;
-          } catch (error) {
+          } catch (_error) {
             // Fall back to regular parser if WASM is not available
             const { parseBinaryToIterableIterator } = await import(
               "../../../parseBinaryToIterableIterator.ts"

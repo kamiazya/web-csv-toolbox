@@ -13,7 +13,6 @@ describe("function assertCommonOptions", () => {
         maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: quotation must not be empty]`,
     );
   });
@@ -26,7 +25,6 @@ describe("function assertCommonOptions", () => {
         maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: delimiter must not be empty]`,
     );
   });
@@ -45,7 +43,6 @@ describe("function assertCommonOptions", () => {
               maxBufferSize: 1024,
             }),
           ).toThrowErrorMatchingInlineSnapshot(
-            // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
             `[RangeError: delimiter must not be the same as quotation, use different characters]`,
           );
         },
@@ -62,7 +59,6 @@ describe("function assertCommonOptions", () => {
           maxBufferSize: 1024,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
         `[RangeError: quotation must not include CR or LF]`,
       );
     }
@@ -74,7 +70,6 @@ describe("function assertCommonOptions", () => {
           maxBufferSize: 1024,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
         `[RangeError: delimiter must not include CR or LF]`,
       );
     }
@@ -88,7 +83,6 @@ describe("function assertCommonOptions", () => {
         maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[TypeError: quotation must be a string]`,
     );
   });
@@ -101,7 +95,6 @@ describe("function assertCommonOptions", () => {
         maxBufferSize: 1024,
       }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[TypeError: delimiter must be a string]`,
     );
   });

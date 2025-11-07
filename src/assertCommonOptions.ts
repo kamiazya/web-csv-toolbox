@@ -59,7 +59,7 @@ export function assertCommonOptions<
   for (const name of ["delimiter", "quotation"] as const) {
     assertOptionValue(options[name], name);
   }
-  // @ts-ignore: TS doesn't understand that the values are strings
+  // @ts-expect-error: TS doesn't understand that the values are strings
   if (options.delimiter === options.quotation) {
     throw new RangeError(
       "delimiter must not be the same as quotation, use different characters",

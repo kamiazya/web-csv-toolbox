@@ -110,7 +110,7 @@ describe("EngineConfig", () => {
 
     it("Invalid configurations are type-checked correctly", () => {
       // When worker is false, type-checked as MainThreadEngineConfig
-      const mainConfig: MainThreadEngineConfig = {
+      const _mainConfig: MainThreadEngineConfig = {
         worker: false,
         wasm: true,
       };
@@ -125,7 +125,7 @@ describe("EngineConfig", () => {
       expectTypeOf<MainThreadEngineConfig>().not.toHaveProperty("onFallback");
 
       // When worker is true, type-checked as WorkerEngineConfig
-      const workerConfig: WorkerEngineConfig = {
+      const _workerConfig: WorkerEngineConfig = {
         worker: true,
       };
 

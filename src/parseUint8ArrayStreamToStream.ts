@@ -1,7 +1,7 @@
 import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
 import { pipeline } from "./utils/pipeline.ts";
 
 export function parseUint8ArrayStreamToStream<

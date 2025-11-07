@@ -1,6 +1,6 @@
 import fc from "fast-check";
-import { DEFAULT_MAX_BUFFER_SIZE } from "../CSVLexer.ts";
 import { assertCommonOptions } from "../assertCommonOptions.ts";
+import { DEFAULT_MAX_BUFFER_SIZE } from "../CSVLexer.ts";
 import { CRLF, LF } from "../constants.ts";
 
 export async function transform<I, O>(

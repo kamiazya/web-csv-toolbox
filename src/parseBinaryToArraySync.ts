@@ -1,6 +1,6 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
 import { commonParseErrorHandling } from "./commonParseErrorHandling.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
 import { parseStringToArraySync } from "./parseStringToArraySync.ts";
 import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
 

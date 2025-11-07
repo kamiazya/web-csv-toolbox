@@ -1,8 +1,3 @@
-import type {
-  ParseBinaryOptions,
-  ParseOptions,
-} from "../../../common/types.ts";
-
 /**
  * Collect ReadableStream<string> into a single string.
  * Node.js does not support Transferable Streams, so we need to collect the stream first.
