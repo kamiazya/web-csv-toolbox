@@ -33,7 +33,12 @@ export async function* parseStreamInWorker<
   const csvString = await collectStringStream(stream, options?.signal);
 
   using session = await WorkerSession.create(
-    options?.engine?.worker === true ? options.engine : undefined,
+    options?.engine?.worker === true
+      ? {
+          workerURL: options.engine.workerURL,
+          workerPool: options.engine.workerPool,
+        }
+      : undefined,
   );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
