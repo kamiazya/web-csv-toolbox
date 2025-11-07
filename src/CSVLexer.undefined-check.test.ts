@@ -17,10 +17,10 @@ describe("CSVLexer undefined checks", () => {
     }).toThrow(ParseError);
   });
 
-  it("should handle incomplete quoted field correctly", () => {
+  it("should parse complete quoted field correctly", () => {
     const lexer = new CSVLexer();
 
-    // Process a complete field
+    // Process a complete quoted field
     const gen = lexer.lex('"field"');
     const tokens = Array.from(gen);
 
@@ -29,11 +29,9 @@ describe("CSVLexer undefined checks", () => {
     expect(tokens[0]?.value).toBe("field");
   });
 
-  it("should handle regex match with undefined group", () => {
+  it("should parse a single unquoted field", () => {
     const lexer = new CSVLexer();
 
-    // This is an edge case that shouldn't normally occur,
-    // but we test the undefined check is in place
     // Normal field parsing should work correctly
     const gen = lexer.lex("field");
     const tokens = Array.from(gen);
