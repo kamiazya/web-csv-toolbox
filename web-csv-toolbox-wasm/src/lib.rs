@@ -2,26 +2,190 @@ use csv::ReaderBuilder;
 use serde_json::json;
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(js_name = parseStringToArraySync)]
-pub fn parse_string_to_array_sync(input: &str, demiliter: u8) -> JsValue {
+#[cfg(test)]
+use serde_json::Value;
+
+/// Parse CSV string to JSON array
+///
+/// # Arguments
+///
+/// * `input` - CSV string to parse
+/// * `delimiter` - Delimiter character (e.g., b',' for comma)
+///
+/// # Returns
+///
+/// JSON string representation of the parsed CSV data
+fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
     let mut rdr = ReaderBuilder::new()
         .has_headers(true)
-        .delimiter(demiliter)
+        .delimiter(delimiter)
         .from_reader(input.as_bytes());
 
-    let headers = rdr.headers().unwrap().clone();
+    let headers = rdr
+        .headers()
+        .map_err(|e| format!("Failed to read headers: {}", e))?
+        .clone();
 
     let mut records = Vec::new();
 
     for result in rdr.records() {
-        let record = result.unwrap();
+        let record = result.map_err(|e| format!("Failed to read record: {}", e))?;
         let mut json_record = json!({});
         for (i, field) in record.iter().enumerate() {
-            json_record[&headers[i]] = json!(field);
+            if let Some(header) = headers.get(i) {
+                json_record[header] = json!(field);
+            }
         }
         records.push(json_record);
     }
 
-    let json_str = serde_json::to_string(&records).unwrap();
-    JsValue::from_str(&json_str)
+    serde_json::to_string(&records).map_err(|e| format!("Failed to serialize JSON: {}", e))
+}
+
+/// Parse CSV string to array synchronously (WASM binding)
+///
+/// # Arguments
+///
+/// * `input` - CSV string to parse
+/// * `delimiter` - Delimiter character (e.g., b',' for comma)
+///
+/// # Returns
+///
+/// JsValue containing the JSON string representation of parsed CSV data.
+/// Returns an empty array "[]" if parsing fails.
+#[wasm_bindgen(js_name = parseStringToArraySync)]
+pub fn parse_string_to_array_sync(input: &str, delimiter: u8) -> JsValue {
+    parse_csv_to_json(input, delimiter)
+        .map(|json_str| JsValue::from_str(&json_str))
+        .unwrap_or_else(|_| JsValue::from_str("[]"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_simple_csv() {
+        let input = ["name,age", "Alice,30", "Bob,25"].join("\n");
+
+        let result = parse_csv_to_json(&input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[0]["age"], "30");
+        assert_eq!(parsed[1]["name"], "Bob");
+        assert_eq!(parsed[1]["age"], "25");
+    }
+
+    #[test]
+    fn test_parse_empty_csv() {
+        let input = "name,age";
+        let result = parse_csv_to_json(input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_csv_with_quotes() {
+        let input = [
+            "name,description",
+            r#"Alice,"Hello, World""#,
+            r#"Bob,"Test ""quoted"" text""#,
+        ]
+        .join("\n");
+
+        let result = parse_csv_to_json(&input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[0]["description"], "Hello, World");
+        assert_eq!(parsed[1]["name"], "Bob");
+        assert_eq!(parsed[1]["description"], "Test \"quoted\" text");
+    }
+
+    #[test]
+    fn test_parse_csv_with_different_delimiter() {
+        let input = ["name\tage", "Alice\t30", "Bob\t25"].join("\n");
+
+        let result = parse_csv_to_json(&input, b'\t').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[0]["age"], "30");
+    }
+
+    #[test]
+    fn test_parse_csv_with_empty_fields() {
+        let input = ["name,age,email", "Alice,30,", "Bob,,bob@example.com"].join("\n");
+
+        let result = parse_csv_to_json(&input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[0]["age"], "30");
+        assert_eq!(parsed[0]["email"], "");
+        assert_eq!(parsed[1]["name"], "Bob");
+        assert_eq!(parsed[1]["age"], "");
+        assert_eq!(parsed[1]["email"], "bob@example.com");
+    }
+
+    #[test]
+    fn test_parse_csv_with_single_column() {
+        let input = ["name", "Alice", "Bob"].join("\n");
+
+        let result = parse_csv_to_json(&input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[1]["name"], "Bob");
+    }
+
+    #[test]
+    fn test_parse_csv_with_unicode() {
+        let input = ["名前,年齢", "太郎,30", "花子,25"].join("\n");
+
+        let result = parse_csv_to_json(&input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0]["名前"], "太郎");
+        assert_eq!(parsed[0]["年齢"], "30");
+        assert_eq!(parsed[1]["名前"], "花子");
+        assert_eq!(parsed[1]["年齢"], "25");
+    }
+
+    #[test]
+    fn test_parse_incomplete_row() {
+        // Incomplete row - missing age for Bob
+        let input = ["name,age", "Alice,30", "Bob"].join("\n");
+
+        let result = parse_csv_to_json(&input, b',');
+        // The csv crate will fail on incomplete rows by default
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_empty_input() {
+        let input = "";
+        let result = parse_csv_to_json(input, b',');
+        // Empty input can be parsed as a CSV with no headers and no data
+        // The csv crate treats this as valid
+        assert!(result.is_ok());
+        let parsed: Vec<Value> = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(parsed.len(), 0);
+    }
+
+    #[test]
+    fn test_parse_headers_only() {
+        let input = "name,age,email";
+        let result = parse_csv_to_json(input, b',').unwrap();
+        let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
+        assert_eq!(parsed.len(), 0);
+    }
 }

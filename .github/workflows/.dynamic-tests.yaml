@@ -43,6 +43,15 @@ jobs:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
 
+  test_rust:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - name: Setup
+      uses: ./.github/actions/setup
+    - name: Run Rust tests
+      run: cargo test --manifest-path=./web-csv-toolbox-wasm/Cargo.toml
+
   test_nodejs:
     runs-on: ubuntu-latest
     strategy:

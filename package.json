@@ -107,6 +107,8 @@
   "scripts": {
     "doc": "typedoc",
     "test": "vitest",
+    "test:rust": "cargo test --manifest-path web-csv-toolbox-wasm/Cargo.toml",
+    "test:all": "pnpm test:rust && pnpm test",
     "check:type": "tsc --noEmit",
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
