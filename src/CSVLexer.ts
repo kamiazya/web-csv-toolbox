@@ -258,7 +258,7 @@ export class CSVLexer<
             // Append a quote to the value and skip two characters.
             value += this.#quotation;
             offset += 2;
-            cur = this.#buffer[offset] ?? undefined;
+            cur = this.#buffer[offset];
             next = this.#buffer[offset + 1];
 
             // Update the diff
@@ -306,7 +306,7 @@ export class CSVLexer<
         }
 
         offset++;
-        cur = next ?? undefined;
+        cur = next;
         next = this.#buffer[offset + 1];
       } while (cur !== undefined);
 
