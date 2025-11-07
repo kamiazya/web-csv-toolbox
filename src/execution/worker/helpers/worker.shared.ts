@@ -236,6 +236,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             const { charset, fatal, ignoreBOM, decompression } =
               req.options ?? {};
 
+            const decoderOptions: TextDecoderOptions = {};
+            if (fatal !== undefined) decoderOptions.fatal = fatal;
+            if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
+
             // Convert binary stream to text stream then parse
             const textStream = decompression
               ? req.stream
@@ -245,16 +249,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                     ) as unknown as TransformStream<Uint8Array, Uint8Array>,
                   )
                   .pipeThrough(
-                    new TextDecoderStream(charset ?? "utf-8", {
-                      fatal,
-                      ignoreBOM,
-                    }) as unknown as TransformStream<Uint8Array, string>,
+                    new TextDecoderStream(charset ?? "utf-8", decoderOptions) as unknown as TransformStream<Uint8Array, string>,
                   )
               : req.stream.pipeThrough(
-                  new TextDecoderStream(charset ?? "utf-8", {
-                    fatal,
-                    ignoreBOM,
-                  }) as unknown as TransformStream<Uint8Array, string>,
+                  new TextDecoderStream(charset ?? "utf-8", decoderOptions) as unknown as TransformStream<Uint8Array, string>,
                 );
 
             const { convertStreamToAsyncIterableIterator } = await import(
@@ -358,6 +356,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const { charset, fatal, ignoreBOM, decompression } =
             req.options ?? {};
 
+          const decoderOptions2: TextDecoderOptions = {};
+          if (fatal !== undefined) decoderOptions2.fatal = fatal;
+          if (ignoreBOM !== undefined) decoderOptions2.ignoreBOM = ignoreBOM;
+
           // Convert binary stream to text stream then parse
           const textStream = decompression
             ? req.data
@@ -367,16 +369,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                   ) as unknown as TransformStream<Uint8Array, Uint8Array>,
                 )
                 .pipeThrough(
-                  new TextDecoderStream(charset ?? "utf-8", {
-                    fatal,
-                    ignoreBOM,
-                  }) as unknown as TransformStream<Uint8Array, string>,
+                  new TextDecoderStream(charset ?? "utf-8", decoderOptions2) as unknown as TransformStream<Uint8Array, string>,
                 )
             : req.data.pipeThrough(
-                new TextDecoderStream(charset ?? "utf-8", {
-                  fatal,
-                  ignoreBOM,
-                }) as unknown as TransformStream<Uint8Array, string>,
+                new TextDecoderStream(charset ?? "utf-8", decoderOptions2) as unknown as TransformStream<Uint8Array, string>,
               );
 
           const { convertStreamToAsyncIterableIterator } = await import(
@@ -408,6 +404,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               ignoreBOM,
               decompression,
             } = req.options ?? {};
+
+            const decoderOptions3: TextDecoderOptions = {};
+            if (fatal !== undefined) decoderOptions3.fatal = fatal;
+            if (ignoreBOM !== undefined) decoderOptions3.ignoreBOM = ignoreBOM;
+
             const asBytes =
               req.data instanceof Uint8Array
                 ? req.data
@@ -433,11 +434,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                   ) as unknown as TransformStream<Uint8Array, Uint8Array>,
                 ),
               ).arrayBuffer();
-              decoded = new TextDecoder(charset, { fatal, ignoreBOM }).decode(
+              decoded = new TextDecoder(charset, decoderOptions3).decode(
                 decompressed,
               );
             } else {
-              decoded = new TextDecoder(charset, { fatal, ignoreBOM }).decode(
+              decoded = new TextDecoder(charset, decoderOptions3).decode(
                 asBytes,
               );
             }

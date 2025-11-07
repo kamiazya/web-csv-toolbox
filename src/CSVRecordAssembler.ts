@@ -32,11 +32,11 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   #row: string[] = [];
   #header: Header | undefined;
   #dirty = false;
-  #signal?: AbortSignal;
+  #signal?: AbortSignal | undefined;
   #maxFieldCount: number;
   #skipEmptyLines: boolean;
-  #currentRowNumber?: number;
-  #source?: string;
+  #currentRowNumber?: number | undefined;
+  #source?: string | undefined;
 
   constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
     const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;

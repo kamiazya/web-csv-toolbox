@@ -245,9 +245,9 @@ export namespace FC {
   }
 
   export interface RowConstraints {
-    sparse?: boolean;
-    columnsConstraints?: fc.ArrayConstraints;
-    fieldConstraints?: TextConstraints;
+    sparse?: boolean | undefined;
+    columnsConstraints?: fc.ArrayConstraints | undefined;
+    fieldConstraints?: TextConstraints | undefined;
   }
   export function row({
     sparse = false,

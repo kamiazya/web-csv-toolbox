@@ -264,7 +264,7 @@ export interface BinaryOptions {
    *
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility | DecompressionStream Compatibility}.
    */
-  decompression?: CompressionFormat;
+  decompression?: CompressionFormat | undefined;
   /**
    * You can specify the character encoding of the binary.
    *
@@ -276,7 +276,7 @@ export interface BinaryOptions {
    *
    * @default 'utf-8'
    */
-  charset?: string;
+  charset?: string | undefined;
   /**
    * Maximum binary size in bytes for ArrayBuffer/Uint8Array inputs.
    *
@@ -289,7 +289,7 @@ export interface BinaryOptions {
    *
    * @default 100 * 1024 * 1024 (100MB)
    */
-  maxBinarySize?: number;
+  maxBinarySize?: number | undefined;
   /**
    * If the binary has a BOM, you can specify whether to ignore it.
    *
@@ -299,7 +299,7 @@ export interface BinaryOptions {
    * See {@link https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM | TextDecoderOptions.ignoreBOM} for more information about the BOM.
    * @default false
    */
-  ignoreBOM?: boolean;
+  ignoreBOM?: boolean | undefined;
   /**
    * If the binary has a invalid character, you can specify whether to throw an error.
    *
@@ -314,7 +314,7 @@ export interface BinaryOptions {
    *
    * @default false
    */
-  fatal?: boolean;
+  fatal?: boolean | undefined;
   /**
    * Allow experimental or non-standard compression formats not explicitly supported by this library.
    *
@@ -370,7 +370,7 @@ export interface BinaryOptions {
    * });
    * ```
    */
-  allowExperimentalCompressions?: boolean;
+  allowExperimentalCompressions?: boolean | undefined;
   /**
    * Allow non-standard character encodings not in the common charset list.
    *
@@ -413,7 +413,7 @@ export interface BinaryOptions {
    * // ⚠️ May throw error if runtime doesn't support the charset
    * ```
    */
-  allowNonStandardCharsets?: boolean;
+  allowNonStandardCharsets?: boolean | undefined;
 }
 
 /**
@@ -533,7 +533,7 @@ export interface EngineFallbackInfo {
   /**
    * Original error if any.
    */
-  error?: Error;
+  error?: Error | undefined;
 }
 
 /**
@@ -650,7 +650,7 @@ interface BaseEngineConfig {
    * parse(csv, { engine: { worker: true, wasm: true } })
    * ```
    */
-  wasm?: boolean;
+  wasm?: boolean | undefined;
 
   /**
    * Blob reading strategy threshold (in bytes).
@@ -666,7 +666,7 @@ interface BaseEngineConfig {
    *
    * @default 1_048_576 (1MB)
    */
-  arrayBufferThreshold?: number;
+  arrayBufferThreshold?: number | undefined;
 
   /**
    * Backpressure monitoring intervals (count-based: number of tokens/records processed).
@@ -674,14 +674,14 @@ interface BaseEngineConfig {
    * @default { lexer: 100, assembler: 10 }
    * @experimental
    */
-  backpressureCheckInterval?: BackpressureCheckInterval;
+  backpressureCheckInterval?: BackpressureCheckInterval | undefined;
 
   /**
    * Internal streaming queuing strategies.
    *
    * @experimental
    */
-  queuingStrategy?: QueuingStrategyConfig;
+  queuingStrategy?: QueuingStrategyConfig | undefined;
 }
 
 /**
@@ -727,7 +727,7 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * })
    * ```
    */
-  workerURL?: string | URL;
+  workerURL?: string | URL | undefined;
 
   /**
    * Worker pool for managing worker lifecycle.
@@ -767,7 +767,7 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * // Worker is reused for both operations
    * ```
    */
-  workerPool?: WorkerPool;
+  workerPool?: WorkerPool | undefined;
 
   /**
    * Worker communication strategy.
@@ -807,7 +807,7 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * })
    * ```
    */
-  workerStrategy?: WorkerCommunicationStrategy;
+  workerStrategy?: WorkerCommunicationStrategy | undefined;
 
   /**
    * Strict mode: disable automatic fallback.
@@ -839,7 +839,7 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * }
    * ```
    */
-  strict?: boolean;
+  strict?: boolean | undefined;
 
   /**
    * Callback when engine configuration fallback occurs.
@@ -867,7 +867,7 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * })
    * ```
    */
-  onFallback?: (info: EngineFallbackInfo) => void;
+  onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
 }
 
 /**

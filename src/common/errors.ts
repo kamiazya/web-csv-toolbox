@@ -7,7 +7,7 @@ export interface ParseErrorOptions extends ErrorOptions {
   /**
    * The position where the error occurred.
    */
-  position?: Position;
+  position?: Position | undefined;
   /**
    * The row number where the error occurred.
    *
@@ -15,7 +15,7 @@ export interface ParseErrorOptions extends ErrorOptions {
    * This represents the logical CSV row number (includes header if present),
    * useful for error reporting to users.
    */
-  rowNumber?: number;
+  rowNumber?: number | undefined;
   /**
    * Source identifier (e.g., filename) for error reporting.
    *
@@ -23,7 +23,7 @@ export interface ParseErrorOptions extends ErrorOptions {
    * A human-readable identifier for the CSV source to help locate
    * which file or stream caused the error.
    */
-  source?: string;
+  source?: string | undefined;
 }
 
 /**
@@ -40,7 +40,7 @@ export class ParseError extends SyntaxError {
   /**
    * The position where the error occurred.
    */
-  public position?: Position;
+  public position?: Position | undefined;
   /**
    * The row number where the error occurred.
    *
@@ -48,7 +48,7 @@ export class ParseError extends SyntaxError {
    * This represents the logical CSV row number (includes header if present),
    * useful for error reporting to users.
    */
-  public rowNumber?: number;
+  public rowNumber?: number | undefined;
   /**
    * Source identifier (e.g., filename) for error reporting.
    *
@@ -56,7 +56,7 @@ export class ParseError extends SyntaxError {
    * A human-readable identifier for the CSV source to help locate
    * which file or stream caused the error.
    */
-  public source?: string;
+  public source?: string | undefined;
 
   constructor(message?: string, options?: ParseErrorOptions) {
     super(message, { cause: options?.cause });

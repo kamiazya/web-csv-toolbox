@@ -43,10 +43,11 @@ export function convertBinaryToString(
   // Try to create TextDecoder with error handling for invalid charsets
   let decoder: TextDecoder;
   try {
-    decoder = new TextDecoder(options?.charset, {
-      ignoreBOM: options?.ignoreBOM,
-      fatal: options?.fatal,
-    });
+    const decoderOptions: TextDecoderOptions = {};
+    if (options?.ignoreBOM !== undefined) decoderOptions.ignoreBOM = options.ignoreBOM;
+    if (options?.fatal !== undefined) decoderOptions.fatal = options.fatal;
+
+    decoder = new TextDecoder(options?.charset, decoderOptions);
   } catch (error) {
     // If charset is invalid, provide clear error message
     if (error instanceof RangeError || error instanceof TypeError) {

@@ -52,8 +52,8 @@ export class CSVLexer<
   };
   #rowNumber = 1;
 
-  #signal?: AbortSignal;
-  #source?: string;
+  #signal?: AbortSignal | undefined;
+  #source?: string | undefined;
 
   /**
    * Constructs a new CSVLexer instance.
@@ -237,7 +237,17 @@ export class CSVLexer<
       let line = 0;
 
       // Define variables
-      let cur: string = this.#buffer[offset];
+      let cur: string | undefined = this.#buffer[offset];
+      if (cur === undefined) {
+        if (this.#flush === false) {
+          return null;
+        }
+        throw new ParseError("Unexpected EOF while parsing quoted field.", {
+          position: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+          source: this.#source,
+        });
+      }
       let next: string | undefined = this.#buffer[offset + 1];
       do {
         // If the current character is a quote, check the next characters for closing quotes.
@@ -248,7 +258,7 @@ export class CSVLexer<
             // Append a quote to the value and skip two characters.
             value += this.#quotation;
             offset += 2;
-            cur = this.#buffer[offset];
+            cur = this.#buffer[offset] ?? undefined;
             next = this.#buffer[offset + 1];
 
             // Update the diff
@@ -296,7 +306,7 @@ export class CSVLexer<
         }
 
         offset++;
-        cur = next;
+        cur = next ?? undefined;
         next = this.#buffer[offset + 1];
       } while (cur !== undefined);
 
@@ -319,6 +329,9 @@ export class CSVLexer<
         return null;
       }
       const value = match[1];
+      if (value === undefined) {
+        return null;
+      }
       this.#buffer = this.#buffer.slice(value.length);
       const start: Position = { ...this.#cursor };
       this.#cursor.column += value.length;
