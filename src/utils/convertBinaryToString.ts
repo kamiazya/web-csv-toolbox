@@ -44,7 +44,8 @@ export function convertBinaryToString(
   let decoder: TextDecoder;
   try {
     const decoderOptions: TextDecoderOptions = {};
-    if (options?.ignoreBOM !== undefined) decoderOptions.ignoreBOM = options.ignoreBOM;
+    if (options?.ignoreBOM !== undefined)
+      decoderOptions.ignoreBOM = options.ignoreBOM;
     if (options?.fatal !== undefined) decoderOptions.fatal = options.fatal;
 
     decoder = new TextDecoder(options?.charset, decoderOptions);

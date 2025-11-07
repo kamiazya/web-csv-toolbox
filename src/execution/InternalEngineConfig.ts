@@ -56,10 +56,14 @@ export class InternalEngineConfig {
   ): InternalEngineConfig {
     const instance = Object.create(InternalEngineConfig.prototype);
     instance.bitmask = bitmask;
-    (instance as { workerURL?: string | URL | undefined }).workerURL = workerURL;
-    (instance as { workerPool?: WorkerPool | undefined }).workerPool = workerPool;
+    (instance as { workerURL?: string | URL | undefined }).workerURL =
+      workerURL;
+    (instance as { workerPool?: WorkerPool | undefined }).workerPool =
+      workerPool;
     (
-      instance as { onFallback?: ((info: EngineFallbackInfo) => void) | undefined }
+      instance as {
+        onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+      }
     ).onFallback = onFallback;
     return instance;
   }

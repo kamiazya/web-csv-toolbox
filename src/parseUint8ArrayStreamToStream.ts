@@ -25,13 +25,19 @@ export function parseUint8ArrayStreamToStream<
           Uint8Array,
           Uint8Array
         >,
-        new TextDecoderStream(charset, decoderOptions) as unknown as TransformStream<Uint8Array, string>,
+        new TextDecoderStream(
+          charset,
+          decoderOptions,
+        ) as unknown as TransformStream<Uint8Array, string>,
         new CSVLexerTransformer(options),
         new CSVRecordAssemblerTransformer(options),
       )
     : pipeline(
         stream,
-        new TextDecoderStream(charset, decoderOptions) as unknown as TransformStream<Uint8Array, string>,
+        new TextDecoderStream(
+          charset,
+          decoderOptions,
+        ) as unknown as TransformStream<Uint8Array, string>,
         new CSVLexerTransformer(options),
         new CSVRecordAssemblerTransformer(options),
       );

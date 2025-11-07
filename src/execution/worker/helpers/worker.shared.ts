@@ -249,10 +249,16 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                     ) as unknown as TransformStream<Uint8Array, Uint8Array>,
                   )
                   .pipeThrough(
-                    new TextDecoderStream(charset ?? "utf-8", decoderOptions) as unknown as TransformStream<Uint8Array, string>,
+                    new TextDecoderStream(
+                      charset ?? "utf-8",
+                      decoderOptions,
+                    ) as unknown as TransformStream<Uint8Array, string>,
                   )
               : req.stream.pipeThrough(
-                  new TextDecoderStream(charset ?? "utf-8", decoderOptions) as unknown as TransformStream<Uint8Array, string>,
+                  new TextDecoderStream(
+                    charset ?? "utf-8",
+                    decoderOptions,
+                  ) as unknown as TransformStream<Uint8Array, string>,
                 );
 
             const { convertStreamToAsyncIterableIterator } = await import(
@@ -369,10 +375,16 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                   ) as unknown as TransformStream<Uint8Array, Uint8Array>,
                 )
                 .pipeThrough(
-                  new TextDecoderStream(charset ?? "utf-8", decoderOptions2) as unknown as TransformStream<Uint8Array, string>,
+                  new TextDecoderStream(
+                    charset ?? "utf-8",
+                    decoderOptions2,
+                  ) as unknown as TransformStream<Uint8Array, string>,
                 )
             : req.data.pipeThrough(
-                new TextDecoderStream(charset ?? "utf-8", decoderOptions2) as unknown as TransformStream<Uint8Array, string>,
+                new TextDecoderStream(
+                  charset ?? "utf-8",
+                  decoderOptions2,
+                ) as unknown as TransformStream<Uint8Array, string>,
               );
 
           const { convertStreamToAsyncIterableIterator } = await import(
