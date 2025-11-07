@@ -21,10 +21,9 @@ export async function* parseStringInWorkerWASM<
   csv: string,
   options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create({
-    workerPool: options?.engine?.workerPool,
-    workerURL: options?.engine?.workerURL,
-  });
+  using session = await WorkerSession.create(
+    options?.engine?.worker === true ? options.engine : undefined,
+  );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),

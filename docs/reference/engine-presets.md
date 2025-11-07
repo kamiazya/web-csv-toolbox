@@ -6,7 +6,7 @@ Pre-configured engine settings for common use cases.
 
 Engine presets provide convenient configurations that combine worker execution, WASM acceleration, and streaming strategies for optimal performance in different scenarios.
 
-**All presets are functions** that optionally accept configuration options like `workerPool`, `workerURL`, and `onFallback`.
+**All presets are functions** that optionally accept configuration options like `workerPool`, `workerURL`, `arrayBufferThreshold`, `backpressureCheckInterval`, `queuingStrategy`, and `onFallback`.
 
 **Basic usage:**
 ```typescript
@@ -320,6 +320,49 @@ app.post('/validate-csv', async (c) => {
 });
 ```
 
+**Example with Custom Blob Reading Threshold:**
+```typescript
+import { parseBlob, EnginePresets } from 'web-csv-toolbox';
+
+// Optimize for small files: always use arrayBuffer up to 512KB
+const config = EnginePresets.balanced({
+  arrayBufferThreshold: 512 * 1024  // 512KB
+});
+
+for await (const record of parseBlob(file, {
+  engine: config
+})) {
+  console.log(record);
+}
+```
+
+**Example with Advanced Performance Tuning (Experimental):**
+```typescript
+import { parseBlob, EnginePresets } from 'web-csv-toolbox';
+
+// Configuration tuned for potential high-throughput scenarios
+const config = EnginePresets.balanced({
+  arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB
+  backpressureCheckInterval: {
+    lexer: 200,      // Check every 200 tokens (less frequent checks)
+    assembler: 20    // Check every 20 records (less frequent checks)
+  },
+  queuingStrategy: {
+    // Tune entire pipeline with larger buffers
+    lexerWritable: new CountQueuingStrategy({ highWaterMark: 200 }),
+    lexerReadable: new CountQueuingStrategy({ highWaterMark: 100 }),
+    assemblerWritable: new CountQueuingStrategy({ highWaterMark: 100 }),
+    assemblerReadable: new CountQueuingStrategy({ highWaterMark: 50 })
+  }
+});
+
+for await (const record of parseBlob(file, {
+  engine: config
+})) {
+  console.log(record);
+}
+```
+
 ---
 
 ### `EnginePresets.strict()`
@@ -367,6 +410,7 @@ try {
 ### By File Size
 
 - **< 1MB:** `mainThread` or `worker`
+  - Note: `parseBlob()` and `parseFile()` automatically optimize for small files using `arrayBufferThreshold` (default 1MB)
 - **1-10MB:** `balanced` (production) or `worker`
 - **> 10MB:** `fastest` (UTF-8) or `balanced` (any encoding)
 - **> 100MB:** `balanced` or `workerStreamTransfer` with streaming input

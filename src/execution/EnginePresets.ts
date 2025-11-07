@@ -1,10 +1,54 @@
-import type { EngineConfig, EngineFallbackInfo } from "../common/types.ts";
+import type {
+  BackpressureCheckInterval,
+  EngineConfig,
+  EngineFallbackInfo,
+  QueuingStrategyConfig,
+} from "../common/types.ts";
 import type { WorkerPool } from "./worker/helpers/WorkerPool.ts";
 
 /**
- * Options for customizing engine presets.
+ * Base options shared by all engine presets.
  */
-export interface EnginePresetOptions {
+interface BasePresetOptions {
+  /**
+   * Blob reading strategy threshold (in bytes).
+   * See {@link EngineConfig.arrayBufferThreshold} for details.
+   *
+   * @default 1048576 (1MB)
+   */
+  arrayBufferThreshold?: number;
+
+  /**
+   * Backpressure monitoring intervals.
+   * See {@link EngineConfig.backpressureCheckInterval} for details.
+   *
+   * @default { lexer: 100, assembler: 10 }
+   * @experimental
+   */
+  backpressureCheckInterval?: BackpressureCheckInterval;
+
+  /**
+   * Internal streaming queuing strategies.
+   * See {@link EngineConfig.queuingStrategy} for details.
+   *
+   * @experimental
+   */
+  queuingStrategy?: QueuingStrategyConfig;
+}
+
+/**
+ * Options for main thread engine presets.
+ * Used by presets that do not use web workers.
+ */
+export interface MainThreadPresetOptions extends BasePresetOptions {
+  // No worker-related options
+}
+
+/**
+ * Options for worker-based engine presets.
+ * Used by presets that utilize web workers.
+ */
+export interface WorkerPresetOptions extends BasePresetOptions {
   /**
    * Worker pool for managing worker lifecycle.
    * Reuse workers across multiple parse operations.
@@ -23,6 +67,12 @@ export interface EnginePresetOptions {
    */
   onFallback?: (info: EngineFallbackInfo) => void;
 }
+
+/**
+ * Options for customizing engine presets.
+ * @deprecated Use {@link MainThreadPresetOptions} or {@link WorkerPresetOptions} instead.
+ */
+export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
 
 /**
  * Predefined engine configuration presets for common use cases.
@@ -61,10 +111,10 @@ export const EnginePresets = Object.freeze({
    * - Synchronous execution on main thread
    * - Best for small files (< 1MB)
    *
-   * @param options - Configuration options (not used for main thread)
+   * @param options - Configuration options
    * @returns Engine configuration
    */
-  mainThread: (options?: EnginePresetOptions): EngineConfig => ({
+  mainThread: (options?: MainThreadPresetOptions): EngineConfig => ({
     worker: false,
     wasm: false,
     ...options,
@@ -80,7 +130,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  worker: (options?: EnginePresetOptions): EngineConfig => ({
+  worker: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "message-streaming",
@@ -98,7 +148,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  workerStreamTransfer: (options?: EnginePresetOptions): EngineConfig => ({
+  workerStreamTransfer: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",
@@ -115,7 +165,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  wasm: (options?: EnginePresetOptions): EngineConfig => ({
+  wasm: (options?: MainThreadPresetOptions): EngineConfig => ({
     worker: false,
     wasm: true,
     ...options,
@@ -130,7 +180,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  workerWasm: (options?: EnginePresetOptions): EngineConfig => ({
+  workerWasm: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: true,
     workerStrategy: "message-streaming",
@@ -147,7 +197,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  fastest: (options?: EnginePresetOptions): EngineConfig => ({
+  fastest: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: true,
     workerStrategy: "stream-transfer",
@@ -164,7 +214,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  balanced: (options?: EnginePresetOptions): EngineConfig => ({
+  balanced: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",
@@ -179,7 +229,7 @@ export const EnginePresets = Object.freeze({
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  strict: (options?: EnginePresetOptions): EngineConfig => ({
+  strict: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",

@@ -1,14 +1,18 @@
 import type { CSVRecord, ParseBinaryOptions } from "./common/types.ts";
+import { getOptionsFromFile } from "./getOptionsFromFile.ts";
 import { parseBlob } from "./parseBlob.ts";
+import { parseFileToArray } from "./parseFileToArray.ts";
+import { parseFileToStream } from "./parseFileToStream.ts";
 
 /**
  * Parse CSV from a {@link !File} to records.
  *
  * @remarks
- * This is an alias for {@link parseBlob} since File extends Blob.
- *
  * This function can parse CSV data from File objects (from file inputs or drag-and-drop).
  * If the File has a type with charset parameter, it will be used for decoding.
+ *
+ * Unlike {@link parseBlob}, this function automatically sets the file name as the
+ * error source for better error reporting (unless explicitly overridden via options).
  *
  * @category Middle-level API
  * @param file - The file to parse
@@ -49,7 +53,8 @@ export function parseFile<Header extends ReadonlyArray<string>>(
   file: File,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  return parseBlob(file, options);
+  const options_ = getOptionsFromFile(file, options);
+  return parseBlob(file, options_);
 }
 
 export declare namespace parseFile {
@@ -110,11 +115,11 @@ Object.defineProperties(parseFile, {
   toArray: {
     enumerable: true,
     writable: false,
-    value: parseBlob.toArray,
+    value: parseFileToArray,
   },
   toStream: {
     enumerable: true,
     writable: false,
-    value: parseBlob.toStream,
+    value: parseFileToStream,
   },
 });

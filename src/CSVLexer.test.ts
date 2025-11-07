@@ -297,4 +297,63 @@ describe("CSVLexer", () => {
       expect(error.name).toBe("TimeoutError");
     }
   });
+
+  describe("error message details with source", () => {
+    test("should include source in ParseError when provided", () => {
+      const lexerWithSource = new CSVLexer({ source: "test.csv" });
+
+      try {
+        // Unclosed quoted field will throw ParseError
+        [...lexerWithSource.lex('"unclosed')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof Error);
+        expect(error.name).toBe("ParseError");
+        expect((error as any).source).toBe("test.csv");
+      }
+    });
+
+    test("should include row number in ParseError", () => {
+      const lexerWithSource = new CSVLexer();
+
+      try {
+        // Invalid CSV: unclosed quoted field (missing closing quote before EOF)
+        [...lexerWithSource.lex('name,age\n"Alice')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof Error);
+        expect(error.name).toBe("ParseError");
+        // Should mention row number in error
+        expect((error as any).rowNumber).toBeGreaterThan(0);
+      }
+    });
+
+    test("should include both source and row number in ParseError", () => {
+      const lexerWithSource = new CSVLexer({ source: "data.csv" });
+
+      try {
+        // Unclosed quoted field
+        [...lexerWithSource.lex('"field1","field2"\n"value1","unclosed')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof Error);
+        expect(error.name).toBe("ParseError");
+        expect((error as any).source).toBe("data.csv");
+        expect((error as any).rowNumber).toBeGreaterThan(0);
+      }
+    });
+
+    test("should not include source when not provided", () => {
+      const lexerWithoutSource = new CSVLexer();
+
+      try {
+        [...lexerWithoutSource.lex('"unclosed')];
+        expect.unreachable();
+      } catch (error) {
+        assert(error instanceof Error);
+        expect(error.name).toBe("ParseError");
+        expect((error as any).source).toBeUndefined();
+      }
+    });
+  });
 });

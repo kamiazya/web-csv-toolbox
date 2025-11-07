@@ -32,9 +32,12 @@ export class InternalEngineConfig {
 
   constructor(config?: EngineConfig) {
     if (config) {
-      this.workerURL = config.workerURL;
-      this.workerPool = config.workerPool;
-      this.onFallback = config.onFallback;
+      // Extract worker-specific properties only if worker is enabled
+      if (config.worker) {
+        this.workerURL = config.workerURL;
+        this.workerPool = config.workerPool;
+        this.onFallback = config.onFallback;
+      }
       this.parse(config);
     }
 
@@ -62,22 +65,42 @@ export class InternalEngineConfig {
   }
 
   private parse(config: EngineConfig): void {
+    // Runtime validation for worker-specific properties
+    // (TypeScript discriminated union prevents this at compile time)
+    const anyConfig = config as any;
+    if (!config.worker) {
+      if (
+        anyConfig.workerStrategy !== undefined &&
+        anyConfig.workerStrategy !== false
+      ) {
+        throw new Error(
+          "workerStrategy requires worker: true in engine config",
+        );
+      }
+      if (anyConfig.strict !== undefined && anyConfig.strict !== false) {
+        throw new Error(
+          'strict requires workerStrategy: "stream-transfer" in engine config',
+        );
+      }
+    }
+
     if (config.worker) {
       this.bitmask |= EngineFlags.WORKER;
+
+      // Worker-specific properties
+      if (config.workerStrategy === "stream-transfer") {
+        this.bitmask |= EngineFlags.STREAM_TRANSFER;
+      } else if (config.workerStrategy === "message-streaming") {
+        this.bitmask |= EngineFlags.MESSAGE_STREAMING;
+      }
+
+      if (config.strict) {
+        this.bitmask |= EngineFlags.STRICT;
+      }
     }
 
     if (config.wasm) {
       this.bitmask |= EngineFlags.WASM;
-    }
-
-    if (config.workerStrategy === "stream-transfer") {
-      this.bitmask |= EngineFlags.STREAM_TRANSFER;
-    } else if (config.workerStrategy === "message-streaming") {
-      this.bitmask |= EngineFlags.MESSAGE_STREAMING;
-    }
-
-    if (config.strict) {
-      this.bitmask |= EngineFlags.STRICT;
     }
   }
 
@@ -209,14 +232,23 @@ export class InternalEngineConfig {
    * Convert to EngineConfig.
    */
   toConfig(): EngineConfig {
+    const hasWorker = this.hasWorker();
+
+    if (hasWorker) {
+      return {
+        worker: true,
+        workerURL: this.workerURL,
+        workerPool: this.workerPool,
+        wasm: this.hasWasm() || undefined,
+        workerStrategy: this.getWorkerStrategy(),
+        strict: this.hasStrict() || undefined,
+        onFallback: this.onFallback,
+      };
+    }
+
     return {
-      worker: this.hasWorker() || undefined,
-      workerURL: this.workerURL,
-      workerPool: this.workerPool,
+      worker: false,
       wasm: this.hasWasm() || undefined,
-      workerStrategy: this.getWorkerStrategy(),
-      strict: this.hasStrict() || undefined,
-      onFallback: this.onFallback,
     };
   }
 

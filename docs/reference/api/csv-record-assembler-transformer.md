@@ -31,8 +31,8 @@ csvStream
 ```typescript
 new CSVRecordAssemblerTransformer<Header>(
   options?: CSVRecordAssemblerOptions<Header>,
-  writableStrategy?: ExtendedQueuingStrategy<Token>,
-  readableStrategy?: ExtendedQueuingStrategy<CSVRecord<Header>>
+  writableStrategy?: QueuingStrategy<Token>,
+  readableStrategy?: QueuingStrategy<CSVRecord<Header>>
 )
 ```
 
@@ -49,16 +49,25 @@ interface CSVRecordAssemblerOptions<Header> {
   header?: Header;
   maxFieldCount?: number;
   skipEmptyLines?: boolean;
+  backpressureCheckInterval?: number;
   signal?: AbortSignal;
 }
 ```
 
-All options are the same as [CSVRecordAssembler options](./csv-record-assembler.md#options).
+All parsing options are the same as [CSVRecordAssembler options](./csv-record-assembler.md#options).
+
+**`backpressureCheckInterval`:**
+- **Type:** `number`
+- **Default:** `10`
+- **Description:** How often to check for backpressure (in number of records processed)
+- **Trade-offs:**
+  - Lower values = more responsive to backpressure but slight performance overhead
+  - Higher values = less overhead but slower backpressure response
 
 #### `writableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<Token>`
-**Default:** `{ highWaterMark: 1024, size: () => 1, checkInterval: 10 }`
+**Type:** `QueuingStrategy<Token>`
+**Default:** Equivalent to `new CountQueuingStrategy({ highWaterMark: 1024 })`
 
 Queuing strategy for the writable side (input stream).
 
@@ -66,7 +75,7 @@ Queuing strategy for the writable side (input stream).
 ```typescript
 const transformer = new CSVRecordAssemblerTransformer(
   { header: ['name', 'age'] },
-  { highWaterMark: 2048 } // Larger input buffer
+  new CountQueuingStrategy({ highWaterMark: 2048 }) // Larger input buffer
 );
 ```
 
@@ -77,8 +86,8 @@ const transformer = new CSVRecordAssemblerTransformer(
 
 #### `readableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<CSVRecord<Header>>`
-**Default:** `{ highWaterMark: 256, size: () => 1, checkInterval: 10 }`
+**Type:** `QueuingStrategy<CSVRecord<Header>>`
+**Default:** Equivalent to `new CountQueuingStrategy({ highWaterMark: 256 })`
 
 Queuing strategy for the readable side (output stream).
 
@@ -87,7 +96,7 @@ Queuing strategy for the readable side (output stream).
 const transformer = new CSVRecordAssemblerTransformer(
   { skipEmptyLines: true },
   undefined, // Use default writable strategy
-  { highWaterMark: 512 } // More records buffered
+  new CountQueuingStrategy({ highWaterMark: 512 }) // More records buffered
 );
 ```
 
@@ -95,13 +104,6 @@ const transformer = new CSVRecordAssemblerTransformer(
 - ✅ Increase for better throughput in high-latency consumers
 - ✅ Decrease for memory-constrained environments
 - ❌ Don't set too high (defeats streaming purpose)
-
-**ExtendedQueuingStrategy:**
-```typescript
-interface ExtendedQueuingStrategy<T> extends QueuingStrategy<T> {
-  checkInterval?: number; // How often to check backpressure (default: 10)
-}
-```
 
 ---
 

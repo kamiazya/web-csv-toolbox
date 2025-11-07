@@ -35,6 +35,8 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   #signal?: AbortSignal;
   #maxFieldCount: number;
   #skipEmptyLines: boolean;
+  #currentRowNumber?: number;
+  #source?: string;
 
   constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
     const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
@@ -49,6 +51,7 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
     }
     this.#maxFieldCount = mfc;
     this.#skipEmptyLines = options.skipEmptyLines ?? false;
+    this.#source = options.source;
     if (options.header !== undefined && Array.isArray(options.header)) {
       this.#setHeader(options.header);
     }
@@ -98,6 +101,11 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
    */
   *#processToken(token: Token): IterableIterator<CSVRecord<Header>> {
     this.#signal?.throwIfAborted();
+
+    // Track the current record number for error reporting
+    if (token.location) {
+      this.#currentRowNumber = token.location.rowNumber;
+    }
 
     switch (token.type) {
       case FieldDelimiter:
@@ -178,7 +186,9 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   #checkFieldCount(): void {
     if (this.#fieldIndex + 1 > this.#maxFieldCount) {
       throw new RangeError(
-        `Field count (${this.#fieldIndex + 1}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
+        `Field count (${this.#fieldIndex + 1}) exceeded maximum allowed count of ${this.#maxFieldCount}${
+          this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
+        }${this.#source ? ` in ${JSON.stringify(this.#source)}` : ""}`,
       );
     }
   }
@@ -186,15 +196,21 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   #setHeader(header: Header) {
     if (header.length > this.#maxFieldCount) {
       throw new RangeError(
-        `Header field count (${header.length}) exceeded maximum allowed count of ${this.#maxFieldCount}`,
+        `Header field count (${header.length}) exceeded maximum allowed count of ${this.#maxFieldCount}${
+          this.#source ? ` in ${JSON.stringify(this.#source)}` : ""
+        }`,
       );
     }
     this.#header = header;
     if (this.#header.length === 0) {
-      throw new ParseError("The header must not be empty.");
+      throw new ParseError("The header must not be empty.", {
+        source: this.#source,
+      });
     }
     if (new Set(this.#header).size !== this.#header.length) {
-      throw new ParseError("The header must not contain duplicate fields.");
+      throw new ParseError("The header must not contain duplicate fields.", {
+        source: this.#source,
+      });
     }
   }
 }

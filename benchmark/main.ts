@@ -2,17 +2,17 @@
 import { withCodSpeed } from "@codspeed/tinybench-plugin";
 import { Bench } from 'tinybench';
 import {
+  CSVLexer,
+  CSVLexerTransformer,
+  CSVRecordAssembler,
+  CSVRecordAssemblerTransformer,
+  EnginePresets,
   loadWASM,
   parseBinary,
   parseString,
-  parseStringToArraySyncWASM,
   parseStringStream,
-  parseUint8ArrayStream,
-  CSVLexer,
-  CSVRecordAssembler,
-  CSVLexerTransformer,
-  CSVRecordAssemblerTransformer,
-  EnginePresets
+  parseStringToArraySyncWASM,
+  parseUint8ArrayStream
 } from 'web-csv-toolbox';
 
 // Helper to generate CSV with specified columns and rows
@@ -211,6 +211,7 @@ console.log('  13. Line ending comparison (LF vs CRLF) - detects line ending pro
 console.log('  14. Engine comparison at scale - identifies optimal engine for data size');
 console.log('  15. Memory allocation patterns - compares allocation strategies');
 console.log('  16. Low-level API performance - measures lexer and assembler separately');
+console.log('  17. Binary vs Stream approach - determines optimal threshold for parseBlob');
 console.log('\nNote: Any WASM initialization warnings can be safely ignored.');
 console.log('CodSpeed will use tinybench for local execution (this is expected behavior).');
 if (!isWorkerAvailable) {
@@ -711,8 +712,74 @@ bench = bench
     }
   });
 
+// Generate CSVs for parseBinary vs parseUint8ArrayStream comparison
+// These tests help determine the optimal threshold for parseBlob
+function generateCSVBySize(targetSizeKB: number): string {
+  const avgRowSize = 80; // approximate bytes per row
+  const rows = Math.floor((targetSizeKB * 1024) / avgRowSize);
+  return generateCSV(10, rows);
+}
 
-await bench.warmup();
+const csv1KB = generateCSVBySize(1);      // ~1KB
+const csv10KB = generateCSVBySize(10);    // ~10KB
+const csv100KB = generateCSVBySize(100);  // ~100KB
+const csv1MB = generateCSVBySize(1024);   // ~1MB
+
+// Convert to Uint8Array for parseBinary tests
+const encoder = new TextEncoder();
+const binary1KB = encoder.encode(csv1KB);
+const binary10KB = encoder.encode(csv10KB);
+const binary100KB = encoder.encode(csv100KB);
+const binary1MB = encoder.encode(csv1MB);
+
+// Create Blob streams for parseUint8ArrayStream tests
+function createBlobStream(csv: string): ReadableStream<Uint8Array> {
+  return new Blob([csv], { type: 'text/csv' }).stream();
+}
+
+bench = bench
+  // parseBinary vs parseUint8ArrayStream comparison
+  // These benchmarks determine the optimal threshold for automatic method selection
+  .add('Binary approach: parseBinary (1KB)', () => {
+    for (const _ of parseBinary.toIterableIterator(binary1KB)) {
+      // noop
+    }
+  })
+  .add('Stream approach: parseUint8ArrayStream (1KB)', async () => {
+    for await (const _ of parseUint8ArrayStream(createBlobStream(csv1KB))) {
+      // noop
+    }
+  })
+  .add('Binary approach: parseBinary (10KB)', () => {
+    for (const _ of parseBinary.toIterableIterator(binary10KB)) {
+      // noop
+    }
+  })
+  .add('Stream approach: parseUint8ArrayStream (10KB)', async () => {
+    for await (const _ of parseUint8ArrayStream(createBlobStream(csv10KB))) {
+      // noop
+    }
+  })
+  .add('Binary approach: parseBinary (100KB)', () => {
+    for (const _ of parseBinary.toIterableIterator(binary100KB)) {
+      // noop
+    }
+  })
+  .add('Stream approach: parseUint8ArrayStream (100KB)', async () => {
+    for await (const _ of parseUint8ArrayStream(createBlobStream(csv100KB))) {
+      // noop
+    }
+  })
+  .add('Binary approach: parseBinary (1MB)', () => {
+    for (const _ of parseBinary.toIterableIterator(binary1MB)) {
+      // noop
+    }
+  })
+  .add('Stream approach: parseUint8ArrayStream (1MB)', async () => {
+    for await (const _ of parseUint8ArrayStream(createBlobStream(csv1MB))) {
+      // noop
+    }
+  });
 
 await bench.run();
 
@@ -737,6 +804,7 @@ console.log('✓ Line ending comparison (LF vs CRLF) completed');
 console.log('✓ Engine comparison at scale completed');
 console.log('✓ Memory allocation pattern tests completed');
 console.log('✓ Low-level API performance tests completed');
+console.log('✓ Binary vs Stream approach tests completed');
 console.log('\n=== Bottleneck Detection Guide ===');
 console.log('Review the benchmark results to identify bottlenecks:');
 console.log('  • Row count scaling: Check if performance degrades linearly (O(n))');
@@ -744,5 +812,6 @@ console.log('  • Field length: Identify string processing limits');
 console.log('  • Quote ratio: Measure quote handling overhead');
 console.log('  • Engine comparison: Find optimal engine for your data size');
 console.log('  • Memory patterns: Compare allocation strategies');
+console.log('  • Binary vs Stream: Determine optimal threshold for parseBlob auto-selection');
 console.log('\nFor detailed analysis, review the ops/sec values in the table above.');
 console.log('Higher ops/sec = better performance\n');

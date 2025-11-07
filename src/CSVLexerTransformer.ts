@@ -1,19 +1,33 @@
 import { CSVLexer } from "./CSVLexer.ts";
-import type {
-  CSVLexerTransformerOptions,
-  ExtendedQueuingStrategy,
-  Token,
-} from "./common/types.ts";
+import type { CSVLexerTransformerOptions, Token } from "./common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+
+/**
+ * Default queuing strategy for the writable side (string input).
+ * Counts by character length for accurate memory tracking.
+ * @internal
+ */
+const DEFAULT_WRITABLE_STRATEGY: QueuingStrategy<string> = {
+  highWaterMark: 65536, // 64KB worth of characters
+  size: (chunk) => chunk.length, // Count by string length
+};
+
+/**
+ * Default queuing strategy for the readable side (token output).
+ * @internal
+ */
+const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
+  highWaterMark: 1024, // 1024 tokens
+});
 
 /**
  * A transform stream that converts a stream of strings into a stream of tokens.
  *
  * @category Low-level API
  *
- * @param options - CSV-specific options (delimiter, quotation, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length, checkInterval: 100 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1, checkInterval: 100 }`)
+ * @param options - CSV-specific options (delimiter, quotation, checkInterval, etc.)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  *
  * @remarks
  * Follows the Web Streams API pattern where queuing strategies are passed as
@@ -57,17 +71,15 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
  * @example Custom queuing strategies with backpressure tuning
  * ```ts
  * const transformer = new CSVLexerTransformer(
- *   { delimiter: ',' },
+ *   {
+ *     delimiter: ',',
+ *     backpressureCheckInterval: 50  // Check backpressure every 50 tokens
+ *   },
  *   {
  *     highWaterMark: 131072,         // 128KB of characters
  *     size: (chunk) => chunk.length, // Count by character length
- *     checkInterval: 200             // Check backpressure every 200 tokens
  *   },
- *   {
- *     highWaterMark: 2048,           // 2048 tokens
- *     size: () => 1,                 // Each token counts as 1
- *     checkInterval: 50              // Check backpressure every 50 tokens
- *   }
+ *   new CountQueuingStrategy({ highWaterMark: 2048 })  // 2048 tokens
  * );
  *
  * await fetch('large-file.csv')
@@ -94,20 +106,11 @@ export class CSVLexerTransformer<
 
   constructor(
     options: CSVLexerTransformerOptions<Delimiter, Quotation> = {},
-    writableStrategy: ExtendedQueuingStrategy<string> = {
-      highWaterMark: 65536, // 64KB worth of characters
-      size: (chunk) => chunk.length, // Count by string length (character count)
-      checkInterval: 100, // Check backpressure every 100 tokens
-    },
-    readableStrategy: ExtendedQueuingStrategy<Token> = {
-      highWaterMark: 1024, // 1024 tokens
-      size: () => 1, // Each token counts as 1
-      checkInterval: 100, // Check backpressure every 100 tokens
-    },
+    writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
+    readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,
   ) {
     const lexer = new CSVLexer(options);
-    const checkInterval =
-      writableStrategy.checkInterval ?? readableStrategy.checkInterval ?? 100;
+    const checkInterval = options.backpressureCheckInterval ?? 100;
 
     super(
       {

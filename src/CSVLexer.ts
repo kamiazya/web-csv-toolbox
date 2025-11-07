@@ -53,6 +53,7 @@ export class CSVLexer<
   #rowNumber = 1;
 
   #signal?: AbortSignal;
+  #source?: string;
 
   /**
    * Constructs a new CSVLexer instance.
@@ -66,20 +67,20 @@ export class CSVLexer<
       quotation = DEFAULT_QUOTATION,
       maxBufferSize = DEFAULT_MAX_BUFFER_SIZE,
       signal,
+      source,
     } = options;
     assertCommonOptions({ delimiter, quotation, maxBufferSize });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
     this.#fieldDelimiterLength = delimiter.length;
     this.#maxBufferSize = maxBufferSize;
+    this.#source = source;
+    this.#signal = signal;
     const d = escapeRegExp(delimiter);
     const q = escapeRegExp(quotation);
     this.#matcher = new RegExp(
       `^(?:(?!${q})(?!${d})(?![\\r\\n]))([\\S\\s\\uFEFF\\xA0]+?)(?=${q}|${d}|\\r|\\n|$)`,
     );
-    if (signal) {
-      this.#signal = signal;
-    }
   }
 
   /**
@@ -302,6 +303,8 @@ export class CSVLexer<
       if (this.#flush) {
         throw new ParseError("Unexpected EOF while parsing quoted field.", {
           position: { ...this.#cursor },
+          rowNumber: this.#rowNumber,
+          source: this.#source,
         });
       }
       return null;
