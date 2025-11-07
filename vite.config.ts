@@ -126,6 +126,7 @@ export default defineConfig(({ command }) => ({
         test: {
           name: "browser",
           include: ["src/**/*.browser.{test,spec}.ts"],
+          testTimeout: 60000, // 60 seconds for browser tests (property-based tests with workers need more time)
           browser: {
             enabled: true,
             provider: webdriverio(),

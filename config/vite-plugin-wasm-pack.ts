@@ -58,13 +58,34 @@ function vitePluginWasmPack({
     resolveId(id: string) {
       for (const cratePath of crates) {
         const crateName = path.basename(cratePath);
-        if (id.startsWith(crateName)) return prefix + id;
+        // Only match if id is exactly crateName or starts with crateName followed by '/'
+        // This prevents false matches like 'vitest/...' matching 'web-csv-toolbox-wasm'
+        if (id === crateName || id.startsWith(crateName + '/')) {
+          return prefix + id;
+        }
       }
       return null;
     },
     async load(id: string) {
       if (id.indexOf(prefix) === 0) {
         id = id.replace(prefix, "");
+
+        // Only handle modules that we resolved in resolveId
+        // Check if this is one of our crates
+        let isOurCrate = false;
+        for (const cratePath of crates) {
+          const crateName = path.basename(cratePath);
+          if (id === crateName || id.startsWith(crateName + '/')) {
+            isOurCrate = true;
+            break;
+          }
+        }
+
+        if (!isOurCrate) {
+          // Not our module, let other plugins handle it
+          return null;
+        }
+
         if (id.endsWith(".wasm")) {
           const file = await fs.readFile(path.join("./node_modules", id));
           const base64 = file.toString("base64");
