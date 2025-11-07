@@ -49,6 +49,8 @@ CSV parsing in Deno runtime:
 | | `ReadableStream` | `parseUint8ArrayStream()` | [open](./deno/open.md) |
 | | `Response` | `parseResponse()` | [fetch](./deno/fetch.md) |
 
+> **Note:** `parseFile()` automatically includes the filename in error messages. For environments where the File constructor is unavailable (e.g., Cloudflare Workers), use `parseBlob()` with a manual `source` option: `parseBlob(blob, { source: 'filename.csv' })`.
+
 ---
 
 ## Best Practices
@@ -64,6 +66,30 @@ CSV parsing in Deno runtime:
 - ✅ **Always use try-catch** - Wrap parsing operations in error handlers
 - ✅ **Validate inputs** - Check file types and sizes before parsing
 - ✅ **Provide user feedback** - Display clear error messages
+- ✅ **Use source tracking** - Specify `source` option or use `parseFile()` for automatic filename tracking
+- ✅ **Check error types** - Handle `ParseError`, `RangeError`, and `DOMException` appropriately
+
+**Example:**
+```typescript
+import { parseFile, ParseError } from 'web-csv-toolbox';
+
+try {
+  for await (const record of parseFile(file)) {
+    await processRecord(record);
+  }
+} catch (error) {
+  if (error instanceof ParseError) {
+    // CSV format error - includes filename automatically
+    console.error(`Parse error in "${error.source}":`, error.message);
+  } else if (error instanceof RangeError) {
+    // Security limit exceeded
+    console.error('File exceeds security limits');
+  } else if (error instanceof DOMException && error.name === 'AbortError') {
+    // Operation cancelled
+    console.log('Parsing cancelled');
+  }
+}
+```
 
 ### Performance
 

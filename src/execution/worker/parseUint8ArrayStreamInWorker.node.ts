@@ -29,10 +29,9 @@ export async function* parseUint8ArrayStreamInWorker<
   // Node.js: Collect stream into Uint8Array first
   const combined = await collectUint8ArrayStream(stream, options?.signal);
 
-  using session = await WorkerSession.create({
-    workerPool: options?.engine?.workerPool,
-    workerURL: options?.engine?.workerURL,
-  });
+  using session = await WorkerSession.create(
+    options?.engine?.worker === true ? options.engine : undefined,
+  );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),

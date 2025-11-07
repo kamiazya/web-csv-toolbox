@@ -29,8 +29,8 @@ csvStream
 ```typescript
 new CSVLexerTransformer<Delimiter, Quotation>(
   options?: CSVLexerTransformerOptions,
-  writableStrategy?: ExtendedQueuingStrategy<string>,
-  readableStrategy?: ExtendedQueuingStrategy<Token>
+  writableStrategy?: QueuingStrategy<string>,
+  readableStrategy?: QueuingStrategy<Token>
 )
 ```
 
@@ -48,16 +48,25 @@ interface CSVLexerTransformerOptions {
   delimiter?: string;
   quotation?: string;
   maxBufferSize?: number;
+  backpressureCheckInterval?: number;
   signal?: AbortSignal;
 }
 ```
 
-All options are the same as [CSVLexer options](./csv-lexer.md#options).
+All parsing options are the same as [CSVLexer options](./csv-lexer.md#options).
+
+**`backpressureCheckInterval`:**
+- **Type:** `number`
+- **Default:** `100`
+- **Description:** How often to check for backpressure (in number of tokens processed)
+- **Trade-offs:**
+  - Lower values = more responsive to backpressure but slight performance overhead
+  - Higher values = less overhead but slower backpressure response
 
 #### `writableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<string>`
-**Default:** `{ highWaterMark: 65536, size: chunk => chunk.length, checkInterval: 100 }`
+**Type:** `QueuingStrategy<string>`
+**Default:** `{ highWaterMark: 65536, size: chunk => chunk.length }`
 
 Queuing strategy for the writable side (input stream).
 
@@ -76,8 +85,8 @@ const transformer = new CSVLexerTransformer(
 
 #### `readableStrategy`
 
-**Type:** `ExtendedQueuingStrategy<Token>`
-**Default:** `{ highWaterMark: 1024, size: () => 1, checkInterval: 100 }`
+**Type:** `QueuingStrategy<Token>`
+**Default:** Equivalent to `new CountQueuingStrategy({ highWaterMark: 1024 })`
 
 Queuing strategy for the readable side (output stream).
 
@@ -86,7 +95,7 @@ Queuing strategy for the readable side (output stream).
 const transformer = new CSVLexerTransformer(
   { delimiter: ',' },
   undefined, // Use default writable strategy
-  { highWaterMark: 2048 } // Larger output buffer
+  new CountQueuingStrategy({ highWaterMark: 2048 }) // Larger output buffer
 );
 ```
 
@@ -94,13 +103,6 @@ const transformer = new CSVLexerTransformer(
 - ✅ Optimize for your specific workload by profiling
 - ✅ Adjust based on processing requirements
 - ❌ Don't guess without benchmarking
-
-**ExtendedQueuingStrategy:**
-```typescript
-interface ExtendedQueuingStrategy<T> extends QueuingStrategy<T> {
-  checkInterval?: number; // How often to check backpressure (default: 100)
-}
-```
 
 ---
 

@@ -31,9 +31,14 @@ What type of input do you have?
 │  └─ Use parseRequest() ✅
 │
 └─ Blob or File (file upload, drag-and-drop)
-   ├─ Generic: Use parseBlob() ✅
-   └─ File-specific: Use parseFile() ✅
+   ├─ Generic Blob: Use parseBlob() ✅
+   └─ File with error tracking: Use parseFile() ✅
 ```
+
+> **Platform Note:** `Blob` is supported in all environments. `File` support varies:
+> - ✅ Browsers, Node.js 20+, Deno: Full support
+> - ⚠️ Cloudflare Workers: `File` constructor unavailable (use `parseBlob()` with `source` option)
+> - ✅ FormData-sourced Files: Supported everywhere
 
 ---
 
@@ -69,7 +74,7 @@ What type of input do you have?
 - `parseResponse()` - Parse HTTP Response
 - `parseRequest()` - Parse HTTP Request (server-side)
 - `parseBlob()` - Parse Blob or File
-- `parseFile()` - Parse File (alias for parseBlob)
+- `parseFile()` - Parse File with automatic error source tracking
 
 **Trade-off:**
 - Optimal performance vs. need to know input type
@@ -376,9 +381,15 @@ const input = document.querySelector('input[type="file"]');
 input.addEventListener('change', async (event) => {
   const file = event.target.files[0];
 
-  // Use parseFile for semantic clarity with File objects
-  for await (const record of parseFile(file)) {
-    console.log(record);
+  // parseFile automatically includes filename in error messages
+  try {
+    for await (const record of parseFile(file)) {
+      console.log(record);
+    }
+  } catch (error) {
+    // Error message includes: 'in "data.csv"'
+    console.error(error.message);
+    console.error('Source:', error.source); // "data.csv"
   }
 });
 
@@ -392,9 +403,15 @@ dropZone.addEventListener('drop', async (event) => {
   }
 });
 
-// ✅ Good for: Blob objects
+// ✅ Good for: Blob objects (use parseBlob)
 const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' });
 for await (const record of parseBlob(blob)) {
+  console.log(record);
+}
+
+// ✅ Edge environments: Use parseBlob with manual source
+const blob = new Blob([csvData], { type: 'text/csv' });
+for await (const record of parseBlob(blob, { source: 'import.csv' })) {
   console.log(record);
 }
 ```
@@ -405,9 +422,18 @@ for await (const record of parseBlob(blob)) {
 - Blob objects with charset in type parameter
 - Browser file handling
 
+**`parseFile()` vs `parseBlob()`:**
+- `parseFile()`: Automatically sets `file.name` as error source
+- `parseBlob()`: Generic Blob support, manual source specification
+- Both support automatic charset detection from `type` parameter
+
 **Performance:**
 - Streaming for large files
 - Automatic charset detection from Blob type
+
+**Platform Compatibility:**
+- `parseBlob()`: ✅ All environments (browsers, Workers, Node.js, Deno)
+- `parseFile()`: ⚠️ May require FormData in Cloudflare Workers
 
 ---
 
@@ -427,13 +453,14 @@ async function handleFileUpload(file: File) {
 
 **Why `parseFile()`?**
 - Direct File object support
+- **Automatic error source tracking** - filename included in all error messages
 - Automatic charset detection from file.type
 - Streaming for large files
 - Clean and simple API
 
-**With validation:**
+**With validation and error handling:**
 ```typescript
-import { parseFile } from 'web-csv-toolbox';
+import { parseFile, ParseError } from 'web-csv-toolbox';
 
 async function handleFileUpload(file: File) {
   // Validate file type
@@ -446,13 +473,22 @@ async function handleFileUpload(file: File) {
     throw new Error('File too large (max 10MB)');
   }
 
-  let count = 0;
-  for await (const record of parseFile(file)) {
-    // Process record (e.g., validate, save to database)
-    count++;
+  try {
+    let count = 0;
+    for await (const record of parseFile(file)) {
+      // Process record (e.g., validate, save to database)
+      count++;
+    }
+    return count;
+  } catch (error) {
+    if (error instanceof ParseError) {
+      // Error includes filename automatically
+      console.error(`Parse error in "${error.source}":`, error.message);
+      // Example: 'Parse error in "data.csv": Field count exceeded at row 5'
+      throw new Error(`Invalid CSV file: ${error.message}`);
+    }
+    throw error;
   }
-
-  return count;
 }
 ```
 
@@ -685,6 +721,140 @@ for await (const record of parseString(csv, {
 
 ---
 
+## Error Handling
+
+### Enhanced Error Reporting with Source Tracking
+
+All parsing APIs support the `source` option to identify the origin of CSV data in error messages:
+
+```typescript
+import { parseString, parseFile, ParseError } from 'web-csv-toolbox';
+
+// Automatic source tracking (parseFile only)
+try {
+  for await (const record of parseFile(file)) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof ParseError) {
+    console.error(error.message);
+    // "Field count (100001) exceeded maximum allowed count at row 5 in "data.csv""
+    console.error('Source:', error.source); // "data.csv"
+    console.error('Row:', error.rowNumber); // 5
+    console.error('Position:', error.position); // { line, column, offset }
+  }
+}
+
+// Manual source specification
+try {
+  for await (const record of parseString(csv, { source: 'user-import.csv' })) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof ParseError) {
+    console.error(error.source); // "user-import.csv"
+  }
+}
+```
+
+### Common Error Types
+
+**ParseError** - CSV syntax errors:
+```typescript
+import { ParseError } from 'web-csv-toolbox';
+
+try {
+  for await (const record of parseString(csv)) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof ParseError) {
+    console.error('CSV syntax error:', error.message);
+    console.error('  Source:', error.source);
+    console.error('  Row:', error.rowNumber);
+    console.error('  Position:', error.position);
+  }
+}
+```
+
+**RangeError** - Security limits exceeded:
+```typescript
+try {
+  for await (const record of parseString(csv, {
+    maxFieldCount: 1000,
+    maxBufferSize: 10 * 1024 * 1024
+  })) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof RangeError) {
+    if (error.message.includes('Field count')) {
+      console.error('Too many columns in CSV');
+    } else if (error.message.includes('Buffer size')) {
+      console.error('CSV field too large');
+    }
+  }
+}
+```
+
+**DOMException (AbortError)** - Operation cancelled:
+```typescript
+const controller = new AbortController();
+
+try {
+  for await (const record of parseString(csv, {
+    signal: controller.signal
+  })) {
+    // ...
+  }
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    console.log('Parsing cancelled by user');
+  }
+}
+```
+
+### Best Practices for Error Handling
+
+✅ **Always use try-catch** with async iteration:
+```typescript
+try {
+  for await (const record of parseFile(file)) {
+    await processRecord(record);
+  }
+} catch (error) {
+  // Handle errors
+}
+```
+
+✅ **Check error types** for specific handling:
+```typescript
+if (error instanceof ParseError) {
+  // CSV format error
+} else if (error instanceof RangeError) {
+  // Security limit exceeded
+} else if (error instanceof DOMException) {
+  // Abort or timeout
+}
+```
+
+✅ **Include context** in error messages:
+```typescript
+catch (error) {
+  throw new Error(`Failed to process ${file.name}: ${error.message}`);
+}
+```
+
+❌ **Don't ignore errors**:
+```typescript
+// BAD
+for await (const record of parseFile(file)) {
+  // No error handling
+}
+```
+
+---
+
 ## Best Practices
 
 ### ✅ Do
@@ -744,7 +914,7 @@ for await (const record of parseResponse(response)) {
 - **[parseResponse() API Reference](../reference/api/parseResponse.md)** - Response parser
 - **[parseRequest() API Reference](../reference/api/parseRequest.md)** - Request parser (server-side)
 - **[parseBlob() API Reference](../reference/api/parseBlob.md)** - Blob/File parser
-- **[parseFile() API Reference](../reference/api/parseFile.md)** - File parser (alias)
+- **[parseFile() API Reference](../reference/api/parseFile.md)** - File parser with automatic error source
 - **[Execution Strategies](../explanation/execution-strategies.md)** - Understanding execution modes
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 
@@ -758,9 +928,11 @@ for await (const record of parseResponse(response)) {
 2. **Production (known input type):** Use specialized middle-level APIs
 3. **HTTP responses (client):** Use `parseResponse()` for automatic header handling
 4. **HTTP requests (server):** Use `parseRequest()` for server-side request handling
-5. **File uploads:** Use `parseFile()` or `parseBlob()` for file inputs and drag-and-drop
-6. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
-7. **Performance-critical:** Use `EnginePresets.fastest()` with WASM + Worker
-8. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
+5. **File uploads:** Use `parseFile()` for automatic error tracking, or `parseBlob()` for generic Blob support
+6. **Edge environments:** Use `parseBlob()` with manual `source` option (Cloudflare Workers compatibility)
+7. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
+8. **Performance-critical:** Use `EnginePresets.fastest()` with WASM + Worker
+9. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
+10. **Error tracking:** Always specify `source` option or use `parseFile()` for automatic tracking
 
 **Remember:** The best API depends on your specific use case. Consider input type, file size, encoding, and performance requirements when choosing.

@@ -52,8 +52,10 @@ export function assertCommonOptions<
   Delimiter extends string,
   Quotation extends string,
 >(
-  options: Required<CommonOptions<Delimiter, Quotation>>,
-): asserts options is Required<CommonOptions<Delimiter, Quotation>> {
+  options: Required<Omit<CommonOptions<Delimiter, Quotation>, "source">>,
+): asserts options is Required<
+  Omit<CommonOptions<Delimiter, Quotation>, "source">
+> {
   for (const name of ["delimiter", "quotation"] as const) {
     assertOptionValue(options[name], name);
   }

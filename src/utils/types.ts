@@ -1,21 +1,26 @@
+import type { CSVString } from "../common/types.ts";
 import type {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   Newline,
 } from "../constants.ts";
-import type { CSVString } from "../web-csv-toolbox.ts";
 
 /**
- * Generate new string by concatenating all of the elements in array.
+ * Join CSV field array into a CSV-formatted string with proper escaping.
  *
  * @category Types
+ *
+ * @remarks
+ * This type handles CSV-specific formatting:
+ * - Quotes fields containing delimiters, quotations, or newlines
+ * - Joins fields with the specified delimiter
  *
  * @example Default
  *
  * ```ts
  * const header = ["name", "age", "city", "zip"];
  *
- * type _ = Join<typeof header>
+ * type _ = JoinCSVFields<typeof header>
  * // `name,age,city,zip`
  * ```
  *
@@ -24,11 +29,11 @@ import type { CSVString } from "../web-csv-toolbox.ts";
  * ```ts
  * const header = ["name", "a\nge", "city", "zip"];
  *
- * type _ = Join<typeof header, "@", "$">
+ * type _ = JoinCSVFields<typeof header, "@", "$">
  * // `name@$a\nge$@city@zip`
  * ```
  */
-export type Join<
+export type JoinCSVFields<
   Chars extends ReadonlyArray<string | number | boolean | bigint>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -38,22 +43,28 @@ export type Join<
     ? R extends string[]
       ? `${F extends `${string}${Nl | Delimiter | Quotation}${string}`
           ? `${Quotation}${F}${Quotation}`
-          : F}${R extends [] ? "" : Delimiter}${Join<R, Delimiter, Quotation>}`
+          : F}${R extends [] ? "" : Delimiter}${JoinCSVFields<R, Delimiter, Quotation>}`
       : string
     : string
   : "";
 
 /**
- * Generate a delimiter-separated tuple from a string.
+ * Split CSV-formatted string into field array with proper unescaping.
  *
  * @category Types
+ *
+ * @remarks
+ * This type handles CSV-specific parsing:
+ * - Unquotes quoted fields
+ * - Handles escaped quotation marks
+ * - Splits by the specified delimiter
  *
  * @example Default
  *
  * ```ts
  * const header = `name,age,city,zip`;
  *
- * type _ = Split<typeof header>
+ * type _ = SplitCSVFields<typeof header>
  * // ["name", "age", "city", "zip"]
  * ```
  *
@@ -63,11 +74,11 @@ export type Join<
  * const header = `name@$a
  * ge$@city@zip`;
  *
- * type _ = Split<typeof header, "@", "$">
+ * type _ = SplitCSVFields<typeof header, "@", "$">
  * // ["name", "a\nge", "city", "zip"]
  * ```
  */
-export type Split<
+export type SplitCSVFields<
   Char extends string,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -76,16 +87,30 @@ export type Split<
   Result extends string[] = [],
 > = Char extends `${Delimiter}${infer R}`
   ? Escaping extends true
-    ? Split<R, Delimiter, Quotation, true, `${Col}${Delimiter}`, Result>
-    : Split<R, Delimiter, Quotation, false, "", [...Result, Col]>
+    ? SplitCSVFields<
+        R,
+        Delimiter,
+        Quotation,
+        true,
+        `${Col}${Delimiter}`,
+        Result
+      >
+    : SplitCSVFields<R, Delimiter, Quotation, false, "", [...Result, Col]>
   : Char extends `${Quotation}${infer R}`
     ? Escaping extends true
       ? R extends "" | Delimiter | `${Delimiter}${string}`
-        ? Split<R, Delimiter, Quotation, false, Col, Result>
-        : Split<R, Delimiter, Quotation, true, `${Col}${Quotation}`, Result>
-      : Split<R, Delimiter, Quotation, true, Col, Result>
+        ? SplitCSVFields<R, Delimiter, Quotation, false, Col, Result>
+        : SplitCSVFields<
+            R,
+            Delimiter,
+            Quotation,
+            true,
+            `${Col}${Quotation}`,
+            Result
+          >
+      : SplitCSVFields<R, Delimiter, Quotation, true, Col, Result>
     : Char extends `${infer F}${infer R}`
-      ? Split<R, Delimiter, Quotation, Escaping, `${Col}${F}`, Result>
+      ? SplitCSVFields<R, Delimiter, Quotation, Escaping, `${Col}${F}`, Result>
       : [...Result, Col] extends [""]
         ? readonly string[]
         : readonly [...Result, Col];
@@ -196,5 +221,9 @@ export type PickCSVHeader<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > = ExtractString<CSVSource> extends `${infer S}`
-  ? Split<ExtractCSVHeader<S, Delimiter, Quotation>, Delimiter, Quotation>
+  ? SplitCSVFields<
+      ExtractCSVHeader<S, Delimiter, Quotation>,
+      Delimiter,
+      Quotation
+    >
   : ReadonlyArray<string>;

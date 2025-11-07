@@ -23,10 +23,9 @@ export async function* parseUint8ArrayStreamInWorker<
   stream: ReadableStream<Uint8Array>,
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create({
-    workerPool: options?.engine?.workerPool,
-    workerURL: options?.engine?.workerURL,
-  });
+  using session = await WorkerSession.create(
+    options?.engine?.worker === true ? options.engine : undefined,
+  );
 
   yield* sendWorkerMessage<CSVRecord<Header>>(
     session.getWorker(),
