@@ -57,7 +57,10 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 ///
 /// Returns a JsError if parsing fails, which will be thrown as a JavaScript error.
 #[wasm_bindgen(js_name = parseStringToArraySync)]
-pub fn parse_string_to_array_sync(input: &str, delimiter: u8) -> Result<JsValue, wasm_bindgen::JsError> {
+pub fn parse_string_to_array_sync(
+    input: &str,
+    delimiter: u8,
+) -> Result<JsValue, wasm_bindgen::JsError> {
     parse_csv_to_json(input, delimiter)
         .map(|json_str| JsValue::from_str(&json_str))
         .map_err(|err| wasm_bindgen::JsError::new(&err))
