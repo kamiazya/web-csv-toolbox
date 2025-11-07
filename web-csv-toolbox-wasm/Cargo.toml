@@ -19,6 +19,7 @@ web-sys = { version = "0.3.82", features = ["console"] }
 
 [dev-dependencies]
 criterion = "0.5"
+wasm-bindgen-test = "0.3"
 
 [[bench]]
 name = "csv_parsing"
