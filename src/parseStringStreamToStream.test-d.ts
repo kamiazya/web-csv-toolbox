@@ -21,7 +21,9 @@ describe("string ReadableStream parsing", () => {
       ReadableStream<CSVRecord<readonly string[]>>
     >();
 
-    type Result2 = ReturnType<typeof parseStringStreamToStream<ReadableStream<string>>>;
+    type Result2 = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<string>>
+    >;
     expectTypeOf<Result2>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly string[]>>
     >();
@@ -34,7 +36,9 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<typeof parseStringStreamToStream<ReadableStream<typeof csv1>>>;
+    type Result = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<typeof csv1>>
+    >;
     expectTypeOf<Result>().toEqualTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
@@ -52,7 +56,9 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<typeof parseStringStreamToStream<ReadableStream<typeof csv1>, "*", "$">>;
+    type Result = ReturnType<
+      typeof parseStringStreamToStream<ReadableStream<typeof csv1>, "*", "$">
+    >;
     expectTypeOf<Result>().toEqualTypeOf<
       ReadableStream<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
