@@ -37,7 +37,9 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<typeof parseStringStream<ReadableStream<typeof csv1>>>;
+    type Result = ReturnType<
+      typeof parseStringStream<ReadableStream<typeof csv1>>
+    >;
     expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
@@ -55,7 +57,9 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<typeof parseStringStream<ReadableStream<typeof csv1>, "*", "$">>;
+    type Result = ReturnType<
+      typeof parseStringStream<ReadableStream<typeof csv1>, "*", "$">
+    >;
     expectTypeOf<Result>().toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>

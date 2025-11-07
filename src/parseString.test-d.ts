@@ -45,12 +45,21 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    type Result1 = ReturnType<typeof parseString<string, ",", "\"", ["name", "age", "city", "zip"]>>;
+    type Result1 = ReturnType<
+      typeof parseString<string, ",", '"', ["name", "age", "city", "zip"]>
+    >;
     expectTypeOf<Result1>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<["name", "age", "city", "zip"]>>
     >();
 
-    type Result2 = ReturnType<typeof parseString<string, "#", "$", readonly ["name", "age", "city", "zip"]>>;
+    type Result2 = ReturnType<
+      typeof parseString<
+        string,
+        "#",
+        "$",
+        readonly ["name", "age", "city", "zip"]
+      >
+    >;
     expectTypeOf<Result2>().toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
