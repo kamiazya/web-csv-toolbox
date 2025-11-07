@@ -1,0 +1,2 @@
+# Clippy configuration for web-csv-toolbox-wasm
+avoid-breaking-exported-api = true

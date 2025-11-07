@@ -3,9 +3,17 @@
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer",
+    "editor.formatOnSave": true
+  },
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit",
     "source.organizeImports.biome": "explicit"
-  }
+  },
+  "rust-analyzer.linkedProjects": ["./web-csv-toolbox-wasm/Cargo.toml"],
+  "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
+  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.checkOnSave.extraArgs": ["--target", "wasm32-unknown-unknown"]
 }
