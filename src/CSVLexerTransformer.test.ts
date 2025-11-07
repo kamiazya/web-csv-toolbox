@@ -6,8 +6,8 @@ import {
   test,
   vi,
 } from "vitest";
-import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { transform, waitAbort } from "./__tests__/helper.ts";
+import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
@@ -25,7 +25,6 @@ describe("CSVLexerTransformer", () => {
           delimiter: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: delimiter must not be empty]`,
     );
 
@@ -35,7 +34,6 @@ describe("CSVLexerTransformer", () => {
           quotation: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: quotation must not be empty]`,
     );
   });
@@ -45,7 +43,6 @@ describe("CSVLexerTransformer", () => {
     expect(async () => {
       await transform(transformer, ['"']);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: Unexpected EOF while parsing quoted field.]`,
     );
   });
@@ -57,10 +54,7 @@ describe("CSVLexerTransformer", () => {
     });
     expect(async () => {
       await transform(transformer, ["aaa"]);
-    }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[Error: test]`,
-    );
+    }).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: test]`);
   });
 
   describe("when AbortSignal is provided", () => {

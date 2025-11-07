@@ -1,7 +1,7 @@
 import { beforeEach, describe as describe_, expect, test } from "vitest";
+import { waitAbort } from "./__tests__/helper.ts";
 import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
-import { waitAbort } from "./__tests__/helper.ts";
 
 const describe = describe_.concurrent;
 

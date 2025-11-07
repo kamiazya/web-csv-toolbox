@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
+import { autoChunk, FC, transform } from "./__tests__/helper.ts";
 import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
-import { FC, autoChunk, transform } from "./__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "./common/constants.ts";
 import { escapeField } from "./escapeField.ts";
 

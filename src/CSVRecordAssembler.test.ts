@@ -94,10 +94,7 @@ describe("CSVRecordAssembler", () => {
             },
           ]),
         ];
-      }).toThrowErrorMatchingInlineSnapshot(
-        // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-        `[MyCustomError: Custom reason]`,
-      );
+      }).toThrowErrorMatchingInlineSnapshot(`[MyCustomError: Custom reason]`);
     });
   });
 

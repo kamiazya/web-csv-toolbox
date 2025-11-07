@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseResponse } from "./parseResponse.ts";
 import { SingleValueReadableStream } from "./utils/SingleValueReadableStream.ts";
@@ -24,7 +23,6 @@ describe("parseRequest function", () => {
       },
     });
     expect(() => parseResponse(response)).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[TypeError: Response body is null]`,
     );
   });

@@ -32,7 +32,7 @@ export function addListener(
     }
     handlerMap.get(worker)!.set(handler, normalizedHandler);
 
-    // @ts-ignore - Node.js Worker has different API
+    // @ts-expect-error - Node.js Worker has different API
     worker.on(event, normalizedHandler);
   }
 }
@@ -52,7 +52,7 @@ export function removeListener(
     // Node.js Worker Threads API
     // Get the normalized handler from the map
     const normalizedHandler = handlerMap.get(worker)?.get(handler) || handler;
-    // @ts-ignore - Node.js Worker has different API
+    // @ts-expect-error - Node.js Worker has different API
     worker.off(event, normalizedHandler);
 
     // Clean up the mapping

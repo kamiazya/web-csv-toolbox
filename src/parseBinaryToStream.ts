@@ -7,7 +7,7 @@ import { convertBinaryToString } from "./utils/convertBinaryToString.ts";
 export function parseBinaryToStream<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = '"',
+  Quotation extends string = DEFAULT_QUOTATION,
 >(
   binary: Uint8Array | ArrayBuffer,
   options: ParseBinaryOptions<

@@ -3,7 +3,7 @@ import type {
   ParseBinaryOptions,
   ParseOptions,
 } from "./common/types.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "./constants.ts";
+import type { DEFAULT_DELIMITER } from "./constants.ts";
 import { InternalEngineConfig } from "./execution/InternalEngineConfig.ts";
 import { parseBinaryInWASM } from "./execution/wasm/parseBinaryInWASM.ts";
 import { WorkerSession } from "./execution/worker/helpers/WorkerSession.ts";

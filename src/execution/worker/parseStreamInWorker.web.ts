@@ -4,7 +4,6 @@ import type {
   ParseOptions,
 } from "../../common/types.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../constants.ts";
-import { convertStreamToAsyncIterableIterator } from "../../utils/convertStreamToAsyncIterableIterator.ts";
 import { WorkerSession } from "./helpers/WorkerSession.ts";
 import { sendWorkerMessage } from "./utils/messageHandler.ts";
 import { serializeOptions } from "./utils/serializeOptions.ts";

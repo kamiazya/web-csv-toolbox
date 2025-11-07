@@ -1,7 +1,6 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "./__tests__/helper.ts";
-import type { ExecutionStrategy } from "./common/types.ts";
 import { escapeField } from "./escapeField.ts";
 import { parseString } from "./parseString.ts";
 
@@ -49,7 +48,6 @@ describe("parseString function", () => {
         // Do nothing.
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[ParseError: Unexpected EOF while parsing quoted field.]`,
     );
   });
@@ -60,7 +58,6 @@ describe("parseString function", () => {
         // Do nothing.
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[RangeError: delimiter must not be empty]`,
     );
   });

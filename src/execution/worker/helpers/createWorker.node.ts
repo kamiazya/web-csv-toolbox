@@ -7,11 +7,11 @@
  */
 export async function createWorker(workerURL?: string | URL): Promise<Worker> {
   // Dynamic import for Node.js Worker and URL utilities
-  // @ts-ignore: node:worker_threads is only available in Node.js
+  // @ts-expect-error: node:worker_threads is only available in Node.js
   const { Worker } = await import("node:worker_threads");
-  // @ts-ignore: node:url is only available in Node.js
+  // @ts-expect-error: node:url is only available in Node.js
   const { fileURLToPath } = await import("node:url");
-  // @ts-ignore: node:path is only available in Node.js
+  // @ts-expect-error: node:path is only available in Node.js
   const { dirname, join } = await import("node:path");
 
   if (workerURL) {
@@ -26,6 +26,5 @@ export async function createWorker(workerURL?: string | URL): Promise<Worker> {
   const currentDir = dirname(currentFilePath);
   const workerPath = join(currentDir, "..", "..", "..", "worker.node.js");
 
-  // @ts-ignore
   return new Worker(workerPath, { type: "module" });
 }

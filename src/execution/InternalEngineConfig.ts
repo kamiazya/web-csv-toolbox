@@ -140,20 +140,6 @@ export class InternalEngineConfig {
   }
 
   /**
-   * Add a flag.
-   */
-  private addFlag(flag: EngineFlags): void {
-    this.bitmask |= flag;
-  }
-
-  /**
-   * Remove a flag.
-   */
-  private removeFlag(flag: EngineFlags): void {
-    this.bitmask &= ~flag;
-  }
-
-  /**
    * Check if worker execution is enabled.
    */
   hasWorker(): boolean {

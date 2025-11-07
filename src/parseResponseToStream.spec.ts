@@ -39,10 +39,7 @@ describe("parseResponseToStream", () => {
     });
     expect(() =>
       parseResponseToStream(response),
-    ).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
-      `[TypeError: Response body is null]`,
-    );
+    ).toThrowErrorMatchingInlineSnapshot(`[TypeError: Response body is null]`);
   });
 
   it("should parse CSV", async () => {

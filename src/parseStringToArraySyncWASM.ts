@@ -1,8 +1,8 @@
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 import { assertCommonOptions } from "./assertCommonOptions.ts";
 import type {
-  CSVRecord,
   CommonOptions,
+  CSVRecord,
   PickCSVHeader,
 } from "./common/types.ts";
 import {

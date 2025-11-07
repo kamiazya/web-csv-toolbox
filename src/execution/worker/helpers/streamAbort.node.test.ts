@@ -19,20 +19,20 @@ describe.skipIf(typeof Worker === "undefined")(
       it("should abort during stream collection when signal is aborted", async () => {
         // Create a slow stream that yields chunks over time
         const encoder = new TextEncoder();
-        let chunkCount = 0;
+        let _chunkCount = 0;
 
         const slowStream = new ReadableStream<Uint8Array>({
           async start(controller) {
             // First chunk
             controller.enqueue(encoder.encode("a,b,c\n"));
-            chunkCount++;
+            _chunkCount++;
 
             // Simulate slow stream with delay
             await new Promise((resolve) => setTimeout(resolve, 50));
 
             // Second chunk (should be aborted before this)
             controller.enqueue(encoder.encode("1,2,3\n"));
-            chunkCount++;
+            _chunkCount++;
 
             controller.close();
           },
@@ -107,20 +107,20 @@ describe.skipIf(typeof Worker === "undefined")(
 
     describe("parseStringStream with AbortSignal", () => {
       it("should abort during stream collection when signal is aborted", async () => {
-        let chunkCount = 0;
+        let _chunkCount = 0;
 
         const slowStream = new ReadableStream<string>({
           async start(controller) {
             // First chunk
             controller.enqueue("a,b,c\n");
-            chunkCount++;
+            _chunkCount++;
 
             // Simulate slow stream with delay
             await new Promise((resolve) => setTimeout(resolve, 50));
 
             // Second chunk (should be aborted before this)
             controller.enqueue("1,2,3\n");
-            chunkCount++;
+            _chunkCount++;
 
             controller.close();
           },

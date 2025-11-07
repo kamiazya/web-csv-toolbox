@@ -18,7 +18,6 @@ test("throws an error if the CSV is invalid", () => {
   expect(() =>
     parseStringToArraySync('a\n"'),
   ).toThrowErrorMatchingInlineSnapshot(
-    // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
     `[ParseError: Unexpected EOF while parsing quoted field.]`,
   );
 });

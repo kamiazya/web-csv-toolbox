@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  createMessageHandler,
   type ParseBinaryRequest,
   type ParseStringRequest,
   type ParseStringStreamRequest,
   type ParseUint8ArrayStreamRequest,
-  type WorkerContext,
-  createMessageHandler,
   streamRecordsToMain,
   streamRecordsToPort,
+  type WorkerContext,
 } from "./worker.shared.ts";
 
 describe("worker.shared", () => {

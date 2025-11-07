@@ -27,7 +27,6 @@ describe("parseRequest function", () => {
       },
     });
     expect(() => parseRequest(request)).toThrowErrorMatchingInlineSnapshot(
-      // biome-ignore lint/style/noUnusedTemplateLiteral: This is a snapshot
       `[TypeError: Request body is null]`,
     );
   });
