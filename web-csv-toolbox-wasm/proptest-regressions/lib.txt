@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 68b04d6fa785bc5ba8b1d0ad2f78da6dfabf9759a78760bc512315e11c916c22 # shrinks to headers = ["col0"], num_rows = 0
+cc 58d356353fbe049436de5e83cc3f6ae6bf9c5d5d469d87c70d0784768fe19286 # shrinks to _headers = ["col0"], (headers2, rows) = (["col0"], []), use_crlf = false
+cc aa563cd775843e416b74dd455c773afdf36ded39636ed78e304b198efb5fe316 # shrinks to _headers = ["col0"], (headers2, rows) = (["col0"], []), chunk_size = 1
+cc 50f30b6ab2eb9b206b15e49f283939af3b616aab5c91e364afd5f794bf5ee245 # shrinks to headers = ["col0"], rows = []
+cc 80a319fce33366bb5543c6b3dfe750e30b3b19a29c82528673dbf99d0b0e87ae # shrinks to _headers = ["col0"], (headers2, rows) = (["col0"], [])

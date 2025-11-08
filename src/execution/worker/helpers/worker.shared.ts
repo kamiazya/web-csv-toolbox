@@ -225,7 +225,54 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           // Type guard: ParseUint8ArrayStreamRequest
           const req = request as ParseUint8ArrayStreamRequest;
           if (req.stream) {
-            // Process binary stream with TransferableStream strategy
+            const { convertStreamToAsyncIterableIterator } = await import(
+              "../../../utils/convertStreamToAsyncIterableIterator.ts"
+            );
+
+            // Use WASM binary parser if useWASM is true
+            if (useWASM) {
+              try {
+                // Import WASM binary stream transformer
+                const { loadWASM } = await import("../../../loadWASM.ts");
+                const { WASMBinaryCSVStreamTransformer } = await import(
+                  "../../../WASMBinaryCSVStreamTransformer.ts"
+                );
+
+                // Ensure WASM is loaded
+                await loadWASM();
+
+                // Handle decompression if needed
+                const processStream = req.options?.decompression
+                  ? req.stream.pipeThrough(
+                      new DecompressionStream(
+                        req.options.decompression,
+                      ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+                    )
+                  : req.stream;
+
+                // Process binary stream directly with WASM (no TextDecoder!)
+                const transformerOptions = req.options?.delimiter
+                  ? { delimiter: req.options.delimiter }
+                  : {};
+                const resultStream = processStream.pipeThrough(
+                  new WASMBinaryCSVStreamTransformer(transformerOptions),
+                );
+
+                await streamRecordsToPort(
+                  resultPort,
+                  convertStreamToAsyncIterableIterator(resultStream),
+                );
+                return;
+              } catch (error) {
+                // Fall back to JavaScript implementation if WASM fails
+                console.warn(
+                  "WASM binary parser failed, falling back to JavaScript:",
+                  error,
+                );
+              }
+            }
+
+            // JavaScript implementation fallback
             const { CSVLexerTransformer } = await import(
               "../../../CSVLexerTransformer.ts"
             );
@@ -260,10 +307,6 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                     decoderOptions,
                   ) as unknown as TransformStream<Uint8Array, string>,
                 );
-
-            const { convertStreamToAsyncIterableIterator } = await import(
-              "../../../utils/convertStreamToAsyncIterableIterator.ts"
-            );
 
             const resultStream = textStream
               .pipeThrough(new CSVLexerTransformer(req.options))

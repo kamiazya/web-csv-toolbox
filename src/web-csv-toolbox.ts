@@ -2,6 +2,8 @@ export * from "./CSVLexer.ts";
 export * from "./CSVLexerTransformer.ts";
 export * from "./CSVRecordAssembler.ts";
 export * from "./CSVRecordAssemblerTransformer.ts";
+export * from "./WASMCSVStreamTransformer.ts";
+export * from "./WASMBinaryCSVStreamTransformer.ts";
 export * from "./common/constants.ts";
 export * from "./common/errors.ts";
 export * from "./common/types.ts";
