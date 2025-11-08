@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { beforeAll, describe, expect, it } from "vitest";
 import { autoChunk, autoChunkBytes, FC } from "./__tests__/helper.ts";
+import { escapeField } from "./escapeField.ts";
 import { loadWASM } from "./loadWASM.ts";
 import { WASMBinaryCSVStreamTransformer } from "./WASMBinaryCSVStreamTransformer.ts";
 import { WASMCSVStreamTransformer } from "./WASMCSVStreamTransformer.ts";
-import { escapeField } from "./escapeField.ts";
 
 /**
  * Property-Based Tests for WASM Binary CSV Stream Transformer
@@ -27,7 +27,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should parse arbitrary CSV data correctly", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = g(FC.header, {
                 fieldConstraints: {
                   // Exclude string16bits to avoid lone surrogates
@@ -86,7 +86,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle comma delimiter (default)", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = g(FC.header, {
                 fieldConstraints: { kindExcludes: ["string16bits"] },
               });
@@ -143,7 +143,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should produce same results regardless of chunk size", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = g(FC.header, {
                 fieldConstraints: { kindExcludes: ["string16bits"] },
               });
@@ -201,7 +201,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle UTF-8 multi-byte sequences split across chunks", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               // Generate header and data with multi-byte UTF-8 characters
               const header = g(FC.header, {
                 fieldConstraints: { kindExcludes: ["string16bits"] },
@@ -263,7 +263,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should produce same results as WASMCSVStreamTransformer", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = g(FC.header, {
                 fieldConstraints: { kindExcludes: ["string16bits"] },
               });
@@ -368,7 +368,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle various line endings (LF, CRLF)", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = g(FC.header, {
                 fieldConstraints: { kindExcludes: ["string16bits"] },
               });
@@ -468,7 +468,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle NULL bytes in fields", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               // Create CSV with NULL bytes in field values
               const header = ["field1", "field2", "field3"];
               const csvData = [
@@ -513,7 +513,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle very long field values", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               // Generate field values with 10KB+ of data
               const longValue = "a".repeat(10000);
               const header = ["short", "long", "medium"];
@@ -581,7 +581,7 @@ describe.skipIf(typeof window === "undefined")(
       it("should handle CSV with many empty fields", () =>
         fc.assert(
           fc.asyncProperty(
-            fc.gen().map((g) => {
+            fc.gen().map((_g) => {
               const header = ["a", "b", "c", "d", "e"];
               const csvData = [
                 ["", "", "", "", ""],
