@@ -5,9 +5,7 @@ runs:
   using: composite
   steps:
     - name: Setup C++
-      run: |
-        sudo apt-get update
-        sudo apt-get install libstdc++-12-dev
+      run: sudo apt-get update && sudo apt-get install -y libstdc++-12-dev
       shell: bash
 
     - name: Setup Rust
