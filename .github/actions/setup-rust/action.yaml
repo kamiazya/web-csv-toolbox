@@ -19,5 +19,6 @@ runs:
         target-dirs: web-csv-toolbox-wasm/target
 
     - name: Install wasm-pack
-      run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-      shell: bash
+      uses: taiki-e/install-action@v2
+      with:
+        tool: wasm-pack
