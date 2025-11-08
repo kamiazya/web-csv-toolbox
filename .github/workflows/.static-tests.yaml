@@ -2,37 +2,45 @@ name: Static Tests
 
 on:
   workflow_call:
+
 jobs:
-  check_format:
-    name: Check format
+  check_format_typescript:
+    name: Check TypeScript format
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - name: Check
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Check format
         run: pnpm check:format
 
-  check_clippy_and_rustfmt:
-    name: Check with clippy and rustfmt
+  check_format_rust:
+    name: Check Rust format
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - name: Run Clippy
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+      - name: Run rustfmt
+        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
+
+  check_clippy:
+    name: Check with clippy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+      - name: Run clippy
         run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
         env:
           RUSTFLAGS: -D warnings
-      - name: Run Fmt
-        run: cargo fmt --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all -- --check
