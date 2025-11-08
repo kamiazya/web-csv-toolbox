@@ -18,16 +18,18 @@ jobs:
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
       - name: Build WASM module
-        run: |
-          cd web-csv-toolbox-wasm
-          wasm-pack build --target web --out-dir pkg
+        run: wasm-pack build web-csv-toolbox-wasm --target web
       - name: Upload WASM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: web-csv-toolbox-wasm
           path: |
-            web-csv-toolbox-wasm/pkg
-          retention-days: 1
+            web-csv-toolbox-wasm/**/*
+            !web-csv-toolbox-wasm/src
+            !web-csv-toolbox-wasm/target
+            !web-csv-toolbox-wasm/Cargo.toml
+            !web-csv-toolbox-wasm/Cargo.lock
+            !web-csv-toolbox-wasm/.gitignore
 
   build_typescript:
     name: Build TypeScript
@@ -44,7 +46,7 @@ jobs:
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: web-csv-toolbox-wasm
-          path: web-csv-toolbox-wasm/pkg
+          path: web-csv-toolbox-wasm
       - name: Build TypeScript
         run: pnpm run build:js
         env:
@@ -58,7 +60,6 @@ jobs:
         with:
           name: dist
           path: dist
-          retention-days: 1
       - name: Build documentation
         run: pnpm run doc
       - name: Upload documentation artifact
@@ -66,4 +67,3 @@ jobs:
         with:
           name: doc
           path: doc
-          retention-days: 1
