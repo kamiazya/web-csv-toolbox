@@ -1,0 +1,22 @@
+name: Setup Rust Environment
+description: Setup Rust toolchain with WASM target and wasm-pack
+
+runs:
+  using: composite
+  steps:
+    - name: Setup C++
+      run: sudo apt-get update && sudo apt-get install -y libstdc++-12-dev
+      shell: bash
+
+    - name: Setup Rust
+      uses: moonrepo/setup-rust@d8048d4fdff0633123678b093726e6d7c8ad6de5 # v1.2.0
+      with:
+        targets: wasm32-unknown-unknown
+        channel: nightly
+        components: clippy,rustfmt
+        target-dirs: web-csv-toolbox-wasm/target
+
+    - name: Install wasm-pack
+      uses: taiki-e/install-action@e797ba6a25dbd8669057e123b02812e16138589e # v2.62.48
+      with:
+        tool: wasm-pack

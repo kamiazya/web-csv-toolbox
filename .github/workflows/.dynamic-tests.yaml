@@ -18,29 +18,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
       - name: Run type tests
         run: pnpm test:typecheck
 
-  coverage:
+  coverage_typescript:
+    name: TypeScript Coverage
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: TypeScript Coverage
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run coverage
         run: pnpm test:coverage
-      - name: Upload TypeScript coverage to Codecov
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         with:
           flags: typescript
@@ -49,19 +48,20 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   coverage_rust:
+    name: Rust Coverage
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Generate Rust coverage
+      - name: Generate coverage
         run: cargo llvm-cov --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --lcov --output-path=lcov-rust.info
-      - name: Upload Rust coverage to Codecov
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
         with:
           files: lcov-rust.info
@@ -70,33 +70,34 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  benchmarks:
+  benchmarks_typescript:
+    name: TypeScript Benchmarks
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: Run TypeScript benchmarks
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run benchmarks
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
         with:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
 
   benchmarks_rust:
+    name: Rust Benchmarks
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
       - name: Install cargo-codspeed
         uses: taiki-e/install-action@v2
         with:
@@ -104,7 +105,7 @@ jobs:
       - name: Build benchmarks
         run: cargo codspeed build
         working-directory: ./web-csv-toolbox-wasm
-      - name: Run Rust benchmarks
+      - name: Run benchmarks
         uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
         with:
           run: cargo codspeed run
@@ -112,95 +113,106 @@ jobs:
           token: ${{ secrets.CODSPEED_TOKEN }}
 
   test_rust:
+    name: Rust Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-    - name: Setup
-      uses: ./.github/actions/setup
-    - name: Run Rust tests
-      run: cargo test --manifest-path=./web-csv-toolbox-wasm/Cargo.toml
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+      - name: Run tests
+        run: cargo test --manifest-path=./web-csv-toolbox-wasm/Cargo.toml
 
   test_nodejs:
+    name: Node.js Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       matrix:
         node-version: [20.x, 22.x, 24.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-    - name: Setup
-      uses: ./.github/actions/setup
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-    - run: pnpm test run
-
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run tests
+        run: pnpm test run
 
   test_deno:
+    name: Deno Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-    - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-    - uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
-      with:
-        deno-version: lts
-    - run: |
-        deno eval '
-        import { parse } from "./dist/web-csv-toolbox.js";
-
-        const csv = `name,age
-        Alice,42
-        Bob,69`;
-
-        for await (const record of parse(csv)) {
-          console.log(record);
-        }'
-
-  test_linux_browser:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Setup Deno
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
         with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: Run browser tests (Chrome, Firefox in parallel)
+          deno-version: lts
+      - name: Run smoke test
+        run: |
+          deno eval '
+          import { parse } from "./dist/web-csv-toolbox.js";
+
+          const csv = `name,age
+          Alice,42
+          Bob,69`;
+
+          for await (const record of parse(csv)) {
+            console.log(record);
+          }'
+
+  test_browser_linux:
+    name: Browser Tests (Linux)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run browser tests (Chrome, Firefox)
         run: pnpm test:browser
 
-  test_macos_browser:
+  test_browser_macos:
+    name: Browser Tests (macOS)
     runs-on: macos-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: Run browser tests (Chrome, Firefox in parallel)
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run browser tests (Chrome, Firefox, Safari)
         run: pnpm test:browser
 
-
-  test_windows_browser:
+  test_browser_windows:
+    name: Browser Tests (Windows)
     runs-on: windows-latest
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Setup
-        uses: ./.github/actions/setup
-        with:
-          skip-rust-setup: 'true'
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-      - name: Run browser tests (Chrome, Firefox, Edge in parallel)
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+      - name: Download artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+      - name: Run browser tests (Chrome, Firefox, Edge)
         run: pnpm test:browser
