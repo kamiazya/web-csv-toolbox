@@ -101,6 +101,7 @@ export function parseStringToArraySyncWASM<
     delimiter = DEFAULT_DELIMITER,
     quotation = DEFAULT_QUOTATION,
     maxBufferSize = 10485760,
+    source,
   } = options;
   if (typeof delimiter !== "string" || delimiter.length !== 1) {
     throw new RangeError(
@@ -112,5 +113,7 @@ export function parseStringToArraySyncWASM<
   }
   assertCommonOptions({ delimiter, quotation, maxBufferSize });
   const demiliterCode = delimiter.charCodeAt(0);
-  return JSON.parse(parseStringToArraySync(csv, demiliterCode));
+  return JSON.parse(
+    parseStringToArraySync(csv, demiliterCode, maxBufferSize, source ?? ""),
+  );
 }

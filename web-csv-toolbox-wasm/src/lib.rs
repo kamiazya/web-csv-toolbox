@@ -5,17 +5,47 @@ use wasm_bindgen::prelude::*;
 #[cfg(test)]
 use serde_json::Value;
 
+/// Formats error message with optional source identifier
+///
+/// Takes ownership of the message String to avoid unnecessary allocation
+/// when source is None.
+fn format_error(message: String, source: Option<&str>) -> String {
+    match source {
+        Some(src) => format!("{} in \"{}\"", message, src),
+        None => message,
+    }
+}
+
 /// Parse CSV string to JSON array
 ///
 /// # Arguments
 ///
 /// * `input` - CSV string to parse
 /// * `delimiter` - Delimiter character (e.g., b',' for comma)
+/// * `max_buffer_size` - Maximum allowed input size in bytes
+/// * `source` - Optional source identifier for error reporting (e.g., filename)
 ///
 /// # Returns
 ///
 /// JSON string representation of the parsed CSV data
-fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
+fn parse_csv_to_json(
+    input: &str,
+    delimiter: u8,
+    max_buffer_size: usize,
+    source: Option<&str>,
+) -> Result<String, String> {
+    // Validate input size to prevent memory exhaustion attacks
+    if input.len() > max_buffer_size {
+        return Err(format_error(
+            format!(
+                "Input size ({} bytes) exceeds maximum allowed size ({} bytes)",
+                input.len(),
+                max_buffer_size
+            ),
+            source,
+        ));
+    }
+
     let mut rdr = ReaderBuilder::new()
         .has_headers(true)
         .delimiter(delimiter)
@@ -23,13 +53,14 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 
     let headers = rdr
         .headers()
-        .map_err(|e| format!("Failed to read headers: {}", e))?
+        .map_err(|e| format_error(format!("Failed to read headers: {}", e), source))?
         .clone();
 
     let mut records = Vec::new();
 
     for result in rdr.records() {
-        let record = result.map_err(|e| format!("Failed to read record: {}", e))?;
+        let record =
+            result.map_err(|e| format_error(format!("Failed to read record: {}", e), source))?;
         let json_record: serde_json::Value = headers
             .iter()
             .zip(record.iter())
@@ -39,7 +70,8 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
         records.push(json_record);
     }
 
-    serde_json::to_string(&records).map_err(|e| format!("Failed to serialize JSON: {}", e))
+    serde_json::to_string(&records)
+        .map_err(|e| format_error(format!("Failed to serialize JSON: {}", e), source))
 }
 
 /// Parse CSV string to array synchronously (WASM binding)
@@ -48,6 +80,8 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 ///
 /// * `input` - CSV string to parse
 /// * `delimiter` - Delimiter character (e.g., b',' for comma)
+/// * `max_buffer_size` - Maximum allowed input size in bytes
+/// * `source` - Optional source identifier for error reporting (e.g., filename). Pass empty string for None.
 ///
 /// # Returns
 ///
@@ -55,13 +89,16 @@ fn parse_csv_to_json(input: &str, delimiter: u8) -> Result<String, String> {
 ///
 /// # Errors
 ///
-/// Returns a JsError if parsing fails, which will be thrown as a JavaScript error.
+/// Returns a JsError if parsing fails or input size exceeds limit, which will be thrown as a JavaScript error.
 #[wasm_bindgen(js_name = parseStringToArraySync)]
 pub fn parse_string_to_array_sync(
     input: &str,
     delimiter: u8,
+    max_buffer_size: usize,
+    source: &str,
 ) -> Result<JsValue, wasm_bindgen::JsError> {
-    parse_csv_to_json(input, delimiter)
+    let source_opt = (!source.is_empty()).then_some(source);
+    parse_csv_to_json(input, delimiter, max_buffer_size, source_opt)
         .map(|json_str| JsValue::from_str(&json_str))
         .map_err(|err| wasm_bindgen::JsError::new(&err))
 }
@@ -74,7 +111,7 @@ mod tests {
     fn test_parse_simple_csv() {
         let input = ["name,age", "Alice,30", "Bob,25"].join("\n");
 
-        let result = parse_csv_to_json(&input, b',').unwrap();
+        let result = parse_csv_to_json(&input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -87,7 +124,7 @@ mod tests {
     #[test]
     fn test_parse_empty_csv() {
         let input = "name,age";
-        let result = parse_csv_to_json(input, b',').unwrap();
+        let result = parse_csv_to_json(input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 0);
@@ -102,7 +139,7 @@ mod tests {
         ]
         .join("\n");
 
-        let result = parse_csv_to_json(&input, b',').unwrap();
+        let result = parse_csv_to_json(&input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -116,7 +153,7 @@ mod tests {
     fn test_parse_csv_with_different_delimiter() {
         let input = ["name\tage", "Alice\t30", "Bob\t25"].join("\n");
 
-        let result = parse_csv_to_json(&input, b'\t').unwrap();
+        let result = parse_csv_to_json(&input, b'\t', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -128,7 +165,7 @@ mod tests {
     fn test_parse_csv_with_empty_fields() {
         let input = ["name,age,email", "Alice,30,", "Bob,,bob@example.com"].join("\n");
 
-        let result = parse_csv_to_json(&input, b',').unwrap();
+        let result = parse_csv_to_json(&input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -144,7 +181,7 @@ mod tests {
     fn test_parse_csv_with_single_column() {
         let input = ["name", "Alice", "Bob"].join("\n");
 
-        let result = parse_csv_to_json(&input, b',').unwrap();
+        let result = parse_csv_to_json(&input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -156,7 +193,7 @@ mod tests {
     fn test_parse_csv_with_unicode() {
         let input = ["名前,年齢", "太郎,30", "花子,25"].join("\n");
 
-        let result = parse_csv_to_json(&input, b',').unwrap();
+        let result = parse_csv_to_json(&input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
         assert_eq!(parsed.len(), 2);
@@ -171,7 +208,7 @@ mod tests {
         // Incomplete row - missing age for Bob
         let input = ["name,age", "Alice,30", "Bob"].join("\n");
 
-        let result = parse_csv_to_json(&input, b',');
+        let result = parse_csv_to_json(&input, b',', 10485760, None);
         // The csv crate will fail on incomplete rows by default
         assert!(result.is_err());
     }
@@ -179,7 +216,7 @@ mod tests {
     #[test]
     fn test_parse_empty_input() {
         let input = "";
-        let result = parse_csv_to_json(input, b',');
+        let result = parse_csv_to_json(input, b',', 10485760, None);
         // Empty input can be parsed as a CSV with no headers and no data
         // The csv crate treats this as valid
         assert!(result.is_ok());
@@ -190,9 +227,76 @@ mod tests {
     #[test]
     fn test_parse_headers_only() {
         let input = "name,age,email";
-        let result = parse_csv_to_json(input, b',').unwrap();
+        let result = parse_csv_to_json(input, b',', 10485760, None).unwrap();
         let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed.len(), 0);
+    }
+
+    #[test]
+    fn test_input_size_limit_exceeded() {
+        // Create a CSV that exceeds the size limit
+        let input = "a,b,c\n".repeat(100);
+        let max_buffer_size = 10; // Very small limit to ensure failure
+
+        let result = parse_csv_to_json(input.as_str(), b',', max_buffer_size, None);
+        assert!(result.is_err());
+
+        let error_message = result.unwrap_err();
+        assert!(error_message.contains("Input size"));
+        assert!(error_message.contains("exceeds maximum allowed size"));
+    }
+
+    #[test]
+    fn test_input_size_within_limit() {
+        let input = "name,age\nAlice,30";
+        let max_buffer_size = 1000;
+
+        let result = parse_csv_to_json(input, b',', max_buffer_size, None);
+        assert!(result.is_ok());
+
+        let parsed: Vec<Value> = serde_json::from_str(&result.unwrap()).unwrap();
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0]["name"], "Alice");
+    }
+
+    #[test]
+    fn test_error_with_source() {
+        let input = "name,age\nAlice,30\nBob"; // Incomplete row
+        let source = Some("test.csv");
+
+        let result = parse_csv_to_json(input, b',', 10485760, source);
+        assert!(result.is_err());
+
+        let error_message = result.unwrap_err();
+        assert!(error_message.contains("test.csv"));
+        assert!(error_message.contains("Failed to read record"));
+    }
+
+    #[test]
+    fn test_error_without_source() {
+        let input = "name,age\nAlice,30\nBob"; // Incomplete row
+
+        let result = parse_csv_to_json(input, b',', 10485760, None);
+        assert!(result.is_err());
+
+        let error_message = result.unwrap_err();
+        assert!(!error_message.contains("in \""));
+        assert!(error_message.contains("Failed to read record"));
+    }
+
+    #[test]
+    fn test_size_limit_error_with_source() {
+        let input = "a,b,c\n".repeat(100);
+        let max_buffer_size = 10;
+        let source = Some("large.csv");
+
+        let result = parse_csv_to_json(input.as_str(), b',', max_buffer_size, source);
+        assert!(result.is_err());
+
+        let error_message = result.unwrap_err();
+        assert!(error_message.contains("large.csv"));
+        assert!(error_message.contains("Input size"));
+        assert!(error_message.contains("exceeds maximum allowed size"));
     }
 }
 
@@ -206,7 +310,7 @@ mod wasm_tests {
     #[wasm_bindgen_test]
     fn test_parse_string_to_array_sync_success() {
         let input = "name,age\nAlice,30\nBob,25";
-        let result = parse_string_to_array_sync(input, b',');
+        let result = parse_string_to_array_sync(input, b',', 10485760, "");
         assert!(result.is_ok());
 
         let js_value = result.unwrap();
@@ -224,7 +328,7 @@ mod wasm_tests {
     fn test_parse_string_to_array_sync_error() {
         // Incomplete row - missing age for Bob
         let input = "name,age\nAlice,30\nBob";
-        let result = parse_string_to_array_sync(input, b',');
+        let result = parse_string_to_array_sync(input, b',', 10485760, "");
         assert!(result.is_err());
 
         let error = result.unwrap_err();
@@ -235,7 +339,7 @@ mod wasm_tests {
     #[wasm_bindgen_test]
     fn test_parse_string_to_array_sync_empty() {
         let input = "name,age";
-        let result = parse_string_to_array_sync(input, b',');
+        let result = parse_string_to_array_sync(input, b',', 10485760, "");
         assert!(result.is_ok());
 
         let js_value = result.unwrap();
@@ -249,7 +353,7 @@ mod wasm_tests {
         let input = r#"name,description
 Alice,"Hello, World"
 Bob,"Test ""quoted"" text""#;
-        let result = parse_string_to_array_sync(input, b',');
+        let result = parse_string_to_array_sync(input, b',', 10485760, "");
         assert!(result.is_ok());
 
         let js_value = result.unwrap();
@@ -266,7 +370,7 @@ Bob,"Test ""quoted"" text""#;
     #[wasm_bindgen_test]
     fn test_parse_string_to_array_sync_different_delimiter() {
         let input = "name\tage\nAlice\t30\nBob\t25";
-        let result = parse_string_to_array_sync(input, b'\t');
+        let result = parse_string_to_array_sync(input, b'\t', 10485760, "");
         assert!(result.is_ok());
 
         let js_value = result.unwrap();
@@ -276,5 +380,64 @@ Bob,"Test ""quoted"" text""#;
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0]["name"], "Alice");
         assert_eq!(parsed[0]["age"], "30");
+    }
+
+    #[wasm_bindgen_test]
+    fn test_parse_string_to_array_sync_size_limit_exceeded() {
+        // Create a CSV that exceeds the size limit
+        let input = "a,b,c\n".repeat(100);
+        let max_buffer_size = 10; // Very small limit to ensure failure
+
+        let result = parse_string_to_array_sync(input.as_str(), b',', max_buffer_size, "");
+        assert!(result.is_err());
+
+        let error = result.unwrap_err();
+        let error_message = format!("{:?}", error);
+        assert!(error_message.contains("Input size"));
+        assert!(error_message.contains("exceeds maximum allowed size"));
+    }
+
+    #[wasm_bindgen_test]
+    fn test_parse_string_to_array_sync_size_within_limit() {
+        let input = "name,age\nAlice,30";
+        let max_buffer_size = 1000;
+
+        let result = parse_string_to_array_sync(input, b',', max_buffer_size, "");
+        assert!(result.is_ok());
+
+        let js_value = result.unwrap();
+        let json_str = js_value.as_string().unwrap();
+        let parsed: Vec<serde_json::Value> = serde_json::from_str(&json_str).unwrap();
+
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0]["name"], "Alice");
+        assert_eq!(parsed[0]["age"], "30");
+    }
+
+    #[wasm_bindgen_test]
+    fn test_parse_string_to_array_sync_with_source() {
+        let input = "name,age\nAlice,30\nBob"; // Incomplete row
+        let result = parse_string_to_array_sync(input, b',', 10485760, "users.csv");
+        assert!(result.is_err());
+
+        let error = result.unwrap_err();
+        let error_message = format!("{:?}", error);
+        assert!(error_message.contains("users.csv"));
+        assert!(error_message.contains("Failed to read record"));
+    }
+
+    #[wasm_bindgen_test]
+    fn test_parse_string_to_array_sync_size_limit_with_source() {
+        let input = "a,b,c\n".repeat(100);
+        let max_buffer_size = 10;
+
+        let result = parse_string_to_array_sync(input.as_str(), b',', max_buffer_size, "large.csv");
+        assert!(result.is_err());
+
+        let error = result.unwrap_err();
+        let error_message = format!("{:?}", error);
+        assert!(error_message.contains("large.csv"));
+        assert!(error_message.contains("Input size"));
+        assert!(error_message.contains("exceeds maximum allowed size"));
     }
 }
