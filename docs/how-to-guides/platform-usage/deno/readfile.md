@@ -1,3 +1,8 @@
+---
+title: Deno - Deno.readFile
+group: Platform Usage
+---
+
 # Deno.readFile
 
 Read and parse CSV files using Deno's file API.

@@ -1,3 +1,8 @@
+---
+title: WASM Performance Optimization
+group: How-to Guides
+---
+
 # WASM Performance Optimization
 
 This guide shows you how to maximize CSV parsing performance using WebAssembly in web-csv-toolbox.
@@ -116,7 +121,7 @@ for await (const record of parse(csv, {
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   console.log(record);
 }
@@ -173,7 +178,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   await processRecord(record); // Async operation
   // Wait for each record to complete
@@ -191,7 +196,7 @@ const BATCH_SIZE = 1000;
 let batch: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   batch.push(record);
 
@@ -278,7 +283,7 @@ await Promise.all(
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   // ❌ Creates new object for each record
   const transformed = {
@@ -301,7 +306,7 @@ for await (const record of parse(csv, {
 const results: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   // ✅ Modify record in-place
   (record as any).fullName = `${record.firstName} ${record.lastName}`;
@@ -322,7 +327,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Default: 10MB
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   console.log(record);
 }
@@ -371,7 +376,7 @@ for await (const record of parse(csv, {
 const records = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   records.push(record);
 }
@@ -388,7 +393,7 @@ processAllRecords(records); // High memory usage
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   // Process immediately
   await processRecord(record);
@@ -463,7 +468,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   // ❌ Expensive validation on every record
   const validated = schema.parse(record);
@@ -487,7 +492,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   // ✅ Quick check first
   if (record.age && Number(record.age) > 0) {
@@ -519,7 +524,7 @@ async function benchmark(csv: string, label: string) {
   let count = 0;
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.fastest
+    engine: EnginePresets.fastest()
   })) {
     count++;
   }
@@ -558,7 +563,7 @@ for await (const record of parse(csv, {
 
 // Benchmark Worker + WASM
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.fastest()
 })) {
   count++;
 }

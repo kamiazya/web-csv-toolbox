@@ -1,3 +1,8 @@
+---
+title: Worker Pool Architecture
+group: Explanation
+---
+
 # Worker Pool Architecture
 
 This document explains how worker pool management works in web-csv-toolbox and why two different pool implementations exist.

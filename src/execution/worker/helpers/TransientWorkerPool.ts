@@ -8,7 +8,7 @@ export interface TransientWorkerPoolOptions {
   /**
    * Custom worker URL to use for all workers in the pool.
    */
-  workerURL?: string | URL;
+  workerURL?: string | URL | undefined;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface TransientWorkerPoolOptions {
  */
 export class TransientWorkerPool implements WorkerPool, Disposable {
   private requestId = 0;
-  private readonly customWorkerURL?: string | URL;
+  private readonly customWorkerURL?: string | URL | undefined;
 
   /**
    * Create a new TransientWorkerPool.

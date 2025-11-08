@@ -1,3 +1,8 @@
+---
+title: Browser - Drag and Drop
+group: Platform Usage
+---
+
 # Drag and Drop
 
 Handle CSV files dropped onto a designated area.

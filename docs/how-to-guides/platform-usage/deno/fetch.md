@@ -1,3 +1,8 @@
+---
+title: Deno - fetch API
+group: Platform Usage
+---
+
 # fetch API
 
 Deno has built-in fetch support.

@@ -1,3 +1,8 @@
+---
+title: WebAssembly Architecture
+group: Explanation
+---
+
 # WebAssembly Architecture
 
 This document explains the WebAssembly (WASM) implementation in web-csv-toolbox and how it achieves high-performance CSV parsing.

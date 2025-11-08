@@ -1,3 +1,8 @@
+---
+title: Versioning Policy
+group: Reference
+---
+
 # Versioning Policy
 
 This document outlines the versioning strategy for web-csv-toolbox and what users can expect from version updates.

@@ -55,4 +55,33 @@ describe("parseMime function", () => {
       },
     });
   });
+
+  it("should throw TypeError for empty content type", () => {
+    expect(() => parseMime("")).toThrow(TypeError);
+    expect(() => parseMime("")).toThrow("Invalid content type");
+  });
+
+  it("should skip parameters without values", () => {
+    const result = parseMime(
+      "text/csv; charset=utf-8; invalid; header=present",
+    );
+    expect(result).toEqual({
+      type: "text/csv",
+      parameters: {
+        charset: "utf-8",
+        header: "present",
+      },
+    });
+  });
+
+  it("should skip parameters without keys", () => {
+    const result = parseMime("text/csv; charset=utf-8; =value; header=present");
+    expect(result).toEqual({
+      type: "text/csv",
+      parameters: {
+        charset: "utf-8",
+        header: "present",
+      },
+    });
+  });
 });

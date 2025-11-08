@@ -1,3 +1,8 @@
+---
+title: Choosing the Right API
+group: How-to Guides
+---
+
 # Choosing the Right API
 
 This guide helps you select the appropriate API for your CSV parsing needs in web-csv-toolbox.

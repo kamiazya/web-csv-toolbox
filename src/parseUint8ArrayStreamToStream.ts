@@ -13,6 +13,11 @@ export function parseUint8ArrayStreamToStream<
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): ReadableStream<CSVRecord<Header>> {
   const { charset, fatal, ignoreBOM, decompression } = options ?? {};
+
+  const decoderOptions: TextDecoderOptions = {};
+  if (fatal !== undefined) decoderOptions.fatal = fatal;
+  if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
+
   return decompression
     ? pipeline(
         stream,
@@ -20,19 +25,19 @@ export function parseUint8ArrayStreamToStream<
           Uint8Array,
           Uint8Array
         >,
-        new TextDecoderStream(charset, {
-          fatal,
-          ignoreBOM,
-        }) as unknown as TransformStream<Uint8Array, string>,
+        new TextDecoderStream(
+          charset,
+          decoderOptions,
+        ) as unknown as TransformStream<Uint8Array, string>,
         new CSVLexerTransformer(options),
         new CSVRecordAssemblerTransformer(options),
       )
     : pipeline(
         stream,
-        new TextDecoderStream(charset, {
-          fatal,
-          ignoreBOM,
-        }) as unknown as TransformStream<Uint8Array, string>,
+        new TextDecoderStream(
+          charset,
+          decoderOptions,
+        ) as unknown as TransformStream<Uint8Array, string>,
         new CSVLexerTransformer(options),
         new CSVRecordAssemblerTransformer(options),
       );

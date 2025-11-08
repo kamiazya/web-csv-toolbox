@@ -1,3 +1,8 @@
+---
+title: Package Exports Reference
+group: Reference
+---
+
 # Package Exports Reference
 
 ## Main Export

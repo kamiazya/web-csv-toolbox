@@ -8,12 +8,12 @@ export interface WorkerSessionOptions {
   /**
    * Custom worker URL.
    */
-  workerURL?: string | URL;
+  workerURL?: string | URL | undefined;
 
   /**
    * Worker pool for reusable workers.
    */
-  workerPool?: WorkerPool;
+  workerPool?: WorkerPool | undefined;
 }
 
 /**
@@ -54,7 +54,7 @@ export interface WorkerSessionOptions {
 export class WorkerSession implements Disposable {
   private worker: Worker;
   private requestIdCounter = 0;
-  private readonly workerPool?: WorkerPool;
+  private readonly workerPool?: WorkerPool | undefined;
 
   private constructor(worker: Worker, workerPool?: WorkerPool) {
     this.worker = worker;
