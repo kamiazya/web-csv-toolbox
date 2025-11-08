@@ -1,3 +1,8 @@
+---
+title: CSV Parsing Architecture
+group: Explanation
+---
+
 # CSV Parsing Architecture
 
 This document explains the internal architecture of web-csv-toolbox's CSV parsing system and how the low-level APIs work together.

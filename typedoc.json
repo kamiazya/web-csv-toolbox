@@ -1,12 +1,42 @@
 {
-  "entryPoints": ["src/web-csv-toolbox.ts"],
+  "entryPoints": [
+    "src/web-csv-toolbox.ts"
+  ],
   "out": "doc",
-  "plugin": ["typedoc-plugin-mdn-links"],
+  "plugin": [
+    "typedoc-plugin-mdn-links"
+  ],
+  "projectDocuments": [
+    "docs/tutorials/*.md",
+    "docs/how-to-guides/*.md",
+    "docs/how-to-guides/platform-usage/**/*.md",
+    "docs/explanation/*.md",
+    "docs/reference/*.md"
+  ],
+  "includeVersion": true,
+  "sort": [
+    "kind",
+    "instance-first",
+    "alphabetical"
+  ],
+  "navigation": {
+    "includeCategories": true,
+    "includeGroups": true,
+    "includeFolders": true,
+    "compactFolders": true
+  },
+  "sidebarLinks": {
+    "GitHub": "https://github.com/kamiazya/web-csv-toolbox",
+    "npm": "https://www.npmjs.com/package/web-csv-toolbox"
+  },
+  "navigationLinks": {
+    "GitHub": "https://github.com/kamiazya/web-csv-toolbox"
+  },
   "categoryOrder": [
-    "Types",
-    "Constants",
     "High-level API",
     "Middle-level API",
     "Low-level API",
+    "Types",
+    "Constants"
   ]
 }

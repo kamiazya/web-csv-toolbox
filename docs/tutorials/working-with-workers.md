@@ -1,3 +1,8 @@
+---
+title: Working with Workers
+group: Tutorials
+---
+
 # Working with Workers
 
 This tutorial will guide you through using web-csv-toolbox's worker thread execution to improve performance and maintain UI responsiveness.

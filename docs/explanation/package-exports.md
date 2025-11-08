@@ -1,3 +1,8 @@
+---
+title: Package Exports and Environment Detection
+group: Explanation
+---
+
 # Package Exports and Environment Detection
 
 This document explains how `web-csv-toolbox` uses Node.js package exports to provide environment-specific implementations.

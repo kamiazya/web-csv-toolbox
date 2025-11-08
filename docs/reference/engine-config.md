@@ -1,3 +1,8 @@
+---
+title: Engine Configuration Reference
+group: Reference
+---
+
 # Engine Configuration Reference
 
 Complete reference for the `engine` configuration option.

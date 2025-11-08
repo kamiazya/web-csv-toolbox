@@ -1,3 +1,8 @@
+---
+title: Deno - Deno.open
+group: Platform Usage
+---
+
 # Deno.open
 
 Stream large files efficiently using Deno.open.

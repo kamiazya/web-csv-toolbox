@@ -22,12 +22,12 @@ export interface ReusableWorkerPoolOptions {
    * const pool = new ReusableReusableWorkerPool({ maxWorkers: 4 });
    * ```
    */
-  maxWorkers?: number;
+  maxWorkers?: number | undefined;
 
   /**
    * Custom worker URL to use for all workers in the pool.
    */
-  workerURL?: string | URL;
+  workerURL?: string | URL | undefined;
 }
 
 /**
@@ -132,7 +132,7 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
   private requestId = 0;
   private currentWorkerIndex = 0;
   private readonly maxWorkers: number;
-  private readonly customWorkerURL?: string | URL;
+  private readonly customWorkerURL?: string | URL | undefined;
   private pendingWorkerCreations: Map<string, Promise<Worker>> = new Map();
   private pendingCreationsByURL: Map<string, Set<string>> = new Map();
   private disposed = false;
@@ -229,9 +229,11 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
       if (urlPendings && urlPendings.size > 0) {
         // Wait for one of the pending workers with this URL
         const pendingId = Array.from(urlPendings)[0];
-        const pendingWorker = this.pendingWorkerCreations.get(pendingId);
-        if (pendingWorker) {
-          return pendingWorker;
+        if (pendingId !== undefined) {
+          const pendingWorker = this.pendingWorkerCreations.get(pendingId);
+          if (pendingWorker) {
+            return pendingWorker;
+          }
         }
       }
 
@@ -244,17 +246,19 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
     const urlPendings = this.pendingCreationsByURL.get(urlKey);
     if (urlPendings && urlPendings.size > 0) {
       const pendingId = Array.from(urlPendings)[0];
-      const pendingWorker = this.pendingWorkerCreations.get(pendingId);
-      if (pendingWorker) {
-        await pendingWorker;
-        // Re-fetch matching workers as the pending creation may have completed
-        const updatedMatchingWorkers = this.workers.filter(
-          (entry) => entry.url === urlKey,
-        );
-        if (updatedMatchingWorkers.length === 0) {
-          throw new Error(
-            `Worker pool was disposed or worker creation failed for URL "${urlKey}"`,
+      if (pendingId !== undefined) {
+        const pendingWorker = this.pendingWorkerCreations.get(pendingId);
+        if (pendingWorker) {
+          await pendingWorker;
+          // Re-fetch matching workers as the pending creation may have completed
+          const updatedMatchingWorkers = this.workers.filter(
+            (entry) => entry.url === urlKey,
           );
+          if (updatedMatchingWorkers.length === 0) {
+            throw new Error(
+              `Worker pool was disposed or worker creation failed for URL "${urlKey}"`,
+            );
+          }
         }
       }
     }
@@ -273,8 +277,17 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
       }
     }
 
+    if (selectedIndex === undefined) {
+      throw new Error(`No matching worker found for URL "${urlKey}"`);
+    }
+
+    const worker = this.workers[selectedIndex];
+    if (!worker) {
+      throw new Error(`Worker at index ${selectedIndex} not found`);
+    }
+
     this.currentWorkerIndex = (selectedIndex + 1) % this.workers.length;
-    return this.workers[selectedIndex].worker;
+    return worker.worker;
   }
 
   /**

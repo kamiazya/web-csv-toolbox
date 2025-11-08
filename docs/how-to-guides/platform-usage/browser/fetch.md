@@ -1,3 +1,8 @@
+---
+title: Browser - Fetch API
+group: Platform Usage
+---
+
 # Fetch API
 
 Parse CSV files from remote URLs.

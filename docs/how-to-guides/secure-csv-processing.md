@@ -1,3 +1,8 @@
+---
+title: Secure CSV Processing
+group: How-to Guides
+---
+
 # How-To: Secure CSV Processing
 
 ## Problem

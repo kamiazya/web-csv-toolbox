@@ -18,8 +18,8 @@ export interface WorkerMessage {
   id: number;
   type: string;
   data: string | CSVBinary | ReadableStream<string>;
-  options?: Record<string, unknown>;
-  useWASM?: boolean;
+  options?: Record<string, unknown> | undefined;
+  useWASM?: boolean | undefined;
 }
 
 /**

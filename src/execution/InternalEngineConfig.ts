@@ -26,9 +26,9 @@ export enum EngineFlags {
  */
 export class InternalEngineConfig {
   private bitmask = 0;
-  readonly workerURL?: string | URL;
-  readonly workerPool?: WorkerPool;
-  readonly onFallback?: (info: EngineFallbackInfo) => void;
+  readonly workerURL?: string | URL | undefined;
+  readonly workerPool?: WorkerPool | undefined;
+  readonly onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
 
   constructor(config?: EngineConfig) {
     if (config) {
@@ -56,10 +56,14 @@ export class InternalEngineConfig {
   ): InternalEngineConfig {
     const instance = Object.create(InternalEngineConfig.prototype);
     instance.bitmask = bitmask;
-    (instance as { workerURL?: string | URL }).workerURL = workerURL;
-    (instance as { workerPool?: WorkerPool }).workerPool = workerPool;
+    (instance as { workerURL?: string | URL | undefined }).workerURL =
+      workerURL;
+    (instance as { workerPool?: WorkerPool | undefined }).workerPool =
+      workerPool;
     (
-      instance as { onFallback?: (info: EngineFallbackInfo) => void }
+      instance as {
+        onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+      }
     ).onFallback = onFallback;
     return instance;
   }

@@ -1,3 +1,8 @@
+---
+title: Using WebAssembly
+group: Tutorials
+---
+
 # Using WebAssembly for CSV Parsing
 
 This tutorial will guide you through using web-csv-toolbox's WebAssembly (WASM) acceleration to improve CSV parsing performance.

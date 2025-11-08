@@ -1,3 +1,8 @@
+---
+title: Node.js - stdin/stdout
+group: Platform Usage
+---
+
 # stdin/stdout
 
 Process CSV from stdin and output to stdout.
