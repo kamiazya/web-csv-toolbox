@@ -1,6 +1,6 @@
 import fc from "fast-check";
 import { beforeAll, describe, expect, it } from "vitest";
-import { autoChunk, FC } from "./__tests__/helper.ts";
+import { autoChunk, autoChunkBytes, FC } from "./__tests__/helper.ts";
 import { loadWASM } from "./loadWASM.ts";
 import { WASMBinaryCSVStreamTransformer } from "./WASMBinaryCSVStreamTransformer.ts";
 import { WASMCSVStreamTransformer } from "./WASMCSVStreamTransformer.ts";
@@ -168,13 +168,13 @@ describe.skipIf(typeof window === "undefined")(
               const expectedData = csvData.map((row) =>
                 Object.fromEntries(row.map((v, i) => [header[i], v])),
               );
-              // Generate random chunks
-              const chunks = autoChunk(g, csv, 1);
-              return { expectedData, chunks };
-            }),
-            async ({ expectedData, chunks }) => {
+              // Encode to bytes first, then chunk to avoid UTF-16 surrogate pair splitting
               const encoder = new TextEncoder();
-              const byteChunks = chunks.map((chunk) => encoder.encode(chunk));
+              const allBytes = encoder.encode(csv);
+              const byteChunks = autoChunkBytes(g, allBytes, 1);
+              return { expectedData, byteChunks };
+            }),
+            async ({ expectedData, byteChunks }) => {
 
               const stream = new ReadableStream({
                 start(controller) {
@@ -443,6 +443,215 @@ describe.skipIf(typeof window === "undefined")(
 
       it("should handle quoted fields with special characters", async () => {
         const csv = '"a,b","c\nd","e""f"';
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(csv);
+
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(bytes);
+            controller.close();
+          },
+        });
+
+        const records = [];
+        for await (const record of stream.pipeThrough(
+          new WASMBinaryCSVStreamTransformer(),
+        )) {
+          records.push(record);
+        }
+
+        expect(records).toEqual([]);
+      });
+    });
+
+    describe("Edge cases and special characters", () => {
+      it("should handle NULL bytes in fields", () =>
+        fc.assert(
+          fc.asyncProperty(
+            fc.gen().map((g) => {
+              // Create CSV with NULL bytes in field values
+              const header = ["field1", "field2", "field3"];
+              const csvData = [
+                ["value\x00with\x00nulls", "normal", "data\x00"],
+                ["another", "row\x00", "here"],
+              ];
+              const csv = [
+                header.map((v) => escapeField(v, { quote: true })).join(","),
+                ...csvData.map((row) =>
+                  row.map((v) => escapeField(v, { quote: true })).join(","),
+                ),
+              ].join("\n");
+              const expectedData = csvData.map((row) =>
+                Object.fromEntries(row.map((v, i) => [header[i], v])),
+              );
+              return { expectedData, csv };
+            }),
+            async ({ expectedData, csv }) => {
+              const encoder = new TextEncoder();
+              const bytes = encoder.encode(csv);
+
+              const stream = new ReadableStream({
+                start(controller) {
+                  controller.enqueue(bytes);
+                  controller.close();
+                },
+              });
+
+              const records = [];
+              for await (const record of stream.pipeThrough(
+                new WASMBinaryCSVStreamTransformer(),
+              )) {
+                records.push(record);
+              }
+
+              expect(records).toEqual(expectedData);
+            },
+          ),
+          { numRuns: 10 },
+        ));
+
+      it("should handle very long field values", () =>
+        fc.assert(
+          fc.asyncProperty(
+            fc.gen().map((g) => {
+              // Generate field values with 10KB+ of data
+              const longValue = "a".repeat(10000);
+              const header = ["short", "long", "medium"];
+              const csvData = [
+                ["x", longValue, "y"],
+                [longValue, "short", longValue],
+              ];
+              const csv = [
+                header.map((v) => escapeField(v, { quote: true })).join(","),
+                ...csvData.map((row) =>
+                  row.map((v) => escapeField(v, { quote: true })).join(","),
+                ),
+              ].join("\n");
+              const expectedData = csvData.map((row) =>
+                Object.fromEntries(row.map((v, i) => [header[i], v])),
+              );
+              return { expectedData, csv };
+            }),
+            async ({ expectedData, csv }) => {
+              const encoder = new TextEncoder();
+              const bytes = encoder.encode(csv);
+
+              const stream = new ReadableStream({
+                start(controller) {
+                  controller.enqueue(bytes);
+                  controller.close();
+                },
+              });
+
+              const records = [];
+              for await (const record of stream.pipeThrough(
+                new WASMBinaryCSVStreamTransformer(),
+              )) {
+                records.push(record);
+              }
+
+              expect(records).toEqual(expectedData);
+            },
+          ),
+          { numRuns: 5 },
+        ));
+
+      it("should handle many consecutive quotes", async () => {
+        const csv = '"a","b""""""c","d"';
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(csv);
+
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(bytes);
+            controller.close();
+          },
+        });
+
+        const records = [];
+        for await (const record of stream.pipeThrough(
+          new WASMBinaryCSVStreamTransformer(),
+        )) {
+          records.push(record);
+        }
+
+        expect(records).toEqual([]);
+      });
+
+      it("should handle CSV with many empty fields", () =>
+        fc.assert(
+          fc.asyncProperty(
+            fc.gen().map((g) => {
+              const header = ["a", "b", "c", "d", "e"];
+              const csvData = [
+                ["", "", "", "", ""],
+                ["x", "", "", "", ""],
+                ["", "", "", "", "y"],
+                ["", "mid", "", "", ""],
+              ];
+              const csv = [
+                header.map((v) => escapeField(v, { quote: true })).join(","),
+                ...csvData.map((row) =>
+                  row.map((v) => escapeField(v, { quote: true })).join(","),
+                ),
+              ].join("\n");
+              const expectedData = csvData.map((row) =>
+                Object.fromEntries(row.map((v, i) => [header[i], v])),
+              );
+              return { expectedData, csv };
+            }),
+            async ({ expectedData, csv }) => {
+              const encoder = new TextEncoder();
+              const bytes = encoder.encode(csv);
+
+              const stream = new ReadableStream({
+                start(controller) {
+                  controller.enqueue(bytes);
+                  controller.close();
+                },
+              });
+
+              const records = [];
+              for await (const record of stream.pipeThrough(
+                new WASMBinaryCSVStreamTransformer(),
+              )) {
+                records.push(record);
+              }
+
+              expect(records).toEqual(expectedData);
+            },
+          ),
+          { numRuns: 20 },
+        ));
+
+      it("should handle BOM (Byte Order Mark) at start", async () => {
+        const csv = "\uFEFFname,age\nAlice,30\nBob,25";
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(csv);
+
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(bytes);
+            controller.close();
+          },
+        });
+
+        const records = [];
+        for await (const record of stream.pipeThrough(
+          new WASMBinaryCSVStreamTransformer(),
+        )) {
+          records.push(record);
+        }
+
+        // BOM should be part of the first header field
+        expect(records).toEqual([
+          { "\uFEFFname": "Alice", age: "30" },
+          { "\uFEFFname": "Bob", age: "25" },
+        ]);
+      });
+
+      it("should handle mixed whitespace characters", async () => {
+        const csv = '"a\\tb","c \\r d","e\\n\\nf"';
         const encoder = new TextEncoder();
         const bytes = encoder.encode(csv);
 

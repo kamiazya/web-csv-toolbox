@@ -308,3 +308,24 @@ export function autoChunk(
   }
   return chunks;
 }
+
+/**
+ * Auto-chunk a Uint8Array into random-sized chunks.
+ * This avoids the UTF-16 surrogate pair splitting issue that can occur with string chunking.
+ */
+export function autoChunkBytes(
+  gen: fc.GeneratorValue,
+  bytes: Uint8Array,
+  minLength = 0,
+): Uint8Array[] {
+  const chunks: Uint8Array[] = [];
+  for (let cur = 0; cur < bytes.length; ) {
+    const next = gen(fc.integer, {
+      min: Math.min(cur + minLength, bytes.length),
+      max: bytes.length,
+    });
+    chunks.push(bytes.slice(cur, next));
+    cur = next;
+  }
+  return chunks;
+}

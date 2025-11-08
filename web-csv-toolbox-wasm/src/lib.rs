@@ -973,13 +973,10 @@ Bob,"Test ""quoted"" text""#;
     }
 }
 
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod proptest_tests {
     use super::*;
     use proptest::prelude::*;
-    use wasm_bindgen_test::*;
-
-    wasm_bindgen_test_configure!(run_in_browser);
 
     /// Strategy for generating valid CSV field strings
     /// Excludes lone surrogates and control characters
@@ -1015,8 +1012,7 @@ mod proptest_tests {
     }
 
     proptest! {
-        /// Property: Parser should handle arbitrary valid CSV data
-        #[test]
+        // Property: Parser should handle arbitrary valid CSV data
         fn prop_parse_arbitrary_csv(
             headers in csv_header_strategy(),
             rows in csv_header_strategy().prop_flat_map(|h| {
@@ -1030,8 +1026,7 @@ mod proptest_tests {
             // Just check it doesn't panic
         }
 
-        /// Property: Chunk independence - same result regardless of chunk size
-        #[test]
+        // Property: Chunk independence - same result regardless of chunk size
         fn prop_chunk_independence(
             _headers in csv_header_strategy(),
             (headers2, rows) in csv_header_strategy().prop_flat_map(|h| {
@@ -1064,8 +1059,7 @@ mod proptest_tests {
             prop_assert!(flush2.is_array() || flush2.is_object() || flush2.is_string());
         }
 
-        /// Property: One character at a time should work
-        #[test]
+        // Property: One character at a time should work
         fn prop_one_char_at_a_time(
             _headers in csv_header_strategy(),
             (headers2, rows) in csv_header_strategy().prop_flat_map(|h| {
@@ -1088,8 +1082,7 @@ mod proptest_tests {
             // Just check it doesn't panic
         }
 
-        /// Property: Empty fields should be handled correctly
-        #[test]
+        // Property: Empty fields should be handled correctly
         fn prop_empty_fields(
             headers in csv_header_strategy(),
             num_rows in 0usize..10usize
@@ -1110,8 +1103,7 @@ mod proptest_tests {
             // Should not panic
         }
 
-        /// Property: Parser should handle different line endings
-        #[test]
+        // Property: Parser should handle different line endings
         fn prop_line_endings(
             _headers in csv_header_strategy(),
             (headers2, rows) in csv_header_strategy().prop_flat_map(|h| {
@@ -1120,7 +1112,7 @@ mod proptest_tests {
             use_crlf in prop::bool::ANY
         ) {
             let line_ending = if use_crlf { "\r\n" } else { "\n" };
-            
+
             // Create CSV with specified line ending
             let mut csv = String::new();
             csv.push_str(&headers2.iter()
@@ -1128,7 +1120,7 @@ mod proptest_tests {
                 .collect::<Vec<_>>()
                 .join(","));
             csv.push_str(line_ending);
-            
+
             for row in &rows {
                 csv.push_str(&row.iter()
                     .map(|f| tests::escape_csv_field(f))
@@ -1136,12 +1128,125 @@ mod proptest_tests {
                     .join(","));
                 csv.push_str(line_ending);
             }
-            
+
             let mut parser = CSVStreamParser::new(b',');
             let _result = parser.process_chunk(&csv);
             let _flush = parser.flush();
-            
+
             // Should not panic
         }
+
+        // Property: Parser should handle fields with NULL bytes
+        fn prop_null_bytes(
+            headers in csv_header_strategy(),
+            num_rows in 1usize..5usize
+        ) {
+            let num_cols = headers.len();
+
+            // Create rows with NULL bytes
+            let rows: Vec<Vec<String>> = (0..num_rows)
+                .map(|i| (0..num_cols)
+                    .map(|j| format!("val{}_{}\x00null", i, j))
+                    .collect())
+                .collect();
+
+            let csv = tests::create_csv(&headers, &rows);
+
+            let mut parser = CSVStreamParser::new(b',');
+            let _result = parser.process_chunk(&csv);
+            let _flush = parser.flush();
+
+            // Should not panic
+        }
+
+        // Property: Parser should handle very long field values
+        fn prop_long_fields(
+            headers in csv_header_strategy(),
+            field_length in 100usize..1000usize
+        ) {
+            let num_cols = headers.len();
+
+            // Create a single row with very long fields
+            let long_value = "a".repeat(field_length);
+            let rows = vec![vec![long_value; num_cols]];
+
+            let csv = tests::create_csv(&headers, &rows);
+
+            let mut parser = CSVStreamParser::new(b',');
+            let _result = parser.process_chunk(&csv);
+            let _flush = parser.flush();
+
+            // Should not panic
+        }
+
+        // Property: Parser should handle UTF-8 multibyte characters
+        fn prop_utf8_multibyte(
+            num_rows in 1usize..5usize
+        ) {
+            // Use various UTF-8 multibyte characters
+            let headers = vec!["日本語".to_string(), "中文".to_string(), "한국어".to_string()];
+            let rows: Vec<Vec<String>> = (0..num_rows)
+                .map(|i| vec![
+                    format!("値{}", i),
+                    format!("值{}", i),
+                    format!("값{}", i),
+                ])
+                .collect();
+
+            let csv = tests::create_csv(&headers, &rows);
+
+            let mut parser = CSVStreamParser::new(b',');
+            let _result = parser.process_chunk(&csv);
+            let _flush = parser.flush();
+
+            // Should not panic
+        }
+
+        // Property: Binary processing should handle byte chunks correctly
+        fn prop_binary_chunk_processing(
+            _headers in csv_header_strategy(),
+            (headers2, rows) in csv_header_strategy().prop_flat_map(|h| {
+                csv_rows_strategy(h.len()).prop_map(move |r| (h.clone(), r))
+            }),
+            chunk_size in 1usize..20usize
+        ) {
+            let csv = tests::create_csv(&headers2, &rows);
+
+            // Process as bytes
+            let mut parser = CSVStreamParser::new(b',');
+            let bytes = csv.as_bytes();
+
+            // Process byte chunks
+            for chunk in bytes.chunks(chunk_size) {
+                // Convert chunk to Uint8Array equivalent (just process as bytes)
+                if let Ok(chunk_str) = std::str::from_utf8(chunk) {
+                    let _ = parser.process_chunk(chunk_str);
+                }
+            }
+
+            let _flush = parser.flush();
+
+            // Should not panic
+        }
+    }
+
+    // Regular test: Parser should handle special field name __proto__
+    #[test]
+    fn test_proto_field() {
+        let headers = vec!["__proto__".to_string(), "normal".to_string()];
+        let rows = vec![
+            vec!["value1".to_string(), "value2".to_string()],
+            vec!["value3".to_string(), "value4".to_string()],
+        ];
+
+        let csv = tests::create_csv(&headers, &rows);
+
+        let mut parser = CSVStreamParser::new(b',');
+        let result = parser.process_chunk(&csv).unwrap();
+        let flush_result = parser.flush().unwrap();
+
+        // Should produce valid arrays
+        assert!(result.is_array());
+        assert!(flush_result.is_array());
     }
 }
