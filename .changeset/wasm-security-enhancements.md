@@ -47,13 +47,6 @@ TypeScript (`src/parseStringToArraySyncWASM.ts`):
 - Updated to pass `maxBufferSize` from options to WASM function
 - Updated to pass `source` from options to WASM function
 
-**Test Coverage:**
-
-- Added 8 new tests covering input size validation and source error reporting
-- All 15 Rust unit tests passing
-- All 18 WASM binding tests passing
-- All 8 TypeScript tests passing
-
 **Breaking Changes:** None - this is a backward-compatible enhancement with sensible defaults.
 
 **Migration:** No action required. Existing code continues to work without modification.
