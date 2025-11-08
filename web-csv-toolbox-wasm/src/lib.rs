@@ -97,7 +97,7 @@ pub fn parse_string_to_array_sync(
     max_buffer_size: usize,
     source: &str,
 ) -> Result<JsValue, wasm_bindgen::JsError> {
-    let source_opt = if source.is_empty() { None } else { Some(source) };
+    let source_opt = (!source.is_empty()).then_some(source);
     parse_csv_to_json(input, delimiter, max_buffer_size, source_opt)
         .map(|json_str| JsValue::from_str(&json_str))
         .map_err(|err| wasm_bindgen::JsError::new(&err))
@@ -238,7 +238,7 @@ mod tests {
         let input = "a,b,c\n".repeat(100);
         let max_buffer_size = 10; // Very small limit to ensure failure
 
-        let result = parse_csv_to_json(&input, b',', max_buffer_size, None);
+        let result = parse_csv_to_json(input.as_str(), b',', max_buffer_size, None);
         assert!(result.is_err());
 
         let error_message = result.unwrap_err();
@@ -251,7 +251,7 @@ mod tests {
         let input = "name,age\nAlice,30";
         let max_buffer_size = 1000;
 
-        let result = parse_csv_to_json(&input, b',', max_buffer_size, None);
+        let result = parse_csv_to_json(input, b',', max_buffer_size, None);
         assert!(result.is_ok());
 
         let parsed: Vec<Value> = serde_json::from_str(&result.unwrap()).unwrap();
@@ -264,7 +264,7 @@ mod tests {
         let input = "name,age\nAlice,30\nBob"; // Incomplete row
         let source = Some("test.csv");
 
-        let result = parse_csv_to_json(&input, b',', 10485760, source);
+        let result = parse_csv_to_json(input, b',', 10485760, source);
         assert!(result.is_err());
 
         let error_message = result.unwrap_err();
@@ -276,7 +276,7 @@ mod tests {
     fn test_error_without_source() {
         let input = "name,age\nAlice,30\nBob"; // Incomplete row
 
-        let result = parse_csv_to_json(&input, b',', 10485760, None);
+        let result = parse_csv_to_json(input, b',', 10485760, None);
         assert!(result.is_err());
 
         let error_message = result.unwrap_err();
@@ -290,7 +290,7 @@ mod tests {
         let max_buffer_size = 10;
         let source = Some("large.csv");
 
-        let result = parse_csv_to_json(&input, b',', max_buffer_size, source);
+        let result = parse_csv_to_json(input.as_str(), b',', max_buffer_size, source);
         assert!(result.is_err());
 
         let error_message = result.unwrap_err();
@@ -388,7 +388,7 @@ Bob,"Test ""quoted"" text""#;
         let input = "a,b,c\n".repeat(100);
         let max_buffer_size = 10; // Very small limit to ensure failure
 
-        let result = parse_string_to_array_sync(&input, b',', max_buffer_size, "");
+        let result = parse_string_to_array_sync(input.as_str(), b',', max_buffer_size, "");
         assert!(result.is_err());
 
         let error = result.unwrap_err();
@@ -431,7 +431,7 @@ Bob,"Test ""quoted"" text""#;
         let input = "a,b,c\n".repeat(100);
         let max_buffer_size = 10;
 
-        let result = parse_string_to_array_sync(&input, b',', max_buffer_size, "large.csv");
+        let result = parse_string_to_array_sync(input.as_str(), b',', max_buffer_size, "large.csv");
         assert!(result.is_err());
 
         let error = result.unwrap_err();
