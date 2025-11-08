@@ -59,7 +59,8 @@ fn parse_csv_to_json(
     let mut records = Vec::new();
 
     for result in rdr.records() {
-        let record = result.map_err(|e| format_error(format!("Failed to read record: {}", e), source))?;
+        let record =
+            result.map_err(|e| format_error(format!("Failed to read record: {}", e), source))?;
         let json_record: serde_json::Value = headers
             .iter()
             .zip(record.iter())
@@ -69,9 +70,8 @@ fn parse_csv_to_json(
         records.push(json_record);
     }
 
-    serde_json::to_string(&records).map_err(|e| {
-        format_error(format!("Failed to serialize JSON: {}", e), source)
-    })
+    serde_json::to_string(&records)
+        .map_err(|e| format_error(format!("Failed to serialize JSON: {}", e), source))
 }
 
 /// Parse CSV string to array synchronously (WASM binding)
