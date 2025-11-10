@@ -161,7 +161,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.4",
     "@vitest/browser-webdriverio": "^4.0.3",
-    "@vitest/coverage-istanbul": "4.0.3",
+    "@vitest/coverage-istanbul": "4.0.8",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^4.1.1",
@@ -172,7 +172,7 @@
     "typescript": "^5.9.3",
     "vite": "^7.1.12",
     "vite-plugin-dts": "^4.5.4",
-    "vitest": "4.0.3",
+    "vitest": "4.0.8",
     "wasm-pack": "^0.13.1",
     "webdriverio": "^9.20.0"
   },
