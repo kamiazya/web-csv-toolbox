@@ -1,9 +1,5 @@
+import { DEFAULT_BINARY_MAX_SIZE } from "../constants.ts";
 import type { BinaryOptions } from "../common/types.ts";
-
-/**
- * Default maximum binary size in bytes (100MB).
- */
-const DEFAULT_MAX_BINARY_SIZE = 100 * 1024 * 1024;
 
 /**
  * Converts a binary string to a string.
@@ -18,7 +14,7 @@ export function convertBinaryToString(
   binary: Uint8Array | ArrayBuffer,
   options: BinaryOptions,
 ): string {
-  const maxBinarySize = options?.maxBinarySize ?? DEFAULT_MAX_BINARY_SIZE;
+  const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
 
   // Validate maxBinarySize
   if (

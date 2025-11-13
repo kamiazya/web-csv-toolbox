@@ -1222,3 +1222,111 @@ export type PickCSVHeader<
       Quotation
     >
   : ReadonlyArray<string>;
+
+/**
+ * Options for the parse method
+ */
+export interface CSVParserParseOptions {
+  /**
+   * Whether to process in streaming mode
+   */
+  stream?: boolean;
+}
+
+/**
+ * Options for CSV Parser
+ */
+export interface CSVParserOptions<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Field delimiter character
+   */
+  delimiter?: string;
+  /**
+   * Quotation character
+   */
+  quotation?: string;
+  /**
+   * Custom header array
+   */
+  header?: Header;
+  /**
+   * Maximum field count limit
+   */
+  maxFieldCount?: number;
+}
+
+/**
+ * String CSV Parser interface
+ * @template Header - The type of the header row
+ */
+export interface StringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV string data
+   * @param chunk - CSV string chunk to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Array of parsed CSV records
+   */
+  parse(
+    chunk?: string,
+    options?: CSVParserParseOptions,
+  ): CSVRecord<Header>[];
+}
+
+/**
+ * Binary CSV Parser interface
+ * @template Header - The type of the header row
+ */
+export interface BinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV binary data
+   * @param chunk - CSV binary chunk (Uint8Array) to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Array of parsed CSV records
+   */
+  parse(
+    chunk?: Uint8Array,
+    options?: CSVParserParseOptions,
+  ): CSVRecord<Header>[];
+}
+
+/**
+ * Options for the WASM string CSV stream transformer.
+ * @category Types
+ */
+export interface WASMStringCSVStreamTransformerOptions {
+  /**
+   * Field delimiter character
+   * @default ','
+   */
+  delimiter?: string;
+}
+
+/**
+ * Options for the WASM binary CSV stream transformer.
+ * @category Types
+ */
+export interface WASMBinaryCSVStreamTransformerOptions {
+  /**
+   * Field delimiter character
+   * @default ','
+   */
+  delimiter?: string;
+}
+
+/**
+ * Options for the WASM CSV stream transformer.
+ * @category Types
+ */
+export interface WASMCSVStreamTransformerOptions {
+  /**
+   * Field delimiter character
+   * @default ','
+   */
+  delimiter?: string;
+}

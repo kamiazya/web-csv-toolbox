@@ -5,11 +5,7 @@ import type {
   CSVRecordAssemblerOptions,
   Token,
 } from "./common/types.ts";
-
-/**
- * Default maximum field count per record (100,000 fields).
- */
-const DEFAULT_MAX_FIELD_COUNT = 100_000;
+import { DEFAULT_ASSEMBLER_MAX_FIELD_COUNT } from "./constants.ts";
 
 /**
  * Options for the CSVRecordAssembler.assemble method.
@@ -39,7 +35,7 @@ export class CSVRecordAssembler<Header extends ReadonlyArray<string>> {
   #source?: string | undefined;
 
   constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
-    const mfc = options.maxFieldCount ?? DEFAULT_MAX_FIELD_COUNT;
+    const mfc = options.maxFieldCount ?? DEFAULT_ASSEMBLER_MAX_FIELD_COUNT;
     // Validate maxFieldCount
     if (
       !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||

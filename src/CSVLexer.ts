@@ -8,14 +8,14 @@ import type {
   RecordDelimiterToken,
   Token,
 } from "./common/types.ts";
-import { CRLF, DEFAULT_DELIMITER, DEFAULT_QUOTATION, LF } from "./constants.ts";
+import {
+  CRLF,
+  DEFAULT_DELIMITER,
+  DEFAULT_LEXER_MAX_BUFFER_SIZE,
+  DEFAULT_QUOTATION,
+  LF,
+} from "./constants.ts";
 import { escapeRegExp } from "./utils/escapeRegExp.ts";
-
-/**
- * Default maximum buffer size in characters (UTF-16 code units).
- * Approximately 10MB for ASCII text, but may vary for non-ASCII characters.
- */
-export const DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 
 /**
  * Options for the CSVLexer.lex method.
@@ -65,7 +65,7 @@ export class CSVLexer<
     const {
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
-      maxBufferSize = DEFAULT_MAX_BUFFER_SIZE,
+      maxBufferSize = DEFAULT_LEXER_MAX_BUFFER_SIZE,
       signal,
       source,
     } = options;
