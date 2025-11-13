@@ -63,6 +63,11 @@ function vitePluginWasmPack({
         if (id === crateName || id.startsWith(crateName + '/')) {
           return prefix + id;
         }
+        // Also handle .wasm file imports directly (with or without ?url query)
+        const cleanId = id.replace(/\?.*$/, ''); // Remove query parameters
+        if (cleanId.includes(crateName) && cleanId.endsWith('.wasm')) {
+          return prefix + id;
+        }
       }
       return null;
     },
@@ -86,10 +91,20 @@ function vitePluginWasmPack({
           return null;
         }
 
-        if (id.endsWith(".wasm")) {
-          const file = await fs.readFile(path.join("./node_modules", id));
-          const base64 = file.toString("base64");
-          return dataToEsm(`data:application/wasm;base64,${base64}`);
+        // Handle .wasm file imports (with or without ?url query)
+        const cleanId = id.replace(/\?.*$/, ''); // Remove query parameters
+        if (cleanId.endsWith(".wasm")) {
+          const wasmPath = path.join("./node_modules", cleanId);
+          try {
+            const file = await fs.readFile(wasmPath);
+            const base64 = file.toString("base64");
+            // Return as data URL for compatibility with both browser and Node.js
+            // This works with both direct imports and ?url imports
+            return dataToEsm(`data:application/wasm;base64,${base64}`);
+          } catch (error) {
+            console.error(`[vite-plugin-wasm-pack] Failed to load WASM file: ${wasmPath}`, error);
+            return null;
+          }
         }
         const modulejs = path.join(
           "./node_modules",

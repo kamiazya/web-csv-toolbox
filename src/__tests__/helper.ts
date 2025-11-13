@@ -1,6 +1,6 @@
 import fc from "fast-check";
-import { assertCommonOptions } from "../assertCommonOptions.ts";
-import { CRLF, DEFAULT_LEXER_MAX_BUFFER_SIZE, LF } from "../constants.ts";
+import { CRLF, DEFAULT_LEXER_MAX_BUFFER_SIZE, LF } from "../core/constants.ts";
+import { assertCommonOptions } from "../utils/validation/assertCommonOptions.ts";
 
 export async function transform<I, O>(
   transformer: TransformStream<I, O>,

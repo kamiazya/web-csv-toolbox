@@ -1,13 +1,13 @@
 # CSVLexer API Reference
 
-The **CSVLexer** class converts raw CSV text into a stream of tokens. This is the first stage of web-csv-toolbox's two-stage parsing pipeline.
+The **DefaultCSVLexer** class is the default implementation of the `CSVLexer` interface. It converts raw CSV text into a stream of tokens. This is the first stage of web-csv-toolbox's two-stage parsing pipeline.
 
 ## Overview
 
 ```typescript
-import { CSVLexer } from 'web-csv-toolbox';
+import { DefaultCSVLexer } from 'web-csv-toolbox';
 
-const lexer = new CSVLexer({ delimiter: ',', quotation: '"' });
+const lexer = new DefaultCSVLexer({ delimiter: ',', quotation: '"' });
 const tokens = lexer.lex('Alice,30\r\n');
 
 for (const token of tokens) {
@@ -22,7 +22,7 @@ for (const token of tokens) {
 ## Constructor
 
 ```typescript
-new CSVLexer<Delimiter, Quotation>(options?: CSVLexerOptions)
+new DefaultCSVLexer<Delimiter, Quotation>(options?: CSVLexerOptions)
 ```
 
 ### Type Parameters
@@ -50,7 +50,7 @@ The field delimiter character.
 
 **Example:**
 ```typescript
-const lexer = new CSVLexer({ delimiter: '\t' }); // TSV
+const lexer = new DefaultCSVLexer({ delimiter: '\t' }); // TSV
 ```
 
 #### `quotation`
@@ -62,7 +62,7 @@ The quotation character for escaping fields.
 
 **Example:**
 ```typescript
-const lexer = new CSVLexer({ quotation: "'" }); // Single-quote
+const lexer = new DefaultCSVLexer({ quotation: "'" }); // Single-quote
 ```
 
 **Note:** If using WebAssembly execution, only `'"'` (double-quote) is supported.
@@ -80,7 +80,7 @@ Maximum buffer size in characters (UTF-16 code units).
 
 **Example:**
 ```typescript
-const lexer = new CSVLexer({
+const lexer = new DefaultCSVLexer({
   maxBufferSize: 1024 * 1024 // 1M characters
 });
 ```
@@ -99,7 +99,7 @@ AbortSignal for canceling lexing operations.
 **Example:**
 ```typescript
 const controller = new AbortController();
-const lexer = new CSVLexer({ signal: controller.signal });
+const lexer = new DefaultCSVLexer({ signal: controller.signal });
 
 // Cancel after 5 seconds
 setTimeout(() => controller.abort(), 5000);
@@ -157,7 +157,7 @@ Indicates whether more chunks are coming (streaming mode).
 #### Example: Single Chunk
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 const tokens = [...lexer.lex('Alice,30\r\n')]; // stream=false (default)
 
 console.log(tokens);
@@ -172,7 +172,7 @@ console.log(tokens);
 #### Example: Multiple Chunks (Streaming)
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 
 // First chunk - incomplete field
 const tokens1 = [...lexer.lex('"Hello', { stream: true })];
@@ -327,7 +327,7 @@ interface Position {
 Thrown when input exceeds `maxBufferSize`.
 
 ```typescript
-const lexer = new CSVLexer({ maxBufferSize: 100 });
+const lexer = new DefaultCSVLexer({ maxBufferSize: 100 });
 
 try {
   const tokens = [...lexer.lex('a'.repeat(200))];
@@ -351,7 +351,7 @@ try {
 Thrown when a quoted field is not properly closed.
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 
 try {
   lexer.lex('"Unclosed quote'); // No closing quote
@@ -375,7 +375,7 @@ Thrown when lexing is canceled via `AbortSignal`.
 
 ```typescript
 const controller = new AbortController();
-const lexer = new CSVLexer({ signal: controller.signal });
+const lexer = new DefaultCSVLexer({ signal: controller.signal });
 
 setTimeout(() => controller.abort(), 100);
 
@@ -397,7 +397,7 @@ try {
 ### Pattern 1: Simple Lexing
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 const tokens = [...lexer.lex('name,age\r\nAlice,30\r\n')];
 
 for (const token of tokens) {
@@ -412,7 +412,7 @@ for (const token of tokens) {
 ### Pattern 2: Streaming Lexing
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 const chunks = ['name,age\r\n', 'Alice,30\r\n', 'Bob,25\r\n'];
 
 for (const chunk of chunks) {
@@ -437,7 +437,7 @@ for (const token of remainingTokens) {
 
 ```typescript
 // Tab-separated values (TSV)
-const lexer = new CSVLexer({ delimiter: '\t' });
+const lexer = new DefaultCSVLexer({ delimiter: '\t' });
 const tokens = [...lexer.lex('name\tage\r\nAlice\t30\r\n')];
 
 for (const token of tokens) {
@@ -453,7 +453,7 @@ for (const token of tokens) {
 
 ```typescript
 const controller = new AbortController();
-const lexer = new CSVLexer({ signal: controller.signal });
+const lexer = new DefaultCSVLexer({ signal: controller.signal });
 
 // Abort after 5 seconds
 const timeout = setTimeout(() => controller.abort(), 5000);
@@ -512,10 +512,10 @@ try {
 ### Example 1: Syntax Highlighter
 
 ```typescript
-import { CSVLexer } from 'web-csv-toolbox';
+import { DefaultCSVLexer } from 'web-csv-toolbox';
 
 function highlightCSV(csv: string): string {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
   let highlighted = '';
 
@@ -544,11 +544,11 @@ console.log(highlightCSV('Alice,30\r\nBob,25\r\n'));
 ### Example 2: CSV Validator
 
 ```typescript
-import { CSVLexer } from 'web-csv-toolbox';
+import { DefaultCSVLexer } from 'web-csv-toolbox';
 
 function validateCSV(csv: string): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
 
   try {
     let fieldCount: number | null = null;
@@ -584,10 +584,10 @@ console.log(validateCSV('name,age\r\nAlice,30\r\nBob\r\n'));
 ### Example 3: Token Stream to JSON
 
 ```typescript
-import { CSVLexer } from 'web-csv-toolbox';
+import { DefaultCSVLexer } from 'web-csv-toolbox';
 
 function tokensToJSON(csv: string): string {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = [...lexer.lex(csv)];
 
   return JSON.stringify(tokens, null, 2);

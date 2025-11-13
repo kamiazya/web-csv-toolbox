@@ -5,7 +5,7 @@ The **CSVLexerTransformer** class is a TransformStream that wraps the [CSVLexer]
 ## Overview
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -156,7 +156,7 @@ A stream of individual tokens.
 ### Pattern 1: Basic Streaming
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -181,7 +181,7 @@ csvStream
 ### Pattern 2: File Reading
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 // Browser
 const file = document.querySelector('input[type="file"]').files[0];
@@ -217,7 +217,7 @@ fileStream
 ### Pattern 3: Network Fetching
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
 
@@ -236,7 +236,7 @@ response.body
 ### Pattern 4: Pipeline Composition
 
 ```typescript
-import { CSVLexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, RecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -261,7 +261,7 @@ csvStream
 ### Pattern 5: Custom Transform
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 // Filter only Field tokens
 class FieldFilterTransform extends TransformStream {
@@ -293,7 +293,7 @@ csvStream
 ### RangeError: Buffer Size Exceeded
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -321,7 +321,7 @@ csvStream
 ### ParseError: Unclosed Quoted Field
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -350,7 +350,7 @@ csvStream
 ### AbortSignal
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const controller = new AbortController();
 const csvStream = getLargeCSVStream();
@@ -412,7 +412,7 @@ csvStream
 ### Readable Stream Source
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -430,7 +430,7 @@ csvStream.pipeThrough(new CSVLexerTransformer());
 ### Transform Stream Middleware
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 class UppercaseTransform extends TransformStream {
   constructor() {
@@ -457,7 +457,7 @@ csvStream
 ### Writable Stream Sink
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 const writable = new WritableStream({
   write(token) {
@@ -503,7 +503,7 @@ See: [Supported Environments](../supported-environments.md)
 ### Example 1: Progress Tracking
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 let tokenCount = 0;
 
@@ -526,7 +526,7 @@ csvStream
 ### Example 2: Token Type Filtering
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 // Extract only field values
 csvStream
@@ -550,7 +550,7 @@ csvStream
 ### Example 3: Error Recovery
 
 ```typescript
-import { CSVLexerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer } from 'web-csv-toolbox';
 
 csvStream
   .pipeThrough(new CSVLexerTransformer())

@@ -5,7 +5,7 @@ The **CSVRecordAssemblerTransformer** class is a TransformStream that wraps the 
 ## Overview
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -152,7 +152,7 @@ A stream of CSV record objects.
 ### Pattern 1: Basic Streaming
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -180,7 +180,7 @@ csvStream
 ### Pattern 2: Pre-defined Header
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -209,7 +209,7 @@ csvStream
 ### Pattern 3: File Reading
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Browser
 const file = document.querySelector('input[type="file"]').files[0];
@@ -247,7 +247,7 @@ fileStream
 ### Pattern 4: Network Fetching
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const response = await fetch('https://example.com/data.csv');
 
@@ -267,7 +267,7 @@ response.body
 ### Pattern 5: Data Transformation
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Convert age to number
 class AgeConverterTransform extends TransformStream {
@@ -299,7 +299,7 @@ csvStream
 ### Pattern 6: Data Validation
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -335,7 +335,7 @@ csvStream
 ### Pattern 7: Progress Tracking
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 let recordCount = 0;
 
@@ -361,7 +361,7 @@ csvStream
 ### ParseError: Empty Header
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -387,7 +387,7 @@ csvStream
 ### ParseError: Duplicate Header Fields
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -414,7 +414,7 @@ csvStream
 ### RangeError: Field Count Exceeded
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -441,7 +441,7 @@ csvStream
 ### AbortSignal
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const controller = new AbortController();
 
@@ -483,7 +483,7 @@ csvStream
 ## Complete Pipeline Example
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Fetch CSV from network
 const response = await fetch('https://example.com/large-data.csv');
@@ -550,7 +550,7 @@ See: [Supported Environments](../supported-environments.md)
 ### Example 1: CSV to JSON
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 async function csvToJSON(csvStream: ReadableStream<string>): Promise<string> {
   const records: any[] = [];
@@ -576,7 +576,7 @@ console.log(json);
 ### Example 2: Filtering Records
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 class FilterTransform extends TransformStream {
   constructor(predicate: (record: any) => boolean) {
@@ -608,7 +608,7 @@ csvStream
 ### Example 3: Record Aggregation
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 let totalAge = 0;
 let count = 0;
@@ -632,7 +632,7 @@ await csvStream
 ### Example 4: Error Recovery
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 class ErrorRecoveryTransform extends TransformStream {
   constructor() {
@@ -702,7 +702,7 @@ See: [parse()](../../tutorials/getting-started.md), [parseString()](../../tutori
 ## TypeScript Types
 
 ```typescript
-import type { CSVRecord, CSVRecordAssemblerOptions } from 'web-csv-toolbox';
+import type { CSVRecord, DefaultCSVRecordAssemblerOptions } from 'web-csv-toolbox';
 
 // CSVRecord type
 type CSVRecord<Header extends ReadonlyArray<string>> = {
