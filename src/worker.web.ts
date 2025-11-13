@@ -12,7 +12,7 @@ if (typeof globalThis !== "undefined") {
 import {
   createMessageHandler,
   type ParseRequest,
-} from "./execution/worker/helpers/worker.shared.js";
+} from "./worker/helpers/worker.shared.js";
 
 /**
  * Web Worker implementation for CSV parsing.

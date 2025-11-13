@@ -17,87 +17,67 @@
     },
     "./worker": {
       "node": {
-        "types": "./dist/worker.node.d.ts",
-        "default": "./dist/worker.node.js"
+        "types": "./dist/worker/worker.node.d.ts",
+        "default": "./dist/worker/worker.node.js"
       },
       "browser": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.js"
+        "types": "./dist/worker/worker.web.d.ts",
+        "default": "./dist/worker/worker.web.js"
       },
       "default": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.js"
+        "types": "./dist/worker/worker.web.d.ts",
+        "default": "./dist/worker/worker.web.js"
       }
-    },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
-    },
-    "./common/*": {
-      "types": "./dist/common/*.d.ts",
-      "default": "./dist/common/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
     },
     "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
     "./package.json": "./package.json"
   },
   "imports": {
     "#execution/worker/createWorker.js": {
-      "types": "./dist/execution/worker/helpers/createWorker.d.ts",
-      "node": "./dist/execution/worker/helpers/createWorker.node.js",
-      "browser": "./dist/execution/worker/helpers/createWorker.web.js",
-      "default": "./dist/execution/worker/helpers/createWorker.web.js"
+      "types": "./dist/worker/helpers/createWorker.d.ts",
+      "node": "./dist/worker/helpers/createWorker.node.js",
+      "browser": "./dist/worker/helpers/createWorker.web.js",
+      "default": "./dist/worker/helpers/createWorker.web.js"
     },
     "#getOptionsFromResponse.constants.js": {
-      "types": "./dist/getOptionsFromResponse.constants.d.ts",
-      "node": "./dist/getOptionsFromResponse.constants.node.js",
-      "browser": "./dist/getOptionsFromResponse.constants.web.js",
-      "default": "./dist/getOptionsFromResponse.constants.web.js"
+      "types": "./dist/utils/response/getOptionsFromResponse.constants.d.ts",
+      "node": "./dist/utils/response/getOptionsFromResponse.constants.node.js",
+      "browser": "./dist/utils/response/getOptionsFromResponse.constants.web.js",
+      "default": "./dist/utils/response/getOptionsFromResponse.constants.web.js"
     },
     "#getCharsetValidation.constants.js": {
-      "types": "./dist/getCharsetValidation.constants.d.ts",
-      "node": "./dist/getCharsetValidation.constants.node.js",
-      "browser": "./dist/getCharsetValidation.constants.web.js",
-      "default": "./dist/getCharsetValidation.constants.web.js"
+      "types": "./dist/utils/charset/getCharsetValidation.constants.d.ts",
+      "node": "./dist/utils/charset/getCharsetValidation.constants.node.js",
+      "browser": "./dist/utils/charset/getCharsetValidation.constants.web.js",
+      "default": "./dist/utils/charset/getCharsetValidation.constants.web.js"
     },
     "#execution/worker/parseStringInWorker.js": {
-      "types": "./dist/execution/worker/parseStringInWorker.d.ts",
-      "node": "./dist/execution/worker/parseStringInWorker.node.js",
-      "browser": "./dist/execution/worker/parseStringInWorker.web.js",
-      "default": "./dist/execution/worker/parseStringInWorker.web.js"
+      "types": "./dist/parser/execution/worker/parseStringInWorker.d.ts",
+      "default": "./dist/parser/execution/worker/parseStringInWorker.js"
     },
     "#execution/worker/parseStringInWorkerWASM.js": {
-      "types": "./dist/execution/worker/parseStringInWorkerWASM.d.ts",
-      "node": "./dist/execution/worker/parseStringInWorkerWASM.node.js",
-      "browser": "./dist/execution/worker/parseStringInWorkerWASM.web.js",
-      "default": "./dist/execution/worker/parseStringInWorkerWASM.web.js"
+      "types": "./dist/parser/execution/worker/parseStringInWorkerWASM.d.ts",
+      "default": "./dist/parser/execution/worker/parseStringInWorkerWASM.js"
     },
     "#execution/worker/parseBinaryInWorker.js": {
-      "types": "./dist/execution/worker/parseBinaryInWorker.d.ts",
-      "node": "./dist/execution/worker/parseBinaryInWorker.node.js",
-      "browser": "./dist/execution/worker/parseBinaryInWorker.web.js",
-      "default": "./dist/execution/worker/parseBinaryInWorker.web.js"
+      "types": "./dist/parser/execution/worker/parseBinaryInWorker.d.ts",
+      "default": "./dist/parser/execution/worker/parseBinaryInWorker.js"
     },
     "#execution/worker/parseBinaryInWorkerWASM.js": {
-      "types": "./dist/execution/worker/parseBinaryInWorkerWASM.d.ts",
-      "node": "./dist/execution/worker/parseBinaryInWorkerWASM.node.js",
-      "browser": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js",
-      "default": "./dist/execution/worker/parseBinaryInWorkerWASM.web.js"
+      "types": "./dist/parser/execution/worker/parseBinaryInWorkerWASM.d.ts",
+      "default": "./dist/parser/execution/worker/parseBinaryInWorkerWASM.js"
     },
     "#execution/worker/parseStreamInWorker.js": {
-      "types": "./dist/execution/worker/parseStreamInWorker.d.ts",
-      "node": "./dist/execution/worker/parseStreamInWorker.node.js",
-      "browser": "./dist/execution/worker/parseStreamInWorker.web.js",
-      "default": "./dist/execution/worker/parseStreamInWorker.web.js"
+      "types": "./dist/parser/execution/worker/parseStreamInWorker.d.ts",
+      "default": "./dist/parser/execution/worker/parseStreamInWorker.js"
     },
     "#execution/worker/parseUint8ArrayStreamInWorker.js": {
-      "types": "./dist/execution/worker/parseUint8ArrayStreamInWorker.d.ts",
-      "node": "./dist/execution/worker/parseUint8ArrayStreamInWorker.node.js",
-      "browser": "./dist/execution/worker/parseUint8ArrayStreamInWorker.web.js",
-      "default": "./dist/execution/worker/parseUint8ArrayStreamInWorker.web.js"
+      "types": "./dist/parser/execution/worker/parseUint8ArrayStreamInWorker.d.ts",
+      "default": "./dist/parser/execution/worker/parseUint8ArrayStreamInWorker.js"
+    },
+    "#execution/worker/parseUint8ArrayStreamInWorkerWASM.js": {
+      "types": "./dist/parser/execution/worker/parseUint8ArrayStreamInWorkerWASM.d.ts",
+      "default": "./dist/parser/execution/worker/parseUint8ArrayStreamInWorkerWASM.js"
     }
   },
   "files": [
@@ -118,7 +98,7 @@
     "check:format:js": "biome ci .",
     "graph": "madge --extensions ts --image graph.svg src/",
     "graph:main": "madge --extensions ts --image graph-main.svg src/web-csv-toolbox.ts",
-    "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker.node.ts src/worker.web.ts",
+    "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker/worker.node.ts src/worker/worker.web.ts",
     "graph:json": "madge --extensions ts --json src/",
     "graph:summary": "madge --extensions ts --summary src/",
     "graph:orphans": "madge --extensions ts --orphans src/",

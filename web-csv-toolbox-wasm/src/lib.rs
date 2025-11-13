@@ -1,3 +1,7 @@
+mod parser;
+
+pub use parser::CSVParser;
+
 use csv::ReaderBuilder;
 use js_sys::{Array, Object, Reflect};
 use serde_json::json;
@@ -408,9 +412,18 @@ impl CSVStreamParser {
                     // which cannot be set properly with Reflect.set
                     let descriptor = Object::new();
                     let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
-                    let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
-                    let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
-                    let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
+                    let _ =
+                        Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
+                    let _ = Reflect::set(
+                        &descriptor,
+                        &JsValue::from_str("enumerable"),
+                        &JsValue::TRUE,
+                    );
+                    let _ = Reflect::set(
+                        &descriptor,
+                        &JsValue::from_str("configurable"),
+                        &JsValue::TRUE,
+                    );
                     let _ = Object::define_property(&obj, &key, &descriptor);
                 }
                 Some(obj.into())
@@ -543,12 +556,23 @@ mod tests {
         let mut csv = String::new();
 
         // Add headers
-        csv.push_str(&headers.iter().map(|h| escape_csv_field(h)).collect::<Vec<_>>().join(","));
+        csv.push_str(
+            &headers
+                .iter()
+                .map(|h| escape_csv_field(h))
+                .collect::<Vec<_>>()
+                .join(","),
+        );
         csv.push('\n');
 
         // Add rows
         for row in rows {
-            csv.push_str(&row.iter().map(|f| escape_csv_field(f)).collect::<Vec<_>>().join(","));
+            csv.push_str(
+                &row.iter()
+                    .map(|f| escape_csv_field(f))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
             csv.push('\n');
         }
 
@@ -980,6 +1004,7 @@ mod proptest_tests {
 
     /// Strategy for generating valid CSV field strings
     /// Excludes lone surrogates and control characters
+    #[allow(dead_code)]
     fn csv_field_strategy() -> impl Strategy<Value = String> {
         // Use printable ASCII and valid Unicode, excluding problematic characters
         prop::string::string_regex("[\\x20-\\x7E\\u{80}-\\u{D7FF}\\u{E000}-\\u{FFFF}]{0,50}")
@@ -991,19 +1016,26 @@ mod proptest_tests {
     }
 
     /// Strategy for generating CSV headers (non-empty, unique field names)
+    #[allow(dead_code)]
     fn csv_header_strategy() -> impl Strategy<Value = Vec<String>> {
-        prop::collection::vec(csv_field_strategy(), 1..10)
-            .prop_map(|fields| {
-                // Make fields unique by adding index
-                fields
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, f)| if f.is_empty() { format!("col{}", i) } else { format!("{}_{}", f, i) })
-                    .collect()
-            })
+        prop::collection::vec(csv_field_strategy(), 1..10).prop_map(|fields| {
+            // Make fields unique by adding index
+            fields
+                .into_iter()
+                .enumerate()
+                .map(|(i, f)| {
+                    if f.is_empty() {
+                        format!("col{}", i)
+                    } else {
+                        format!("{}_{}", f, i)
+                    }
+                })
+                .collect()
+        })
     }
 
     /// Strategy for generating CSV data rows
+    #[allow(dead_code)]
     fn csv_rows_strategy(num_columns: usize) -> impl Strategy<Value = Vec<Vec<String>>> {
         prop::collection::vec(
             prop::collection::vec(csv_field_strategy(), num_columns..=num_columns),
@@ -1035,23 +1067,23 @@ mod proptest_tests {
             chunk_size in 1usize..20usize
         ) {
             let csv = tests::create_csv(&headers2, &rows);
-            
+
             // Parse all at once
             let mut parser1 = CSVStreamParser::new(b',');
             let result1 = parser1.process_chunk(&csv).unwrap();
             let flush1 = parser1.flush().unwrap();
-            
+
             // Parse in chunks
             let mut parser2 = CSVStreamParser::new(b',');
             let mut results2 = Vec::new();
-            
+
             for chunk in csv.as_bytes().chunks(chunk_size) {
                 let chunk_str = std::str::from_utf8(chunk).unwrap();
                 let result = parser2.process_chunk(chunk_str).unwrap();
                 results2.push(result);
             }
             let flush2 = parser2.flush().unwrap();
-            
+
             // Results should be equivalent (order and content)
             // We check that both parsers produce valid output without panicking
             prop_assert!(result1.is_array() || result1.is_object() || result1.is_string());
@@ -1088,18 +1120,18 @@ mod proptest_tests {
             num_rows in 0usize..10usize
         ) {
             let num_cols = headers.len();
-            
+
             // Create CSV with all empty fields
             let rows: Vec<Vec<String>> = (0..num_rows)
                 .map(|_| vec![String::new(); num_cols])
                 .collect();
-            
+
             let csv = tests::create_csv(&headers, &rows);
-            
+
             let mut parser = CSVStreamParser::new(b',');
             let _result = parser.process_chunk(&csv);
             let _flush = parser.flush();
-            
+
             // Should not panic
         }
 
