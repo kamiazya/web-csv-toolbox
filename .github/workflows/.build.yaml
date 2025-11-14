@@ -23,13 +23,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: web-csv-toolbox-wasm
-          path: |
-            web-csv-toolbox-wasm/**/*
-            !web-csv-toolbox-wasm/src
-            !web-csv-toolbox-wasm/target
-            !web-csv-toolbox-wasm/Cargo.toml
-            !web-csv-toolbox-wasm/Cargo.lock
-            !web-csv-toolbox-wasm/.gitignore
+          path: web-csv-toolbox-wasm/pkg
 
   build_typescript:
     name: Build TypeScript
@@ -46,7 +40,11 @@ jobs:
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: web-csv-toolbox-wasm
-          path: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
+      - name: Copy WASM package to node_modules
+        run: |
+          mkdir -p node_modules/web-csv-toolbox-wasm
+          cp -r web-csv-toolbox-wasm/pkg/* node_modules/web-csv-toolbox-wasm/
       - name: Build TypeScript
         run: pnpm run build:js
         env:
