@@ -1,8 +1,8 @@
-import { SUPPORTED_CHARSETS } from "#getCharsetValidation.constants.js";
-import { SUPPORTED_COMPRESSIONS } from "#getOptionsFromResponse.constants.js";
-import type { DEFAULT_DELIMITER } from "../../core/constants.ts";
-import type { ParseBinaryOptions } from "../../core/types.ts";
-import { parseMime } from "../../helpers/mime/parseMime.ts";
+import { SUPPORTED_CHARSETS } from "#/utils/charset/getCharsetValidation.constants.js";
+import { SUPPORTED_COMPRESSIONS } from "#/utils/response/getOptionsFromResponse.constants.js";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { ParseBinaryOptions } from "@/core/types.ts";
+import { parseMime } from "@/helpers/mime/parseMime.ts";
 
 /**
  * Extracts the options from the response object.

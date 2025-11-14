@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFileToArray } from "../file/parseFileToArray.ts";
+import { parseFileToArray } from "@/parser/api/file/parseFileToArray.ts";
 
 describe("parseFileToArray", () => {
   it("should parse CSV from File and return array", async () => {
@@ -37,7 +37,7 @@ describe("parseFileToArray", () => {
       type: "text/tab-separated-values",
     });
 
-    const records = await parseFileToArray(file, { delimiter: "\t" });
+    const records = await parseFileToArray(file, { delimiter: "\t" } as any);
 
     expect(records).toStrictEqual([
       { name: "Alice", age: "42" },

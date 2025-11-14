@@ -6,9 +6,9 @@ import {
   test,
   vi,
 } from "vitest";
-import { transform, waitAbort } from "../../__tests__/helper.ts";
-import { DefaultCSVLexer } from "../models/DefaultCSVLexer.ts";
-import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
+import { transform, waitAbort } from "@/__tests__/helper.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
@@ -133,7 +133,7 @@ describe("CSVLexerTransformer", () => {
     it("should accept custom writable strategy", async () => {
       const lexer = new DefaultCSVLexer({});
       const customStrategy = { highWaterMark: 32 };
-      const transformer = new CSVLexerTransformer(lexer, customStrategy);
+      const transformer = new CSVLexerTransformer(lexer, {}, customStrategy);
       expect(transformer.writable).toBeDefined();
 
       // Verify it works with actual data
@@ -160,6 +160,7 @@ describe("CSVLexerTransformer", () => {
       const lexer = new DefaultCSVLexer({});
       const transformer = new CSVLexerTransformer(
         lexer,
+        {},
         { highWaterMark: 4 },
         { highWaterMark: 2 },
       );

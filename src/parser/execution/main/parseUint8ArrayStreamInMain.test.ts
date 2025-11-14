@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CSVRecord } from "../../../core/types.ts";
-import { parseUint8ArrayStreamInMain } from "./parseUint8ArrayStreamInMain.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseUint8ArrayStreamInMain } from "@/parser/execution/main/parseUint8ArrayStreamInMain.ts";
 
 // Helper to create ReadableStream from Uint8Array
 function createUint8ArrayStream(data: Uint8Array): ReadableStream<Uint8Array> {

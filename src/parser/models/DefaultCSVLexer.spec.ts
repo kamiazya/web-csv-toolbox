@@ -1,15 +1,15 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { autoChunk, FC } from "../../__tests__/helper.ts";
+import { autoChunk, FC } from "@/__tests__/helper.ts";
 import {
   COMMA,
   DOUBLE_QUOTE,
   Field,
   FieldDelimiter,
   RecordDelimiter,
-} from "../../core/constants.ts";
-import { escapeField } from "../../utils/serialization/escapeField.ts";
-import { DefaultCSVLexer } from "./DefaultCSVLexer.ts";
+} from "@/core/constants.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 const LOCATION_SHAPE = {
   start: {

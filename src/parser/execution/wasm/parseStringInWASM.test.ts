@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { CSVRecord } from "../../../core/types.ts";
-import { loadWASM } from "../../../wasm/loadWASM.ts";
-import { parseStringInWASM } from "./parseStringInWASM.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
+import { loadWASM } from "@/wasm/loadWASM.ts";
 
 describe("parseStringInWASM", () => {
   beforeAll(async () => {
@@ -36,7 +36,9 @@ describe("parseStringInWASM", () => {
     const csv = "name;age\nAlice;30";
     const records = [];
 
-    for await (const record of parseStringInWASM(csv, { delimiter: ";" })) {
+    for await (const record of parseStringInWASM(csv, {
+      delimiter: ";",
+    } as any)) {
       records.push(record);
     }
 

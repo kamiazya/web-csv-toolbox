@@ -1,14 +1,10 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
-import { autoChunk, FC, transform } from "../../__tests__/helper.ts";
-import {
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-} from "../../core/constants.ts";
-import { escapeField } from "../../utils/serialization/escapeField.ts";
-import { DefaultCSVLexer } from "../models/DefaultCSVLexer.ts";
-import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
+import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
@@ -173,7 +169,7 @@ describe("CSVLexerTransformer", () => {
           [
             // only EOL is ignored
             {
-              options: { delimiter: ",", quotation: '"' },
+              options: { delimiter: ",", quotation: '"' } as any,
               chunks: ["\n"],
               expected: [],
             },

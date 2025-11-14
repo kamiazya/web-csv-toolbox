@@ -1,11 +1,11 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { CR, CRLF, LF } from "../core/constants.ts";
+import { CR, CRLF, LF } from "@/core/constants.ts";
 import type {
   ExtractCSVHeader,
   JoinCSVFields,
   PickCSVHeader,
   SplitCSVFields,
-} from "../core/types.ts";
+} from "@/core/types.ts";
 
 const case1csv1 = '"na\nme,",age,city,zip';
 

@@ -1,7 +1,7 @@
-import { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "../../core/constants.ts";
-import type { CommonOptions } from "../../core/types.ts";
-import { occurrences } from "../../helpers/string/occurrences.ts";
-import type { assertCommonOptions } from "../validation/assertCommonOptions.ts";
+import { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CommonOptions } from "@/core/types.ts";
+import { occurrences } from "@/helpers/string/occurrences.ts";
+import type { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 export interface EscapeFieldOptions<
   Delimiter extends string,

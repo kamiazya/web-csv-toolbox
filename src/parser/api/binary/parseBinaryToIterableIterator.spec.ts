@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseBinaryToIterableIterator } from "../binary/parseBinaryToIterableIterator.ts";
+import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 
 const csv = new TextEncoder().encode(`name,age
 Alice,42

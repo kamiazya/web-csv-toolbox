@@ -1,14 +1,11 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVBinary,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../core/types.ts";
-import type { WorkerSession } from "../../worker/helpers/WorkerSession.ts";
-import type { InternalEngineConfig } from "../config/InternalEngineConfig.ts";
+} from "@/core/types.ts";
+import type { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import type { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
  * Worker strategy interface.

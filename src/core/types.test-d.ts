@@ -3,7 +3,7 @@ import type {
   EngineConfig,
   MainThreadEngineConfig,
   WorkerEngineConfig,
-} from "./types.ts";
+} from "@/core/types.ts";
 
 describe("EngineConfig", () => {
   describe("Discriminated Union based on worker property", () => {

@@ -1,10 +1,11 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { CSVRecord, parseString } from "./web-csv-toolbox.ts";
+import type { CSVRecord } from "@/web-csv-toolbox.ts";
+import { parseString } from "@/web-csv-toolbox.ts";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {
-    type Result = ReturnType<typeof parseString<string>>;
-    expectTypeOf<Result>().toEqualTypeOf<
+    const result = parseString("test" as string);
+    expectTypeOf(result).toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly string[]>>
     >();
   });
@@ -16,8 +17,8 @@ Alice,24,New York,10001
 Bob,36,Los Angeles,90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<typeof parseString<typeof csv1>>;
-    expectTypeOf<Result>().toEqualTypeOf<
+    const result = parseString(csv1);
+    expectTypeOf(result).toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });

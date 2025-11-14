@@ -7,12 +7,13 @@ import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 export default defineConfig(({ command }) => ({
   resolve: {
     alias: {
+      "@": "/src",
       // Aliases for testing only - production uses package.json "imports"
-      "#execution/worker/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+      "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
       // Note: In tests (Node.js environment), use node version
       // In production, package.json "imports" handles browser/node resolution
-      "#getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
-      "#getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
+      "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+      "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
     },
   },
   build: {
@@ -103,9 +104,10 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
-            "#getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
-            "#getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -139,9 +141,10 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
-            "#getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
-            "#getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
           },
         },
       },
@@ -157,9 +160,10 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
-            "#getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
-            "#getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -169,6 +173,14 @@ export default defineConfig(({ command }) => ({
           include: ["src/**/*.test-d.ts"],
           typecheck: {
             enabled: true,
+          },
+        },
+        resolve: {
+          alias: {
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },

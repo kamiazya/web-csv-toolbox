@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertBinaryToString } from "./convertBinaryToString.ts";
+import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
 
 describe("function convertBinaryToString", () => {
   const text = "abc";

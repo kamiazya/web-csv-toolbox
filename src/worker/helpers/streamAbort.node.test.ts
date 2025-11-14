@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseUint8ArrayStream } from "../../parser/api/binary/parseUint8ArrayStream.ts";
-import { parseStringStream } from "../../parser/api/string/parseStringStream.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
 
 /**
  * Test AbortSignal support in stream collection loops.

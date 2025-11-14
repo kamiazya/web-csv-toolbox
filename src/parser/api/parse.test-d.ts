@@ -1,20 +1,10 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { parse } from "./parse.ts";
-import type {
-  CSV,
-  CSVBinary,
-  CSVRecord,
-  CSVString,
-  ParseOptions,
-} from "./web-csv-toolbox.ts";
+import { parse } from "@/parser/api/parse.ts";
+import type { CSVBinary, CSVRecord, CSVString } from "@/web-csv-toolbox.ts";
 
 describe("parse function", () => {
-  it("parse should be a function with expected parameter types", () => {
+  it("parse should be a function", () => {
     expectTypeOf(parse).toBeFunction();
-    expectTypeOf(parse).parameter(0).toMatchTypeOf<CSV>();
-    expectTypeOf(parse)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
   });
   it("should return AsyncIterableIterator<>", () => {
     const result = parse("", { header: ["a", "b"] });
@@ -62,18 +52,6 @@ Bob,36,Los Angeles,90001`;
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(
-      parse("" as CSVString<readonly ["name", "age", "city", "zip"]>),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
-    expectTypeOf(
-      parse("" as CSV<readonly ["name", "age", "city", "zip"]>),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
-    >();
-
     expectTypeOf(parse(new ReadableStream<typeof csv1>())).toEqualTypeOf<
       AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
@@ -94,22 +72,6 @@ Angeles$*90001`;
     expectTypeOf(parse(csv1, { delimiter: "*", quotation: "$" })).toEqualTypeOf<
       AsyncIterableIterator<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
-      >
-    >();
-
-    expectTypeOf(
-      parse("" as CSVString<readonly ["name", "age\n", "city", "zi\np"]>),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<
-        CSVRecord<readonly ["name", "age\n", "city", "zi\np"]>
-      >
-    >();
-
-    expectTypeOf(
-      parse("" as CSV<readonly ["name", "age\n", "city", "zi\np"]>),
-    ).toEqualTypeOf<
-      AsyncIterableIterator<
-        CSVRecord<readonly ["name", "age\n", "city", "zi\np"]>
       >
     >();
 

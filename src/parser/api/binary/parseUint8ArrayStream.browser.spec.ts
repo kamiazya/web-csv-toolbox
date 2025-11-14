@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import type { EngineConfig } from "../../../core/types.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseUint8ArrayStream } from "../binary/parseUint8ArrayStream.ts";
+import { FC } from "@/__tests__/helper.ts";
+import type { EngineConfig } from "@/core/types.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 // Test each execution strategy (WASM doesn't support streaming)
 describe("parseUint8ArrayStream with execution strategies", () => {

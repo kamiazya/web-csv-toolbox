@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseString } from "../string/parseString.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
 
 /**
  * AbortSignal tests for worker execution
@@ -15,7 +15,7 @@ describe("parseString AbortSignal handling", () => {
 
     try {
       for await (const _ of parseString(csv, {
-        execution: ["worker"],
+        engine: { worker: true },
         signal: controller.signal,
       })) {
         // Should not reach here
@@ -36,7 +36,7 @@ describe("parseString AbortSignal handling", () => {
 
     try {
       for await (const _record of parseString(csv, {
-        execution: ["worker"],
+        engine: { worker: true },
         signal: controller.signal,
       })) {
         // Add delay to allow abort to trigger
@@ -55,7 +55,7 @@ describe("parseString AbortSignal handling", () => {
 
     const records = [];
     for await (const record of parseString(csv, {
-      execution: ["worker"],
+      engine: { worker: true },
       signal: controller.signal,
     })) {
       records.push(record);
@@ -73,7 +73,7 @@ describe("parseString AbortSignal handling", () => {
 
     try {
       for await (const _ of parseString(csv, {
-        execution: ["worker"],
+        engine: { worker: true },
         signal: controller.signal,
       })) {
         // Should not reach here

@@ -57,7 +57,7 @@ describe("SUPPORTED_COMPRESSIONS in browser", () => {
 
   it("should only include standard compression formats by default", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     // Only gzip and deflate should be included by default for cross-browser compatibility
@@ -70,7 +70,7 @@ describe("SUPPORTED_COMPRESSIONS in browser", () => {
 
   it("should match SUPPORTED_COMPRESSIONS with actual browser support", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     // Test that each format in SUPPORTED_COMPRESSIONS actually works

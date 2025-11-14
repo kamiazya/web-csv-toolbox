@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { convertBinaryToString } from "./convertBinaryToString.ts";
+import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
 
 describe("convertBinaryToString security tests", () => {
   const sampleBinary = new Uint8Array([0x61, 0x62, 0x63]); // "abc"

@@ -10,7 +10,7 @@ describe("SUPPORTED_COMPRESSIONS environment-specific constants", () => {
   it("should export SUPPORTED_COMPRESSIONS", async () => {
     // Import the constant (will use environment-specific version)
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     expect(SUPPORTED_COMPRESSIONS).toBeDefined();
@@ -19,7 +19,7 @@ describe("SUPPORTED_COMPRESSIONS environment-specific constants", () => {
 
   it("should support gzip in all environments", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     expect(SUPPORTED_COMPRESSIONS.has("gzip")).toBe(true);
@@ -27,7 +27,7 @@ describe("SUPPORTED_COMPRESSIONS environment-specific constants", () => {
 
   it("should support deflate in all environments", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     expect(SUPPORTED_COMPRESSIONS.has("deflate")).toBe(true);
@@ -35,7 +35,7 @@ describe("SUPPORTED_COMPRESSIONS environment-specific constants", () => {
 
   it("should have appropriate size for the environment", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     // In Node.js: 2 formats (gzip, deflate)
@@ -54,7 +54,7 @@ describe("getOptionsFromResponse with environment-specific compressions", () => 
       "./getOptionsFromResponse.ts"
     );
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     for (const format of SUPPORTED_COMPRESSIONS) {

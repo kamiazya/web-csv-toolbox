@@ -1,8 +1,8 @@
-import type { DEFAULT_DELIMITER } from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { getOptionsFromResponse } from "../../../utils/response/getOptionsFromResponse.ts";
-import { parseUint8ArrayStreamToStream } from "../binary/parseUint8ArrayStreamToStream.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
+import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.ts";
 
 export function parseResponseToStream<
   Header extends ReadonlyArray<string>,

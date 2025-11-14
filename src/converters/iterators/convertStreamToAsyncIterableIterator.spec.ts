@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { convertStreamToAsyncIterableIterator } from "./convertStreamToAsyncIterableIterator.ts";
+import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
 
 /**
  * Helper function to collect all values from an async iterable into an array

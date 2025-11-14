@@ -1,10 +1,7 @@
-import { convertIterableIteratorToAsync } from "../../../converters/iterators/convertIterableIteratorToAsync.ts";
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type { CSVRecord, ParseOptions } from "../../../core/types.ts";
-import { parseStringToIterableIterator } from "../../api/string/parseStringToIterableIterator.ts";
+import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseOptions } from "@/core/types.ts";
+import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 
 /**
  * Parse CSV string in main thread.

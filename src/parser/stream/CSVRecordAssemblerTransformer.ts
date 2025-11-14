@@ -1,4 +1,9 @@
-import type { CSVRecord, CSVRecordAssembler, Token } from "../../core/types.ts";
+import type {
+  CSVRecord,
+  CSVRecordAssembler,
+  CSVRecordAssemblerTransformerStreamOptions,
+  Token,
+} from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (token input).
@@ -109,12 +114,13 @@ export class CSVRecordAssemblerTransformer<
 
   constructor(
     assembler: CSVRecordAssembler<Header>,
+    options: CSVRecordAssemblerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<Token> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<
       CSVRecord<Header>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = 10;
+    const checkInterval = options.backpressureCheckInterval ?? 10;
 
     super(
       {

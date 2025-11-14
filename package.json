@@ -45,19 +45,19 @@
     "./package.json": "./package.json"
   },
   "imports": {
-    "#execution/worker/createWorker.js": {
+    "#/worker/helpers/createWorker.js": {
       "types": "./dist/worker/helpers/createWorker.d.ts",
       "node": "./dist/worker/helpers/createWorker.node.js",
       "browser": "./dist/worker/helpers/createWorker.web.js",
       "default": "./dist/worker/helpers/createWorker.web.js"
     },
-    "#getOptionsFromResponse.constants.js": {
+    "#/utils/response/getOptionsFromResponse.constants.js": {
       "types": "./dist/utils/response/getOptionsFromResponse.constants.d.ts",
       "node": "./dist/utils/response/getOptionsFromResponse.constants.node.js",
       "browser": "./dist/utils/response/getOptionsFromResponse.constants.web.js",
       "default": "./dist/utils/response/getOptionsFromResponse.constants.web.js"
     },
-    "#getCharsetValidation.constants.js": {
+    "#/utils/charset/getCharsetValidation.constants.js": {
       "types": "./dist/utils/charset/getCharsetValidation.constants.d.ts",
       "node": "./dist/utils/charset/getCharsetValidation.constants.node.js",
       "browser": "./dist/utils/charset/getCharsetValidation.constants.web.js",

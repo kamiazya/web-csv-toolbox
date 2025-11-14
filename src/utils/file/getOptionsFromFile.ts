@@ -1,6 +1,6 @@
-import type { DEFAULT_DELIMITER } from "../../core/constants.ts";
-import type { ParseBinaryOptions } from "../../core/types.ts";
-import { getOptionsFromBlob } from "../blob/getOptionsFromBlob.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { ParseBinaryOptions } from "@/core/types.ts";
+import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
 
 /**
  * Extracts the options from the file object.

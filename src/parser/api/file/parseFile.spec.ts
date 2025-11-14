@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFile } from "../file/parseFile.ts";
+import { parseFile } from "@/parser/api/file/parseFile.ts";
 
 describe("parseFile function", () => {
   it("should parse CSV from File", async () => {

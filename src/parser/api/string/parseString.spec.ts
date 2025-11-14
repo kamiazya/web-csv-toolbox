@@ -1,8 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseString } from "../string/parseString.ts";
+import { FC } from "@/__tests__/helper.ts";
+import type { EngineConfig } from "@/core/types.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("parseString function", () => {
   it("should parse CSV", () =>
@@ -334,9 +335,9 @@ describe("parseString with execution strategies", () => {
           async ({ csv }) => {
             // Parse with all execution strategies
             const results = await Promise.all(
-              strategies.map(async ({ execution }) => {
+              strategies.map(async ({ engine }) => {
                 const records = [];
-                for await (const record of parseString(csv, { execution })) {
+                for await (const record of parseString(csv, { engine })) {
                   records.push(record);
                 }
                 return records;

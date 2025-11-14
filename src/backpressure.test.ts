@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DefaultCSVLexer } from "./parser/models/DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "./parser/models/DefaultCSVRecordAssembler.ts";
-import { CSVLexerTransformer } from "./parser/stream/CSVLexerTransformer.ts";
-import { CSVRecordAssemblerTransformer } from "./parser/stream/CSVRecordAssemblerTransformer.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 describe("Backpressure handling", () => {
   beforeEach(() => {
@@ -15,6 +15,7 @@ describe("Backpressure handling", () => {
       const lexerInstance = new DefaultCSVLexer({});
       const lexer = new CSVLexerTransformer(
         lexerInstance,
+        {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
         { highWaterMark: 1, size: () => 1 },
       );
@@ -44,13 +45,14 @@ describe("Backpressure handling", () => {
       const lexerInstance = new DefaultCSVLexer({});
       const lexer = new CSVLexerTransformer(
         lexerInstance,
+        {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
         { highWaterMark: 1, size: () => 1 },
       );
 
       // Spy on the yieldToEventLoop method and mock it
       const _yieldSpy = vi
-        .spyOn(lexer, "yieldToEventLoop" as any)
+        .spyOn(lexer as any, "yieldToEventLoop")
         .mockResolvedValue(undefined);
 
       const stream = new ReadableStream({
@@ -103,6 +105,7 @@ describe("Backpressure handling", () => {
       const lexerInstance = new DefaultCSVLexer({});
       const lexer = new CSVLexerTransformer(
         lexerInstance,
+        {},
         { highWaterMark: 1000 },
         { highWaterMark: 1000 },
       );
@@ -145,6 +148,7 @@ describe("Backpressure handling", () => {
       const lexerInstance = new DefaultCSVLexer({});
       const lexer = new CSVLexerTransformer(
         lexerInstance,
+        {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
         { highWaterMark: 1, size: () => 1 },
       );
@@ -178,6 +182,7 @@ describe("Backpressure handling", () => {
       const assemblerInstance = new DefaultCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
+        {},
         { highWaterMark: 1, size: () => 1 },
         { highWaterMark: 1, size: () => 1 },
       );
@@ -214,12 +219,13 @@ describe("Backpressure handling", () => {
       const assemblerInstance = new DefaultCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
+        {},
         { highWaterMark: 1, size: () => 1 },
         { highWaterMark: 1, size: () => 1 },
       );
 
       // Mock yieldToEventLoop to prevent actual delays
-      vi.spyOn(assembler, "yieldToEventLoop" as any).mockResolvedValue(
+      vi.spyOn(assembler as any, "yieldToEventLoop").mockResolvedValue(
         undefined,
       );
 
@@ -285,6 +291,7 @@ describe("Backpressure handling", () => {
       });
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
+        {},
         { highWaterMark: 1000 },
         { highWaterMark: 1000 },
       );
@@ -332,6 +339,7 @@ describe("Backpressure handling", () => {
       const assemblerInstance = new DefaultCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
+        {},
         { highWaterMark: 1, size: () => 1 },
         { highWaterMark: 1, size: () => 1 },
       );
@@ -372,12 +380,14 @@ describe("Backpressure handling", () => {
       const lexerInstance = new DefaultCSVLexer({});
       const lexer = new CSVLexerTransformer(
         lexerInstance,
+        {},
         { highWaterMark: 65536 },
         { highWaterMark: 1024 },
       );
       const assemblerInstance = new DefaultCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
+        {},
         { highWaterMark: 1024 },
         { highWaterMark: 256 },
       );
@@ -416,6 +426,7 @@ describe("Backpressure handling", () => {
       const lexerInstance1 = new DefaultCSVLexer({});
       const lexerWithWritableInterval = new CSVLexerTransformer(
         lexerInstance1,
+        {},
         { highWaterMark: 100 },
         { highWaterMark: 100 },
       );
@@ -423,6 +434,7 @@ describe("Backpressure handling", () => {
       const lexerInstance2 = new DefaultCSVLexer({});
       const lexerWithReadableInterval = new CSVLexerTransformer(
         lexerInstance2,
+        {},
         { highWaterMark: 100 },
         { highWaterMark: 100 },
       );
@@ -430,6 +442,7 @@ describe("Backpressure handling", () => {
       const assemblerInstance1 = new DefaultCSVRecordAssembler({});
       const assemblerWithWritableInterval = new CSVRecordAssemblerTransformer(
         assemblerInstance1,
+        {},
         { highWaterMark: 100 },
         { highWaterMark: 100 },
       );
@@ -437,6 +450,7 @@ describe("Backpressure handling", () => {
       const assemblerInstance2 = new DefaultCSVRecordAssembler({});
       const assemblerWithReadableInterval = new CSVRecordAssemblerTransformer(
         assemblerInstance2,
+        {},
         { highWaterMark: 100 },
         { highWaterMark: 100 },
       );

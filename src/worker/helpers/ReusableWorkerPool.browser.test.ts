@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseString } from "../../parser/api/string/parseString.ts";
-import { ReusableWorkerPool } from "./ReusableWorkerPool.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
+import { ReusableWorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
 
 /**
  * ReusableWorkerPool tests

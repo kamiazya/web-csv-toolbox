@@ -1,14 +1,14 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../__tests__/helper.ts";
+import { FC } from "@/__tests__/helper.ts";
 import {
   Field,
   FieldDelimiter,
   LF,
   RecordDelimiter,
-} from "../../core/constants.ts";
-import type { Token } from "../../core/types.ts";
-import { DefaultCSVRecordAssembler } from "./DefaultCSVRecordAssembler.ts";
+} from "@/core/constants.ts";
+import type { Token } from "@/core/types.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
 
 const LOCATION_SHAPE = {
   start: {

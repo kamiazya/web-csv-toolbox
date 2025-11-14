@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseStringToStream } from "../string/parseStringToStream.ts";
+import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
 
 const csv = `name,age
 Alice,42

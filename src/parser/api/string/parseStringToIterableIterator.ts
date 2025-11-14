@@ -1,15 +1,8 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type {
-  CSVRecord,
-  ParseOptions,
-  PickCSVHeader,
-} from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { DefaultCSVLexer } from "../../models/DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "../../models/DefaultCSVRecordAssembler.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 export function parseStringToIterableIterator<
   const CSVSource extends string,

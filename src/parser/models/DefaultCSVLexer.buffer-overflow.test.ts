@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Field } from "../../core/constants.ts";
-import { DefaultCSVLexer } from "./DefaultCSVLexer.ts";
+import { Field } from "@/core/constants.ts";
+import type { StringCSVLexer } from "@/core/types.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
 
 describe("CSVLexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {
-    let lexer: CSVLexer;
+    let lexer: StringCSVLexer;
     beforeEach(() => {
       lexer = new DefaultCSVLexer();
     });

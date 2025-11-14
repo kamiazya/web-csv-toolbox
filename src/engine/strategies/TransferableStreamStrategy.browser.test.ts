@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { parseUint8ArrayStream } from "../../parser/api/binary/parseUint8ArrayStream.ts";
-import { parseStringStream } from "../../parser/api/string/parseStringStream.ts";
-import { EnginePresets } from "../config/EnginePresets.ts";
+import { EnginePresets } from "@/engine/config/EnginePresets.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
 
 describe("TransferableStreamStrategy in browser", () => {
   describe("parseStringStream with stream-transfer", () => {

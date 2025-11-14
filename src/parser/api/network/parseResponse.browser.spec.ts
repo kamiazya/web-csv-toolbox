@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import type { EngineConfig } from "../../../core/types.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseResponse } from "../network/parseResponse.ts";
+import { FC } from "@/__tests__/helper.ts";
+import type { EngineConfig } from "@/core/types.ts";
+import { parseResponse } from "@/parser/api/network/parseResponse.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 // Test each execution strategy (WASM doesn't support streaming)
 describe("parseResponse with execution strategies", () => {
@@ -115,7 +115,7 @@ describe("parseResponse with execution strategies", () => {
         async ({ csv }) => {
           // Parse with all execution strategies
           const results = await Promise.all(
-            strategies.map(async ({ execution }) => {
+            strategies.map(async ({ engine }) => {
               const records = [];
               const response = new Response(
                 new ReadableStream({
@@ -131,7 +131,7 @@ describe("parseResponse with execution strategies", () => {
                 },
               );
               for await (const record of parseResponse(response, {
-                execution,
+                engine,
               })) {
                 records.push(record);
               }

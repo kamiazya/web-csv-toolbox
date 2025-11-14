@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseResponse } from "../network/parseResponse.ts";
-import { parseResponseToStream } from "../network/parseResponseToStream.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { parseResponse } from "@/parser/api/network/parseResponse.ts";
+import { parseResponseToStream } from "@/parser/api/network/parseResponseToStream.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("parseResponseToStream", () => {
   it("should parse a response to a stream", () => {

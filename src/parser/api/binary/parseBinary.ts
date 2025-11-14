@@ -1,18 +1,18 @@
-import { convertIterableIteratorToAsync } from "../../../converters/iterators/convertIterableIteratorToAsync.ts";
-import * as internal from "../../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type { DEFAULT_DELIMITER } from "../../../core/constants.ts";
+import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../../core/types.ts";
-import { InternalEngineConfig } from "../../../engine/config/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "../../../engine/strategies/WorkerStrategySelector.ts";
-import { parseBinaryInWASM } from "../../../parser/execution/wasm/parseBinaryInWASM.ts";
-import { WorkerSession } from "../../../worker/helpers/WorkerSession.ts";
-import { parseBinaryToArraySync } from "../binary/parseBinaryToArraySync.ts";
-import { parseBinaryToIterableIterator } from "../binary/parseBinaryToIterableIterator.ts";
-import { parseBinaryToStream } from "../binary/parseBinaryToStream.ts";
+} from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
+import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
+import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
+import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
+import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
  * Parse a binary from an {@link !Uint8Array}.

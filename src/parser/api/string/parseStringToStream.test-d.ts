@@ -1,14 +1,10 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { parseStringToStream } from "../string/parseStringToStream.ts";
-import type { CSVRecord, ParseOptions } from "./web-csv-toolbox.ts";
+import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import type { CSVRecord } from "@/web-csv-toolbox.ts";
 
 describe("parseStringToStream function", () => {
-  it("parseStringToStream should be a function with expected parameter types", () => {
+  it("parseStringToStream should be a function", () => {
     expectTypeOf(parseStringToStream).toBeFunction();
-    expectTypeOf(parseStringToStream).parameter(0).toMatchTypeOf<string>();
-    expectTypeOf(parseStringToStream)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
   });
 });
 

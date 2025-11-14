@@ -1,5 +1,5 @@
-import { DEFAULT_BINARY_MAX_SIZE } from "../../core/constants.ts";
-import type { BinaryOptions } from "../../core/types.ts";
+import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
+import type { BinaryOptions } from "@/core/types.ts";
 
 /**
  * Converts a binary string to a string.

@@ -1,5 +1,5 @@
-import { CR, LF } from "../../core/constants.ts";
-import type { CommonOptions } from "../../core/types.ts";
+import { CR, LF } from "@/core/constants.ts";
+import type { CommonOptions } from "@/core/types.ts";
 
 /**
  * Asserts that the provided value is a string and satisfies certain conditions.

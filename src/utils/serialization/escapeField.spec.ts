@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
-import { FC } from "../../__tests__/helper.ts";
-import { escapeField } from "./escapeField.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("escapeField function", () => {
   test("should escape quotation and special cases", () => {

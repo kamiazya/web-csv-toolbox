@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { ParseBinaryOptions, ParseOptions } from "../../../core/types.ts";
-import { serializeOptions } from "./serializeOptions.ts";
+import type { ParseBinaryOptions, ParseOptions } from "@/core/types.ts";
+import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
 
 describe("serializeOptions", () => {
   describe("Basic serialization", () => {
@@ -97,19 +97,19 @@ describe("serializeOptions", () => {
     });
 
     it("should preserve delimiter option", () => {
-      const options: ParseOptions<["name"]> = {
+      const options = {
         delimiter: ";",
-      };
+      } as any;
       const result = serializeOptions(options);
-      expect(result).toEqual({ delimiter: ";" });
+      expect(result).toEqual({ delimiter: ";" } as any);
     });
 
     it("should preserve quotation option", () => {
-      const options: ParseOptions<["name"]> = {
+      const options = {
         quotation: "'",
-      };
+      } as any;
       const result = serializeOptions(options);
-      expect(result).toEqual({ quotation: "'" });
+      expect(result).toEqual({ quotation: "'" } as any);
     });
 
     it("should preserve decompression option", () => {
@@ -209,14 +209,14 @@ describe("serializeOptions", () => {
     });
 
     it("should handle options with empty strings", () => {
-      const options: ParseOptions<never> = {
+      const options = {
         delimiter: "",
         quotation: "",
-      };
+      } as any;
       const result = serializeOptions(options);
       expect(result).toEqual({
-        delimiter: "",
-        quotation: "",
+        delimiter: "" as string,
+        quotation: "" as string,
       });
     });
 
@@ -240,8 +240,7 @@ describe("serializeOptions", () => {
         delimiter: ",",
         quotation: '"',
         signal: controller.signal,
-        engine: { worker: true, wasm: true },
-        workerURL: "/custom-worker.js",
+        engine: { worker: true, wasm: true, workerURL: "/custom-worker.js" },
       };
       const result = serializeOptions(options);
       expect(result).toEqual({
@@ -252,20 +251,20 @@ describe("serializeOptions", () => {
     });
 
     it("should serialize binary options for worker", () => {
-      const options: ParseBinaryOptions<["col1", "col2"]> = {
+      const options = {
         header: ["col1", "col2"],
         charset: "utf-8",
         decompression: "gzip",
         delimiter: ";",
         signal: new AbortController().signal,
         engine: { worker: true },
-      };
+      } as any;
       const result = serializeOptions(options);
       expect(result).toEqual({
         header: ["col1", "col2"],
         charset: "utf-8",
         decompression: "gzip",
-        delimiter: ";",
+        delimiter: ";" as string,
       });
     });
   });

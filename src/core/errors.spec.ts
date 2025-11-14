@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ParseError } from "./errors";
+import { ParseError } from "@/core/errors";
 
 describe("ParseError", () => {
   it("should be an instance of Error", () => {

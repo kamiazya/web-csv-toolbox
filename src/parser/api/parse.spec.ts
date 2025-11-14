@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../__tests__/helper.ts";
-import { escapeField } from "../../utils/serialization/escapeField.ts";
-import { parse } from "./parse.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { parse } from "@/parser/api/parse.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("parse function", () => {
   it("should parse CSV string", () =>
@@ -369,7 +369,7 @@ describe("parse function", () => {
                   controller.close();
                 },
               }),
-              { "content-type": "text/csv" },
+              { headers: { "content-type": "text/csv" } },
             ),
           };
         }),

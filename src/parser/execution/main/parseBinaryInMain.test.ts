@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CSVRecord } from "../../../core/types.ts";
-import { parseBinaryInMain } from "./parseBinaryInMain.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseBinaryInMain } from "@/parser/execution/main/parseBinaryInMain.ts";
 
 describe("parseBinaryInMain", () => {
   const encoder = new TextEncoder();

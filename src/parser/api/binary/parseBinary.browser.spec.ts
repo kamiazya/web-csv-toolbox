@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import type { EngineConfig } from "../../../core/types.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseBinary } from "../binary/parseBinary.ts";
+import { FC } from "@/__tests__/helper.ts";
+import type { EngineConfig } from "@/core/types.ts";
+import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 // Test each execution strategy
 describe("parseBinary with execution strategies", () => {

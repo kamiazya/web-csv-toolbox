@@ -1,10 +1,7 @@
-import { convertStreamToAsyncIterableIterator } from "../../../converters/iterators/convertStreamToAsyncIterableIterator.ts";
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { parseUint8ArrayStreamToStream } from "../../api/binary/parseUint8ArrayStreamToStream.ts";
+import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
 
 /**
  * Parse CSV Uint8Array stream in main thread.

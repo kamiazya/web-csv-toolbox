@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sendWorkerMessage } from "../utils/messageHandler.ts";
-import { serializeOptions } from "../utils/serializeOptions.ts";
-import { ReusableWorkerPool as WorkerPool } from "./ReusableWorkerPool.ts";
-import { WorkerSession } from "./WorkerSession.ts";
+import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
+import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
+import { sendWorkerMessage } from "@/worker/utils/messageHandler.ts";
+import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
 
 describe("WorkerSession", () => {
   describe("Disposable worker mode (no pool)", () => {

@@ -1,13 +1,10 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import {
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-} from "../../core/constants.ts";
-import { DefaultCSVLexer } from "./DefaultCSVLexer.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import type { StringCSVLexer } from "@/core/types.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
 
 describe("CSVLexer", () => {
-  let lexer: CSVLexer;
+  let lexer: StringCSVLexer;
   beforeEach(() => {
     lexer = new DefaultCSVLexer();
   });

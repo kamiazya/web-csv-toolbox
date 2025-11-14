@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseString } from "../../parser/api/string/parseString.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
 
 /**
  * Test to verify WorkerManager behavior with concurrent requests

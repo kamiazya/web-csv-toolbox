@@ -10,10 +10,14 @@
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
     "quickfix.biome": "explicit",
+    "source.organizeImports": "never",
     "source.organizeImports.biome": "explicit"
   },
-  "rust-analyzer.linkedProjects": ["./web-csv-toolbox-wasm/Cargo.toml"],
-  "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
-  "rust-analyzer.checkOnSave.command": "clippy",
-  "rust-analyzer.checkOnSave.extraArgs": ["--target", "wasm32-unknown-unknown"]
+  "typescript.preferences.preferTypeOnlyAutoImports": false,
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.updateImportsOnFileMove.enabled": "never",
+  "rust-analyzer.linkedProjects": [
+    "./web-csv-toolbox-wasm/Cargo.toml"
+  ],
+  "rust-analyzer.cargo.target": "wasm32-unknown-unknown"
 }

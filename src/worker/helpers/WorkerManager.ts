@@ -1,4 +1,4 @@
-import { TransientWorkerPool } from "./TransientWorkerPool.ts";
+import { TransientWorkerPool } from "@/worker/helpers/TransientWorkerPool.ts";
 
 /**
  * Global default worker pool using transient workers.

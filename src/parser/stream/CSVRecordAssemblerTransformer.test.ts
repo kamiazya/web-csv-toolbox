@@ -1,9 +1,9 @@
 import { beforeEach, describe as describe_, expect, test } from "vitest";
-import { waitAbort } from "../../__tests__/helper.ts";
-import { DefaultCSVLexer } from "../models/DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "../models/DefaultCSVRecordAssembler.ts";
-import { CSVLexerTransformer } from "./CSVLexerTransformer.ts";
-import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
+import { waitAbort } from "@/__tests__/helper.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 const describe = describe_.concurrent;
 
@@ -119,7 +119,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       await stream
         .pipeThrough(new CSVLexerTransformer(lexer))
         .pipeThrough(
-          new CSVRecordAssemblerTransformer(assembler, customStrategy),
+          new CSVRecordAssemblerTransformer(assembler, {}, customStrategy),
         )
         .pipeTo(
           new WritableStream({
@@ -180,6 +180,7 @@ describe("CSVRecordAssemblerTransformer", () => {
         .pipeThrough(
           new CSVRecordAssemblerTransformer(
             assembler,
+            {},
             { highWaterMark: 32 },
             { highWaterMark: 4 },
           ),

@@ -1,4 +1,4 @@
-import type { Position } from "./types.js";
+import type { Position } from "@/core/types.js";
 
 /**
  * Options for creating a parse error.

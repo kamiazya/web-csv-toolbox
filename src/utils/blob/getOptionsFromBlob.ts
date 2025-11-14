@@ -1,6 +1,6 @@
-import type { DEFAULT_DELIMITER } from "../../core/constants.ts";
-import type { ParseBinaryOptions } from "../../core/types.ts";
-import { parseMime } from "../../helpers/mime/parseMime.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { ParseBinaryOptions } from "@/core/types.ts";
+import { parseMime } from "@/helpers/mime/parseMime.ts";
 
 /**
  * Extracts the options from the blob object.

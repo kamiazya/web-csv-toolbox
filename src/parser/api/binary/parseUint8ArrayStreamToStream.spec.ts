@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseUint8ArrayStreamToStream } from "../binary/parseUint8ArrayStreamToStream.ts";
+import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
 
 const csv = new ReadableStream({
   start(controller) {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { ReusableWorkerPool as WorkerPool } from "../../worker/helpers/ReusableWorkerPool.ts";
-import { EnginePresets } from "./EnginePresets.ts";
+import type { WorkerEngineConfig } from "@/core/types.ts";
+import { EnginePresets } from "@/engine/config/EnginePresets.ts";
+import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
 
 describe("EnginePresets", () => {
   it("should be frozen (immutable)", () => {
@@ -31,7 +32,7 @@ describe("EnginePresets", () => {
 
     it("should ignore options (main thread doesn't use them)", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.mainThread({ workerPool: pool });
+      const config = EnginePresets.mainThread({ workerPool: pool } as any);
       expect(config).toEqual({
         worker: false,
         wasm: false,
@@ -72,7 +73,7 @@ describe("EnginePresets", () => {
 
     it("should accept onFallback callback", () => {
       const onFallback = vi.fn();
-      const config = EnginePresets.worker({ onFallback });
+      const config = EnginePresets.worker({ onFallback }) as WorkerEngineConfig;
       expect(config.onFallback).toBe(onFallback);
     });
   });
@@ -244,8 +245,12 @@ describe("EnginePresets", () => {
       const pool1 = new WorkerPool({ maxWorkers: 2 });
       const pool2 = new WorkerPool({ maxWorkers: 4 });
 
-      const config1 = EnginePresets.fastest({ workerPool: pool1 });
-      const config2 = EnginePresets.fastest({ workerPool: pool2 });
+      const config1 = EnginePresets.fastest({
+        workerPool: pool1,
+      }) as WorkerEngineConfig;
+      const config2 = EnginePresets.fastest({
+        workerPool: pool2,
+      }) as WorkerEngineConfig;
 
       expect(config1.workerPool).toBe(pool1);
       expect(config2.workerPool).toBe(pool2);
@@ -277,11 +282,15 @@ describe("EnginePresets", () => {
       const sharedPool = new WorkerPool({ maxWorkers: 4 });
 
       // Request 1
-      const config1 = EnginePresets.balanced({ workerPool: sharedPool });
+      const config1 = EnginePresets.balanced({
+        workerPool: sharedPool,
+      }) as WorkerEngineConfig;
       expect(config1.workerPool).toBe(sharedPool);
 
       // Request 2
-      const config2 = EnginePresets.balanced({ workerPool: sharedPool });
+      const config2 = EnginePresets.balanced({
+        workerPool: sharedPool,
+      }) as WorkerEngineConfig;
       expect(config2.workerPool).toBe(sharedPool);
 
       // Different config objects but same pool
@@ -292,7 +301,7 @@ describe("EnginePresets", () => {
     it("should work with custom worker URL", () => {
       const config = EnginePresets.fastest({
         workerURL: new URL("/workers/csv-parser.js", "https://example.com"),
-      });
+      }) as WorkerEngineConfig;
 
       expect(config.workerURL).toBeInstanceOf(URL);
       expect(config.workerURL?.toString()).toBe(
@@ -305,7 +314,7 @@ describe("EnginePresets", () => {
 
       const config = EnginePresets.fastest({
         onFallback: (info) => fallbacks.push(info),
-      });
+      }) as WorkerEngineConfig;
 
       // Simulate fallback
       config.onFallback?.({

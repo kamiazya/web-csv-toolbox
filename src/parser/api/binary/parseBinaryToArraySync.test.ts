@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseBinaryToArraySync } from "../binary/parseBinaryToArraySync.ts";
+import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 
 const csv = new TextEncoder().encode(`name,age
 Alice,42

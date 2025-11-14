@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseRequest } from "../network/parseRequest.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { parseRequest } from "@/parser/api/network/parseRequest.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("parseRequest function", () => {
   it("should throw error if content-type header is not text/csv", async () => {

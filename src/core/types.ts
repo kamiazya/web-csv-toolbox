@@ -1,10 +1,11 @@
 import type {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
+  Field,
+  FieldDelimiter,
   Newline,
-} from "../core/constants.ts";
-import type { WorkerPool } from "../worker/helpers/WorkerPool.ts";
-import type { Field, FieldDelimiter, RecordDelimiter } from "./constants.ts";
+  RecordDelimiter,
+} from "@/core/constants.ts";
 
 /**
  * Position object.
@@ -424,7 +425,14 @@ export interface CSVLexerTransformerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    AbortSignalOptions {
+    AbortSignalOptions {}
+
+/**
+ * CSV Lexer Transformer Stream Options.
+ * Options for CSVLexerTransformer stream behavior.
+ * @category Types
+ */
+export interface CSVLexerTransformerStreamOptions {
   /**
    * How often to check for backpressure (in number of tokens processed).
    *
@@ -484,7 +492,14 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default false
    */
   skipEmptyLines?: boolean;
+}
 
+/**
+ * CSV Record Assembler Transformer Stream Options.
+ * Options for CSVRecordAssemblerTransformer stream behavior.
+ * @category Types
+ */
+export interface CSVRecordAssemblerTransformerStreamOptions {
   /**
    * How often to check for backpressure (in number of records processed).
    *
@@ -871,6 +886,65 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
 }
 
 /**
+ * Common interface for worker pools.
+ * Both ReusableWorkerPool and TransientWorkerPool implement this interface.
+ *
+ * @remarks
+ * This interface defines the contract for worker pool implementations.
+ * Users typically use {@link ReusableWorkerPool} for persistent worker pools,
+ * while the internal default pool uses {@link TransientWorkerPool} for automatic cleanup.
+ *
+ * @category Types
+ */
+export interface WorkerPool {
+  /**
+   * Get a worker instance from the pool.
+   *
+   * @param workerURL - Optional custom worker URL
+   * @returns A worker instance
+   */
+  getWorker(workerURL?: string | URL): Promise<Worker>;
+
+  /**
+   * Get the next request ID for this pool.
+   *
+   * @returns The next request ID
+   */
+  getNextRequestId(): number;
+
+  /**
+   * Release a worker back to the pool.
+   *
+   * @param worker - The worker to release
+   */
+  releaseWorker(worker: Worker): void;
+
+  /**
+   * Get the current number of workers in the pool.
+   *
+   * @returns The number of active workers
+   */
+  readonly size: number;
+
+  /**
+   * Check if the pool has reached its maximum capacity.
+   *
+   * @returns True if the pool is at maximum capacity, false otherwise
+   */
+  isFull(): boolean;
+
+  /**
+   * Terminate all workers in the pool and clean up resources.
+   */
+  terminate(): void;
+
+  /**
+   * Dispose of the worker pool, terminating all workers.
+   */
+  [Symbol.dispose](): void;
+}
+
+/**
  * Engine configuration for CSV parsing.
  *
  * All parsing engine settings are unified in this type.
@@ -1071,52 +1145,60 @@ export type SplitCSVFields<
         : readonly [...Result, Col];
 
 /**
- * CSV String.
+ * CSV string data (value or stream).
  *
  * @category Types
  */
-export type CSVString<
-  Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-> = Header extends readonly [string, ...string[]]
-  ?
-      | JoinCSVFields<Header, Delimiter, Quotation>
-      | ReadableStream<JoinCSVFields<Header, Delimiter, Quotation>>
-  : string | ReadableStream<string>;
+export type CSVString = string | ReadableStream<string>;
 
 /**
- * CSV Binary.
+ * CSV binary data (all binary formats).
  *
  * @category Types
  */
 export type CSVBinary =
+  | Uint8Array
+  | ArrayBuffer
   | ReadableStream<Uint8Array>
   | Response
   | Request
-  | Blob
-  | ArrayBuffer
-  | Uint8Array;
+  | Blob;
 
 /**
- * CSV.
+ * CSV data (all supported formats for parsing).
  *
  * @category Types
  */
-export type CSV<
-  Header extends ReadonlyArray<string> = [],
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-> = Header extends []
-  ? CSVString | CSVBinary
-  : CSVString<Header, Delimiter, Quotation>;
+export type CSVData = CSVString | CSVBinary;
 
+/**
+ * Extracts the string type from CSVString for type-level processing.
+ *
+ * @remarks
+ * - For string literals: Returns the literal type for pattern matching
+ * - For ReadableStream: Returns the element type (falls back to string for type inference)
+ * - This is an internal utility type for header extraction from CSV data
+ *
+ * @internal
+ */
 type ExtractString<Source extends CSVString> = Source extends `${infer S}`
   ? S
   : Source extends ReadableStream<infer R>
     ? R
     : string;
 
+/**
+ * Extracts the CSV body (everything after the header line) for type-level parsing.
+ *
+ * @remarks
+ * This is a recursive type that processes CSV content character by character,
+ * handling:
+ * - Quoted fields with the specified quotation character
+ * - Escaped quotation marks within quoted fields
+ * - Newline characters that terminate the header
+ *
+ * @internal
+ */
 type ExtractCSVBody<
   CSVSource extends CSVString,
   Delimiter extends string = DEFAULT_DELIMITER,
@@ -1235,18 +1317,36 @@ export interface CSVLexerLexOptions {
 }
 
 /**
- * CSV Lexer interface.
+ * String CSV Lexer interface
  *
- * CSVLexer tokenizes CSV data into fields and records.
+ * StringCSVLexer tokenizes string CSV data into fields and records.
  */
-export interface CSVLexer {
+export interface StringCSVLexer {
   /**
-   * Lexes the given chunk of CSV data.
-   * @param chunk - The chunk of CSV data to be lexed. Omit to flush remaining data.
+   * Lexes the given chunk of CSV string data.
+   * @param chunk - The chunk of CSV string data to be lexed. Omit to flush remaining data.
    * @param options - Lexer options.
    * @returns An iterable iterator of tokens.
    */
   lex(chunk?: string, options?: CSVLexerLexOptions): IterableIterator<Token>;
+}
+
+/**
+ * Binary CSV Lexer interface
+ *
+ * BinaryCSVLexer tokenizes binary CSV data (Uint8Array) into fields and records.
+ */
+export interface BinaryCSVLexer {
+  /**
+   * Lexes the given chunk of CSV binary data.
+   * @param chunk - The chunk of CSV binary data (Uint8Array) to be lexed. Omit to flush remaining data.
+   * @param options - Lexer options.
+   * @returns An iterable iterator of tokens.
+   */
+  lex(
+    chunk?: Uint8Array,
+    options?: CSVLexerLexOptions,
+  ): IterableIterator<Token>;
 }
 
 /**
@@ -1345,40 +1445,4 @@ export interface BinaryCSVParser<
     chunk?: Uint8Array,
     options?: CSVParserParseOptions,
   ): CSVRecord<Header>[];
-}
-
-/**
- * Options for the WASM string CSV stream transformer.
- * @category Types
- */
-export interface WASMStringCSVStreamTransformerOptions {
-  /**
-   * Field delimiter character
-   * @default ','
-   */
-  delimiter?: string;
-}
-
-/**
- * Options for the WASM binary CSV stream transformer.
- * @category Types
- */
-export interface WASMBinaryCSVStreamTransformerOptions {
-  /**
-   * Field delimiter character
-   * @default ','
-   */
-  delimiter?: string;
-}
-
-/**
- * Options for the WASM CSV stream transformer.
- * @category Types
- */
-export interface WASMCSVStreamTransformerOptions {
-  /**
-   * Field delimiter character
-   * @default ','
-   */
-  delimiter?: string;
 }

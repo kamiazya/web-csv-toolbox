@@ -36,8 +36,6 @@ export type DEFAULT_QUOTATION = typeof DEFAULT_QUOTATION;
  * @category Constants
  */
 export const DEFAULT_ARRAY_BUFFER_THRESHOLD = 1 * 1024 * 1024; // 1MB
-export type DEFAULT_ARRAY_BUFFER_THRESHOLD =
-  typeof DEFAULT_ARRAY_BUFFER_THRESHOLD;
 
 /**
  * Default maximum buffer size for CSV lexer in characters (UTF-16 code units).

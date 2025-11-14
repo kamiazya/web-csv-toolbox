@@ -1,8 +1,9 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
-import type { CSVLexer, Token } from "../../core/types.ts";
+  CSVLexerTransformerStreamOptions,
+  StringCSVLexer,
+  Token,
+} from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (string input).
@@ -95,7 +96,7 @@ export class CSVLexerTransformer<
   _Delimiter extends string = DEFAULT_DELIMITER,
   _Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token> {
-  public readonly lexer: CSVLexer;
+  public readonly lexer: StringCSVLexer;
 
   /**
    * Yields to the event loop to allow backpressure handling.
@@ -107,11 +108,12 @@ export class CSVLexerTransformer<
   }
 
   constructor(
-    lexer: CSVLexer,
+    lexer: StringCSVLexer,
+    options: CSVLexerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = 100;
+    const checkInterval = options.backpressureCheckInterval ?? 100;
 
     super(
       {

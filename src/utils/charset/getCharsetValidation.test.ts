@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOptionsFromResponse } from "../response/getOptionsFromResponse.ts";
+import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.ts";
 
 describe("charset validation in getOptionsFromResponse", () => {
   describe("supported charsets", () => {

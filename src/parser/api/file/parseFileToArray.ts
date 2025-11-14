@@ -1,6 +1,6 @@
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { getOptionsFromFile } from "../../../utils/file/getOptionsFromFile.ts";
-import { parseBlob } from "../file/parseBlob.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseBlob } from "@/parser/api/file/parseBlob.ts";
+import { getOptionsFromFile } from "@/utils/file/getOptionsFromFile.ts";
 
 /**
  * Parse CSV from a {@link !File} to array of records.

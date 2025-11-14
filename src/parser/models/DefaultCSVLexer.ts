@@ -7,19 +7,19 @@ import {
   FieldDelimiter,
   LF,
   RecordDelimiter,
-} from "../../core/constants.ts";
-import { ParseError } from "../../core/errors.ts";
+} from "@/core/constants.ts";
+import { ParseError } from "@/core/errors.ts";
 import type {
   AbortSignalOptions,
   CommonOptions,
-  CSVLexer,
   CSVLexerLexOptions,
   Position,
   RecordDelimiterToken,
+  StringCSVLexer,
   Token,
-} from "../../core/types.ts";
-import { escapeRegExp } from "../../helpers/string/escapeRegExp.ts";
-import { assertCommonOptions } from "../../utils/validation/assertCommonOptions.ts";
+} from "@/core/types.ts";
+import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
+import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 /**
  * Default CSV Lexer implementation.
@@ -29,7 +29,7 @@ import { assertCommonOptions } from "../../utils/validation/assertCommonOptions.
 export class DefaultCSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> implements CSVLexer
+> implements StringCSVLexer
 {
   #delimiter: string;
   #quotation: string;

@@ -1,6 +1,6 @@
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { getOptionsFromBlob } from "../../../utils/blob/getOptionsFromBlob.ts";
-import { parseUint8ArrayStreamToStream } from "../binary/parseUint8ArrayStreamToStream.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
 
 /**
  * Parse CSV from a {@link !Blob} or {@link !File} to stream of records.

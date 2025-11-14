@@ -3,8 +3,8 @@ import type {
   EngineConfig,
   EngineFallbackInfo,
   QueuingStrategyConfig,
-} from "../../core/types.ts";
-import type { WorkerPool } from "../../worker/helpers/WorkerPool.ts";
+  WorkerPool,
+} from "@/core/types.ts";
 
 /**
  * Base options shared by all engine presets.

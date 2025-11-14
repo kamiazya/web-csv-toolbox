@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { beforeAll, describe, expect, it } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { loadWASM } from "../../../wasm/loadWASM.ts";
-import { parseStringToArraySyncWASM } from "../string/parseStringToArraySyncWASM.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
+import { loadWASM } from "@/wasm/loadWASM.ts";
 
 // Skip WASM tests in test environment as WASM module requires build-time setup
 describe.skip("parseStringToArraySyncWASM", async () => {

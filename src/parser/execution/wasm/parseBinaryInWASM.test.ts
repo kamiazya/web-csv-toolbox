@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { CSVRecord } from "../../../core/types.ts";
-import { loadWASM } from "../../../wasm/loadWASM.ts";
-import { parseBinaryInWASM } from "./parseBinaryInWASM.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
+import { loadWASM } from "@/wasm/loadWASM.ts";
 
 describe("parseBinaryInWASM", () => {
   beforeAll(async () => {
@@ -60,7 +60,7 @@ describe("parseBinaryInWASM", () => {
 
       for await (const record of parseBinaryInWASM(binary, {
         delimiter: ";",
-      })) {
+      } as any)) {
         records.push(record);
       }
 

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { DefaultCSVLexer } from "./DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "./DefaultCSVRecordAssembler.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
 
 /**
  * Regression tests to ensure that CSVRecordAssembler does not cause prototype pollution.

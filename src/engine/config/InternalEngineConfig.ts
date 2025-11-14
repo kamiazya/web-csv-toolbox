@@ -2,8 +2,8 @@ import type {
   EngineConfig,
   EngineFallbackInfo,
   WorkerCommunicationStrategy,
-} from "../../core/types.ts";
-import type { WorkerPool } from "../../worker/helpers/WorkerPool.ts";
+  WorkerPool,
+} from "@/core/types.ts";
 
 /**
  * Engine flags bitmask (internal use).

@@ -3,14 +3,10 @@ import {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   DOUBLE_QUOTE,
-} from "../../../core/constants.ts";
-import type {
-  CommonOptions,
-  CSVRecord,
-  PickCSVHeader,
-} from "../../../core/types.ts";
-import { assertCommonOptions } from "../../../utils/validation/assertCommonOptions.ts";
-import type { loadWASM } from "../../../wasm/loadWASM.ts";
+} from "@/core/constants.ts";
+import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";
+import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
+import type { loadWASM } from "@/wasm/loadWASM.ts";
 
 /**
  * Parse CSV string to record of arrays.

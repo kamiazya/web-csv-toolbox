@@ -1,11 +1,11 @@
-import * as internal from "../../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import { DEFAULT_ARRAY_BUFFER_THRESHOLD } from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { getOptionsFromBlob } from "../../../utils/blob/getOptionsFromBlob.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { parseBinary } from "../binary/parseBinary.ts";
-import { parseUint8ArrayStream } from "../binary/parseUint8ArrayStream.ts";
-import { parseBlobToStream } from "../file/parseBlobToStream.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import { DEFAULT_ARRAY_BUFFER_THRESHOLD } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBlobToStream } from "@/parser/api/file/parseBlobToStream.ts";
+import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
  * Parse CSV from a {@link !Blob} or {@link !File} to records.

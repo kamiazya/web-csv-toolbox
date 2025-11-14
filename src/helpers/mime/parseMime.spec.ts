@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseMime } from "./parseMime.ts";
+import { parseMime } from "@/helpers/mime/parseMime.ts";
 
 describe("parseMime function", () => {
   it("should parse mime type", () => {

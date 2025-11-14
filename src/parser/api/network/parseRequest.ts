@@ -1,9 +1,9 @@
-import * as internal from "../../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { getOptionsFromRequest } from "../../../utils/request/getOptionsFromRequest.ts";
-import { parseUint8ArrayStream } from "../binary/parseUint8ArrayStream.ts";
-import { parseRequestToStream } from "../network/parseRequestToStream.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseRequestToStream } from "@/parser/api/network/parseRequestToStream.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
+import { getOptionsFromRequest } from "@/utils/request/getOptionsFromRequest.ts";
 
 /**
  * Parse HTTP Request what contains CSV to records,

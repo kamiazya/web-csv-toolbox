@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 describe("SUPPORTED_COMPRESSIONS in Node.js", () => {
   it("should support only gzip and deflate in Node.js", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     expect(SUPPORTED_COMPRESSIONS.size).toBe(2);
@@ -18,7 +18,7 @@ describe("SUPPORTED_COMPRESSIONS in Node.js", () => {
 
   it("should not support deflate-raw in Node.js", async () => {
     const { SUPPORTED_COMPRESSIONS } = await import(
-      "#getOptionsFromResponse.constants.js"
+      "#/utils/response/getOptionsFromResponse.constants.js"
     );
 
     expect(SUPPORTED_COMPRESSIONS.has("deflate-raw")).toBe(false);

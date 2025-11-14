@@ -2,15 +2,15 @@ import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   FieldDelimiter,
   RecordDelimiter,
-} from "../../core/constants.ts";
-import { ParseError } from "../../core/errors.ts";
+} from "@/core/constants.ts";
+import { ParseError } from "@/core/errors.ts";
 import type {
   CSVRecord,
   CSVRecordAssembler,
   CSVRecordAssemblerAssembleOptions,
   CSVRecordAssemblerOptions,
   Token,
-} from "../../core/types.ts";
+} from "@/core/types.ts";
 
 /**
  * Default CSV Record Assembler implementation.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseString } from "../string/parseString.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
 
 /**
  * Memory usage tests for worker execution

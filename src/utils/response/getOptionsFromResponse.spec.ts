@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOptionsFromResponse } from "./getOptionsFromResponse.ts";
+import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.ts";
 
 describe("getOptionsFromResponse", () => {
   it("should return options", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CSVRecord } from "../../../core/types.ts";
-import { parseStringInMain } from "./parseStringInMain.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseStringInMain } from "@/parser/execution/main/parseStringInMain.ts";
 
 describe("parseStringInMain", () => {
   it("should parse simple CSV string", async () => {

@@ -1,9 +1,9 @@
-import type { DEFAULT_DELIMITER } from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { DefaultCSVLexer } from "../../models/DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "../../models/DefaultCSVRecordAssembler.ts";
-import { CSVLexerTransformer } from "../../stream/CSVLexerTransformer.ts";
-import { CSVRecordAssemblerTransformer } from "../../stream/CSVRecordAssemblerTransformer.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 export function parseUint8ArrayStreamToStream<
   Header extends readonly string[],

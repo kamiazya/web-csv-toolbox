@@ -1,17 +1,14 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVBinary,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../core/types.ts";
-import type { WorkerSession } from "../../worker/helpers/WorkerSession.ts";
-import type { InternalEngineConfig } from "../config/InternalEngineConfig.ts";
-import { MessageStreamingStrategy } from "./MessageStreamingStrategy.ts";
-import { TransferableStreamStrategy } from "./TransferableStreamStrategy.ts";
-import type { WorkerStrategy } from "./WorkerStrategy.ts";
+} from "@/core/types.ts";
+import type { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { MessageStreamingStrategy } from "@/engine/strategies/MessageStreamingStrategy.ts";
+import { TransferableStreamStrategy } from "@/engine/strategies/TransferableStreamStrategy.ts";
+import type { WorkerStrategy } from "@/engine/strategies/WorkerStrategy.ts";
+import type { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
  * Worker strategy selector.

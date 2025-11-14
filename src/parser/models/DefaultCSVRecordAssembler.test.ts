@@ -1,7 +1,8 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Field } from "../../core/constants";
-import { DefaultCSVLexer } from "./DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "./DefaultCSVRecordAssembler.ts";
+import { Field } from "@/core/constants";
+import type { CSVRecordAssembler } from "@/core/types.ts";
+import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
 
 describe("CSVRecordAssembler", () => {
   describe("constructor validation", () => {

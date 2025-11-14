@@ -1,4 +1,4 @@
-import { escapeRegExp } from "./escapeRegExp.ts";
+import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
 
 const PATTERN_CACHE = new Map<string, RegExp>();
 

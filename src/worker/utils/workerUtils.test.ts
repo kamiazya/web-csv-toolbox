@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { addListener, removeListener } from "./workerUtils.ts";
+import { addListener, removeListener } from "@/worker/utils/workerUtils.ts";
 
 describe("workerUtils", () => {
   describe("addListener", () => {
@@ -22,7 +22,10 @@ describe("workerUtils", () => {
       const handler = vi.fn();
       addListener(worker, "message", handler);
 
-      expect(worker.on).toHaveBeenCalledWith("message", expect.any(Function));
+      expect((worker as any).on).toHaveBeenCalledWith(
+        "message",
+        expect.any(Function),
+      );
     });
 
     it("should normalize message handler for Node.js workers", () => {
@@ -124,7 +127,10 @@ describe("workerUtils", () => {
       // Then remove it
       removeListener(worker, "message", handler);
 
-      expect(worker.off).toHaveBeenCalledWith("message", expect.any(Function));
+      expect((worker as any).off).toHaveBeenCalledWith(
+        "message",
+        expect.any(Function),
+      );
     });
 
     it("should remove the correct normalized handler for Node.js workers", () => {
@@ -162,7 +168,7 @@ describe("workerUtils", () => {
       }).not.toThrow();
 
       // Should still call off with the original handler
-      expect(worker.off).toHaveBeenCalledWith("message", handler);
+      expect((worker as any).off).toHaveBeenCalledWith("message", handler);
     });
 
     it("should clean up handler map after removal", () => {
@@ -262,8 +268,8 @@ describe("workerUtils", () => {
       removeListener(worker1, "message", handler);
 
       // worker2 should still have its handler
-      expect(worker1.off).toHaveBeenCalledTimes(1);
-      expect(worker2.off).toHaveBeenCalledTimes(0);
+      expect((worker1 as any).off).toHaveBeenCalledTimes(1);
+      expect((worker2 as any).off).toHaveBeenCalledTimes(0);
     });
   });
 

@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
-import { FC } from "../../../__tests__/helper.ts";
-import { escapeField } from "../../../utils/serialization/escapeField.ts";
-import { parseStringStream } from "../string/parseStringStream.ts";
+import { FC } from "@/__tests__/helper.ts";
+import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
+import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 describe("parseStringStream function", () => {
   it("should parse CSV", () =>

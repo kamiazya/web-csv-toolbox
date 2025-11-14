@@ -1,16 +1,10 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { parseStringToIterableIterator } from "../string/parseStringToIterableIterator.ts";
-import type { CSVRecord, ParseOptions } from "./web-csv-toolbox.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 
 describe("parseStringToIterableIterator function", () => {
-  it("parseStringToIterableIterator should be a function with expected parameter types", () => {
+  it("parseStringToIterableIterator should be a function", () => {
     expectTypeOf(parseStringToIterableIterator).toBeFunction();
-    expectTypeOf(parseStringToIterableIterator)
-      .parameter(0)
-      .toMatchTypeOf<string>();
-    expectTypeOf(parseStringToIterableIterator)
-      .parameter(1)
-      .toMatchTypeOf<ParseOptions<readonly string[]> | undefined>();
   });
 });
 

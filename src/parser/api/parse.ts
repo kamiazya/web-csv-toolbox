@@ -1,24 +1,21 @@
-import * as internal from "../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
-import type {
-  CSV,
   CSVBinary,
+  CSVData,
   CSVRecord,
   CSVString,
   ParseBinaryOptions,
   ParseOptions,
   PickCSVHeader,
-} from "../../core/types.ts";
-import { parseBinary } from "./binary/parseBinary.ts";
-import { parseUint8ArrayStream } from "./binary/parseUint8ArrayStream.ts";
-import { parseBlob } from "./file/parseBlob.ts";
-import { parseRequest } from "./network/parseRequest.ts";
-import { parseResponse } from "./network/parseResponse.ts";
-import { parseString } from "./string/parseString.ts";
-import { parseStringStream } from "./string/parseStringStream.ts";
+} from "@/core/types.ts";
+import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
+import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBlob } from "@/parser/api/file/parseBlob.ts";
+import { parseRequest } from "@/parser/api/network/parseRequest.ts";
+import { parseResponse } from "@/parser/api/network/parseResponse.ts";
+import { parseString } from "@/parser/api/string/parseString.ts";
+import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
 
 /**
  * Parse CSV to records.
@@ -199,7 +196,7 @@ export function parse<const Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>>;
 export async function* parse<const Header extends ReadonlyArray<string>>(
-  csv: CSV,
+  csv: CSVData,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   if (typeof csv === "string") {

@@ -1,11 +1,8 @@
-import { convertBinaryToString } from "../../../converters/binary/convertBinaryToString.ts";
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { parseStringToIterableIterator } from "../string/parseStringToIterableIterator.ts";
+import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
  * Parses the given binary data into an iterable iterator of CSV records.

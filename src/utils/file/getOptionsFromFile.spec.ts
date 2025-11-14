@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getOptionsFromFile } from "./getOptionsFromFile.ts";
+import { getOptionsFromFile } from "@/utils/file/getOptionsFromFile.ts";
 
 describe("getOptionsFromFile", () => {
   it("should extract charset from File type", () => {
@@ -53,7 +53,7 @@ describe("getOptionsFromFile", () => {
     const options = getOptionsFromFile(file, {
       delimiter: "\t",
       quotation: "'",
-    });
+    } as any);
 
     expect(options.charset).toBe("utf-8");
     expect(options.source).toBe("data.csv");

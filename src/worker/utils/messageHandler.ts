@@ -1,13 +1,10 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVBinary,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../core/types.ts";
-import { addListener, removeListener } from "./workerUtils.ts";
+} from "@/core/types.ts";
+import { addListener, removeListener } from "@/worker/utils/workerUtils.ts";
 
 /**
  * Message to send to worker.

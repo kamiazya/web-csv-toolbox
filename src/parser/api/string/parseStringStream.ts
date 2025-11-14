@@ -1,18 +1,11 @@
-import { convertStreamToAsyncIterableIterator } from "../../../converters/iterators/convertStreamToAsyncIterableIterator.ts";
-import * as internal from "../../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type {
-  CSVRecord,
-  ParseOptions,
-  PickCSVHeader,
-} from "../../../core/types.ts";
-import { InternalEngineConfig } from "../../../engine/config/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "../../../engine/strategies/WorkerStrategySelector.ts";
-import { WorkerSession } from "../../../worker/helpers/WorkerSession.ts";
-import { parseStringStreamToStream } from "../string/parseStringStreamToStream.ts";
+import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
+import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
  * Parse CSV string stream to records.

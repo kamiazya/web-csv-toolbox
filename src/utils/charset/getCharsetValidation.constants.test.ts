@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 describe("SUPPORTED_CHARSETS environment-specific constants", () => {
   it("should export SUPPORTED_CHARSETS", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     expect(SUPPORTED_CHARSETS).toBeDefined();
@@ -15,7 +15,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should support utf-8 in all environments", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     expect(SUPPORTED_CHARSETS.has("utf-8")).toBe(true);
@@ -23,7 +23,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should support utf8 alias in all environments", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     expect(SUPPORTED_CHARSETS.has("utf8")).toBe(true);
@@ -31,7 +31,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should support common Western European encodings", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     expect(SUPPORTED_CHARSETS.has("iso-8859-1")).toBe(true);
@@ -40,7 +40,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should support common Asian encodings", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     // Japanese
@@ -57,7 +57,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should have reasonable size for common charsets", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     // Should have at least the major charsets
@@ -66,7 +66,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should not include obviously invalid charsets", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     expect(SUPPORTED_CHARSETS.has("invalid-charset")).toBe(false);
@@ -77,7 +77,7 @@ describe("SUPPORTED_CHARSETS environment-specific constants", () => {
 
   it("should be case-insensitive (all lowercase)", async () => {
     const { SUPPORTED_CHARSETS } = await import(
-      "#getCharsetValidation.constants.js"
+      "#/utils/charset/getCharsetValidation.constants.js"
     );
 
     // All entries should be lowercase

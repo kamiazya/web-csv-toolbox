@@ -1,14 +1,10 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_, vi } from "vitest";
-import { FC, transform } from "../../__tests__/helper.ts";
-import {
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-} from "../../core/constants.ts";
-import type { Token } from "../../core/types.ts";
-import { DefaultCSVRecordAssembler } from "../models/DefaultCSVRecordAssembler.ts";
-import { CSVRecordAssemblerTransformer } from "./CSVRecordAssemblerTransformer.ts";
+import { FC, transform } from "@/__tests__/helper.ts";
+import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import type { Token } from "@/core/types.ts";
+import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;

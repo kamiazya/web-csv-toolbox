@@ -1,4 +1,4 @@
-import { ParseError } from "../../core/errors";
+import { ParseError } from "@/core/errors";
 
 /**
  * Common error handling for parsing CSV data.

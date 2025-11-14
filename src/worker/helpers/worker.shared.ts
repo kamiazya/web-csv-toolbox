@@ -1,12 +1,9 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../core/types.ts";
+} from "@/core/types.ts";
 
 /**
  * Base interface for Worker requests

@@ -1,5 +1,5 @@
-import { createWorker } from "#execution/worker/createWorker.js";
-import type { WorkerPool } from "./WorkerPool.ts";
+import { createWorker } from "#/worker/helpers/createWorker.js";
+import type { WorkerPool } from "@/core/types.ts";
 
 /**
  * Options for configuring the ReusableWorkerPool.

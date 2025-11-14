@@ -1,8 +1,8 @@
-import { convertBinaryToString } from "../../../converters/binary/convertBinaryToString.ts";
-import type { DEFAULT_DELIMITER } from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { parseStringToArraySync } from "../string/parseStringToArraySync.ts";
+import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
  * Synchronously parses binary CSV data into an array of records.

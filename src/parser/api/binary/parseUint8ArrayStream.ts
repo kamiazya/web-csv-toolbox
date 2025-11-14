@@ -1,15 +1,15 @@
-import { convertStreamToAsyncIterableIterator } from "../../../converters/iterators/convertStreamToAsyncIterableIterator.ts";
-import * as internal from "../../../converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type { DEFAULT_DELIMITER } from "../../../core/constants.ts";
+import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
+import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
+import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../../core/types.ts";
-import { InternalEngineConfig } from "../../../engine/config/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "../../../engine/strategies/WorkerStrategySelector.ts";
-import { WorkerSession } from "../../../worker/helpers/WorkerSession.ts";
-import { parseUint8ArrayStreamToStream } from "../binary/parseUint8ArrayStreamToStream.ts";
+} from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
  * Parse CSV to records.

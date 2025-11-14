@@ -1,15 +1,12 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
-} from "../../../core/types.ts";
-import { WorkerSession } from "../../../worker/helpers/WorkerSession.ts";
-import { sendWorkerMessage } from "../../../worker/utils/messageHandler.ts";
-import { serializeOptions } from "../../../worker/utils/serializeOptions.ts";
+} from "@/core/types.ts";
+import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
+import { sendWorkerMessage } from "@/worker/utils/messageHandler.ts";
+import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
 
 /**
  * Parse CSV string in Worker thread using WASM.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseFileToStream } from "../file/parseFileToStream.ts";
+import { parseFileToStream } from "@/parser/api/file/parseFileToStream.ts";
 
 describe("parseFileToStream", () => {
   it("should parse CSV from File and return ReadableStream", async () => {
@@ -49,7 +49,7 @@ describe("parseFileToStream", () => {
       type: "text/tab-separated-values",
     });
 
-    const stream = parseFileToStream(file, { delimiter: "\t" });
+    const stream = parseFileToStream(file, { delimiter: "\t" } as any);
     const reader = stream.getReader();
 
     const result = await reader.read();

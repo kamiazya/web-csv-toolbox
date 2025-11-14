@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EngineFlags, InternalEngineConfig } from "./InternalEngineConfig.ts";
+import type { WorkerEngineConfig } from "@/core/types.ts";
+import {
+  EngineFlags,
+  InternalEngineConfig,
+} from "@/engine/config/InternalEngineConfig.ts";
 
 describe("InternalEngineConfig", () => {
   describe("Constructor and parsing", () => {
@@ -271,7 +275,7 @@ describe("InternalEngineConfig", () => {
   describe("toConfig conversion", () => {
     it("should convert to EngineConfig with worker", () => {
       const config = new InternalEngineConfig({ worker: true });
-      const engineConfig = config.toConfig();
+      const engineConfig = config.toConfig() as WorkerEngineConfig;
 
       expect(engineConfig.worker).toBe(true);
       expect(engineConfig.wasm).toBeUndefined();
@@ -297,7 +301,7 @@ describe("InternalEngineConfig", () => {
         workerURL: url,
         onFallback: callback,
       });
-      const engineConfig = config.toConfig();
+      const engineConfig = config.toConfig() as WorkerEngineConfig;
 
       expect(engineConfig.worker).toBe(true);
       expect(engineConfig.wasm).toBe(true);
@@ -387,7 +391,7 @@ describe("InternalEngineConfig", () => {
         worker: false,
         wasm: false,
         strict: false,
-      });
+      } as any);
       expect(config.hasWorker()).toBe(false);
       expect(config.hasWasm()).toBe(false);
       expect(config.hasStrict()).toBe(false);

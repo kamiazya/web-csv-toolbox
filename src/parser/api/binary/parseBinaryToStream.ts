@@ -1,11 +1,8 @@
-import { convertBinaryToString } from "../../../converters/binary/convertBinaryToString.ts";
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "../../../core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "../../../core/types.ts";
-import { commonParseErrorHandling } from "../../../utils/error/commonParseErrorHandling.ts";
-import { parseStringToStream } from "../string/parseStringToStream.ts";
+import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 export function parseBinaryToStream<
   Header extends ReadonlyArray<string>,

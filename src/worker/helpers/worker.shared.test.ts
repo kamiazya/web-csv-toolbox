@@ -8,7 +8,7 @@ import {
   streamRecordsToMain,
   streamRecordsToPort,
   type WorkerContext,
-} from "./worker.shared.ts";
+} from "@/worker/helpers/worker.shared.ts";
 
 describe("worker.shared", () => {
   describe("streamRecordsToMain", () => {
