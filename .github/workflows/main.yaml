@@ -13,10 +13,12 @@ jobs:
 
   static_tests:
     name: Static Tests
+    permissions: inherit
     uses: ./.github/workflows/.static-tests.yaml
 
   build:
     name: Build
+    permissions: inherit
     uses: ./.github/workflows/.build.yaml
     needs:
       - static_tests
@@ -25,6 +27,7 @@ jobs:
 
   dynamic_tests:
     name: Dynamic Tests
+    permissions: inherit
     uses: ./.github/workflows/.dynamic-tests.yaml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
@@ -35,6 +38,7 @@ jobs:
 
   release:
     name: Release
+    permissions: inherit
     uses: ./.github/workflows/.release.yaml
     needs:
       - static_tests
