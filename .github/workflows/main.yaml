@@ -9,17 +9,19 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: {}
+
 jobs:
 
   static_tests:
     name: Static Tests
-    permissions: inherit
     uses: ./.github/workflows/.static-tests.yaml
+    permissions: {}
 
   build:
     name: Build
-    permissions: inherit
     uses: ./.github/workflows/.build.yaml
+    permissions: {}
     needs:
       - static_tests
     secrets:
@@ -27,8 +29,8 @@ jobs:
 
   dynamic_tests:
     name: Dynamic Tests
-    permissions: inherit
     uses: ./.github/workflows/.dynamic-tests.yaml
+    permissions: {}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
@@ -38,8 +40,8 @@ jobs:
 
   release:
     name: Release
-    permissions: inherit
     uses: ./.github/workflows/.release.yaml
+    permissions: {}
     needs:
       - static_tests
       - build
