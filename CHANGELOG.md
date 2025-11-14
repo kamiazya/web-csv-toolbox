@@ -1,5 +1,1097 @@
 # web-csv-toolbox
 
+## 0.14.0
+
+### Minor Changes
+
+- [#577](https://github.com/kamiazya/web-csv-toolbox/pull/577) [`978b889`](https://github.com/kamiazya/web-csv-toolbox/commit/978b88933762ecc27270ce746b80a3fa7ed8c4f7) Thanks [@kamiazya](https://github.com/kamiazya)! - Add `arrayBufferThreshold` option to Engine configuration for automatic Blob reading strategy selection
+
+  ## New Feature
+
+  Added `engine.arrayBufferThreshold` option that automatically selects the optimal Blob reading strategy based on file size:
+
+  - **Files smaller than threshold**: Use `blob.arrayBuffer()` + `parseBinary()` (6-8x faster, confirmed by benchmarks)
+  - **Files equal to or larger than threshold**: Use `blob.stream()` + `parseUint8ArrayStream()` (memory-efficient)
+
+  **Default:** 1MB (1,048,576 bytes), determined by comprehensive benchmarks
+
+  **Applies to:** `parseBlob()` and `parseFile()` only
+
+  ## Benchmark Results
+
+  | File Size | Binary (ops/sec) | Stream (ops/sec) | Performance Gain |
+  | --------- | ---------------- | ---------------- | ---------------- |
+  | 1KB       | 21,691           | 2,685            | **8.08x faster** |
+  | 10KB      | 2,187            | 311              | **7.03x faster** |
+  | 100KB     | 219              | 32               | **6.84x faster** |
+  | 1MB       | 20               | 3                | **6.67x faster** |
+
+  ## Usage
+
+  ```typescript
+  import { parseBlob, EnginePresets } from "web-csv-toolbox";
+
+  // Use default (1MB threshold)
+  for await (const record of parseBlob(file)) {
+    console.log(record);
+  }
+
+  // Always use streaming (memory-efficient)
+  for await (const record of parseBlob(largeFile, {
+    engine: { arrayBufferThreshold: 0 },
+  })) {
+    console.log(record);
+  }
+
+  // Custom threshold (512KB)
+  for await (const record of parseBlob(file, {
+    engine: { arrayBufferThreshold: 512 * 1024 },
+  })) {
+    console.log(record);
+  }
+
+  // With preset
+  for await (const record of parseBlob(file, {
+    engine: EnginePresets.fastest({
+      arrayBufferThreshold: 2 * 1024 * 1024, // 2MB
+    }),
+  })) {
+    console.log(record);
+  }
+  ```
+
+  ## Special Values
+
+  - `0` - Always use streaming (maximum memory efficiency)
+  - `Infinity` - Always use arrayBuffer (maximum performance for small files)
+
+  ## Security Note
+
+  When using `arrayBufferThreshold > 0`, files must stay below `maxBufferSize` (default 10MB) to prevent excessive memory allocation. Files exceeding this limit will throw a `RangeError`.
+
+  ## Design Philosophy
+
+  This option belongs to `engine` configuration because it affects **performance and behavior only**, not the parsing result specification. This follows the design principle:
+
+  - **Top-level options**: Affect specification (result changes)
+  - **Engine options**: Affect performance/behavior (same result, different execution)
+
+- [#574](https://github.com/kamiazya/web-csv-toolbox/pull/574) [`fe8f8c2`](https://github.com/kamiazya/web-csv-toolbox/commit/fe8f8c27b5fcf2744b32ad7dca0a70ed7f47c915) Thanks [@kamiazya](https://github.com/kamiazya)! - Add support for Blob, File, and Request objects
+
+  This release adds native support for parsing CSV data from Web Standard `Blob`, `File`, and `Request` objects, making the library more versatile across different environments.
+
+  **New Functions:**
+
+  - **`parseBlob(blob, options)`** - Parse CSV from Blob or File objects
+
+    - Automatic charset detection from `blob.type` property
+    - Supports compression via `decompression` option
+    - Returns `AsyncIterableIterator<CSVRecord>`
+    - Includes `.toArray()` and `.toStream()` namespace methods
+
+  - **`parseFile(file, options)`** - Enhanced File parsing with automatic error source tracking
+
+    - Built on top of `parseBlob` with additional functionality
+    - **Automatically sets `file.name` as error source** for better error reporting
+    - Provides clearer intent when working specifically with File objects
+    - Useful for file inputs and drag-and-drop scenarios
+    - Includes `.toArray()` and `.toStream()` namespace methods
+
+  - **`parseRequest(request, options)`** - Server-side Request parsing
+    - Automatic `Content-Type` validation and charset extraction
+    - Automatic `Content-Encoding` detection and decompression
+    - Designed for Cloudflare Workers, Service Workers, and edge platforms
+    - Includes `.toArray()` and `.toStream()` namespace methods
+
+  **High-level API Integration:**
+
+  The `parse()` function now automatically detects and handles these new input types:
+
+  ```typescript
+  import { parse } from "web-csv-toolbox";
+
+  // Blob/File (browser file uploads)
+  // File objects automatically include filename in error messages
+  const file = input.files[0];
+  for await (const record of parse(file)) {
+    console.log(record);
+  }
+
+  // Request (server-side)
+  export default {
+    async fetch(request: Request) {
+      for await (const record of parse(request)) {
+        console.log(record);
+      }
+    },
+  };
+  ```
+
+  **Type System Updates:**
+
+  - Updated `CSVBinary` type to include `Blob` and `Request`
+  - Added proper type overloads to `parse()` function
+  - Full TypeScript support with generic header types
+  - **New `source` field** in `CommonOptions`, `CSVRecordAssemblerOptions`, and `ParseError`
+    - Allows custom error source identification (e.g., filename, description)
+    - Automatically populated for File objects
+    - Improves error messages with contextual information
+  - **Improved internal type naming** for better clarity
+    - `Join` → `JoinCSVFields` - More descriptive CSV field joining utility type
+    - `Split` → `SplitCSVFields` - More descriptive CSV field splitting utility type
+    - These are internal utility types used for CSV type-level string manipulation
+  - **Enhanced terminology** in type definitions
+    - `TokenLocation.rowNumber` - Logical CSV row number (includes header)
+    - Clear distinction between physical line numbers (`line`) and logical row numbers (`rowNumber`)
+
+  **Compression Support:**
+
+  All binary input types support compressed data:
+
+  - **Blob/File**: Manual specification via `decompression` option
+
+    ```typescript
+    parseBlob(file, { decompression: "gzip" });
+    ```
+
+  - **Request**: Automatic detection from `Content-Encoding` header
+
+    ```typescript
+    // No configuration needed - automatic
+    parseRequest(request);
+    ```
+
+  - Supported formats: `gzip`, `deflate`, `deflate-raw` (environment-dependent)
+
+  **Helper Functions:**
+
+  - `getOptionsFromBlob()` - Extracts charset from Blob MIME type
+  - `getOptionsFromFile()` - Extracts options from File (charset + automatic source naming)
+  - `getOptionsFromRequest()` - Processes Request headers (Content-Type, Content-Encoding)
+  - `parseBlobToStream()` - Stream conversion helper
+  - `parseFileToArray()` - Parse File to array of records
+  - `parseFileToStream()` - Parse File to ReadableStream
+  - `parseRequestToStream()` - Stream conversion helper
+
+  **Documentation:**
+
+  Comprehensive documentation following Diátaxis framework:
+
+  - **API Reference:**
+
+    - `parseBlob.md` - Complete API reference with examples
+    - `parseFile.md` - Alias documentation
+    - `parseRequest.md` - Server-side API reference with examples
+    - Updated `parse.md` to include new input types
+
+  - **How-to Guides:**
+
+    - **NEW:** `platform-usage/` - Environment-specific usage patterns organized by platform
+      - Each topic has its own dedicated guide for easy navigation
+      - **Browser:** File input, drag-and-drop, FormData, Fetch API
+      - **Node.js:** Buffer, fs.ReadStream, HTTP requests, stdin/stdout
+      - **Deno:** Deno.readFile, Deno.open, fetch API
+    - Organized in `{environment}/{topic}.md` structure for maintainability
+
+  - **Examples:**
+
+    - File input elements with HTML samples
+    - Drag-and-drop file uploads
+    - Compressed file handling (.csv.gz)
+    - Validation and error handling patterns
+    - **NEW:** Node.js Buffer usage (already supported via Uint8Array)
+    - **NEW:** FormData integration patterns
+    - **NEW:** Node.js stream conversion (fs.ReadStream → Web Streams)
+
+  - **Updated:**
+    - `README.md` - Added usage examples and API listings
+    - `choosing-the-right-api.md` - Updated decision tree
+
+  **Enhanced Error Reporting:**
+
+  The `source` field provides better error context when parsing multiple files:
+
+  ```typescript
+  import { parseFile } from "web-csv-toolbox";
+
+  // Automatic source tracking
+  try {
+    for await (const record of parseFile(file)) {
+      // ...
+    }
+  } catch (error) {
+    console.error(error.message);
+    // "Field count (100001) exceeded maximum allowed count of 100000 at row 5 in "data.csv""
+    console.error(error.source); // "data.csv"
+  }
+
+  // Manual source specification
+  parseString(csv, { source: "API-Export-2024" });
+  // Error: "... at row 5 in "API-Export-2024""
+  ```
+
+  **Security Note:** The `source` field should not contain sensitive information (API keys, tokens, URLs with credentials) as it may be exposed in error messages and logs.
+
+  **Use Cases:**
+
+  ✅ **Browser File Uploads:**
+
+  - File input elements (`<input type="file">`)
+  - Drag-and-drop interfaces
+  - Compressed file support (.csv.gz)
+
+  ✅ **Server-Side Processing:**
+
+  - Node.js servers
+  - Deno applications
+  - Service Workers
+
+  ✅ **Automatic Header Processing:**
+
+  - Content-Type validation
+  - Charset detection
+  - Content-Encoding decompression
+
+  **Platform Support:**
+
+  All new APIs work across:
+
+  - Modern browsers (Chrome, Firefox, Edge, Safari)
+  - Node.js 18+ (via undici Request/Blob)
+  - Deno
+  - Service Workers
+
+  **Breaking Changes:**
+
+  None - this is a purely additive feature. All existing APIs remain unchanged.
+
+  **Migration:**
+
+  No migration needed. New functions are available immediately:
+
+  ```typescript
+  // Before (still works)
+  import { parse } from "web-csv-toolbox";
+  const response = await fetch("data.csv");
+  for await (const record of parse(response)) {
+  }
+
+  // After (new capabilities)
+  import { parseBlob, parseFile, parseRequest } from "web-csv-toolbox";
+
+  // Blob support
+  for await (const record of parseBlob(blob)) {
+  }
+
+  // File support with automatic error source
+  const file = input.files[0];
+  for await (const record of parseFile(file)) {
+  }
+  // Errors will include: 'in "data.csv"'
+
+  // Server-side Request support
+  for await (const record of parseRequest(request)) {
+  }
+
+  // Custom error source for any parser
+  import { parseString } from "web-csv-toolbox";
+  for await (const record of parseString(csv, { source: "user-import.csv" })) {
+  }
+  ```
+
+- [#577](https://github.com/kamiazya/web-csv-toolbox/pull/577) [`978b889`](https://github.com/kamiazya/web-csv-toolbox/commit/978b88933762ecc27270ce746b80a3fa7ed8c4f7) Thanks [@kamiazya](https://github.com/kamiazya)! - Implement discriminated union pattern for `EngineConfig` to improve type safety
+
+  ## Breaking Changes
+
+  ### 1. EngineConfig Type Structure
+
+  `EngineConfig` is now a discriminated union based on the `worker` property:
+
+  **Before:**
+
+  ```typescript
+  interface EngineConfig {
+    worker?: boolean;
+    workerURL?: string | URL;
+    workerPool?: WorkerPool;
+    workerStrategy?: WorkerCommunicationStrategy;
+    strict?: boolean;
+    onFallback?: (info: EngineFallbackInfo) => void;
+    wasm?: boolean;
+    // ... other properties
+  }
+  ```
+
+  **After:**
+
+  ```typescript
+  // Base configuration shared by all modes
+  interface BaseEngineConfig {
+    wasm?: boolean;
+    arrayBufferThreshold?: number;
+    backpressureCheckInterval?: BackpressureCheckInterval;
+    queuingStrategy?: QueuingStrategyConfig;
+  }
+
+  // Main thread configuration (worker is false or undefined)
+  interface MainThreadEngineConfig extends BaseEngineConfig {
+    worker?: false;
+  }
+
+  // Worker configuration (worker must be true)
+  interface WorkerEngineConfig extends BaseEngineConfig {
+    worker: true;
+    workerURL?: string | URL;
+    workerPool?: WorkerPool;
+    workerStrategy?: WorkerCommunicationStrategy;
+    strict?: boolean;
+    onFallback?: (info: EngineFallbackInfo) => void;
+  }
+
+  // Union type
+  type EngineConfig = MainThreadEngineConfig | WorkerEngineConfig;
+  ```
+
+  ### 2. Type Safety Improvements
+
+  Worker-specific properties are now only available when `worker: true`:
+
+  ```typescript
+  // ✅ Valid - worker: true allows worker-specific properties
+  const config1: EngineConfig = {
+    worker: true,
+    workerURL: "./worker.js", // ✅ Type-safe
+    workerStrategy: "stream-transfer",
+    strict: true,
+  };
+
+  // ✅ Valid - worker: false doesn't require worker properties
+  const config2: EngineConfig = {
+    worker: false,
+    wasm: true,
+  };
+
+  // ❌ Type Error - worker: false cannot have workerURL
+  const config3: EngineConfig = {
+    worker: false,
+    workerURL: "./worker.js", // ❌ Type error!
+  };
+  ```
+
+  ### 3. EnginePresets Options Split
+
+  `EnginePresetOptions` is now split into two interfaces for better type safety:
+
+  **Before:**
+
+  ```typescript
+  interface EnginePresetOptions {
+    workerPool?: WorkerPool;
+    workerURL?: string | URL;
+    onFallback?: (info: EngineFallbackInfo) => void;
+    arrayBufferThreshold?: number;
+    // ...
+  }
+
+  EnginePresets.mainThread(options?: EnginePresetOptions)
+  EnginePresets.fastest(options?: EnginePresetOptions)
+  ```
+
+  **After:**
+
+  ```typescript
+  // For main thread presets (mainThread, wasm)
+  interface MainThreadPresetOptions extends BasePresetOptions {
+    // No worker-related options
+  }
+
+  // For worker-based presets (worker, fastest, balanced, etc.)
+  interface WorkerPresetOptions extends BasePresetOptions {
+    workerPool?: WorkerPool;
+    workerURL?: string | URL;
+    onFallback?: (info: EngineFallbackInfo) => void;
+  }
+
+  EnginePresets.mainThread(options?: MainThreadPresetOptions)
+  EnginePresets.fastest(options?: WorkerPresetOptions)
+  ```
+
+  **Migration:**
+
+  ```typescript
+  // Before: No type error, but logically incorrect
+  EnginePresets.mainThread({ workerURL: "./worker.js" }); // Accepted but ignored
+
+  // After: Type error prevents mistakes
+  EnginePresets.mainThread({ workerURL: "./worker.js" }); // ❌ Type error!
+  ```
+
+  ### 4. Transformer Constructor Changes
+
+  Queuing strategy parameters changed from optional (`?`) to default parameters:
+
+  **Before:**
+
+  ```typescript
+  constructor(
+    options?: CSVLexerTransformerOptions,
+    writableStrategy?: QueuingStrategy<string>,
+    readableStrategy?: QueuingStrategy<Token>
+  )
+  ```
+
+  **After:**
+
+  ```typescript
+  constructor(
+    options: CSVLexerTransformerOptions = {},
+    writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
+    readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY
+  )
+  ```
+
+  **Impact:** This is technically a breaking change in the type signature, but **functionally backward compatible** since all parameters still have defaults. Existing code will continue to work without modifications.
+
+  ## New Features
+
+  ### 1. Default Strategy Constants
+
+  Default queuing strategies are now module-level constants using `CountQueuingStrategy`:
+
+  ```typescript
+  // CSVLexerTransformer
+  const DEFAULT_WRITABLE_STRATEGY: QueuingStrategy<string> = {
+    highWaterMark: 65536,
+    size: (chunk) => chunk.length,
+  };
+  const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
+    highWaterMark: 1024,
+  });
+
+  // CSVRecordAssemblerTransformer
+  const DEFAULT_WRITABLE_STRATEGY = new CountQueuingStrategy({
+    highWaterMark: 1024,
+  });
+  const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
+    highWaterMark: 256,
+  });
+  ```
+
+  ### 2. Type Tests
+
+  Added comprehensive type tests in `src/common/types.test-d.ts` to validate the discriminated union behavior:
+
+  ```typescript
+  // Validates type narrowing
+  const config: EngineConfig = { worker: true };
+  expectTypeOf(config).toExtend<WorkerEngineConfig>();
+
+  // Validates property exclusion
+  expectTypeOf<MainThreadEngineConfig>().not.toHaveProperty("workerURL");
+  ```
+
+  ## Migration Guide
+
+  ### For TypeScript Users
+
+  If you're passing `EngineConfig` objects explicitly typed, you may need to update:
+
+  ```typescript
+  // Before: Could accidentally mix incompatible properties
+  const config: EngineConfig = {
+    worker: false,
+    workerURL: "./worker.js", // Silently ignored
+  };
+
+  // After: TypeScript catches the mistake
+  const config: EngineConfig = {
+    worker: false,
+    // workerURL: './worker.js'  // ❌ Type error - removed
+  };
+  ```
+
+  ### For EnginePresets Users
+
+  Update preset option types if explicitly typed:
+
+  ```typescript
+  // Before
+  const options: EnginePresetOptions = {
+    workerPool: myPool,
+  };
+  EnginePresets.mainThread(options); // No error, but workerPool ignored
+
+  // After
+  const options: WorkerPresetOptions = {
+    // or MainThreadPresetOptions
+    workerPool: myPool,
+  };
+  EnginePresets.fastest(options); // ✅ Correct usage
+  // EnginePresets.mainThread(options);  // ❌ Type error - use MainThreadPresetOptions
+  ```
+
+  ### For Transformer Users
+
+  No code changes required. Existing usage continues to work:
+
+  ```typescript
+  // Still works exactly as before
+  new CSVLexerTransformer();
+  new CSVLexerTransformer({ delimiter: "," });
+  new CSVLexerTransformer({}, customWritable, customReadable);
+  ```
+
+  ## Benefits
+
+  1. **IDE Autocomplete**: Better suggestions based on `worker` setting
+  2. **Type Safety**: Prevents invalid property combinations
+  3. **Self-Documenting**: Type system enforces valid configurations
+  4. **Catch Errors Early**: TypeScript catches configuration mistakes at compile time
+  5. **Standards Compliance**: Uses `CountQueuingStrategy` from Web Streams API
+
+- [#577](https://github.com/kamiazya/web-csv-toolbox/pull/577) [`978b889`](https://github.com/kamiazya/web-csv-toolbox/commit/978b88933762ecc27270ce746b80a3fa7ed8c4f7) Thanks [@kamiazya](https://github.com/kamiazya)! - Add experimental performance tuning options to Engine configuration: `backpressureCheckInterval` and `queuingStrategy`
+
+  ## New Experimental Features
+
+  Added advanced performance tuning options for fine-grained control over streaming behavior:
+
+  ### `engine.backpressureCheckInterval`
+
+  Controls how frequently the internal parsers check for backpressure during streaming operations (count-based).
+
+  **Default:**
+
+  ```typescript
+  {
+    lexer: 100,      // Check every 100 tokens processed
+    assembler: 10    // Check every 10 records processed
+  }
+  ```
+
+  **Trade-offs:**
+
+  - **Lower values**: More frequent backpressure checks, more responsive to downstream consumers
+  - **Higher values**: Less frequent backpressure checks, reduced checking overhead
+
+  **Potential Use Cases:**
+
+  - Memory-constrained environments: Consider lower values for more responsive backpressure
+  - Scenarios where checking overhead is a concern: Consider higher values
+  - Slow consumers: Consider lower values to propagate backpressure more quickly
+
+  ### `engine.queuingStrategy`
+
+  Controls the internal queuing behavior of the CSV parser's streaming pipeline.
+
+  **Default:** Designed to balance memory usage and buffering behavior
+
+  **Structure:**
+
+  ```typescript
+  {
+    lexerWritable?: QueuingStrategy<string>;
+    lexerReadable?: QueuingStrategy<Token>;
+    assemblerWritable?: QueuingStrategy<Token>;
+    assemblerReadable?: QueuingStrategy<CSVRecord<any>>;
+  }
+  ```
+
+  **Pipeline Stages:**
+  The CSV parser uses a two-stage pipeline:
+
+  1. **Lexer**: String → Token
+  2. **Assembler**: Token → CSVRecord
+
+  Each stage has both writable (input) and readable (output) sides:
+
+  1. `lexerWritable` - Lexer input (string chunks)
+  2. `lexerReadable` - Lexer output (tokens)
+  3. `assemblerWritable` - Assembler input (tokens from lexer)
+  4. `assemblerReadable` - Assembler output (CSV records)
+
+  **Theoretical Trade-offs:**
+
+  - **Small highWaterMark (1-10)**: Less memory for buffering, backpressure applied more quickly
+  - **Medium highWaterMark (default)**: Balanced memory and buffering
+  - **Large highWaterMark (100+)**: More memory for buffering, backpressure applied less frequently
+
+  **Note:** Actual performance characteristics depend on your specific use case and runtime environment. Profile your application to determine optimal values.
+
+  **Potential Use Cases:**
+
+  - IoT/Embedded: Consider smaller highWaterMark for minimal memory footprint
+  - Server-side batch processing: Consider larger highWaterMark for more buffering
+  - Real-time streaming: Consider smaller highWaterMark for faster backpressure propagation
+
+  ## Usage Examples
+
+  ### Configuration Example: Tuning for Potential High-Throughput Scenarios
+
+  ```typescript
+  import { parseString, EnginePresets } from "web-csv-toolbox";
+
+  const config = EnginePresets.fastest({
+    backpressureCheckInterval: {
+      lexer: 200, // Check every 200 tokens (less frequent)
+      assembler: 20, // Check every 20 records (less frequent)
+    },
+    queuingStrategy: {
+      lexerReadable: new CountQueuingStrategy({ highWaterMark: 100 }),
+      assemblerReadable: new CountQueuingStrategy({ highWaterMark: 50 }),
+    },
+  });
+
+  for await (const record of parseString(csv, { engine: config })) {
+    console.log(record);
+  }
+  ```
+
+  ### Memory-Constrained Environment
+
+  ```typescript
+  import { parseString, EnginePresets } from "web-csv-toolbox";
+
+  const config = EnginePresets.balanced({
+    backpressureCheckInterval: {
+      lexer: 10, // Check every 10 tokens (frequent checks)
+      assembler: 5, // Check every 5 records (frequent checks)
+    },
+    queuingStrategy: {
+      // Minimal buffers throughout entire pipeline
+      lexerWritable: new CountQueuingStrategy({ highWaterMark: 1 }),
+      lexerReadable: new CountQueuingStrategy({ highWaterMark: 1 }),
+      assemblerWritable: new CountQueuingStrategy({ highWaterMark: 1 }),
+      assemblerReadable: new CountQueuingStrategy({ highWaterMark: 1 }),
+    },
+  });
+
+  for await (const record of parseString(csv, { engine: config })) {
+    console.log(record);
+  }
+  ```
+
+  ## ⚠️ Experimental Status
+
+  These APIs are marked as **experimental** and may change in future versions based on ongoing performance research. The default values are designed to work well for most use cases, but optimal values may vary depending on your specific environment and workload.
+
+  **Recommendation:** Only adjust these settings if you're experiencing specific performance issues with large streaming operations or have specific memory/throughput requirements.
+
+  ## Design Philosophy
+
+  These options belong to `engine` configuration because they affect **performance and behavior only**, not the parsing result specification. This follows the design principle:
+
+  - **Top-level options**: Affect specification (result changes)
+  - **Engine options**: Affect performance/behavior (same result, different execution)
+
+- [#592](https://github.com/kamiazya/web-csv-toolbox/pull/592) [`defef9e`](https://github.com/kamiazya/web-csv-toolbox/commit/defef9e7d3514381592c5b2b83a103aa90759385) Thanks [@kamiazya](https://github.com/kamiazya)! - refactor!: rename core classes and simplify type system
+
+  This release contains breaking changes for users of low-level APIs. Most users are not affected.
+
+  ## Breaking Changes
+
+  ### 1. Class Naming
+
+  Low-level CSV processing classes have been renamed:
+
+  ```diff
+  - import { CSVLexer } from 'web-csv-toolbox';
+  + import { DefaultStringCSVLexer } from 'web-csv-toolbox';
+
+  - const lexer = new CSVLexer(options);
+  + const lexer = new DefaultStringCSVLexer(options);
+  ```
+
+  ```diff
+  - import { CSVRecordAssembler } from 'web-csv-toolbox';
+  + import { DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+  - const assembler = new CSVRecordAssembler(options);
+  + const assembler = new DefaultCSVRecordAssembler(options);
+  ```
+
+  ### 2. Type Renaming
+
+  The `CSV` type has been renamed to `CSVData`:
+
+  ```diff
+  - import type { CSV } from 'web-csv-toolbox';
+  + import type { CSVData } from 'web-csv-toolbox';
+
+  - function processCSV(data: CSV) {
+  + function processCSV(data: CSVData) {
+      // ...
+    }
+  ```
+
+  ## Bug Fixes
+
+  - Fixed stream reader locks not being released when AbortSignal was triggered
+  - Fixed Node.js WASM module loading
+  - Improved error handling
+
+  ## Migration Guide
+
+  **For most users**: No changes required if you only use high-level functions like `parse()`, `parseString()`, `parseBlob()`, etc.
+
+  **For advanced users** using low-level APIs:
+
+  1. Rename `CSV` type to `CSVData`
+  2. Rename `CSVLexer` to `DefaultStringCSVLexer`
+  3. Rename `CSVRecordAssembler` to `DefaultCSVRecordAssembler`
+
+### Patch Changes
+
+- [#568](https://github.com/kamiazya/web-csv-toolbox/pull/568) [`f8d7ffb`](https://github.com/kamiazya/web-csv-toolbox/commit/f8d7ffbf9fd4fd2fe596d7250cc86bc361c376df) Thanks [@kamiazya](https://github.com/kamiazya)! - Consolidate and enhance benchmark suite
+
+  This changeset focuses on benchmark organization and expansion:
+
+  **Benchmark Consolidation:**
+
+  - Integrated 3 separate benchmark files (concurrent-performance.ts, queuing-strategy.bench.ts, worker-performance.ts) into main.ts
+  - Unified benchmark suite now contains 57 comprehensive tests
+  - Added conditional Worker support for Node.js vs browser environments
+
+  **API Migration:**
+
+  - Migrated from deprecated `{ execution: ['worker'] }` API to new EnginePresets API
+  - Added tests for all engine presets: mainThread, wasm, worker, workerStreamTransfer, workerWasm, balanced, fastest, strict
+
+  **Bottleneck Detection:**
+
+  - Added 23 new benchmarks for systematic bottleneck detection:
+    - Row count scaling (50-5000 rows)
+    - Field length scaling (10 chars - 10KB)
+    - Quote ratio impact (0%-100%)
+    - Column count scaling (10-10,000 columns)
+    - Line ending comparison (LF vs CRLF)
+    - Engine comparison at different scales
+
+  **Documentation Scenario Coverage:**
+
+  - Added benchmarks for all scenarios mentioned in documentation
+  - Included WASM performance tests
+  - Added custom delimiter tests
+  - Added parseStringStream tests
+  - Added data transformation overhead tests
+
+  **Key Findings:**
+
+  - Column count is the most critical bottleneck (99.7% slower at 10k columns)
+  - Field length has non-linear behavior at 1KB threshold
+  - WASM advantage increases with data size (+18% → +32%)
+  - Quote processing overhead is minimal (1.1-10% depending on scale)
+
+- [#576](https://github.com/kamiazya/web-csv-toolbox/pull/576) [`e45bc4d`](https://github.com/kamiazya/web-csv-toolbox/commit/e45bc4d089f1fb259a7596b9862b3b34e717dab7) Thanks [@kamiazya](https://github.com/kamiazya)! - fix: add charset validation to prevent malicious Content-Type header manipulation
+
+  This patch addresses a security vulnerability where malicious or invalid charset values in Content-Type headers could cause parsing failures or unexpected behavior.
+
+  **Changes:**
+
+  - Fixed `parseMime` to handle Content-Type parameters without values (prevents `undefined.trim()` errors)
+  - Added charset validation similar to existing compression validation pattern
+  - Created `SUPPORTED_CHARSETS` constants for commonly used character encodings
+  - Added `allowNonStandardCharsets` option to `BinaryOptions` for opt-in support of non-standard charsets
+  - Added error handling in `convertBinaryToString` to catch TextDecoder instantiation failures
+  - Charset values are now validated against a whitelist and normalized to lowercase
+
+  **Security Impact:**
+
+  - Invalid or malicious charset values are now rejected with clear error messages
+  - Prevents DoS attacks via malformed Content-Type headers
+  - Reduces risk of charset-based injection attacks
+
+  **Breaking Changes:** None - existing valid charset values continue to work as before.
+
+- [#567](https://github.com/kamiazya/web-csv-toolbox/pull/567) [`afac98b`](https://github.com/kamiazya/web-csv-toolbox/commit/afac98bd3a41b6e902268ac4ca6a99a8da883c81) Thanks [@kamiazya](https://github.com/kamiazya)! - Add bundler integration guide for Workers and WebAssembly
+
+  This release adds comprehensive documentation for using web-csv-toolbox with modern JavaScript bundlers (Vite, Webpack, Rollup) when using Worker-based or WebAssembly execution.
+
+  **Package Structure Improvements:**
+
+  - Moved worker files to root level for cleaner package exports
+    - `src/execution/worker/helpers/worker.{node,web}.ts` → `src/worker.{node,web}.ts`
+  - Added `./worker` export with environment-specific resolution (node/browser/default)
+  - Added `./web_csv_toolbox_wasm_bg.wasm` export for explicit WASM file access
+  - Updated internal relative paths in `createWorker.{node,web}.ts` to reflect new structure
+
+  **New Documentation:**
+
+  - **How-to Guide: Use with Bundlers** - Step-by-step configuration for Vite, Webpack, and Rollup
+
+    - Worker configuration with `?url` imports
+    - WASM configuration with explicit URL handling
+    - WorkerPool reuse patterns
+    - Common issues and troubleshooting
+
+  - **Explanation: Package Exports** - Deep dive into environment detection mechanism
+
+    - Conditional exports for node/browser environments
+    - Worker implementation differences
+    - Bundler compatibility
+
+  - **Reference: Package Exports** - API reference for all package exports
+    - Export paths and their resolutions
+    - Conditional export conditions
+
+  **Updated Documentation:**
+
+  Added bundler usage notes to all Worker and WASM-related documentation:
+
+  - `README.md`
+  - `docs/explanation/execution-strategies.md`
+  - `docs/explanation/worker-pool-architecture.md`
+  - `docs/how-to-guides/choosing-the-right-api.md`
+  - `docs/how-to-guides/wasm-performance-optimization.md`
+
+  **Key Differences: Workers vs WASM with Bundlers**
+
+  **Workers** 🟢:
+
+  - Bundled automatically as data URLs using `?url` suffix
+  - Works out of the box with Vite
+  - Example: `import workerUrl from 'web-csv-toolbox/worker?url'`
+
+  **WASM** 🟡:
+
+  - Requires explicit URL configuration via `?url` import
+  - Must call `loadWASM(wasmUrl)` before parsing
+  - Example: `import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url'`
+  - Alternative: Copy WASM file to public directory
+
+  **Migration Guide:**
+
+  For users already using Workers with bundlers, no changes are required. The package now explicitly documents the `workerURL` option that was previously implicit.
+
+  For new users, follow the bundler integration guide:
+
+  ```typescript
+  import { parseString, EnginePresets } from "web-csv-toolbox";
+  import workerUrl from "web-csv-toolbox/worker?url"; // Vite
+
+  for await (const record of parseString(csv, {
+    engine: EnginePresets.worker({ workerURL: workerUrl }),
+  })) {
+    console.log(record);
+  }
+  ```
+
+  **Breaking Changes:**
+
+  None - this is purely additive documentation and package export improvements. Existing code continues to work without modifications.
+
+- [#588](https://github.com/kamiazya/web-csv-toolbox/pull/588) [`58879be`](https://github.com/kamiazya/web-csv-toolbox/commit/58879bebc32395d3dd03ca7a7ddcd296c5132c78) Thanks [@kamiazya](https://github.com/kamiazya)! - Refactor CI workflows to separate TypeScript and Rust environments
+
+  This change improves CI efficiency by:
+
+  - Splitting setup actions into setup-typescript, setup-rust, and setup-full
+  - Separating WASM build and TypeScript build jobs with clear dependencies
+  - Removing unnecessary tool installations from jobs that don't need them
+  - Clarifying dependencies between TypeScript tests and WASM artifacts
+
+- [#581](https://github.com/kamiazya/web-csv-toolbox/pull/581) [`e111547`](https://github.com/kamiazya/web-csv-toolbox/commit/e111547cabb76ada8846a5ae75b108e21a9dbf67) Thanks [@kamiazya](https://github.com/kamiazya)! - chore: eliminate circular dependencies and improve code quality
+
+  This patch improves the internal code structure by eliminating all circular dependencies and adding tooling to prevent future issues.
+
+  **Changes:**
+
+  - Introduced `madge` for circular dependency detection and visualization
+  - Eliminated circular dependencies:
+    - `common/types.ts` ⇄ `utils/types.ts`: Merged type definitions into `common/types.ts`
+    - `parseFile.ts` ⇄ `parseFileToArray.ts`: Refactored to use direct dependencies
+  - Fixed import paths in test files to consistently use `.ts` extension
+  - Added npm scripts for dependency analysis:
+    - `check:circular`: Detect circular dependencies
+    - `graph:main`: Visualize main entry point dependencies
+    - `graph:worker`: Visualize worker entry point dependencies
+    - `graph:json`, `graph:summary`, `graph:orphans`, `graph:leaves`: Various analysis tools
+  - Added circular dependency check to CI pipeline (`.github/workflows/.build.yaml`)
+  - Updated `.gitignore` to exclude generated dependency graph files
+
+  **Impact:**
+
+  - No runtime behavior changes
+  - Better maintainability and code structure
+  - Faster build times due to cleaner dependency graph
+  - Automated prevention of circular dependency introduction
+
+  **Breaking Changes:** None - this is purely an internal refactoring with no API changes.
+
+- [#575](https://github.com/kamiazya/web-csv-toolbox/pull/575) [`386eebe`](https://github.com/kamiazya/web-csv-toolbox/commit/386eebeaafe5857e28c876345c14c9fe5f1a3774) Thanks [@kamiazya](https://github.com/kamiazya)! - Expand browser testing coverage and improve documentation
+
+  **Testing Infrastructure Improvements:**
+
+  - **macOS Browser Testing**: Added Chrome and Firefox testing on macOS in CI/CD
+    - Vitest 4 stable browser mode enabled headless testing on macOS
+    - Previously blocked due to Safari headless limitations
+  - **Parallel Browser Execution**: Multiple browsers now run in parallel within each OS job
+    - Linux: Chrome + Firefox in parallel
+    - macOS: Chrome + Firefox in parallel
+    - Windows: Chrome + Firefox + Edge in parallel
+  - **Dynamic Browser Configuration**: Browser instances automatically determined by platform
+    - Uses `process.platform` to select appropriate browsers
+    - Eliminates need for environment variables
+  - **Explicit Browser Project Targeting**: Updated `test:browser` script to explicitly run only browser tests
+    - Added `--project browser` flag to prevent running Node.js tests during browser test execution
+    - Ensures CI jobs run only their intended test suites
+
+  **Documentation Improvements:**
+
+  - **Quick Overview Section**: Added comprehensive support matrix and metrics
+    - Visual support matrix showing all environment/platform combinations
+    - Tier summary with coverage statistics
+    - Testing coverage breakdown by category
+    - Clear legend explaining all support status icons
+  - **Clearer Support Tiers**: Improved distinction between support levels
+    - ✅ Full Support (Tier 1): Tested and officially supported
+    - 🟡 Active Support (Tier 2): Limited testing, active maintenance
+    - 🔵 Community Support (Tier 3): Not tested, best-effort support
+  - **Cross-Platform Runtime Support**: Clarified Node.js and Deno support across all platforms
+    - Node.js LTS: Tier 1 support on Linux, macOS, and Windows
+    - Deno LTS: Tier 2 support on Linux, macOS, and Windows
+    - Testing performed on Linux only due to cross-platform runtime design
+    - Eliminates unnecessary concern about untested platforms
+  - **Simplified Tables**: Converted redundant tables to concise bullet lists
+    - Removed repetitive "Full Support" entries
+    - Easier to scan and understand
+
+  **Browser Testing Coverage:**
+
+  - Chrome: Tested on Linux, macOS, and Windows (Tier 1)
+  - Firefox: Tested on Linux, macOS, and Windows (Tier 1)
+  - Edge: Tested on Windows only (Tier 1)
+  - Safari: Community support (headless mode not supported by Vitest)
+
+  **Breaking Changes:**
+
+  None - this release only improves testing infrastructure and documentation.
+
+- [#573](https://github.com/kamiazya/web-csv-toolbox/pull/573) [`120af88`](https://github.com/kamiazya/web-csv-toolbox/commit/120af8840dd0795dac94d59e32713b96a34e2a41) Thanks [@kamiazya](https://github.com/kamiazya)! - Add regression tests and documentation for prototype pollution safety
+
+  This changeset adds comprehensive tests and documentation to ensure that CSVRecordAssembler does not cause prototype pollution when processing CSV headers with dangerous property names.
+
+  **Security Verification:**
+
+  - Verified that `Object.fromEntries()` is safe from prototype pollution attacks
+  - Confirmed that dangerous property names (`__proto__`, `constructor`, `prototype`) are handled safely
+  - Added 8 comprehensive regression tests in `FlexibleCSVRecordAssembler.prototype-safety.test.ts`
+
+  **Test Coverage:**
+
+  - Tests with `__proto__` as CSV header
+  - Tests with `constructor` as CSV header
+  - Tests with `prototype` as CSV header
+  - Tests with multiple dangerous property names
+  - Tests with multiple records
+  - Tests with quoted fields
+  - Baseline tests documenting `Object.fromEntries()` behavior
+
+  **Documentation:**
+
+  - Added detailed safety comments to all `Object.fromEntries()` usage in CSVRecordAssembler
+  - Documented why the implementation is safe from prototype pollution
+  - Added references to regression tests for verification
+
+  **Conclusion:**
+  The AI security report suggesting prototype pollution vulnerability was a false positive. `Object.fromEntries()` creates own properties (not prototype properties), making it inherently safe from prototype pollution attacks. This changeset provides regression tests to prevent future concerns and documents the safety guarantees.
+
+- [#580](https://github.com/kamiazya/web-csv-toolbox/pull/580) [`5ff2b29`](https://github.com/kamiazya/web-csv-toolbox/commit/5ff2b29f2eae404b484b680d9f58637a6e11fbb0) Thanks [@kamiazya](https://github.com/kamiazya)! - Improve Rust/WASM development environment and add comprehensive tests
+
+  ## Internal Improvements
+
+  - Migrated from Homebrew Rust to rustup for better toolchain management
+  - Updated Rust dependencies to latest versions (csv 1.4, wasm-bindgen 0.2.105, serde 1.0.228)
+  - Added 10 comprehensive unit tests for CSV parsing functionality
+  - Added Criterion-based benchmarks for performance tracking
+  - Improved error handling in WASM bindings
+  - Configured rust-analyzer and development tools (rustfmt, clippy)
+  - Added `pkg/` directory to `.gitignore` (build artifacts should not be tracked)
+  - Added Rust tests to CI pipeline (GitHub Actions Dynamic Tests workflow)
+  - Integrated Rust coverage with Codecov (separate from TypeScript with `rust` flag)
+  - Integrated Rust benchmarks with CodSpeed for performance regression detection
+
+  These changes improve code quality and maintainability without affecting the public API or functionality.
+
+- [#583](https://github.com/kamiazya/web-csv-toolbox/pull/583) [`ff960d3`](https://github.com/kamiazya/web-csv-toolbox/commit/ff960d37dfd84a984aeddf25daaa3045b7245556) Thanks [@kamiazya](https://github.com/kamiazya)! - chore: upgrade Biome to 2.3.4 and update configuration
+
+  Upgraded development dependency @biomejs/biome from 1.9.4 to 2.3.4 and updated configuration for compatibility with Biome v2. This change has no impact on the runtime behavior or public API.
+
+- [#584](https://github.com/kamiazya/web-csv-toolbox/pull/584) [`ef5eacd`](https://github.com/kamiazya/web-csv-toolbox/commit/ef5eacd46161f6ba3a1eb3f04b78431443825f69) Thanks [@kamiazya](https://github.com/kamiazya)! - chore: upgrade TypeScript to 5.9.3 and typedoc to 0.28.14 with enhanced documentation
+
+  **Developer Experience Improvements:**
+
+  - Upgraded TypeScript from 5.8.3 to 5.9.3
+  - Upgraded typedoc from 0.28.5 to 0.28.14
+  - Enabled strict type checking options (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`)
+  - Enhanced TypeDoc configuration with version display, improved sorting, and navigation
+  - Integrated all documentation markdown files with TypeDoc using native `projectDocuments` support
+  - Added YAML frontmatter to all documentation files for better organization
+
+  **Type Safety Enhancements:**
+
+  - Added explicit `| undefined` to all optional properties for stricter type checking
+  - Added proper undefined checks for array/object indexed access
+  - Improved TextDecoderOptions usage to avoid explicit undefined values
+
+  **Documentation Improvements:**
+
+  - Enhanced TypeDoc navigation with categories, groups, and folders
+  - Added sidebar and navigation links to GitHub and npm
+  - Organized documentation into Tutorials, How-to Guides, Explanation, and Reference sections
+  - Improved documentation discoverability with YAML frontmatter grouping
+
+  **Breaking Changes:** None - all changes are backward compatible
+
+- [#586](https://github.com/kamiazya/web-csv-toolbox/pull/586) [`ce9cf85`](https://github.com/kamiazya/web-csv-toolbox/commit/ce9cf85a9fe3ebeb51eda901dc921aa507c0e78b) Thanks [@kamiazya](https://github.com/kamiazya)! - feat(wasm): add input size validation and source option for error reporting
+
+  This patch enhances the WASM CSV parser with security improvements and better error reporting capabilities.
+
+  **Security Enhancements:**
+
+  - **Input Size Validation**: Added validation to prevent memory exhaustion attacks
+    - Validates CSV input size against `maxBufferSize` parameter before processing
+    - Returns clear error message when size limit is exceeded
+    - Default limit: 10MB (configurable via TypeScript options)
+    - Addresses potential DoS vulnerability from maliciously large CSV inputs
+
+  **Error Reporting Improvements:**
+
+  - **Source Option**: Added optional `source` parameter for better error context
+    - Allows specifying a source identifier (e.g., filename) in error messages
+    - Error format: `"Error message in \"filename\""`
+    - Significantly improves debugging when processing multiple CSV files
+    - Aligns with TypeScript implementation's `CommonOptions.source`
+
+  **Performance Optimizations:**
+
+  - Optimized `format_error()` to take ownership of String
+    - Avoids unnecessary allocation when source is None
+    - Improves error path performance by eliminating `to_string()` call
+    - Zero-cost abstraction in the common case (no source identifier)
+
+  **Code Quality Improvements:**
+
+  - Used `bool::then_some()` for more idiomatic Option handling
+  - Fixed Clippy `needless_borrow` warnings in tests
+  - Applied cargo fmt formatting for consistency
+
+  **Implementation Details:**
+
+  Rust (`web-csv-toolbox-wasm/src/lib.rs`):
+
+  - Added `format_error()` helper function for consistent error formatting
+  - Updated `parse_csv_to_json()` to accept `max_buffer_size` and `source` parameters
+  - Implemented input size validation at parse entry point
+  - Applied source context to all error types (headers, records, JSON serialization)
+
+  TypeScript (`src/parseStringToArraySyncWASM.ts`):
+
+  - Updated to pass `maxBufferSize` from options to WASM function
+  - Updated to pass `source` from options to WASM function
+
+  **Breaking Changes:** None - this is a backward-compatible enhancement with sensible defaults.
+
+  **Migration:** No action required. Existing code continues to work without modification.
+
 ## 0.13.0
 
 ### Minor Changes
