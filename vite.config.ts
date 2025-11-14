@@ -4,7 +4,7 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": "/src",
@@ -47,6 +47,13 @@ export default defineConfig(({ command }) => ({
     minify: "terser",
     sourcemap: true,
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress WASM file resolution warnings (intentional runtime resolution)
+        if (warning.message?.includes("web_csv_toolbox_wasm_bg.wasm")) {
+          return;
+        }
+        warn(warning);
+      },
       external: [
         "node:worker_threads",
         "node:url",
@@ -74,7 +81,7 @@ export default defineConfig(({ command }) => ({
     dts({
       insertTypesEntry: true,
       outDir: "dist",
-      exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
+      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/*.test-d.ts", "**/__tests__/**/*"],
       copyDtsFiles: true,
     }),
     codecovVitePlugin({

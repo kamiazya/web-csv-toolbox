@@ -29,7 +29,7 @@ export async function loadWASM(input?: InitInput | Promise<InitInput>) {
       const { fileURLToPath } = await import("node:url");
 
       const wasmPath = fileURLToPath(
-        new URL(
+        /* @vite-ignore */ new URL(
           "../../node_modules/web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm",
           import.meta.url,
         ),

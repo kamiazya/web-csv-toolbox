@@ -1,7 +1,7 @@
 import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
 import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -19,7 +19,7 @@ export function parseUint8ArrayStreamToStream<
   if (fatal !== undefined) decoderOptions.fatal = fatal;
   if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
 
-  const lexer = new DefaultCSVLexer(options);
+  const lexer = new DefaultStringCSVLexer(options);
   const assembler = new DefaultCSVRecordAssembler(options);
 
   return decompression

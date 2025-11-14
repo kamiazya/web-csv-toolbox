@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { ParseError } from "@/core/errors.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 
 /**
  * Tests for undefined checks added for TypeScript 5.9 strict type checking
  */
 describe("CSVLexer undefined checks", () => {
   it("should handle empty buffer during quoted field parsing with flush", () => {
-    const lexer = new DefaultCSVLexer();
+    const lexer = new FlexibleStringCSVLexer();
 
     // Start a quoted field but don't complete it
     // This should trigger the undefined check when flush is called
@@ -18,7 +18,7 @@ describe("CSVLexer undefined checks", () => {
   });
 
   it("should parse complete quoted field correctly", () => {
-    const lexer = new DefaultCSVLexer();
+    const lexer = new FlexibleStringCSVLexer();
 
     // Process a complete quoted field
     const gen = lexer.lex('"field"');
@@ -30,7 +30,7 @@ describe("CSVLexer undefined checks", () => {
   });
 
   it("should parse a single unquoted field", () => {
-    const lexer = new DefaultCSVLexer();
+    const lexer = new FlexibleStringCSVLexer();
 
     // Normal field parsing should work correctly
     const gen = lexer.lex("field");

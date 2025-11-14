@@ -22,11 +22,18 @@ import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 /**
- * Default CSV Lexer implementation.
+ * Flexible String CSV Lexer implementation.
  *
- * DefaultCSVLexer tokenizes CSV data into fields and records.
+ * A balanced implementation that tokenizes CSV data into fields and records,
+ * optimizing for both performance and memory efficiency.
+ *
+ * @remarks
+ * This implementation is designed to handle various CSV formats flexibly
+ * while maintaining good performance characteristics. For specialized use cases,
+ * future implementations may provide optimizations for specific scenarios
+ * (e.g., speed-optimized, memory-optimized).
  */
-export class DefaultCSVLexer<
+export class FlexibleStringCSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > implements StringCSVLexer

@@ -1,12 +1,12 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type { StringCSVLexer } from "@/core/types.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 
 describe("CSVLexer", () => {
   let lexer: StringCSVLexer;
   beforeEach(() => {
-    lexer = new DefaultCSVLexer();
+    lexer = new FlexibleStringCSVLexer();
   });
 
   test("should parse a field with not escaped", () => {
@@ -246,7 +246,7 @@ describe("CSVLexer", () => {
     let controller: AbortController;
     beforeEach(() => {
       controller = new AbortController();
-      lexer = new DefaultCSVLexer({
+      lexer = new FlexibleStringCSVLexer({
         signal: controller.signal,
       });
     });
@@ -289,7 +289,7 @@ describe("CSVLexer", () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
 
-    lexer = new DefaultCSVLexer({ signal });
+    lexer = new FlexibleStringCSVLexer({ signal });
     try {
       [...lexer.lex('"Hello"')];
       expect.unreachable();
@@ -301,7 +301,9 @@ describe("CSVLexer", () => {
 
   describe("error message details with source", () => {
     test("should include source in ParseError when provided", () => {
-      const lexerWithSource = new DefaultCSVLexer({ source: "test.csv" });
+      const lexerWithSource = new FlexibleStringCSVLexer({
+        source: "test.csv",
+      });
 
       try {
         // Unclosed quoted field will throw ParseError
@@ -315,7 +317,7 @@ describe("CSVLexer", () => {
     });
 
     test("should include row number in ParseError", () => {
-      const lexerWithSource = new DefaultCSVLexer();
+      const lexerWithSource = new FlexibleStringCSVLexer();
 
       try {
         // Invalid CSV: unclosed quoted field (missing closing quote before EOF)
@@ -330,7 +332,9 @@ describe("CSVLexer", () => {
     });
 
     test("should include both source and row number in ParseError", () => {
-      const lexerWithSource = new DefaultCSVLexer({ source: "data.csv" });
+      const lexerWithSource = new FlexibleStringCSVLexer({
+        source: "data.csv",
+      });
 
       try {
         // Unclosed quoted field
@@ -345,7 +349,7 @@ describe("CSVLexer", () => {
     });
 
     test("should not include source when not provided", () => {
-      const lexerWithoutSource = new DefaultCSVLexer();
+      const lexerWithoutSource = new FlexibleStringCSVLexer();
 
       try {
         [...lexerWithoutSource.lex('"unclosed')];

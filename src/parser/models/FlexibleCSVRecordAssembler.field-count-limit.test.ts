@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type { CSVRecordAssembler, Token } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { FlexibleCSVRecordAssembler } from "@/parser/models/FlexibleCSVRecordAssembler.ts";
 
 describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("with default field count limit (100000)", () => {
     let assembler: CSVRecordAssembler<string[]>;
     beforeEach(() => {
-      assembler = new DefaultCSVRecordAssembler();
+      assembler = new FlexibleCSVRecordAssembler();
     });
 
     test("should not throw error for normal field counts", () => {
@@ -144,7 +144,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
 
   describe("with custom field count limit", () => {
     test("should allow exactly N fields when limit is N", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 10 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 10 });
       const tokens: Token[] = [];
 
       // Create exactly 10 fields (at the limit, should succeed)
@@ -191,7 +191,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should respect custom maxFieldCount option", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 10 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 10 });
       const tokens: Token[] = [];
 
       // Create 11 fields (exceeds limit of 10)
@@ -231,7 +231,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should allow Number.POSITIVE_INFINITY as maxFieldCount to disable limit", () => {
-      const assembler = new DefaultCSVRecordAssembler({
+      const assembler = new FlexibleCSVRecordAssembler({
         maxFieldCount: Number.POSITIVE_INFINITY,
       });
       const tokens: Token[] = [];
@@ -279,7 +279,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
       const largeHeader = Array.from({ length: 100001 }, (_, i) => `field${i}`);
 
       expect(
-        () => new DefaultCSVRecordAssembler({ header: largeHeader }),
+        () => new FlexibleCSVRecordAssembler({ header: largeHeader }),
       ).toThrow(RangeError);
     });
 
@@ -287,14 +287,14 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
       const normalHeader = ["field1", "field2", "field3"];
 
       expect(
-        () => new DefaultCSVRecordAssembler({ header: normalHeader }),
+        () => new FlexibleCSVRecordAssembler({ header: normalHeader }),
       ).not.toThrow();
     });
   });
 
   describe("realistic attack scenarios", () => {
     test("should prevent DoS via CSV with excessive columns", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 1000 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 1000 });
       const tokens: Token[] = [];
 
       // Simulate attack with 2000 columns
@@ -325,7 +325,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should properly handle CSV within field count limits", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 100 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 100 });
       const tokens: Token[] = [];
 
       // Create 50 fields (within limit)
@@ -402,7 +402,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
 
   describe("error message details", () => {
     test("should include row number in error message", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 5 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 5 });
       const tokens: Token[] = [];
 
       // Create 6 fields (exceeds limit of 5)
@@ -439,7 +439,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should include source in error message when provided", () => {
-      const assembler = new DefaultCSVRecordAssembler({
+      const assembler = new FlexibleCSVRecordAssembler({
         maxFieldCount: 5,
         source: "data.csv",
       });
@@ -479,7 +479,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should include both row number and source in error message", () => {
-      const assembler = new DefaultCSVRecordAssembler({
+      const assembler = new FlexibleCSVRecordAssembler({
         maxFieldCount: 3,
         source: "users.csv",
       });
@@ -524,7 +524,7 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should only include field count info when source is not provided", () => {
-      const assembler = new DefaultCSVRecordAssembler({ maxFieldCount: 2 });
+      const assembler = new FlexibleCSVRecordAssembler({ maxFieldCount: 2 });
       const tokens: Token[] = [];
 
       // Create 3 fields (exceeds limit of 2)

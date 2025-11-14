@@ -1,7 +1,7 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
 import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -48,7 +48,7 @@ export function parseStringToArraySync<
   const Header extends ReadonlyArray<string>,
 >(csv: string, options?: ParseOptions<Header>): CSVRecord<Header>[] {
   try {
-    const lexer = new DefaultCSVLexer(options);
+    const lexer = new DefaultStringCSVLexer(options);
     const assembler = new DefaultCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);
     return [...assembler.assemble(tokens)];

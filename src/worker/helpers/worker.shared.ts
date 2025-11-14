@@ -204,8 +204,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             );
           }
           // Process string stream with TransferableStream strategy
-          const { DefaultCSVLexer } = await import(
-            "../../parser/models/DefaultCSVLexer.ts"
+          const { DefaultStringCSVLexer } = await import(
+            "../../parser/models/DefaultStringCSVLexer.ts"
           );
           const { DefaultCSVRecordAssembler } = await import(
             "../../parser/models/DefaultCSVRecordAssembler.ts"
@@ -220,7 +220,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new DefaultCSVLexer(req.options);
+          const lexer = new DefaultStringCSVLexer(req.options);
           const assembler = new DefaultCSVRecordAssembler(req.options);
 
           const resultStream = stream
@@ -247,8 +247,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             );
           }
           // Process binary stream with TransferableStream strategy
-          const { DefaultCSVLexer } = await import(
-            "../../parser/models/DefaultCSVLexer.ts"
+          const { DefaultStringCSVLexer } = await import(
+            "../../parser/models/DefaultStringCSVLexer.ts"
           );
           const { DefaultCSVRecordAssembler } = await import(
             "../../parser/models/DefaultCSVRecordAssembler.ts"
@@ -292,7 +292,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new DefaultCSVLexer(req.options);
+          const lexer = new DefaultStringCSVLexer(req.options);
           const assembler = new DefaultCSVRecordAssembler(req.options);
 
           const resultStream = textStream
@@ -354,8 +354,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseStringStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Stream processing (WASM not supported for streams)
-          const { DefaultCSVLexer } = await import(
-            "../../parser/models/DefaultCSVLexer.ts"
+          const { DefaultStringCSVLexer } = await import(
+            "../../parser/models/DefaultStringCSVLexer.ts"
           );
           const { DefaultCSVRecordAssembler } = await import(
             "../../parser/models/DefaultCSVRecordAssembler.ts"
@@ -370,7 +370,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new DefaultCSVLexer(req.options);
+          const lexer = new DefaultStringCSVLexer(req.options);
           const assembler = new DefaultCSVRecordAssembler(req.options);
 
           const resultStream = req.data
@@ -390,8 +390,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseUint8ArrayStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Binary stream processing
-          const { DefaultCSVLexer } = await import(
-            "../../parser/models/DefaultCSVLexer.ts"
+          const { DefaultStringCSVLexer } = await import(
+            "../../parser/models/DefaultStringCSVLexer.ts"
           );
           const { DefaultCSVRecordAssembler } = await import(
             "../../parser/models/DefaultCSVRecordAssembler.ts"
@@ -435,7 +435,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new DefaultCSVLexer(req.options);
+          const lexer = new DefaultStringCSVLexer(req.options);
           const assembler = new DefaultCSVRecordAssembler(req.options);
 
           const resultStream = textStream

@@ -1,39 +1,39 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
 import { Field } from "@/core/constants";
 import type { CSVRecordAssembler } from "@/core/types.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { FlexibleCSVRecordAssembler } from "@/parser/models/FlexibleCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 
 describe("CSVRecordAssembler", () => {
   describe("constructor validation", () => {
     test("should throw RangeError if maxFieldCount is negative", () => {
       expect(
-        () => new DefaultCSVRecordAssembler({ maxFieldCount: -1 }),
+        () => new FlexibleCSVRecordAssembler({ maxFieldCount: -1 }),
       ).toThrow(RangeError);
     });
 
     test("should throw RangeError if maxFieldCount is zero", () => {
-      expect(() => new DefaultCSVRecordAssembler({ maxFieldCount: 0 })).toThrow(
-        RangeError,
-      );
+      expect(
+        () => new FlexibleCSVRecordAssembler({ maxFieldCount: 0 }),
+      ).toThrow(RangeError);
     });
 
     test("should throw RangeError if maxFieldCount is not an integer", () => {
       expect(
-        () => new DefaultCSVRecordAssembler({ maxFieldCount: 1.5 }),
+        () => new FlexibleCSVRecordAssembler({ maxFieldCount: 1.5 }),
       ).toThrow(RangeError);
     });
 
     test("should throw RangeError if maxFieldCount is NaN", () => {
       expect(
-        () => new DefaultCSVRecordAssembler({ maxFieldCount: Number.NaN }),
+        () => new FlexibleCSVRecordAssembler({ maxFieldCount: Number.NaN }),
       ).toThrow(RangeError);
     });
 
     test("should accept Number.POSITIVE_INFINITY as maxFieldCount", () => {
       expect(
         () =>
-          new DefaultCSVRecordAssembler({
+          new FlexibleCSVRecordAssembler({
             maxFieldCount: Number.POSITIVE_INFINITY,
           }),
       ).not.toThrow();
@@ -46,7 +46,7 @@ describe("CSVRecordAssembler", () => {
 
     beforeEach(() => {
       controller = new AbortController();
-      assembler = new DefaultCSVRecordAssembler({
+      assembler = new FlexibleCSVRecordAssembler({
         signal: controller.signal,
       });
     });
@@ -111,7 +111,7 @@ describe("CSVRecordAssembler", () => {
     }
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
-    const assembler = new DefaultCSVRecordAssembler({ signal });
+    const assembler = new FlexibleCSVRecordAssembler({ signal });
     try {
       [
         ...assembler.assemble([
@@ -137,8 +137,8 @@ describe("CSVRecordAssembler", () => {
     test("should correctly map row values when header has trailing empty field", () => {
       // This test verifies that flush preserves original header indices
       // even after filtering out empty header fields
-      const lexer = new DefaultCSVLexer();
-      const assembler = new DefaultCSVRecordAssembler();
+      const lexer = new FlexibleStringCSVLexer();
+      const assembler = new FlexibleCSVRecordAssembler();
 
       // CSV with trailing comma in header (creates empty field):
       // name,age,
@@ -158,8 +158,8 @@ describe("CSVRecordAssembler", () => {
     });
 
     test("should correctly map row values when header has leading empty field", () => {
-      const lexer = new DefaultCSVLexer();
-      const assembler = new DefaultCSVRecordAssembler();
+      const lexer = new FlexibleStringCSVLexer();
+      const assembler = new FlexibleCSVRecordAssembler();
 
       // CSV with leading comma in header (creates empty field):
       // ,name,age

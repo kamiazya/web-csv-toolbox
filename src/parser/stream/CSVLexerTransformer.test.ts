@@ -7,7 +7,7 @@ import {
   vi,
 } from "vitest";
 import { transform, waitAbort } from "@/__tests__/helper.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 
 const describe = describe_.concurrent;
@@ -22,7 +22,7 @@ describe("CSVLexerTransformer", () => {
   it("should throw an error if options is invalid", async () => {
     expect(
       () =>
-        new DefaultCSVLexer({
+        new FlexibleStringCSVLexer({
           delimiter: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -31,7 +31,7 @@ describe("CSVLexerTransformer", () => {
 
     expect(
       () =>
-        new DefaultCSVLexer({
+        new FlexibleStringCSVLexer({
           quotation: "",
         }),
     ).toThrowErrorMatchingInlineSnapshot(
@@ -40,7 +40,7 @@ describe("CSVLexerTransformer", () => {
   });
 
   it("should throw an error if the input is invalid", async () => {
-    const lexer = new DefaultCSVLexer({});
+    const lexer = new FlexibleStringCSVLexer({});
     const transformer = new CSVLexerTransformer(lexer);
     await expect(async () => {
       await transform(transformer, ['"']);
@@ -50,7 +50,7 @@ describe("CSVLexerTransformer", () => {
   });
 
   it("should throw an error if the input is invalid", async () => {
-    const lexer = new DefaultCSVLexer({});
+    const lexer = new FlexibleStringCSVLexer({});
     const transformer = new CSVLexerTransformer(lexer);
     vi.spyOn(transformer.lexer, "lex").mockImplementationOnce(() => {
       throw new Error("test");
@@ -68,7 +68,7 @@ describe("CSVLexerTransformer", () => {
     });
 
     test("should throw DOMException named AbortError if the signal is aborted", async () => {
-      const lexer = new DefaultCSVLexer({
+      const lexer = new FlexibleStringCSVLexer({
         signal: controller.signal,
       });
       const transformer = new CSVLexerTransformer(lexer);
@@ -90,7 +90,7 @@ describe("CSVLexerTransformer", () => {
           this.name = "MyCustomError";
         }
       }
-      const lexer = new DefaultCSVLexer({
+      const lexer = new FlexibleStringCSVLexer({
         signal: controller.signal,
       });
       const transformer = new CSVLexerTransformer(lexer);
@@ -109,7 +109,7 @@ describe("CSVLexerTransformer", () => {
   test("should throw DOMException named TimeoutError if the signal is aborted with timeout", async () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
-    const lexer = new DefaultCSVLexer({ signal });
+    const lexer = new FlexibleStringCSVLexer({ signal });
     const transformer = new CSVLexerTransformer(lexer);
 
     try {
@@ -123,7 +123,7 @@ describe("CSVLexerTransformer", () => {
 
   describe("queuing strategy", () => {
     it("should use default strategies when not specified", () => {
-      const lexer = new DefaultCSVLexer({});
+      const lexer = new FlexibleStringCSVLexer({});
       const transformer = new CSVLexerTransformer(lexer);
       // TransformStream has writable and readable properties
       expect(transformer.writable).toBeDefined();
@@ -131,7 +131,7 @@ describe("CSVLexerTransformer", () => {
     });
 
     it("should accept custom writable strategy", async () => {
-      const lexer = new DefaultCSVLexer({});
+      const lexer = new FlexibleStringCSVLexer({});
       const customStrategy = { highWaterMark: 32 };
       const transformer = new CSVLexerTransformer(lexer, {}, customStrategy);
       expect(transformer.writable).toBeDefined();
@@ -142,7 +142,7 @@ describe("CSVLexerTransformer", () => {
     });
 
     it("should accept custom readable strategy", async () => {
-      const lexer = new DefaultCSVLexer({});
+      const lexer = new FlexibleStringCSVLexer({});
       const customStrategy = { highWaterMark: 64 };
       const transformer = new CSVLexerTransformer(
         lexer,
@@ -157,7 +157,7 @@ describe("CSVLexerTransformer", () => {
     });
 
     it("should accept both custom strategies", async () => {
-      const lexer = new DefaultCSVLexer({});
+      const lexer = new FlexibleStringCSVLexer({});
       const transformer = new CSVLexerTransformer(
         lexer,
         {},

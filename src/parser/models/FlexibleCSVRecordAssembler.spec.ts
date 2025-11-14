@@ -8,7 +8,7 @@ import {
   RecordDelimiter,
 } from "@/core/constants.ts";
 import type { Token } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { FlexibleCSVRecordAssembler } from "@/parser/models/FlexibleCSVRecordAssembler.ts";
 
 const LOCATION_SHAPE = {
   start: {
@@ -27,7 +27,7 @@ const LOCATION_SHAPE = {
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
     expect(
-      () => new DefaultCSVRecordAssembler({ header: [] }),
+      () => new FlexibleCSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[ParseError: The header must not be empty.]`,
     );
@@ -35,7 +35,7 @@ describe("class RecordAssembler", () => {
 
   it("should throw an error for duplicate headers", () => {
     expect(
-      () => new DefaultCSVRecordAssembler({ header: ["a", "a"] }),
+      () => new FlexibleCSVRecordAssembler({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[ParseError: The header must not contain duplicate fields.]`,
     );
@@ -93,7 +93,7 @@ describe("class RecordAssembler", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const assembler = new DefaultCSVRecordAssembler();
+          const assembler = new FlexibleCSVRecordAssembler();
           const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },
@@ -134,7 +134,7 @@ describe("class RecordAssembler", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const assembler = new DefaultCSVRecordAssembler({ header });
+          const assembler = new FlexibleCSVRecordAssembler({ header });
           const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },

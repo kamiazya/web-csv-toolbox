@@ -2,26 +2,22 @@
 "web-csv-toolbox": minor
 ---
 
-refactor!: reorganize TypeScript project structure and rename core classes
+refactor!: rename core classes and simplify type system
 
-This release includes a comprehensive TypeScript project structure refactoring that improves code organization and maintainability. This release contains breaking changes that require code updates when upgrading.
+This release contains breaking changes for users of low-level APIs. Most users are not affected.
 
 ## Breaking Changes
 
-### 1. Core Class Naming Changes
+### 1. Class Naming
 
-The following classes have been renamed to add a "Default" prefix, establishing an interface-implementation pattern:
+Low-level CSV processing classes have been renamed:
 
-- `CSVLexer` → `DefaultCSVLexer` (class)
-- `CSVRecordAssembler` → `DefaultCSVRecordAssembler` (class)
-
-**Migration:**
 ```diff
 - import { CSVLexer } from 'web-csv-toolbox';
-+ import { DefaultCSVLexer } from 'web-csv-toolbox';
++ import { DefaultStringCSVLexer } from 'web-csv-toolbox';
 
 - const lexer = new CSVLexer(options);
-+ const lexer = new DefaultCSVLexer(options);
++ const lexer = new DefaultStringCSVLexer(options);
 ```
 
 ```diff
@@ -32,53 +28,9 @@ The following classes have been renamed to add a "Default" prefix, establishing 
 + const assembler = new DefaultCSVRecordAssembler(options);
 ```
 
-### 2. New Interface Pattern
+### 2. Type Renaming
 
-New interfaces have been introduced to define the contracts for lexer and assembler implementations:
-
-- `CSVLexer` interface
-- `CSVRecordAssembler<Header>` interface
-- `CSVLexerLexOptions` interface
-- `CSVRecordAssemblerAssembleOptions` interface
-
-The `DefaultCSVLexer` and `DefaultCSVRecordAssembler` classes implement these interfaces, allowing for future alternative implementations while maintaining a consistent API.
-
-**Usage:**
-```typescript
-import type { CSVLexer, CSVLexerLexOptions } from 'web-csv-toolbox';
-import { DefaultCSVLexer } from 'web-csv-toolbox';
-
-// Use interface types for flexibility
-const lexer: CSVLexer = new DefaultCSVLexer(options);
-```
-
-### 3. Core Type Simplification
-
-The CSV type system has been dramatically simplified by removing unnecessary type parameters:
-
-**Type Renaming:**
-- `CSV` → `CSVData`
-
-**Type Simplification:**
-```typescript
-// Before
-export type CSVString<Header, Delimiter, Quotation> = ...complex type...
-export type CSVData<Header, Delimiter, Quotation> = ...
-
-// After
-export type CSVString = string | ReadableStream<string>
-export type CSVBinary = Uint8Array | ArrayBuffer | ReadableStream<Uint8Array> | Response | Request | Blob
-export type CSVData = CSVString | CSVBinary
-```
-
-**Benefits:**
-- Much simpler type definitions
-- Easier to understand and use
-- Type inference still works perfectly through the `parse` function's overloads
-
-**Migration:**
-
-For most users, no changes are required as `CSVData` is used internally. However, if you were explicitly using the `CSV` type in your code:
+The `CSV` type has been renamed to `CSVData`:
 
 ```diff
 - import type { CSV } from 'web-csv-toolbox';
@@ -90,57 +42,17 @@ For most users, no changes are required as `CSVData` is used internally. However
   }
 ```
 
-### 4. Import Path Changes
+## Bug Fixes
 
-**Migration:** If you were importing from internal paths (not recommended), always import from the main package entry point instead:
-```typescript
-import { /* ... */ } from 'web-csv-toolbox';
-```
+- Fixed stream reader locks not being released when AbortSignal was triggered
+- Fixed Node.js WASM module loading
+- Improved error handling
 
-## Non-Breaking Changes
+## Migration Guide
 
-### Bug Fixes
+**For most users**: No changes required if you only use high-level functions like `parse()`, `parseString()`, `parseBlob()`, etc.
 
-- **Stream Reader Lock Cleanup**: Fixed an issue where stream reader locks were not properly released when AbortSignal was triggered during parsing
-- **WASM Loading**: Fixed Node.js WASM module loading
-- **Error Handling**: Improved DOMException handling
-
-### TypeScript Configuration Improvements
-
-- **Modular tsconfig structure**: Split TypeScript configuration for better developer experience
-  - `tsconfig.base.json`: Shared compiler options and path mappings
-  - `tsconfig.src.json`: Source code type checking (excludes tests)
-  - `tsconfig.test.json`: Test files type checking
-  - `tsconfig.json`: Editor configuration (covers all files)
-  - `benchmark/tsconfig.json`: Benchmark-specific configuration
-- **New npm scripts for granular type checking**:
-  - `check:type:src`: Type check source code only (faster CI)
-  - `check:type:test`: Type check including tests
-- **Better editor experience**: Comprehensive type coverage for all files
-- **Consistent import patterns**: All imports updated to use `@/` and `#/` path aliases
-
-### Test Quality Improvements
-
-- Replaced deprecated `toMatchTypeOf` with `toExtend` in type tests
-- Fixed WASM initialization errors in type tests by using `ReturnType` instead of function execution
-- All type tests now execute without runtime side effects
-- Fixed vite.config.ts duplicate key warning
-
-### Code Quality Improvements
-
-- Better code organization with clearer separation of concerns
-- Eliminated circular dependencies
-- Improved TypeScript strict mode compliance
-- Enhanced test coverage for edge cases
-- Consistent code style across the codebase
-
-## Migration Guide Summary
-
-For most users who only use the high-level parsing functions (`parse`, `parseString`, `parseBlob`, etc.), **no changes are required**.
-
-If you are using low-level APIs or explicitly importing types:
-
-1. **Update type names**: Replace `CSV` type with `CSVData`
-2. **Update class names**: Add `Default` prefix when instantiating lexer or assembler classes
-3. **Consider using interface types**: Use interface types for more flexible, decoupled code
-4. **Use main entry point**: Import from the package root instead of internal paths
+**For advanced users** using low-level APIs:
+1. Rename `CSV` type to `CSVData`
+2. Rename `CSVLexer` to `DefaultStringCSVLexer`
+3. Rename `CSVRecordAssembler` to `DefaultCSVRecordAssembler`

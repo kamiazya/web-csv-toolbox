@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import { DefaultCSVLexer } from "@/parser/models/DefaultCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
@@ -25,7 +25,7 @@ const LOCATION_SHAPE = {
 
 describe("CSVLexerTransformer", () => {
   it("should be a TransformStream", () => {
-    const lexer = new DefaultCSVLexer({});
+    const lexer = new FlexibleStringCSVLexer({});
     expect(new CSVLexerTransformer(lexer)).toBeInstanceOf(TransformStream);
   });
 
@@ -60,7 +60,7 @@ describe("CSVLexerTransformer", () => {
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
-          const lexer = new DefaultCSVLexer({});
+          const lexer = new FlexibleStringCSVLexer({});
           const transformer = new CSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
@@ -95,7 +95,7 @@ describe("CSVLexerTransformer", () => {
           return { expected, chunks };
         }),
         async ({ expected, chunks }) => {
-          const lexer = new DefaultCSVLexer({});
+          const lexer = new FlexibleStringCSVLexer({});
           const transformer = new CSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
@@ -158,7 +158,7 @@ describe("CSVLexerTransformer", () => {
           return { options, chunks, expected };
         }),
         async ({ options, chunks, expected }) => {
-          const lexer = new DefaultCSVLexer(options);
+          const lexer = new FlexibleStringCSVLexer(options);
           const transformer = new CSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
