@@ -105,12 +105,34 @@ import { /* ... */ } from 'web-csv-toolbox';
 - **WASM Loading**: Fixed Node.js WASM module loading
 - **Error Handling**: Improved DOMException handling
 
-### Improvements
+### TypeScript Configuration Improvements
+
+- **Modular tsconfig structure**: Split TypeScript configuration for better developer experience
+  - `tsconfig.base.json`: Shared compiler options and path mappings
+  - `tsconfig.src.json`: Source code type checking (excludes tests)
+  - `tsconfig.test.json`: Test files type checking
+  - `tsconfig.json`: Editor configuration (covers all files)
+  - `benchmark/tsconfig.json`: Benchmark-specific configuration
+- **New npm scripts for granular type checking**:
+  - `check:type:src`: Type check source code only (faster CI)
+  - `check:type:test`: Type check including tests
+- **Better editor experience**: Comprehensive type coverage for all files
+- **Consistent import patterns**: All imports updated to use `@/` and `#/` path aliases
+
+### Test Quality Improvements
+
+- Replaced deprecated `toMatchTypeOf` with `toExtend` in type tests
+- Fixed WASM initialization errors in type tests by using `ReturnType` instead of function execution
+- All type tests now execute without runtime side effects
+- Fixed vite.config.ts duplicate key warning
+
+### Code Quality Improvements
 
 - Better code organization with clearer separation of concerns
 - Eliminated circular dependencies
 - Improved TypeScript strict mode compliance
 - Enhanced test coverage for edge cases
+- Consistent code style across the codebase
 
 ## Migration Guide Summary
 
