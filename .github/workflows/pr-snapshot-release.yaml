@@ -78,16 +78,11 @@ jobs:
               core.setFailed(`Request failed with error ${err}`)
             }
 
-      - name: Checkout default branch
+      - name: Checkout pull request HEAD commit
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Checkout pull request branch
-        run: gh pr checkout ${{ github.event.issue.number }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Pin to specific commit SHA
-        run: git checkout ${{ steps.pr_data.outputs.sha }}
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ steps.pr_data.outputs.sha }}
 
       - name: Reset changeset entries on changeset-release/main branch
         run: |
