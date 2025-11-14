@@ -13,10 +13,17 @@ runs:
     - name: Setup pnpm
       uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
 
-    - name: Setup Node.js
+    - name: Setup Node.js (with specified version)
+      if: ${{ inputs.node-version != '' }}
       uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
       with:
         node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Setup Node.js (from .node-version file)
+      if: ${{ inputs.node-version == '' }}
+      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+      with:
         node-version-file: ./.node-version
         cache: pnpm
 
