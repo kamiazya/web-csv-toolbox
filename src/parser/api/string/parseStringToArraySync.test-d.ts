@@ -41,9 +41,7 @@ Angeles$*90001`;
   it("should csv header of the parsed result will be header's tuple", () => {
     expectTypeOf(
       parseStringToArraySync(csv1, { delimiter: "*", quotation: "$" }),
-    ).toExtend<
-      CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>[]
-    >();
+    ).toExtend<CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>[]>();
   });
 });
 
