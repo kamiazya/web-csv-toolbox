@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "lib": ["DOM", "ESNext"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "#/worker/helpers/createWorker.js": [
+        "./src/worker/helpers/createWorker.node.ts"
+      ],
+      "#/utils/response/getOptionsFromResponse.constants.js": [
+        "./src/utils/response/getOptionsFromResponse.constants.web.ts"
+      ],
+      "#/utils/charset/getCharsetValidation.constants.js": [
+        "./src/utils/charset/getCharsetValidation.constants.web.ts"
+      ]
+    }
+  }
+}

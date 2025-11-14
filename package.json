@@ -77,6 +77,8 @@
     "bench:rust": "cargo bench --manifest-path web-csv-toolbox-wasm/Cargo.toml",
     "coverage:rust": "cargo llvm-cov --manifest-path web-csv-toolbox-wasm/Cargo.toml --lcov --output-path lcov-rust.info",
     "check:type": "tsc --noEmit",
+    "check:type:src": "tsc --noEmit --project tsconfig.src.json",
+    "check:type:test": "tsc --noEmit --project tsconfig.test.json",
     "check:circular": "madge --circular --extensions ts src/",
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
