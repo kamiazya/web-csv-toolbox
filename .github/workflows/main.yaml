@@ -9,6 +9,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions: read-all
+
 jobs:
 
   static_tests:
@@ -36,6 +38,10 @@ jobs:
   release:
     name: Release
     uses: ./.github/workflows/.release.yaml
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     needs:
       - static_tests
       - build
