@@ -16,12 +16,14 @@ jobs:
   static_tests:
     name: Static Tests
     uses: ./.github/workflows/.static-tests.yaml
-    permissions: {}
+    permissions:
+      contents: read
 
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
-    permissions: {}
+    permissions:
+      contents: read
     needs:
       - static_tests
     secrets:
@@ -30,7 +32,8 @@ jobs:
   dynamic_tests:
     name: Dynamic Tests
     uses: ./.github/workflows/.dynamic-tests.yaml
-    permissions: {}
+    permissions:
+      contents: read
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
@@ -41,7 +44,10 @@ jobs:
   release:
     name: Release
     uses: ./.github/workflows/.release.yaml
-    permissions: {}
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
     needs:
       - static_tests
       - build
