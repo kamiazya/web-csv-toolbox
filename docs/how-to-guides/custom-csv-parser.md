@@ -48,15 +48,15 @@ See: [Parsing Architecture](../explanation/parsing-architecture.md)
 ### Step 1: Create a Simple Parser
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseCSV(csv: string) {
   // Stage 1: Tokenization
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
   // Stage 2: Record assembly
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   return records;
@@ -76,13 +76,13 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 ### Tab-Separated Values (TSV)
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseTSV(tsv: string) {
-  const lexer = new CSVLexer({ delimiter: '\t' });
+  const lexer = new DefaultCSVLexer({ delimiter: '\t' });
   const tokens = lexer.lex(tsv);
 
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   return records;
@@ -100,13 +100,13 @@ for (const record of parseTSV('name\tage\r\nAlice\t30\r\n')) {
 ### Pipe-Separated Values
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parsePSV(psv: string) {
-  const lexer = new CSVLexer({ delimiter: '|' });
+  const lexer = new DefaultCSVLexer({ delimiter: '|' });
   const tokens = lexer.lex(psv);
 
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   return records;
@@ -126,14 +126,14 @@ for (const record of parsePSV('name|age\r\nAlice|30\r\n')) {
 ### Use Custom Header
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseWithCustomHeader(csv: string, header: string[]) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
   // Pre-define header (all rows treated as data)
-  const assembler = new CSVRecordAssembler({ header });
+  const assembler = new DefaultCSVRecordAssembler({ header });
   const records = assembler.assemble(tokens);
 
   return records;
@@ -155,13 +155,13 @@ for (const record of parseWithCustomHeader(
 ### No Header Row
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseHeaderless(csv: string, header: string[]) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler({ header });
+  const assembler = new DefaultCSVRecordAssembler({ header });
   const records = assembler.assemble(tokens);
 
   return records;
@@ -185,13 +185,13 @@ for (const record of parseHeaderless(
 ### Field-Level Validation
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithValidation(csv: string) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler<['name', 'age', 'email']>();
+  const assembler = new DefaultCSVRecordAssembler<['name', 'age', 'email']>();
   const records = assembler.assemble(tokens);
 
   for (const record of records) {
@@ -230,7 +230,7 @@ try {
 ### Schema Validation with Zod
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const recordSchema = z.object({
@@ -240,10 +240,10 @@ const recordSchema = z.object({
 });
 
 function* parseWithSchema(csv: string) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler<['name', 'age', 'email']>();
+  const assembler = new DefaultCSVRecordAssembler<['name', 'age', 'email']>();
   const records = assembler.assemble(tokens);
 
   for (const record of records) {
@@ -271,13 +271,13 @@ try {
 ### Type Conversion
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithTypes(csv: string) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler<['name', 'age', 'active']>();
+  const assembler = new DefaultCSVRecordAssembler<['name', 'age', 'active']>();
   const records = assembler.assemble(tokens);
 
   for (const record of records) {
@@ -304,16 +304,16 @@ for (const record of parseWithTypes(
 ### Field Mapping
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithMapping(
   csv: string,
   mapping: Record<string, string>
 ) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   for (const record of records) {
@@ -341,16 +341,16 @@ for (const record of parseWithMapping(
 ### Basic Filtering
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithFilter(
   csv: string,
   predicate: (record: any) => boolean
 ) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
 
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   for (const record of records) {
@@ -378,7 +378,7 @@ for (const record of parseWithFilter(
 ### Streaming with TransformStream
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Custom validation transform
 class ValidationTransform extends TransformStream {
@@ -429,7 +429,7 @@ csvStream
 ### Custom Type Conversion Transform
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 class TypeConversionTransform extends TransformStream {
   constructor() {
@@ -463,10 +463,10 @@ csvStream
 ## Advanced: Syntax Highlighting
 
 ```typescript
-import { CSVLexer } from 'web-csv-toolbox';
+import { DefaultCSVLexer } from 'web-csv-toolbox';
 
 function highlightCSV(csv: string): string {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = lexer.lex(csv);
   let html = '<pre class="csv-highlight">';
 
@@ -513,17 +513,17 @@ console.log(highlighted);
 ## Advanced: Progress Tracking
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithProgress(
   csv: string,
   onProgress: (progress: { records: number; tokens: number }) => void
 ) {
-  const lexer = new CSVLexer();
+  const lexer = new DefaultCSVLexer();
   const tokens = [...lexer.lex(csv)];
   const totalTokens = tokens.length;
 
-  const assembler = new CSVRecordAssembler();
+  const assembler = new DefaultCSVRecordAssembler();
   const records = assembler.assemble(tokens);
 
   let recordCount = 0;
@@ -550,11 +550,11 @@ for (const record of parseWithProgress(
 ## Advanced: Error Recovery
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function* parseWithErrorRecovery(csv: string) {
-  const lexer = new CSVLexer();
-  const assembler = new CSVRecordAssembler();
+  const lexer = new DefaultCSVLexer();
+  const assembler = new DefaultCSVRecordAssembler();
 
   try {
     const tokens = lexer.lex(csv);
@@ -588,7 +588,7 @@ for (const result of parseWithErrorRecovery(
 ## Advanced: CSV Validator
 
 ```typescript
-import { CSVLexer, CSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 interface ValidationResult {
   valid: boolean;
@@ -599,10 +599,10 @@ function validateCSV(csv: string): ValidationResult {
   const errors: string[] = [];
 
   try {
-    const lexer = new CSVLexer();
+    const lexer = new DefaultCSVLexer();
     const tokens = [...lexer.lex(csv)];
 
-    const assembler = new CSVRecordAssembler();
+    const assembler = new DefaultCSVRecordAssembler();
     const records = [...assembler.assemble(tokens)];
 
     // Check field count consistency

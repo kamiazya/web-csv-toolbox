@@ -9,7 +9,7 @@ This changeset adds comprehensive tests and documentation to ensure that CSVReco
 **Security Verification:**
 - Verified that `Object.fromEntries()` is safe from prototype pollution attacks
 - Confirmed that dangerous property names (`__proto__`, `constructor`, `prototype`) are handled safely
-- Added 8 comprehensive regression tests in `CSVRecordAssembler.prototype-safety.test.ts`
+- Added 8 comprehensive regression tests in `FlexibleCSVRecordAssembler.prototype-safety.test.ts`
 
 **Test Coverage:**
 - Tests with `__proto__` as CSV header

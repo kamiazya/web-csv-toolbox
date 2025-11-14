@@ -4,21 +4,16 @@ import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(() => ({
   resolve: {
     alias: {
+      "@": "/src",
       // Aliases for testing only - production uses package.json "imports"
-      "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
-      "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
-      "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.web.ts",
-      "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
-      "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.web.ts",
-      "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
-      "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
+      "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
       // Note: In tests (Node.js environment), use node version
       // In production, package.json "imports" handles browser/node resolution
-      "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
-      "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.web.ts",
+      "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+      "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
     },
   },
   build: {
@@ -26,37 +21,39 @@ export default defineConfig(({ command }) => ({
     lib: {
       entry: [
         "src/web-csv-toolbox.ts",
-        "src/loadWASM.web.ts",
+        "src/wasm/loadWASM.web.ts",
         "src/worker.web.ts",
         "src/worker.node.ts",
-        "src/execution/worker/helpers/createWorker.web.ts",
-        "src/execution/worker/helpers/createWorker.node.ts",
-        "src/execution/worker/parseStringInWorker.web.ts",
-        "src/execution/worker/parseStringInWorker.node.ts",
-        "src/execution/worker/parseStringInWorkerWASM.web.ts",
-        "src/execution/worker/parseStringInWorkerWASM.node.ts",
-        "src/execution/worker/parseBinaryInWorker.web.ts",
-        "src/execution/worker/parseBinaryInWorker.node.ts",
-        "src/execution/worker/parseBinaryInWorkerWASM.web.ts",
-        "src/execution/worker/parseBinaryInWorkerWASM.node.ts",
-        "src/execution/worker/parseStreamInWorker.web.ts",
-        "src/execution/worker/parseStreamInWorker.node.ts",
-        "src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
-        "src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
-        "src/getOptionsFromResponse.constants.web.ts",
-        "src/getOptionsFromResponse.constants.node.ts",
-        "src/getCharsetValidation.constants.web.ts",
-        "src/getCharsetValidation.constants.node.ts",
+        "src/worker/helpers/createWorker.web.ts",
+        "src/worker/helpers/createWorker.node.ts",
+        "src/parser/execution/worker/parseStringInWorker.ts",
+        "src/parser/execution/worker/parseStringInWorkerWASM.ts",
+        "src/parser/execution/worker/parseBinaryInWorker.ts",
+        "src/parser/execution/worker/parseBinaryInWorkerWASM.ts",
+        "src/parser/execution/worker/parseStreamInWorker.ts",
+        "src/parser/execution/worker/parseUint8ArrayStreamInWorker.ts",
+        "src/parser/execution/worker/parseUint8ArrayStreamInWorkerWASM.ts",
+        "src/utils/response/getOptionsFromResponse.constants.web.ts",
+        "src/utils/response/getOptionsFromResponse.constants.node.ts",
+        "src/utils/charset/getCharsetValidation.constants.web.ts",
+        "src/utils/charset/getCharsetValidation.constants.node.ts",
       ],
       name: "CSV",
       formats: ["es"],
-      fileName: (format, entryName) => {
+      fileName: (_format, entryName) => {
         return `${entryName}.js`;
       },
     },
     minify: "terser",
     sourcemap: true,
     rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress WASM file resolution warnings (intentional runtime resolution)
+        if (warning.message?.includes("web_csv_toolbox_wasm_bg.wasm")) {
+          return;
+        }
+        warn(warning);
+      },
       external: [
         "node:worker_threads",
         "node:url",
@@ -84,7 +81,7 @@ export default defineConfig(({ command }) => ({
     dts({
       insertTypesEntry: true,
       outDir: "dist",
-      exclude: ["**/*.spec.ts", "**/__tests__/**/*"],
+      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/*.test-d.ts", "**/__tests__/**/*"],
       copyDtsFiles: true,
     }),
     codecovVitePlugin({
@@ -95,6 +92,11 @@ export default defineConfig(({ command }) => ({
   ],
   test: {
     setupFiles: ["config/vitest.setup.ts"],
+    server: {
+      deps: {
+        inline: ["web-csv-toolbox-wasm"],
+      },
+    },
     coverage: {
       provider: "istanbul",
       include: ["src/**/*.ts"],
@@ -104,20 +106,15 @@ export default defineConfig(({ command }) => ({
         test: {
           name: "node",
           include: ["src/**/*.node.{test,spec}.ts"],
-          exclude: ["src/parseStringToArraySyncWASM.node.spec.ts"],
+          exclude: ["src/parser/api/string/parseStringToArraySyncWASM.node.spec.ts"],
           environment: "node",
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
-            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
-            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.node.ts",
-            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
-            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.node.ts",
-            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
-            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
-            "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
-            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.node.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -151,15 +148,10 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.web.ts",
-            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.web.ts",
-            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.web.ts",
-            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.web.ts",
-            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.web.ts",
-            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.web.ts",
-            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.web.ts",
-            "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.web.ts",
-            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.web.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
           },
         },
       },
@@ -175,15 +167,10 @@ export default defineConfig(({ command }) => ({
         },
         resolve: {
           alias: {
-            "#execution/worker/createWorker.js": "/src/execution/worker/helpers/createWorker.node.ts",
-            "#execution/worker/parseStringInWorker.js": "/src/execution/worker/parseStringInWorker.node.ts",
-            "#execution/worker/parseStringInWorkerWASM.js": "/src/execution/worker/parseStringInWorkerWASM.node.ts",
-            "#execution/worker/parseBinaryInWorker.js": "/src/execution/worker/parseBinaryInWorker.node.ts",
-            "#execution/worker/parseBinaryInWorkerWASM.js": "/src/execution/worker/parseBinaryInWorkerWASM.node.ts",
-            "#execution/worker/parseStreamInWorker.js": "/src/execution/worker/parseStreamInWorker.node.ts",
-            "#execution/worker/parseUint8ArrayStreamInWorker.js": "/src/execution/worker/parseUint8ArrayStreamInWorker.node.ts",
-            "#getOptionsFromResponse.constants.js": "/src/getOptionsFromResponse.constants.node.ts",
-            "#getCharsetValidation.constants.js": "/src/getCharsetValidation.constants.node.ts",
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -193,6 +180,14 @@ export default defineConfig(({ command }) => ({
           include: ["src/**/*.test-d.ts"],
           typecheck: {
             enabled: true,
+          },
+        },
+        resolve: {
+          alias: {
+            "@": "/src",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },

@@ -185,7 +185,7 @@ export function parseStringToArraySyncWASM<Header>(
 WASM respects the same `maxBufferSize` limit as JavaScript:
 
 ```typescript
-const lexer = new CSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
+const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
 ```
 
 **Why:**
@@ -375,7 +375,7 @@ WASM parser processes the entire CSV string at once (not streaming).
 For streaming, the JavaScript implementation supports chunk-by-chunk parsing:
 
 ```typescript
-const lexer = new CSVLexer();
+const lexer = new DefaultCSVLexer();
 
 for (const chunk of chunks) {
   for (const token of lexer.lex(chunk, true)) {
@@ -449,7 +449,7 @@ WASM respects the same resource limits as JavaScript:
 
 ```typescript
 // maxBufferSize applies to both JS and WASM
-const lexer = new CSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
+const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
 ```
 
 **Why:**
