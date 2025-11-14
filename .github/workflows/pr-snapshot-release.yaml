@@ -71,6 +71,9 @@ jobs:
 
                 core.setFailed(errorMessage)
               }
+
+              // Set the PR head SHA as output to prevent TOCTOU attacks
+              core.setOutput('sha', pullRequest.data.head.sha)
             } catch (err) {
               core.setFailed(`Request failed with error ${err}`)
             }
@@ -82,6 +85,9 @@ jobs:
         run: gh pr checkout ${{ github.event.issue.number }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pin to specific commit SHA
+        run: git checkout ${{ steps.pr_data.outputs.sha }}
 
       - name: Reset changeset entries on changeset-release/main branch
         run: |
