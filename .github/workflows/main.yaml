@@ -9,21 +9,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+permissions: read-all
 
 jobs:
 
   static_tests:
     name: Static Tests
     uses: ./.github/workflows/.static-tests.yaml
-    permissions:
-      contents: read
 
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
-    permissions:
-      contents: read
     needs:
       - static_tests
     secrets:
@@ -32,8 +28,6 @@ jobs:
   dynamic_tests:
     name: Dynamic Tests
     uses: ./.github/workflows/.dynamic-tests.yaml
-    permissions:
-      contents: read
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}

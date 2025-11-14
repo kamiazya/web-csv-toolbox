@@ -32,8 +32,6 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
-    permissions:
-      contents: read
     needs: check
   snapshot:
     name: Snapshot Release
