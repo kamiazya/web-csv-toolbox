@@ -24,10 +24,10 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
     // Verify the record has __proto__ as its own property
     expect(records).toHaveLength(1);
-    expect(records[0]).toHaveProperty("__proto__");
-    expect(records[0].__proto__).toBe("malicious_value");
-    expect(records[0].name).toBe("Alice");
-    expect(records[0].age).toBe("30");
+    expect(records[0]!).toHaveProperty("__proto__");
+    expect(records[0]!.__proto__).toBe("malicious_value");
+    expect(records[0]!.name).toBe("Alice");
+    expect(records[0]!.age).toBe("30");
 
     // CRITICAL: Verify that Object.prototype was NOT polluted
     // If prototype pollution occurred, all new objects would have this property
@@ -36,7 +36,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     expect((testObject as any).malicious_value).toBeUndefined();
 
     // Verify __proto__ is an own property of the record, not inherited
-    expect(Object.hasOwn(records[0], "__proto__")).toBe(true);
+    expect(Object.hasOwn(records[0]!, "__proto__")).toBe(true);
   });
 
   test("should not pollute when constructor is used as CSV header", () => {
@@ -49,14 +49,14 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     const records = [...assembler.assemble(tokens)];
 
     expect(records).toHaveLength(1);
-    expect(records[0].constructor).toBe("malicious_value");
-    expect(records[0].name).toBe("Alice");
+    expect(records[0]!.constructor).toBe("malicious_value");
+    expect(records[0]!.name).toBe("Alice");
 
     // Verify the constructor property is a string (own property), not the Function constructor
-    expect(typeof records[0].constructor).toBe("string");
+    expect(typeof records[0]!.constructor).toBe("string");
 
     // Verify constructor is an own property
-    expect(Object.hasOwn(records[0], "constructor")).toBe(true);
+    expect(Object.hasOwn(records[0]!, "constructor")).toBe(true);
 
     // Verify Object.constructor is not affected
     const testObject = {};
@@ -73,11 +73,11 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     const records = [...assembler.assemble(tokens)];
 
     expect(records).toHaveLength(1);
-    expect(records[0].prototype).toBe("malicious_value");
-    expect(records[0].name).toBe("Alice");
+    expect(records[0]!.prototype).toBe("malicious_value");
+    expect(records[0]!.name).toBe("Alice");
 
     // Verify prototype is an own property
-    expect(Object.hasOwn(records[0], "prototype")).toBe(true);
+    expect(Object.hasOwn(records[0]!, "prototype")).toBe(true);
   });
 
   test("should handle multiple dangerous property names together", () => {
@@ -92,7 +92,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     const records = [...assembler.assemble(tokens)];
 
     expect(records).toHaveLength(1);
-    const record = records[0];
+    const record = records[0]!;
 
     // All values should be strings (own properties)
     expect(record.__proto__).toBe("v1");
@@ -132,9 +132,9 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     expect(records).toHaveLength(3);
 
     // Each record should have its own __proto__ value
-    expect(records[0].__proto__).toBe("value1");
-    expect(records[1].__proto__).toBe("value2");
-    expect(records[2].__proto__).toBe("value3");
+    expect(records[0]!.__proto__).toBe("value1");
+    expect(records[1]!.__proto__).toBe("value2");
+    expect(records[2]!.__proto__).toBe("value3");
 
     // Verify no global pollution after processing multiple records
     const testObject = {};
@@ -158,8 +158,8 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     // Verify properties are set as own properties
     expect(Object.hasOwn(obj, "__proto__")).toBe(true);
     expect(Object.hasOwn(obj, "constructor")).toBe(true);
-    expect(obj.__proto__).toBe("polluted");
-    expect(obj.constructor).toBe("malicious");
+    expect(obj.__proto__!).toBe("polluted");
+    expect(obj.constructor!).toBe("malicious");
 
     // CRITICAL: Verify no prototype pollution occurred
     const testObject = {};
@@ -180,8 +180,8 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
     expect(records).toHaveLength(1);
     // The value should be treated as a plain string
-    expect(records[0].__proto__).toBe('{"polluted":true}');
-    expect(records[0].name).toBe("Alice");
+    expect(records[0]!.__proto__).toBe('{"polluted":true}');
+    expect(records[0]!.name).toBe("Alice");
 
     // Verify no pollution
     const testObject = {};
@@ -199,12 +199,12 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
     const records = [...assembler.assemble(tokens)];
 
     expect(records).toHaveLength(1);
-    expect(records[0].__proto__).toBe("evil1");
-    expect(records[0].constructor).toBe("evil2");
+    expect(records[0]!.__proto__).toBe("evil1");
+    expect(records[0]!.constructor).toBe("evil2");
 
     // Verify both are strings (own properties)
-    expect(typeof records[0].__proto__).toBe("string");
-    expect(typeof records[0].constructor).toBe("string");
+    expect(typeof records[0]!.__proto__).toBe("string");
+    expect(typeof records[0]!.constructor).toBe("string");
 
     // Verify no pollution
     const testObject = {};

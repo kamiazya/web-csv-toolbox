@@ -38,7 +38,7 @@ describe("workerUtils", () => {
       addListener(worker, "message", handler);
 
       // Get the normalized handler that was passed to worker.on()
-      const normalizedHandler = mockOn.mock.calls[0][1];
+      const normalizedHandler = mockOn.mock.calls[0]![1];
 
       // When Node.js worker emits data directly
       const testData = { foo: "bar" };
@@ -58,7 +58,7 @@ describe("workerUtils", () => {
       addListener(worker, "error", handler);
 
       // Error handler should be passed through without normalization
-      const normalizedHandler = mockOn.mock.calls[0][1];
+      const normalizedHandler = mockOn.mock.calls[0]![1];
       expect(normalizedHandler).toBe(handler);
     });
 
@@ -145,11 +145,11 @@ describe("workerUtils", () => {
 
       // Add listener
       addListener(worker, "message", handler);
-      const addedHandler = mockOn.mock.calls[0][1];
+      const addedHandler = mockOn.mock.calls[0]![1];
 
       // Remove listener
       removeListener(worker, "message", handler);
-      const removedHandler = mockOff.mock.calls[0][1];
+      const removedHandler = mockOff.mock.calls[0]![1];
 
       // The same normalized handler should be added and removed
       expect(removedHandler).toBe(addedHandler);
@@ -222,10 +222,10 @@ describe("workerUtils", () => {
       const handler = vi.fn();
 
       addListener(worker, "message", handler);
-      const addedHandler = mockOn.mock.calls[0][1];
+      const addedHandler = mockOn.mock.calls[0]![1];
 
       removeListener(worker, "message", handler);
-      const removedHandler = mockOff.mock.calls[0][1];
+      const removedHandler = mockOff.mock.calls[0]![1];
 
       // Same normalized handler should be used
       expect(addedHandler).toBe(removedHandler);
@@ -301,11 +301,11 @@ describe("workerUtils", () => {
       addListener(worker, "error", errorHandler);
 
       // Error handler should not be normalized
-      const addedErrorHandler = mockOn.mock.calls[1][1];
+      const addedErrorHandler = mockOn.mock.calls[1]![1];
       expect(addedErrorHandler).toBe(errorHandler);
 
       // Message handler should be normalized
-      const addedMessageHandler = mockOn.mock.calls[0][1];
+      const addedMessageHandler = mockOn.mock.calls[0]![1];
       expect(addedMessageHandler).not.toBe(messageHandler);
     });
   });

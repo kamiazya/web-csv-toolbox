@@ -561,7 +561,7 @@ describe("parse function", () => {
 
           // Return random edge case or generated CSV
           return Math.random() < 0.3
-            ? edgeCases[Math.floor(Math.random() * edgeCases.length)]
+            ? edgeCases[Math.floor(Math.random() * edgeCases.length)]!
             : { header, csv };
         }),
         async ({ header, csv }) => {

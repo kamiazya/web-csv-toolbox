@@ -249,7 +249,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
           originalReleaseLock();
         });
         return reader;
-      });
+      }) as any;
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
       await collectAsyncIterator(iterator);
@@ -288,7 +288,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
         });
 
         return reader;
-      });
+      }) as any;
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
 
@@ -299,7 +299,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
       // Verify cancel was called with the error
       expect(cancelSpy).toHaveBeenCalledOnce();
       expect(cancelSpy).toHaveBeenCalledWith(expect.any(Error));
-      expect(cancelSpy.mock.calls[0][0].message).toBe("test error");
+      expect(cancelSpy.mock.calls[0]![0].message).toBe("test error");
 
       // Verify releaseLock was called even on error
       expect(releaseLockSpy).toHaveBeenCalledOnce();
@@ -333,7 +333,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
         });
 
         return reader;
-      });
+      }) as any;
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
 
@@ -375,7 +375,7 @@ describe("convertStreamToAsyncIterableIterator", () => {
         });
 
         return reader;
-      });
+      }) as any;
 
       const iterator = convertStreamToAsyncIterableIterator(stream);
       const result: number[] = [];

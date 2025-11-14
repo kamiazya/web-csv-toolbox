@@ -61,7 +61,7 @@ describe("parseFile function", () => {
         expect.fail("Should have thrown ParseError");
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
-        expect(error.name).toBe("ParseError");
+        expect((error as Error).name).toBe("ParseError");
         expect((error as any).source).toBe("users.csv");
       }
     });
