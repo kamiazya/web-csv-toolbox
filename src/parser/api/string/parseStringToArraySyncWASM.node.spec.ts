@@ -1,16 +1,11 @@
 import fc from "fast-check";
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
 import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
-import { loadWASM } from "@/wasm/loadWASM.ts";
 
-// Skip WASM tests in test environment as WASM module requires build-time setup
-describe.skip("parseStringToArraySyncWASM", async () => {
-  beforeAll(async () => {
-    await loadWASM();
-  });
-
+// No preload needed - WASM will be auto-initialized on first use with inlined WASM
+describe("parseStringToArraySyncWASM", async () => {
   it("should parse CSV string to record of arrays", async () => {
     await fc.assert(
       fc.asyncProperty(

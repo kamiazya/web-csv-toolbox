@@ -20,7 +20,7 @@ Alice,30,New York
 Bob,25,London`;
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.worker({ workerURL: workerUrl })
+  engine: EnginePresets.responsive({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -36,7 +36,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.worker({ workerURL: workerUrl })
+  engine: EnginePresets.responsive({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -76,7 +76,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 import workerUrl from 'web-csv-toolbox/worker';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.worker({ workerURL: workerUrl })
+  engine: EnginePresets.responsive({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -90,7 +90,7 @@ If you prefer not to use Workers, use the main thread engine:
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.mainThread()
+  engine: EnginePresets.stable()
 })) {
   console.log(record);
 }
@@ -119,7 +119,7 @@ import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
 await loadWASM('/web_csv_toolbox_wasm_bg.wasm');
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fastest()  // Uses WASM + Worker
+  engine: EnginePresets.responsiveFast()  // Uses WASM + Worker
 })) {
   console.log(record);
 }
@@ -144,7 +144,7 @@ import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url';
 await loadWASM(wasmUrl);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -222,7 +222,7 @@ for await (const record of parseString(csv, { engine: { wasm: true } })) {
 
 ### Worker + WASM Combined
 
-When using both Workers and WASM (via `EnginePresets.fastest()` or `workerWasm()`), you need to configure **both**:
+When using both Workers and WASM (via `EnginePresets.responsiveFast()` or `responsiveFast()`), you need to configure **both**:
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
@@ -232,13 +232,13 @@ import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url';
 await loadWASM(wasmUrl);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fastest({ workerURL: workerUrl })
+  engine: EnginePresets.responsiveFast({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
 ```
 
-**Important**: The WASM module must be loaded **before** the Worker starts using it. Always call `loadWASM()` before parsing when using `workerWasm()` or `fastest()` presets.
+**Important**: The WASM module must be loaded **before** the Worker starts using it. Always call `loadWASM()` before parsing when using `responsiveFast()` or `fastest()` presets.
 
 ## Environment Detection
 
@@ -280,7 +280,7 @@ await Promise.all(
   files.map(async (csv) => {
     let count = 0;
     for await (const record of parseString(csv, {
-      engine: EnginePresets.worker({ workerPool: pool })
+      engine: EnginePresets.responsive({ workerPool: pool })
     })) {
       // Process record
       count++;

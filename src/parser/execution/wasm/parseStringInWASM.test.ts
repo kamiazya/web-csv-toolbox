@@ -1,12 +1,8 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { CSVRecord } from "@/core/types.ts";
 import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
-import { loadWASM } from "@/wasm/loadWASM.ts";
 
 describe("parseStringInWASM", () => {
-  beforeAll(async () => {
-    await loadWASM();
-  });
   it("should parse simple CSV string", async () => {
     const csv = "name,age\nAlice,30\nBob,25";
     const records: CSVRecord<["name", "age"]>[] = [];

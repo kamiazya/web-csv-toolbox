@@ -21,6 +21,6 @@ export * from "@/parser/models/FlexibleStringCSVLexer.ts";
 export * from "@/parser/stream/CSVLexerTransformer.ts";
 export * from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 export * from "@/utils/file/getOptionsFromFile.ts";
-export * from "@/wasm/loadWASM.ts";
+export * from "@/wasm/WasmInstance.ts";
 export * from "@/worker/helpers/ReusableWorkerPool.ts";
 export * from "@/worker/helpers/WorkerSession.ts";

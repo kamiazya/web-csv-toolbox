@@ -258,7 +258,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Use fastest available execution method
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }

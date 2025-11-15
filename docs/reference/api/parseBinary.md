@@ -340,7 +340,7 @@ const buffer = await file.arrayBuffer();
 // Fast parsing for large UTF-8 files
 for await (const record of parseBinary(buffer, {
   charset: 'utf-8',
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }

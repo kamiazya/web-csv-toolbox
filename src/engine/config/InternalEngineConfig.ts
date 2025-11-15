@@ -10,11 +10,11 @@ import type {
  * @internal
  */
 export enum EngineFlags {
-  WORKER = 1 << 0, // 0b00001 = 1
-  WASM = 1 << 1, // 0b00010 = 2
-  STREAM_TRANSFER = 1 << 2, // 0b00100 = 4
-  MESSAGE_STREAMING = 1 << 3, // 0b01000 = 8
-  STRICT = 1 << 4, // 0b10000 = 16
+  WORKER = 1 << 0, // 0b000001 = 1
+  WASM = 1 << 1, // 0b000010 = 2
+  STREAM_TRANSFER = 1 << 2, // 0b000100 = 4
+  MESSAGE_STREAMING = 1 << 3, // 0b001000 = 8
+  STRICT = 1 << 4, // 0b010000 = 16
 }
 
 /**
@@ -103,6 +103,7 @@ export class InternalEngineConfig {
       }
     }
 
+    // Parse WASM configuration
     if (config.wasm) {
       this.bitmask |= EngineFlags.WASM;
     }
@@ -128,8 +129,8 @@ export class InternalEngineConfig {
       throw new Error("workerStrategy requires worker: true in engine config");
     }
 
-    // strict requires stream-transfer
-    if (this.hasStrict() && !this.hasStreamTransfer()) {
+    // strict mode requires stream-transfer for worker
+    if (this.hasWorker() && this.hasStrict() && !this.hasStreamTransfer()) {
       throw new Error(
         'strict requires workerStrategy: "stream-transfer" in engine config',
       );
@@ -192,11 +193,11 @@ export class InternalEngineConfig {
   }
 
   /**
-   * Create a fallback configuration.
+   * Create a fallback configuration for worker.
    *
-   * Converts stream-transfer to message-streaming and disables strict mode.
+   * Converts stream-transfer to message-streaming and disables worker strict mode.
    */
-  createFallbackConfig(): InternalEngineConfig {
+  createWorkerFallbackConfig(): InternalEngineConfig {
     let fallbackBitmask = this.bitmask;
 
     // Stream transfer -> message streaming
@@ -219,26 +220,48 @@ export class InternalEngineConfig {
   }
 
   /**
+   * Create a fallback configuration for WASM.
+   *
+   * Disables WASM.
+   */
+  createWasmFallbackConfig(): InternalEngineConfig {
+    let fallbackBitmask = this.bitmask;
+
+    // Disable WASM
+    if ((fallbackBitmask & EngineFlags.WASM) !== 0) {
+      fallbackBitmask &= ~EngineFlags.WASM;
+    }
+
+    return InternalEngineConfig.fromBitmask(
+      fallbackBitmask,
+      this.workerURL,
+      this.workerPool,
+      this.onFallback,
+    );
+  }
+
+  /**
    * Convert to EngineConfig.
    */
   toConfig(): EngineConfig {
     const hasWorker = this.hasWorker();
+    const hasWasm = this.hasWasm();
 
     if (hasWorker) {
       return {
         worker: true,
         workerURL: this.workerURL,
         workerPool: this.workerPool,
-        wasm: this.hasWasm() || undefined,
+        wasm: hasWasm,
         workerStrategy: this.getWorkerStrategy(),
-        strict: this.hasStrict() || undefined,
+        strict: this.hasStrict(),
         onFallback: this.onFallback,
       };
     }
 
     return {
       worker: false,
-      wasm: this.hasWasm() || undefined,
+      wasm: hasWasm,
     };
   }
 

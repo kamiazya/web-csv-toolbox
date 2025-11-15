@@ -200,7 +200,7 @@ const binaryStream = response.body;
 // Non-blocking parsing in worker
 for await (const record of parseUint8ArrayStream(binaryStream, {
   charset: 'utf-8',
-  engine: EnginePresets.workerStreamTransfer()
+  engine: EnginePresets.memoryEfficient()
 })) {
   console.log(record);
   // UI stays responsive!

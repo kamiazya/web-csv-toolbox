@@ -24,27 +24,29 @@ By the end of this tutorial, you'll be able to:
 
 ## What is WebAssembly?
 
-WebAssembly (WASM) is a binary instruction format that runs at near-native speed in modern browsers and runtimes. For CSV parsing, this means:
+WebAssembly (WASM) is a binary instruction format that runs in modern browsers and runtimes. For CSV parsing, this means:
 
-- **Improved performance** compared to JavaScript for large CSV files
-- **Lower CPU usage** for CPU-intensive parsing
+- **Compiled code execution** using WASM instead of interpreted JavaScript
+- **Potential performance benefits** for CPU-intensive parsing
 - **Same memory efficiency** as JavaScript implementation
 
-**Note:** For actual performance measurements, see [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox).
+**Note:** Actual performance depends on many factors including CSV structure, file size, and runtime environment. See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.
 
 ## When to use WebAssembly
 
 **✅ Use WASM when:**
-- Parsing large UTF-8 CSV files (>1MB)
-- CPU performance is critical
+- Parsing UTF-8 CSV files
+- Server-side parsing where blocking is acceptable
 - CSV uses standard delimiters (comma, tab, etc.)
 - CSV uses double-quote (`"`) as quotation character
 
 **❌ Skip WASM when:**
 - CSV uses non-UTF-8 encoding (Shift-JIS, EUC-JP, etc.)
 - CSV uses single-quote (`'`) as quotation character
-- Parsing small files (<100KB)
-- WASM initialization overhead matters
+- Stability is the highest priority (use JavaScript parser instead)
+- WASM initialization overhead matters for your use case
+
+**Note:** WASM parser is stable but the implementation may change in future versions. For maximum stability, use the JavaScript parser (`mainThread` preset).
 
 ## Step 1: Load the WASM Module
 
@@ -100,9 +102,9 @@ import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
 
 await loadWASM();
 
-// Use 'wasm' preset (main thread WASM)
+// Use 'fast' preset (main thread WASM)
 for await (const record of parse(csv, {
-  engine: EnginePresets.wasm
+  engine: EnginePresets.fast()
 })) {
   console.log(record);
 }
@@ -110,28 +112,27 @@ for await (const record of parse(csv, {
 
 ### Available WASM Presets
 
-| Preset | Worker | WASM | Best For |
-|--------|--------|------|----------|
-| `wasm` | ❌ | ✅ | Medium UTF-8 files, main thread |
-| `workerWasm` | ✅ | ✅ | Large UTF-8 files, non-blocking UI |
-| `fastest` | ✅ | ✅ | Maximum performance (UTF-8 only) |
+| Preset | Optimization Target | Worker | WASM | Stability |
+|--------|---------------------|--------|------|-----------|
+| `fast` | Parse speed | ❌ | ✅ | ✅ Stable |
+| `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | ✅ Stable |
 
-**Recommendation:** Use `EnginePresets.fastest()` for maximum performance.
+**Note:** For fastest execution time, use `fast()` on main thread. `responsiveFast()` prioritizes UI responsiveness with some worker communication overhead.
 
 ---
 
 ## Step 4: Combine WASM with Worker Threads
 
-For the best performance, combine WASM with Worker Threads:
+Combine WASM with Worker Threads for non-blocking UI with fast parsing:
 
 ```typescript
 import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
 
 await loadWASM();
 
-// Use 'fastest' preset (Worker + WASM)
+// Use 'responsiveFast' preset (Worker + WASM)
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -139,8 +140,10 @@ for await (const record of parse(csv, {
 
 **Benefits:**
 - ✅ Non-blocking UI (Worker Thread)
-- ✅ Maximum performance (WASM acceleration)
-- ✅ Best for large files (>1MB)
+- ✅ Fast parsing (compiled WASM code)
+- ⚠️ Worker communication adds overhead (data transfer between threads)
+
+**Note:** This approach prioritizes UI responsiveness. Execution time may be slower than `fast()` on main thread due to worker communication cost, but UI remains responsive.
 
 ---
 
@@ -157,7 +160,7 @@ async function fetchAndParseCSV(url: string) {
   const response = await fetch(url);
 
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.fastest
+    engine: EnginePresets.responsiveFast()
   })) {
     console.log(record);
   }
@@ -358,7 +361,7 @@ async function handleFileUpload(file: File) {
   const csv = await file.text();
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.fastest
+    engine: EnginePresets.responsiveFast()
   })) {
     console.log(record);
   }
@@ -413,22 +416,21 @@ export default app;
 
 ## Performance Comparison
 
-<!-- TODO: Add actual performance benchmarks based on real measurements -->
+**Performance Characteristics:**
 
-**General Guidelines:**
+| Approach | Execution | UI Blocking | Characteristics |
+|----------|-----------|-------------|-----------------|
+| JavaScript (main thread) | Standard | ✅ Yes | Most stable, all encodings |
+| WASM (main thread) | Compiled code | ✅ Yes | UTF-8 only, no worker overhead |
+| Worker + WASM | Compiled code | ❌ No | UTF-8 only, worker communication overhead |
 
-| File Size | JavaScript | WASM | Worker + WASM |
-|-----------|-----------|------|---------------|
-| <100KB | Baseline | May be slower (init overhead) | May be slower (init overhead) |
-| 100KB-1MB | Baseline | Improved | Improved + non-blocking |
-| >1MB | Baseline | Improved | Best (improved + non-blocking) |
-
-**Note:** Actual performance depends on:
-- Hardware specifications
+**Note:** Actual performance depends on many factors:
+- CSV structure and size
 - Runtime environment (Node.js, browser, Deno)
-- CSV complexity (number of columns, escaping, etc.)
+- System capabilities
+- Worker communication overhead (when using workers)
 
-For detailed benchmarks, see [CodSpeed](https://codspeed.io/kamiazya/web-csv-toolbox).
+**Recommendation:** Benchmark your specific use case to determine the best approach. See [CodSpeed](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.
 
 ---
 
@@ -482,8 +484,10 @@ You've learned how to:
 **Problem:** WASM is slower than JavaScript
 
 **Solution:**
-- WASM has initialization overhead - only beneficial for larger files (>100KB)
-- For small files, use JavaScript parser
+- WASM has initialization overhead - benchmark your specific use case
+- Worker + WASM adds worker communication overhead - may be slower than main thread WASM
+- For fastest execution time, use `wasm` preset on main thread (blocks UI)
+- For non-blocking UI, accept the worker communication overhead trade-off
 - Ensure `loadWASM()` is called once at startup, not before every parse
 
 ### Encoding errors

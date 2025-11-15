@@ -56,7 +56,7 @@ describe("InternalEngineConfig", () => {
       expect(config.getWorkerStrategy()).toBe("message-streaming");
     });
 
-    it("should parse strict flag", () => {
+    it("should parse worker strict flag", () => {
       const config = new InternalEngineConfig({
         worker: true,
         workerStrategy: "stream-transfer",
@@ -187,25 +187,27 @@ describe("InternalEngineConfig", () => {
       );
     });
 
-    it("should set correct bitmask for strict mode", () => {
+    it("should set correct bitmask for worker strict mode", () => {
       const config = new InternalEngineConfig({
         worker: true,
         workerStrategy: "stream-transfer",
         strict: true,
       });
       expect(config.getBitmask()).toBe(
-        EngineFlags.WORKER | EngineFlags.STREAM_TRANSFER | EngineFlags.STRICT,
+        EngineFlags.WORKER |
+          EngineFlags.STREAM_TRANSFER |
+          EngineFlags.STRICT,
       );
     });
   });
 
-  describe("Fallback config creation", () => {
+  describe("Worker fallback config creation", () => {
     it("should convert stream-transfer to message-streaming", () => {
       const config = new InternalEngineConfig({
         worker: true,
         workerStrategy: "stream-transfer",
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.hasWorker()).toBe(true);
       expect(fallback.hasStreamTransfer()).toBe(false);
@@ -213,13 +215,13 @@ describe("InternalEngineConfig", () => {
       expect(fallback.getWorkerStrategy()).toBe("message-streaming");
     });
 
-    it("should disable strict mode in fallback", () => {
+    it("should disable worker strict mode in fallback", () => {
       const config = new InternalEngineConfig({
         worker: true,
         workerStrategy: "stream-transfer",
         strict: true,
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.hasStrict()).toBe(false);
     });
@@ -230,7 +232,7 @@ describe("InternalEngineConfig", () => {
         wasm: true,
         workerStrategy: "stream-transfer",
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.hasWorker()).toBe(true);
       expect(fallback.hasWasm()).toBe(true);
@@ -243,7 +245,7 @@ describe("InternalEngineConfig", () => {
         workerStrategy: "stream-transfer",
         workerURL: url,
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.workerURL).toBe(url);
     });
@@ -255,7 +257,7 @@ describe("InternalEngineConfig", () => {
         workerStrategy: "stream-transfer",
         onFallback: callback,
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.onFallback).toBe(callback);
     });
@@ -265,7 +267,7 @@ describe("InternalEngineConfig", () => {
         worker: true,
         workerStrategy: "message-streaming",
       });
-      const fallback = config.createFallbackConfig();
+      const fallback = config.createWorkerFallbackConfig();
 
       expect(fallback.hasMessageStreaming()).toBe(true);
       expect(fallback.hasStreamTransfer()).toBe(false);
@@ -278,7 +280,7 @@ describe("InternalEngineConfig", () => {
       const engineConfig = config.toConfig() as WorkerEngineConfig;
 
       expect(engineConfig.worker).toBe(true);
-      expect(engineConfig.wasm).toBeUndefined();
+      expect(engineConfig.wasm).toBe(false);
       expect(engineConfig.workerStrategy).toBe("message-streaming");
     });
 
@@ -316,7 +318,7 @@ describe("InternalEngineConfig", () => {
       const engineConfig = config.toConfig();
 
       expect(engineConfig.worker).toBe(false);
-      expect(engineConfig.wasm).toBeUndefined();
+      expect(engineConfig.wasm).toBe(false);
       // workerStrategy and strict are not accessible in MainThreadEngineConfig
       expect("workerStrategy" in engineConfig).toBe(false);
       expect("strict" in engineConfig).toBe(false);

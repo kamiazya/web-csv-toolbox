@@ -7,7 +7,7 @@ group: How-to Guides
 
 This guide helps you select the appropriate API for your CSV parsing needs in web-csv-toolbox.
 
-> **Note for Bundler Users**: When using Worker-based engines (e.g., `EnginePresets.worker()`), you must specify the `workerURL` option with bundlers. See [How to Use with Bundlers](./use-with-bundlers.md).
+> **Note for Bundler Users**: When using Worker-based engines (e.g., `EnginePresets.responsive()`), you must specify the `workerURL` option with bundlers. See [How to Use with Bundlers](./use-with-bundlers.md).
 
 ## Quick Decision Tree
 
@@ -670,15 +670,22 @@ export default {
 
 **Main Thread:**
 ```typescript
-// No worker overhead - best for small files (<1MB)
+// Blocks main thread during parsing
 for await (const record of parseString(csv)) {
   console.log(record);
 }
 ```
 
+**Characteristics:**
+- ✅ No worker communication overhead
+- ❌ Blocks main thread during parsing
+- **Use case:** Server-side parsing, scenarios where blocking is acceptable
+
+---
+
 **Worker Thread:**
 ```typescript
-// Non-blocking UI - best for large files (>1MB)
+// Non-blocking UI
 for await (const record of parseString(csv, {
   engine: { worker: true }
 })) {
@@ -686,9 +693,17 @@ for await (const record of parseString(csv, {
 }
 ```
 
+**Characteristics:**
+- ✅ Non-blocking UI
+- ⚠️ Worker communication adds overhead (data transfer between threads)
+- **Performance trade-off:** Execution time may increase due to communication cost, but UI remains responsive
+- **Use case:** Browser applications, scenarios requiring UI responsiveness
+
+---
+
 **WASM:**
 ```typescript
-// Improved performance - best for UTF-8 large files (>10MB)
+// Compiled WASM code
 await loadWASM();
 for await (const record of parseString(csv, {
   engine: { wasm: true }
@@ -697,32 +712,58 @@ for await (const record of parseString(csv, {
 }
 ```
 
+**Characteristics:**
+- ✅ Uses compiled WASM code
+- ✅ No worker communication overhead
+- ❌ Blocks main thread during parsing
+- **Limitations:** UTF-8 only, double-quote only
+- **Use case:** Server-side parsing with UTF-8 CSV files
+
+---
+
 **Worker + WASM:**
 ```typescript
-// Maximum performance - best for very large UTF-8 files
+// Non-blocking execution with compiled WASM code
 await loadWASM();
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
 ```
 
+**Characteristics:**
+- ✅ Non-blocking UI
+- ✅ Uses compiled WASM code
+- ⚠️ Worker communication adds overhead (data transfer between threads)
+- **Performance trade-off:** Execution time may increase due to communication cost, but UI remains responsive
+- **Limitations:** UTF-8 only, double-quote only
+- **Use case:** Browser applications requiring non-blocking parsing of UTF-8 CSV files
+
+**Note:** Despite the name "fastest", this preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use main thread with WASM (`{ wasm: true }`).
+
+**Performance Note:**
+Actual performance depends on many factors including CSV structure, file size, runtime environment, and system capabilities. Benchmark your specific use case to determine the best approach. See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.
+
 ---
 
 ## API Selection Matrix
 
-| Input Type | Small (<1MB) | Medium (1-10MB) | Large (>10MB) | Encoding | API |
-|------------|--------------|-----------------|---------------|----------|-----|
-| `string` | Main thread | Worker | Worker + WASM | UTF-8 | `parseString()` |
-| `string` | Main thread | Worker | Worker | Any | `parseString()` |
-| `ReadableStream<string>` | Main thread | Worker + stream | Worker + stream | UTF-8 | `parseStringStream()` |
-| `Uint8Array` | Main thread | Worker | Worker + WASM | UTF-8 | `parseBinary()` |
-| `Uint8Array` | Main thread | Worker | Worker | Any | `parseBinary()` |
+| Input Type | Server-side | Browser (blocking OK) | Browser (non-blocking) | Encoding | API |
+|------------|-------------|----------------------|------------------------|----------|-----|
+| `string` | Main thread | Main thread | Worker | UTF-8 | `parseString()` |
+| `string` | Main thread + WASM | Main thread | Worker | UTF-8 | `parseString()` |
+| `string` | Main thread | Main thread | Worker | Any | `parseString()` |
+| `ReadableStream<string>` | Main thread | Main thread | Worker + stream | UTF-8 | `parseStringStream()` |
+| `Uint8Array` | Main thread | Main thread | Worker | UTF-8 | `parseBinary()` |
+| `Uint8Array` | Main thread + WASM | Main thread | Worker | UTF-8 | `parseBinary()` |
+| `Uint8Array` | Main thread | Main thread | Worker | Any | `parseBinary()` |
 | `ReadableStream<Uint8Array>` | Main thread | Main thread | Main thread | Any | `parseUint8ArrayStream()` |
 | `Response` | Auto | Auto | Auto | Auto | `parseResponse()` |
 | `Request` | Auto | Auto | Auto | Auto | `parseRequest()` |
 | `Blob` / `File` | Main thread | Main thread | Main thread | Auto | `parseBlob()` / `parseFile()` |
+
+**Note:** Choose execution strategy based on your requirements (blocking vs non-blocking) rather than file size alone. Benchmark your specific use case to determine the best approach.
 
 ---
 
@@ -936,8 +977,8 @@ for await (const record of parseResponse(response)) {
 5. **File uploads:** Use `parseFile()` for automatic error tracking, or `parseBlob()` for generic Blob support
 6. **Edge environments:** Use `parseBlob()` with manual `source` option (Cloudflare Workers compatibility)
 7. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
-8. **Performance-critical:** Use `EnginePresets.fastest()` with WASM + Worker
+8. **Non-blocking parsing:** Use Worker-based execution (e.g., `{ engine: { worker: true } }` or `EnginePresets.responsive()`) for UI responsiveness in browser applications
 9. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
 10. **Error tracking:** Always specify `source` option or use `parseFile()` for automatic tracking
 
-**Remember:** The best API depends on your specific use case. Consider input type, file size, encoding, and performance requirements when choosing.
+**Remember:** The best API depends on your specific use case. Consider input type, encoding, execution environment (server vs browser), and blocking vs non-blocking requirements when choosing. Benchmark your actual data to make informed decisions.

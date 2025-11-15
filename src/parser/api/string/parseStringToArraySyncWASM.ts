@@ -1,4 +1,8 @@
-import { parseStringToArraySync } from "web-csv-toolbox-wasm";
+import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loadWASM.js";
+import {
+  isSyncInitialized,
+  loadWASMSync,
+} from "#/wasm/loadWASMSync.js";
 import {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
@@ -6,54 +10,70 @@ import {
 } from "@/core/constants.ts";
 import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
-import type { loadWASM } from "@/wasm/loadWASM.ts";
 
 /**
- * Parse CSV string to record of arrays.
+ * Parse CSV string to record of arrays using WebAssembly (synchronous).
  *
- * @param csv CSV string
- * @param options Parse options
+ * @param csv - CSV string to parse
+ * @param options - Parse options
+ * @param wasmPool - Optional WASM pool for custom instance management
  * @returns Record of arrays
  *
  * @remarks
- * This function uses WebAssembly to parse CSV string.
- * Before calling this function, you must call {@link loadWASM} function.
+ * This function uses WebAssembly to parse CSV string synchronously.
+ *
+ * **WASM Initialization:**
+ * WASM module is automatically initialized on first use.
+ * However, it is recommended to call {@link loadWASM} beforehand for better performance.
+ *
+ * ```ts
+ * // Recommended: Initialize WASM beforehand
+ * import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+ * await loadWASM();
+ * const result = parseStringToArraySyncWASM(csv);
+ * ```
+ *
+ * ```ts
+ * // Alternative: Automatic initialization (works but slower on first use)
+ * import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+ * const result = parseStringToArraySyncWASM(csv);
+ * ```
  *
  * **Performance Characteristics:**
- * - **Speed**: 2-3x faster than JavaScript parser for large CSV strings
- * - **Memory usage**: O(n) - proportional to file size (loads entire result into memory)
- * - **Suitable for**: CPU-intensive workloads, large CSV strings on server-side
- * - **Recommended max**: ~100MB (Node.js/Deno)
+ * - **Execution**: Synchronous operation that blocks the calling thread
+ * - **Memory usage**: O(n) - loads entire result into memory
+ * - **Use case**: Suitable when you need synchronous parsing and can accept blocking behavior
  *
  * **Limitations:**
  * - Only supports UTF-8 string (not UTF-16)
  * - Only supports double quote (`"`) as quotation character
  * - Only supports single character as delimiter
+ * - Requires prior WASM initialization (synchronous limitation)
  *
- * This function only supports UTF-8 string.
- * If you pass a string that is not UTF-8, like UTF-16, it throws an error.
- * This function only supports double quote as quotation.
- * So, `options.quotation` must be `"` (double quote). Otherwise, it throws an error.
- *
- * And this function only supports single character as delimiter.
- * So, `options.delimiter` must be a single character. Otherwise, it throws an error.
- *
- * @example
- *
+ * @example Recommended usage with loadWASM
  * ```ts
- * import { loadWASM, parseStringWASM } from "web-csv-toolbox";
+ * import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
  *
+ * // Recommended: Load WASM beforehand
  * await loadWASM();
  *
  * const csv = "a,b,c\n1,2,3";
- *
  * const result = parseStringToArraySyncWASM(csv);
  * console.log(result);
- * // Prints:
- * // [{ a: "1", b: "2", c: "3" }]
+ * // Prints: [{ a: "1", b: "2", c: "3" }]
  * ```
+ *
+ * @example Alternative: automatic initialization (slower on first use)
+ * ```ts
+ * import { parseStringToArraySyncWASM } from "web-csv-toolbox";
+ *
+ * // WASM is automatically initialized on first use
+ * const result = parseStringToArraySyncWASM(csv);
+ * ```
+ *
  * @beta
- * @throws {RangeError | TypeError} - If provided options are invalid.
+ * @throws {RangeError} If provided options are invalid or WASM module is not initialized
+ * @throws {TypeError} If provided options have invalid types
  */
 export function parseStringToArraySyncWASM<
   const CSVSource extends string,
@@ -109,7 +129,7 @@ export function parseStringToArraySyncWASM<
     throw new RangeError("Invalid quotation, must be double quote on WASM.");
   }
   assertCommonOptions({ delimiter, quotation, maxBufferSize });
-  const demiliterCode = delimiter.charCodeAt(0);
+  const delimiterCode = delimiter.charCodeAt(0);
 
   // If custom header is provided, prepend it to the CSV string
   // so WASM parser treats it as the header row
@@ -130,10 +150,26 @@ export function parseStringToArraySyncWASM<
     csvToParse = `${escapedHeader.join(delimiter)}\n${csv}`;
   }
 
+  // Auto-initialize WASM if not already initialized
+  if (!isSyncInitialized()) {
+    try {
+      loadWASMSync();
+    } catch (error) {
+      // In Node.js or when sync init fails, throw helpful error
+      throw new RangeError(
+        "WASM module is not initialized. " +
+          "In browser: WASM will be auto-initialized on first use. " +
+          "In Node.js: WASM will be auto-initialized on first use (with inlined WASM). " +
+          `Original error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  // Use the imported WASM function (initialized by loadWASMSync)
   return JSON.parse(
-    parseStringToArraySync(
+    wasmParseStringToArraySync(
       csvToParse,
-      demiliterCode,
+      delimiterCode,
       maxBufferSize,
       source ?? "",
     ),

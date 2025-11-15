@@ -647,7 +647,8 @@ interface BaseEngineConfig {
   /**
    * Use WASM implementation.
    *
-   * Requires prior initialization with {@link loadWASM}.
+   * WASM module is automatically initialized on first use.
+   * However, it is recommended to call {@link loadWASM} beforehand for better performance.
    *
    * @default false
    *
@@ -661,6 +662,8 @@ interface BaseEngineConfig {
    *
    * @example Worker + WASM
    * ```ts
+   * import { loadWASM, parse } from 'web-csv-toolbox';
+   *
    * await loadWASM();
    * parse(csv, { engine: { worker: true, wasm: true } })
    * ```

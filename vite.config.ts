@@ -5,13 +5,17 @@ import { defineConfig } from "vitest/config";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
 export default defineConfig(() => ({
+  assetsInclude: ["**/*.wasm", "**/*.wasm?*"],
+  optimizeDeps: {
+    exclude: ["web-csv-toolbox-wasm"],
+  },
   resolve: {
     alias: {
       "@": "/src",
-      // Aliases for testing only - production uses package.json "imports"
+      // Aliases for development - production uses package.json "imports"
+      "#/wasm/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
+      "#/wasm/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.ts",
       "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
-      // Note: In tests (Node.js environment), use node version
-      // In production, package.json "imports" handles browser/node resolution
       "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
       "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
     },
@@ -21,7 +25,9 @@ export default defineConfig(() => ({
     lib: {
       entry: [
         "src/web-csv-toolbox.ts",
-        "src/wasm/loadWASM.web.ts",
+        "src/wasm/loaders/loadWASM.web.ts",
+        "src/wasm/loaders/loadWASM.node.ts",
+        "src/wasm/loaders/loadWASMSync.ts",
         "src/worker.web.ts",
         "src/worker.node.ts",
         "src/worker/helpers/createWorker.web.ts",
@@ -49,7 +55,8 @@ export default defineConfig(() => ({
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress WASM file resolution warnings (intentional runtime resolution)
-        if (warning.message?.includes("web_csv_toolbox_wasm_bg.wasm")) {
+        if (warning.message?.includes("csv.wasm") ||
+            warning.message?.includes("web_csv_toolbox_wasm_bg.wasm")) {
           return;
         }
         warn(warning);
@@ -58,6 +65,7 @@ export default defineConfig(() => ({
         "node:worker_threads",
         "node:url",
         "node:path",
+        "node:fs/promises",
       ],
       output: {
         inlineDynamicImports: false,
@@ -106,15 +114,11 @@ export default defineConfig(() => ({
         test: {
           name: "node",
           include: ["src/**/*.node.{test,spec}.ts"],
-          exclude: ["src/parser/api/string/parseStringToArraySyncWASM.node.spec.ts"],
           environment: "node",
         },
         resolve: {
           alias: {
             "@": "/src",
-            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
-            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
-            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -149,9 +153,6 @@ export default defineConfig(() => ({
         resolve: {
           alias: {
             "@": "/src",
-            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
-            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
-            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
           },
         },
       },
@@ -168,9 +169,6 @@ export default defineConfig(() => ({
         resolve: {
           alias: {
             "@": "/src",
-            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
-            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
-            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -185,9 +183,6 @@ export default defineConfig(() => ({
         resolve: {
           alias: {
             "@": "/src",
-            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
-            "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.node.ts",
-            "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
