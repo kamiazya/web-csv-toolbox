@@ -532,7 +532,7 @@ import { EnginePresets, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
-const config = EnginePresets.fastest();
+const config = EnginePresets.responsiveFast();
 ```
 
 **Why:**
@@ -543,7 +543,7 @@ const config = EnginePresets.fastest();
 ### Maximum Compatibility
 
 ```typescript
-const config = EnginePresets.worker();
+const config = EnginePresets.responsive();
 ```
 
 **Why:**
@@ -551,23 +551,12 @@ const config = EnginePresets.worker();
 - ✅ All encodings supported
 - ✅ Reliable message-streaming
 
-### Testing/Debugging
-
-```typescript
-const config = EnginePresets.strict();
-```
-
-**Why:**
-- ✅ No silent fallbacks
-- ✅ Explicit error handling
-- ✅ Guaranteed execution mode
-
 ### Advanced Performance Tuning 🧪
 
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.fastest({
+const config = EnginePresets.balanced({
   arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB threshold
   backpressureCheckInterval: {
     lexer: 50,      // Check every 50 tokens (more responsive)

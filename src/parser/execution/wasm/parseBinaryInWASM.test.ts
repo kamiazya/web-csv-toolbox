@@ -1,12 +1,8 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { CSVRecord } from "@/core/types.ts";
 import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
-import { loadWASM } from "@/wasm/loadWASM.ts";
 
 describe("parseBinaryInWASM", () => {
-  beforeAll(async () => {
-    await loadWASM();
-  });
   const encoder = new TextEncoder();
 
   describe("Uint8Array input", () => {

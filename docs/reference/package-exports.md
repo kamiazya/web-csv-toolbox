@@ -18,8 +18,15 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 **Exports**:
 - All parsing functions (`parseString`, `parseBinary`, etc.)
 - Engine configuration (`EnginePresets`)
-- Low-level APIs (`CSVLexer`, `CSVRecordAssembler`, etc.)
-- Worker management (`ReusableWorkerPool`, `WorkerSession`)
+  - `EnginePresets.stable()` - Stability optimized
+  - `EnginePresets.responsive()` - UI responsiveness optimized
+  - `EnginePresets.memoryEfficient()` - Memory efficiency optimized
+  - `EnginePresets.fast()` - Parse speed optimized
+  - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
+  - `EnginePresets.balanced()` - Balanced (general-purpose)
+- Low-level APIs (`DefaultStringCSVLexer`, `DefaultCSVRecordAssembler`, etc.)
+- Worker management (`WorkerPool`, `WorkerSession`)
+- WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 
 ## Worker Export
 
@@ -61,15 +68,48 @@ The `./worker` export uses Node.js conditional exports:
 
 ## WASM Export
 
-### `web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm`
+### `web-csv-toolbox/csv.wasm`
 
 ```typescript
-import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm';
+import wasmUrl from 'web-csv-toolbox/csv.wasm';
 ```
 
-**Resolves to**: `./dist/web_csv_toolbox_wasm_bg.wasm`
+**Resolves to**: `./dist/csv.wasm`
 
-WebAssembly binary for WASM-based parsing.
+Pre-compiled WebAssembly module for high-performance CSV parsing.
+
+**Do you need this?**
+
+**No, in most cases.** The library automatically loads the WASM module when you use WASM-enabled features:
+
+```typescript
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+// WASM module is automatically loaded
+await loadWASM();
+
+// Just use the API - WASM file is handled internally
+for await (const record of parse(csv, {
+  engine: { wasm: true }
+})) {
+  console.log(record);
+}
+```
+
+**Current limitations:**
+
+⚠️ The WASM module is currently embedded as base64 in the JavaScript bundle for automatic initialization. Importing `csv.wasm` separately does **not** reduce bundle size in the current architecture.
+
+**Potential future use cases:**
+
+When combined with future distribution improvements, this export could enable:
+
+1. **Separate caching strategy**: Cache WASM file independently from JavaScript
+2. **CDN hosting**: Host WASM on a different domain or CDN
+3. **Service worker pre-caching**: Pre-cache WASM for offline use
+4. **Custom loading strategies**: Implement lazy-loading or conditional loading
+
+**See**: [Package Exports Explanation](../explanation/package-exports.md#3-wasm-module-web-csv-toolboxcsvwasm) for detailed discussion of current limitations and future improvements.
 
 ## Package Metadata
 
@@ -107,5 +147,6 @@ All exports include TypeScript declarations:
 
 ## See Also
 
+- [Engine Presets Reference](./engine-presets.md) - Detailed preset configuration guide
 - [Package Exports Explanation](../explanation/package-exports.md) - How conditional exports work
 - [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) - Practical bundler integration

@@ -11,21 +11,50 @@ The WASM API provides high-performance CSV parsing using WebAssembly. It offers 
 - Double-quote (`"`) quotation only
 - Single-character delimiters
 
+**Automatic Initialization:**
+- WASM functions auto-initialize on first use
+- Manual preloading is optional but can improve first-parse performance
+- All WASM functions share the same initialized instance
+
+---
+
+## Quick Start
+
+### Automatic Initialization (Recommended)
+
+```typescript
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// No manual initialization needed!
+const records = parseStringToArraySyncWASM(csv);
+```
+
+### Manual Preloading (Optional)
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// Optionally preload for better first-parse performance
+await loadWASM();
+
+const records = parseStringToArraySyncWASM(csv);
+```
+
 ---
 
 ## loadWASM()
 
-Loads and initializes the WebAssembly module.
+Load and initialize the WebAssembly module.
 
 ```typescript
-function loadWASM(input?: InitInput | Promise<InitInput>): Promise<void>
+function loadWASM(input?: InitInput): Promise<void>
 ```
 
 ### Parameters
 
 #### `input` (optional)
 
-**Type:** `InitInput | Promise<InitInput>`
+**Type:** `InitInput`
 **Default:** Bundled WASM binary
 
 Custom WASM module source.
@@ -48,13 +77,30 @@ Custom WASM module source.
 ```typescript
 import { loadWASM } from 'web-csv-toolbox';
 
-// Load bundled WASM (most common)
+// Preload WASM module
 await loadWASM();
 
-console.log('WASM ready');
+console.log('WASM ready for use');
 ```
 
----
+### Example: Application Startup
+
+```typescript
+import { loadWASM } from 'web-csv-toolbox';
+
+async function initializeApp() {
+  // Optional: Preload for better first-parse performance
+  await loadWASM();
+
+  console.log('Application initialized');
+}
+
+// Browser
+window.addEventListener('DOMContentLoaded', initializeApp);
+
+// Node.js
+await initializeApp();
+```
 
 ### Example: Custom WASM URL
 
@@ -65,72 +111,38 @@ import { loadWASM } from 'web-csv-toolbox';
 await loadWASM('https://cdn.example.com/web_csv_toolbox.wasm');
 ```
 
----
-
-### Example: Fetch Response
-
-```typescript
-import { loadWASM } from 'web-csv-toolbox';
-
-// Load from custom endpoint
-const response = await fetch('/assets/wasm/csv-parser.wasm');
-await loadWASM(response);
-```
-
----
-
-### Example: Application Initialization
-
-```typescript
-import { loadWASM } from 'web-csv-toolbox';
-
-async function initializeApp() {
-  try {
-    await loadWASM();
-    console.log('Application initialized');
-  } catch (error) {
-    console.error('WASM initialization failed:', error);
-    // Fallback to JavaScript parser
-  }
-}
-
-// Browser
-window.addEventListener('DOMContentLoaded', initializeApp);
-
-// Node.js
-await initializeApp();
-```
-
----
-
-### Error Handling
-
-```typescript
-import { loadWASM } from 'web-csv-toolbox';
-
-try {
-  await loadWASM();
-} catch (error) {
-  if (error instanceof TypeError) {
-    console.error('Invalid WASM input:', error);
-  } else if (error instanceof WebAssembly.CompileError) {
-    console.error('WASM compilation failed:', error);
-  } else if (error instanceof WebAssembly.LinkError) {
-    console.error('WASM linking failed:', error);
-  } else {
-    console.error('Unknown error:', error);
-  }
-}
-```
-
----
-
 ### Notes
 
-- Call `loadWASM()` once at application startup
-- Subsequent calls are instant (module cached)
-- Safe to call multiple times (idempotent)
-- Must be called before using WASM parsing
+- **Optional:** WASM auto-initializes on first use if not called
+- **Idempotent:** Safe to call multiple times (subsequent calls are instant)
+- **Performance:** Reduces first-parse latency by initializing ahead of time
+- **Best Practice:** Call once at application startup for optimal performance
+
+---
+
+## isWASMReady()
+
+Check if WASM module is ready (initialized).
+
+```typescript
+function isWASMReady(): boolean
+```
+
+### Returns
+
+`boolean` - `true` if WASM is initialized, `false` otherwise
+
+### Example
+
+```typescript
+import { isWASMReady, loadWASM } from 'web-csv-toolbox';
+
+console.log(isWASMReady()); // false
+
+await loadWASM();
+
+console.log(isWASMReady()); // true
+```
 
 ---
 
@@ -198,11 +210,31 @@ Maximum buffer size in characters.
 
 `CSVRecord<Header>[]` - Array of CSV records
 
-### Example: Basic Usage
+### Example: Basic Usage (Auto-initialization)
+
+```typescript
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+const csv = `name,age
+Alice,30
+Bob,25`;
+
+// WASM auto-initializes on first use
+const records = parseStringToArraySyncWASM(csv);
+
+console.log(records);
+// [
+//   { name: 'Alice', age: '30' },
+//   { name: 'Bob', age: '25' }
+// ]
+```
+
+### Example: With Preloading (Optional)
 
 ```typescript
 import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
+// Optional: Preload for better first-parse performance
 await loadWASM();
 
 const csv = `name,age
@@ -223,9 +255,7 @@ console.log(records);
 ### Example: Custom Delimiter
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 const tsv = `name\tage
 Alice\t30
@@ -247,9 +277,7 @@ console.log(records);
 ### Example: With Type Safety
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 const csv = `name,age
 Alice,30
@@ -267,29 +295,32 @@ console.log(records[0].age); // '30'
 
 ### Error Handling
 
-#### WASM Not Loaded
+#### WASM Initialization Failure
+
+> **Note:** With automatic initialization, this error is rare. WASM typically initializes successfully on first use.
 
 ```typescript
 import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 try {
-  // ❌ Forgot to call loadWASM()
   const records = parseStringToArraySyncWASM(csv);
 } catch (error) {
-  console.error('WASM not loaded:', error);
+  console.error('WASM initialization failed:', error);
+  // Fallback to JavaScript parser if needed
 }
 ```
 
-**Fix:** Call `loadWASM()` first.
+**Possible causes:**
+- Browser/runtime doesn't support WASM
+- WASM binary failed to load
+- Custom initialization with invalid input
 
 ---
 
 #### Invalid Quotation
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 try {
   // ❌ Single-quote not supported
@@ -307,9 +338,7 @@ try {
 #### Multi-Character Delimiter
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 try {
   // ❌ Multi-character delimiter not supported
@@ -327,9 +356,7 @@ try {
 #### Buffer Size Exceeded
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
 try {
   const largeCSV = 'a'.repeat(20_000_000); // 20MB
@@ -394,13 +421,11 @@ Instead of calling `parseStringToArraySyncWASM()` directly, use high-level APIs 
 ### parse() with WASM
 
 ```typescript
-import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
+import { parse, EnginePresets } from 'web-csv-toolbox';
 
-await loadWASM();
-
-// Streaming with WASM
+// WASM auto-initializes - no manual preloading needed
 for await (const record of parse(csv, {
-  engine: EnginePresets.wasm
+  engine: EnginePresets.fast()
 })) {
   console.log(record);
 }
@@ -410,19 +435,18 @@ for await (const record of parse(csv, {
 - Streaming (memory-efficient)
 - Consistent API across implementations
 - Automatic error handling
+- No manual WASM initialization required
 
 ---
 
 ### parse() with Worker + WASM
 
 ```typescript
-import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
-
-await loadWASM();
+import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Non-blocking UI with maximum performance
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -432,6 +456,7 @@ for await (const record of parse(csv, {
 - Non-blocking UI
 - Maximum performance
 - Best for large files
+- Automatic WASM initialization
 
 ---
 
@@ -501,15 +526,16 @@ See: [Supported Environments](../supported-environments.md)
 
 ### ✅ Do
 
-- Call `loadWASM()` once at application startup
+- Optionally call `loadWASM()` once at application startup for best performance
 - Use high-level APIs (`parse()`) instead of direct WASM functions
-- Handle WASM loading errors gracefully
+- Handle WASM initialization errors gracefully
 - Use Worker + WASM for large files
 - Set appropriate `maxBufferSize` for your use case
+- Trust automatic initialization for most use cases
 
 ### ❌ Don't
 
-- Don't call `loadWASM()` before every parse operation
+- Don't manually initialize WASM before every parse operation (it's automatic)
 - Don't use `parseStringToArraySyncWASM()` for very large files (>100MB)
 - Don't ignore WASM limitations (UTF-8, double-quote only)
 - Don't forget error handling
@@ -535,9 +561,9 @@ See: [Supported Environments](../supported-environments.md)
 **Problem:** WASM is slower than JavaScript
 
 **Solution:**
-- Only beneficial for files >100KB
-- Ensure `loadWASM()` called once at startup
-- Use `EnginePresets.fastest()` for maximum performance
+- Optionally call `loadWASM()` once at startup for best performance
+- Use `EnginePresets.fast()` for fastest parse speed (blocks main thread)
+- Use `EnginePresets.responsiveFast()` for non-blocking with fast parsing
 
 ---
 
@@ -555,16 +581,22 @@ See: [Supported Environments](../supported-environments.md)
 
 web-csv-toolbox's WASM API provides:
 
-1. **`loadWASM()`**: Initialize WASM module
-2. **`parseStringToArraySyncWASM()`**: Synchronous parsing
-3. **Engine integration**: Use with `parse()` for streaming
+1. **`loadWASM()`**: Optional preloading for better first-parse performance
+2. **`parseStringToArraySyncWASM()`**: Synchronous parsing with automatic initialization
+3. **`isWASMReady()`**: Check initialization status
+4. **Engine integration**: Use with `parse()` for streaming
 
 **Key Features:**
+- **Automatic initialization**: No manual setup required
 - High-performance parsing (compiled to machine code)
 - UTF-8 only, double-quote only
 - Synchronous and asynchronous APIs
 - Combines with Worker Threads for maximum performance
 
-**Recommendation:** Use `parse()` with `EnginePresets.fastest()` for production applications.
+**Recommendation:**
+- **New code**: Just import and use - WASM auto-initializes
+- **Optimal performance**: Call `loadWASM()` at app startup
+- **Fastest parse speed**: Use `parse()` with `EnginePresets.fast()` (blocks main thread)
+- **Non-blocking UI**: Use `parse()` with `EnginePresets.responsiveFast()`
 
 **Performance:** See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance data.

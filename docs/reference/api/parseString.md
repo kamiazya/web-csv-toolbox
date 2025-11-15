@@ -173,7 +173,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Use fastest available strategy
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -321,7 +321,7 @@ await loadWASM();
 
 // Fast parsing for large UTF-8 strings
 for await (const record of parseString(largeCSV, {
-  engine: EnginePresets.fastest
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -542,7 +542,7 @@ await stream.pipeTo(
 | Main thread | `{ worker: false, wasm: false }` | Baseline | Small files (<1MB) |
 | Worker | `{ worker: true }` | Non-blocking | Large files, UI apps |
 | WASM | `{ wasm: true }` | Improved speed | Large UTF-8 files |
-| Worker + WASM | `EnginePresets.fastest()` | Maximum | Very large UTF-8 files |
+| Worker + WASM | `EnginePresets.responsiveFast()` | Maximum | Very large UTF-8 files |
 
 **File Size Guidelines:**
 
@@ -550,7 +550,7 @@ await stream.pipeTo(
 |-----------|-------------------|
 | < 1MB | Main thread (default) |
 | 1-10MB | `EnginePresets.balanced()` |
-| > 10MB (UTF-8) | `EnginePresets.fastest()` |
+| > 10MB (UTF-8) | `EnginePresets.responsiveFast()` |
 | > 10MB (any encoding) | `EnginePresets.balanced()` |
 
 ---

@@ -34,7 +34,7 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  *
  * // Use worker with automatic stream-transfer (falls back if not supported)
  * for await (const record of parseStringStream(stream, {
- *   engine: EnginePresets.workerStreamTransfer()
+ *   engine: EnginePresets.memoryEfficient()
  * })) {
  *   console.log(record);
  * }

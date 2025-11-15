@@ -18,13 +18,13 @@ describe("EnginePresets", () => {
   it("should throw when attempting to delete presets", () => {
     expect(() => {
       // @ts-expect-error - Intentionally trying to mutate frozen object
-      delete EnginePresets.fastest;
+      delete EnginePresets.stable;
     }).toThrow(TypeError);
   });
 
-  describe("mainThread", () => {
+  describe("stable", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.mainThread()).toEqual({
+      expect(EnginePresets.stable()).toEqual({
         worker: false,
         wasm: false,
       });
@@ -32,7 +32,7 @@ describe("EnginePresets", () => {
 
     it("should ignore options (main thread doesn't use them)", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.mainThread({ workerPool: pool } as any);
+      const config = EnginePresets.stable({ workerPool: pool } as any);
       expect(config).toEqual({
         worker: false,
         wasm: false,
@@ -41,9 +41,9 @@ describe("EnginePresets", () => {
     });
   });
 
-  describe("worker", () => {
+  describe("responsive", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.worker()).toEqual({
+      expect(EnginePresets.responsive()).toEqual({
         worker: true,
         wasm: false,
         workerStrategy: "message-streaming",
@@ -52,7 +52,7 @@ describe("EnginePresets", () => {
 
     it("should accept workerPool option", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.worker({ workerPool: pool });
+      const config = EnginePresets.responsive({ workerPool: pool });
       expect(config).toEqual({
         worker: true,
         wasm: false,
@@ -62,7 +62,9 @@ describe("EnginePresets", () => {
     });
 
     it("should accept workerURL option", () => {
-      const config = EnginePresets.worker({ workerURL: "/custom-worker.js" });
+      const config = EnginePresets.responsive({
+        workerURL: "/custom-worker.js",
+      });
       expect(config).toEqual({
         worker: true,
         wasm: false,
@@ -73,14 +75,16 @@ describe("EnginePresets", () => {
 
     it("should accept onFallback callback", () => {
       const onFallback = vi.fn();
-      const config = EnginePresets.worker({ onFallback }) as WorkerEngineConfig;
+      const config = EnginePresets.responsive({
+        onFallback,
+      }) as WorkerEngineConfig;
       expect(config.onFallback).toBe(onFallback);
     });
   });
 
-  describe("workerStreamTransfer", () => {
+  describe("memoryEfficient", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.workerStreamTransfer()).toEqual({
+      expect(EnginePresets.memoryEfficient()).toEqual({
         worker: true,
         wasm: false,
         workerStrategy: "stream-transfer",
@@ -90,7 +94,7 @@ describe("EnginePresets", () => {
     it("should accept all options", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
       const onFallback = vi.fn();
-      const config = EnginePresets.workerStreamTransfer({
+      const config = EnginePresets.memoryEfficient({
         workerPool: pool,
         workerURL: "/worker.js",
         onFallback,
@@ -106,18 +110,18 @@ describe("EnginePresets", () => {
     });
   });
 
-  describe("wasm", () => {
+  describe("fast", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.wasm()).toEqual({
+      expect(EnginePresets.fast()).toEqual({
         worker: false,
         wasm: true,
       });
     });
   });
 
-  describe("workerWasm", () => {
+  describe("responsiveFast", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.workerWasm()).toEqual({
+      expect(EnginePresets.responsiveFast()).toEqual({
         worker: true,
         wasm: true,
         workerStrategy: "message-streaming",
@@ -126,44 +130,13 @@ describe("EnginePresets", () => {
 
     it("should accept workerPool option", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.workerWasm({ workerPool: pool });
+      const config = EnginePresets.responsiveFast({ workerPool: pool });
       expect(config).toEqual({
         worker: true,
         wasm: true,
         workerStrategy: "message-streaming",
         workerPool: pool,
       });
-    });
-  });
-
-  describe("fastest", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.fastest()).toEqual({
-        worker: true,
-        wasm: true,
-        workerStrategy: "stream-transfer",
-      });
-    });
-
-    it("should accept workerPool option", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.fastest({ workerPool: pool });
-      expect(config).toEqual({
-        worker: true,
-        wasm: true,
-        workerStrategy: "stream-transfer",
-        workerPool: pool,
-      });
-    });
-
-    it("should match inline snapshot", () => {
-      expect(EnginePresets.fastest()).toMatchInlineSnapshot(`
-        {
-          "wasm": true,
-          "worker": true,
-          "workerStrategy": "stream-transfer",
-        }
-      `);
     });
   });
 
@@ -198,44 +171,10 @@ describe("EnginePresets", () => {
     });
   });
 
-  describe("strict", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.strict()).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-        strict: true,
-      });
-    });
-
-    it("should accept workerPool option", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.strict({ workerPool: pool });
-      expect(config).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-        strict: true,
-        workerPool: pool,
-      });
-    });
-
-    it("should match inline snapshot", () => {
-      expect(EnginePresets.strict()).toMatchInlineSnapshot(`
-        {
-          "strict": true,
-          "wasm": false,
-          "worker": true,
-          "workerStrategy": "stream-transfer",
-        }
-      `);
-    });
-  });
-
   describe("Integration tests", () => {
     it("should create new config objects each call (not cached)", () => {
-      const config1 = EnginePresets.fastest();
-      const config2 = EnginePresets.fastest();
+      const config1 = EnginePresets.responsiveFast();
+      const config2 = EnginePresets.responsiveFast();
 
       expect(config1).toEqual(config2);
       expect(config1).not.toBe(config2); // Different objects
@@ -245,10 +184,10 @@ describe("EnginePresets", () => {
       const pool1 = new WorkerPool({ maxWorkers: 2 });
       const pool2 = new WorkerPool({ maxWorkers: 4 });
 
-      const config1 = EnginePresets.fastest({
+      const config1 = EnginePresets.responsiveFast({
         workerPool: pool1,
       }) as WorkerEngineConfig;
-      const config2 = EnginePresets.fastest({
+      const config2 = EnginePresets.responsiveFast({
         workerPool: pool2,
       }) as WorkerEngineConfig;
 
@@ -258,14 +197,12 @@ describe("EnginePresets", () => {
 
     it("should support all preset names as type", () => {
       const presets: Array<keyof typeof EnginePresets> = [
-        "mainThread",
-        "worker",
-        "workerStreamTransfer",
-        "wasm",
-        "workerWasm",
-        "fastest",
+        "stable",
+        "responsive",
+        "memoryEfficient",
+        "fast",
+        "responsiveFast",
         "balanced",
-        "strict",
       ];
 
       for (const presetName of presets) {
@@ -299,7 +236,7 @@ describe("EnginePresets", () => {
     });
 
     it("should work with custom worker URL", () => {
-      const config = EnginePresets.fastest({
+      const config = EnginePresets.responsiveFast({
         workerURL: new URL("/workers/csv-parser.js", "https://example.com"),
       }) as WorkerEngineConfig;
 
@@ -312,7 +249,7 @@ describe("EnginePresets", () => {
     it("should work with fallback callback", () => {
       const fallbacks: any[] = [];
 
-      const config = EnginePresets.fastest({
+      const config = EnginePresets.responsiveFast({
         onFallback: (info) => fallbacks.push(info),
       }) as WorkerEngineConfig;
 

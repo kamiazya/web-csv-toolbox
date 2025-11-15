@@ -5,47 +5,46 @@ group: Explanation
 
 # Package Exports and Environment Detection
 
-This document explains how `web-csv-toolbox` uses Node.js package exports to provide environment-specific implementations.
+This document explains how `web-csv-toolbox` uses Node.js package exports to provide environment-specific implementations and optimized resource loading.
 
 ## Overview
 
-The library provides different Worker implementations for different JavaScript environments:
+This library provides multiple import paths for different use cases. The appropriate implementation is automatically selected based on your environment (Node.js, Browser, Deno, etc.) - **you don't need to worry about platform differences**.
 
-- **Node.js**: Uses Worker Threads API (`worker_threads`)
-- **Browser/Deno**: Uses Web Workers API (`Worker`)
+**What you need to know:**
 
-These are automatically selected based on the runtime environment using [Conditional Exports](https://nodejs.org/api/packages.html#conditional-exports) in `package.json`.
+1. **Main library** (`web-csv-toolbox`): Full features with automatic WASM initialization
+   ```typescript
+   import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+   const records = parseStringToArraySyncWASM(csv); // Auto-initialized
+   ```
 
-## Package Exports Structure
+2. **Worker file** (`web-csv-toolbox/worker`): Only needed when using bundlers with worker-based parsing
+   ```typescript
+   // Vite
+   import workerUrl from 'web-csv-toolbox/worker?url';
 
-```json
-{
-  "exports": {
-    ".": {
-      "types": "./dist/web-csv-toolbox.d.ts",
-      "default": "./dist/web-csv-toolbox.js"
-    },
-    "./worker": {
-      "node": {
-        "types": "./dist/worker.node.d.ts",
-        "default": "./dist/worker.node.js"
-      },
-      "browser": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.js"
-      },
-      "default": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.js"
-      }
-    }
-  }
-}
-```
+   // Webpack
+   const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url);
+   ```
+
+3. **WASM module** (`web-csv-toolbox/csv.wasm`): For advanced deployment scenarios
+   - Default: WASM is automatically loaded (no manual import needed)
+   - Advanced: Import directly for separate caching or custom loading
+
+The library handles environment detection and optimizations automatically using [Conditional Exports](https://nodejs.org/api/packages.html#conditional-exports).
+
+## Available Import Paths
+
+| Import Path | Purpose | Typical Usage |
+|-------------|---------|---------------|
+| `web-csv-toolbox` | Full features (auto-initialization) | ✅ Default choice |
+| `web-csv-toolbox/worker` | Worker implementation | ✅ Via bundler |
+| `web-csv-toolbox/csv.wasm` | WebAssembly module | ⚠️ Advanced scenarios |
 
 ## How It Works
 
-### 1. Main Entry Point (`.`)
+### 1. Main Entry Point (`web-csv-toolbox`)
 
 The main entry point exports the public API:
 
@@ -55,7 +54,7 @@ import { parseString } from 'web-csv-toolbox';
 
 This always resolves to `./dist/web-csv-toolbox.js` regardless of environment.
 
-### 2. Worker Entry Point (`./worker`)
+### 2. Worker Entry Point (`web-csv-toolbox/worker`)
 
 The worker entry point provides environment-specific implementations:
 
@@ -80,6 +79,53 @@ const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url); // Webpack
 3. **Default fallback**:
    - Uses browser implementation (`worker.web.js`)
    - Covers Deno and other environments
+
+### 3. WASM Module (`web-csv-toolbox/csv.wasm`)
+
+**What is it?**
+
+This exports the pre-compiled WebAssembly module used for high-performance CSV parsing.
+
+**Do you need to use this directly?**
+
+**No, in most cases.** The library automatically loads the WASM module when you use WASM-enabled features.
+
+```typescript
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+// WASM module is automatically loaded
+await loadWASM();
+
+// Just use the API - WASM file is handled internally
+for await (const record of parse(csv, { engine: { wasm: true } })) {
+  console.log(record);
+}
+```
+
+**Current limitations and future improvements:**
+
+⚠️ **Currently, this export has limited practical use.** The WASM module is embedded as base64 in the JavaScript bundle for automatic initialization, so importing `csv.wasm` separately does not reduce bundle size.
+
+**Potential use cases** (when combined with future distribution improvements):
+
+1. **Separate caching strategy**: Cache WASM file independently from JavaScript
+2. **CDN hosting**: Host WASM on a different domain or CDN
+3. **Service worker pre-caching**: Pre-cache WASM for offline use
+4. **Custom loading strategies**: Implement lazy-loading or conditional loading
+
+**Future considerations:**
+
+We are considering improvements to the distribution method to enable:
+- Lightweight entry point without embedded WASM
+- Streaming WASM loading to reduce initial bundle size
+- Better separation between WASM and JavaScript code
+
+These improvements would make the `csv.wasm` export more useful for bundle size optimization. For transparency, we acknowledge that the current architecture does not fully support these scenarios, but we are exploring options for future releases.
+
+**Key points:**
+- ✅ WASM is automatically loaded - no manual import needed in normal usage
+- ⚠️ Currently does NOT reduce bundle size (base64 WASM is embedded)
+- 🔮 Future improvements may enable lightweight distribution options
 
 ## Worker Implementation Differences
 
@@ -145,30 +191,6 @@ Requires `@rollup/plugin-url` or similar plugin to process Worker imports.
 1. **Requires Modern Tools**: Older bundlers may not support conditional exports
 2. **Complexity**: Internal implementation has more moving parts
 3. **Bundle Size**: Both implementations exist in package (but only one is bundled)
-
-## Internal Imports
-
-The library also uses `imports` field for internal path resolution:
-
-```json
-{
-  "imports": {
-    "#execution/worker/createWorker.js": {
-      "node": "./dist/execution/worker/helpers/createWorker.node.js",
-      "browser": "./dist/execution/worker/helpers/createWorker.web.js",
-      "default": "./dist/execution/worker/helpers/createWorker.web.js"
-    }
-  }
-}
-```
-
-This allows internal code to use:
-
-```typescript
-import { createWorker } from '#execution/worker/createWorker.js';
-```
-
-And automatically get the correct implementation.
 
 ## See Also
 

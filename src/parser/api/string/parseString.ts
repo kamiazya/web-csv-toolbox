@@ -4,9 +4,9 @@ import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
-import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -37,9 +37,9 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * ```ts
  * import { parseString, EnginePresets } from 'web-csv-toolbox';
  *
- * // Use fastest available execution method
+ * // Use UI responsiveness + parse speed optimized execution method
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.fastest()
+ *   engine: EnginePresets.responsiveFast()
  * })) {
  *   console.log(record);
  * }
@@ -131,7 +131,8 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
     } else {
       // Main thread execution
       if (engineConfig.hasWasm()) {
-        yield* parseStringToArraySyncWASM(csv, options);
+        // WASM execution with implicit initialization
+        yield* parseStringInWASM(csv, options);
       } else {
         yield* parseStringToIterableIterator(csv, options);
       }

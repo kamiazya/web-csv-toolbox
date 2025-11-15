@@ -55,7 +55,58 @@ function vitePluginWasmPack({
       isBuild = resolvedConfig.command === 'build';
     },
 
+    transform(code: string, id: string) {
+      // Transform imports to use virtual modules for arraybuffer imports
+      // This runs before vite:import-analysis
+      if (code.includes("?arraybuffer")) {
+        console.log(`[vite-plugin-wasm-pack] transform: Processing file ${id}`);
+        console.log(`[vite-plugin-wasm-pack] transform: Code contains ?arraybuffer`);
+        let transformed = code;
+        for (const cratePath of crates) {
+          const crateName = path.basename(cratePath);
+          const wasmFile = crateName.replace(/\-/g, "_") + "_bg.wasm";
+          // Match: from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer"
+          const importPattern = new RegExp(
+            `from\\s+["']${crateName.replace(/-/g, "\\-")}/${wasmFile.replace(/_/g, "\\_")}\\?arraybuffer["']`,
+            'g'
+          );
+          if (importPattern.test(code)) {
+            console.log(`[vite-plugin-wasm-pack] transform: Pattern matched!`);
+            transformed = code.replace(
+              importPattern,
+              `from "\\0${crateName}/${wasmFile}?arraybuffer"`
+            );
+            console.log(`[vite-plugin-wasm-pack] transform: Transformed`);
+          }
+        }
+        if (transformed !== code) {
+          return { code: transformed, map: null };
+        }
+      }
+      return null;
+    },
+
     resolveId(id: string) {
+      // Handle WASM arraybuffer imports from our crates
+      // This provides base64-inlined WASM for synchronous initialization
+      if (id.includes("?arraybuffer")) {
+        for (const cratePath of crates) {
+          const crateName = path.basename(cratePath);
+          const wasmFile = crateName.replace(/\-/g, "_") + "_bg.wasm";
+          // Match patterns like:
+          // - web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer
+          // - /path/to/node_modules/web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer
+          // - \0web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer (virtual module)
+          if (id.includes(`${crateName}/${wasmFile}?arraybuffer`) ||
+              id.endsWith(`${crateName}/${wasmFile}?arraybuffer`)) {
+            const virtualId = `\0${crateName}/${wasmFile}?arraybuffer`;
+            return virtualId;
+          }
+        }
+        // Not our WASM, let other plugins handle it
+        return null;
+      }
+
       for (const cratePath of crates) {
         const crateName = path.basename(cratePath);
         // Only match if id is exactly crateName or starts with crateName followed by '/'
@@ -72,6 +123,41 @@ function vitePluginWasmPack({
       return null;
     },
     async load(id: string) {
+      // Handle WASM arraybuffer imports
+      // Match virtual modules like: \0web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer
+      if (id.startsWith("\0") && id.includes("?arraybuffer")) {
+        // Remove the null byte prefix
+        const cleanId = id.substring(1);
+
+        for (const cratePath of crates) {
+          const crateName = path.basename(cratePath);
+          const wasmFile = crateName.replace(/\-/g, "_") + "_bg.wasm";
+
+          if (cleanId === `${crateName}/${wasmFile}?arraybuffer`) {
+            // Load the WASM file and inline it as base64
+            const wasmPath = path.join("./node_modules", crateName, wasmFile);
+            try {
+              const file = await fs.readFile(wasmPath);
+              const base64 = file.toString("base64");
+              // Return as JavaScript module that exports an ArrayBuffer
+              return `
+// WASM file inlined as base64-encoded ArrayBuffer
+const base64 = "${base64}";
+const binaryString = atob(base64);
+const bytes = new Uint8Array(binaryString.length);
+for (let i = 0; i < binaryString.length; i++) {
+  bytes[i] = binaryString.charCodeAt(i);
+}
+export default bytes.buffer;
+`;
+            } catch (error) {
+              console.error(`[vite-plugin-wasm-pack] Failed to load WASM file: ${wasmPath}`, error);
+              return null;
+            }
+          }
+        }
+      }
+
       if (id.indexOf(prefix) === 0) {
         id = id.replace(prefix, "");
 
@@ -88,6 +174,11 @@ function vitePluginWasmPack({
 
         if (!isOurCrate) {
           // Not our module, let other plugins handle it
+          return null;
+        }
+
+        // Skip .wasm imports with ?arraybuffer - let the arraybuffer plugin handle them
+        if (id.includes("?arraybuffer")) {
           return null;
         }
 
@@ -188,9 +279,15 @@ function vitePluginWasmPack({
     buildEnd() {
       if (copyWasm && isBuild) {
         for (const [fileName, crate] of wasmMap.entries()) {
+          // Use user-friendly name instead of internal implementation name
+          // web_csv_toolbox_wasm_bg.wasm -> csv.wasm
+          const outputFileName = fileName === "web_csv_toolbox_wasm_bg.wasm"
+            ? "csv.wasm"
+            : fileName;
+
           this.emitFile({
             type: "asset",
-            fileName: fileName,
+            fileName: outputFileName,
             source: readFileSync(crate.path),
           });
         }
