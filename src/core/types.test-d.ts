@@ -33,12 +33,16 @@ describe("EngineConfig", () => {
       expectTypeOf(config2.worker).toEqualTypeOf<false | undefined>();
 
       // Only common properties are available
-      expectTypeOf(config1.wasm).toEqualTypeOf<boolean | undefined>();
+      expectTypeOf(config1.wasm).toEqualTypeOf<
+        boolean | undefined
+      >();
       expectTypeOf(config1.arrayBufferThreshold).toEqualTypeOf<
         number | undefined
       >();
 
-      expectTypeOf(config2.wasm).toEqualTypeOf<boolean | undefined>();
+      expectTypeOf(config2.wasm).toEqualTypeOf<
+        boolean | undefined
+      >();
     });
 
     it("WorkerEngineConfig: worker is true", () => {
@@ -80,7 +84,9 @@ describe("EngineConfig", () => {
 
       // config extends WorkerEngineConfig
       expectTypeOf(config).toExtend<WorkerEngineConfig>();
-      expectTypeOf(config.wasm).toEqualTypeOf<boolean | undefined>();
+      expectTypeOf(config.wasm).toEqualTypeOf<
+        boolean | undefined
+      >();
       expectTypeOf(config.arrayBufferThreshold).toEqualTypeOf<
         number | undefined
       >();

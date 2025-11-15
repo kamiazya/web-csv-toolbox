@@ -71,7 +71,7 @@ export class WorkerStrategySelector {
         if (fallbackStrategy) {
           // Notify about fallback
           if (engineConfig.onFallback) {
-            const fallbackConfig = engineConfig.createFallbackConfig();
+            const fallbackConfig = engineConfig.createWorkerFallbackConfig();
             engineConfig.onFallback({
               requestedConfig: engineConfig.toConfig(),
               actualConfig: fallbackConfig.toConfig(),
@@ -108,7 +108,7 @@ export class WorkerStrategySelector {
         const fallbackStrategy = this.strategies.get("message-streaming");
         if (fallbackStrategy) {
           // Notify about fallback
-          const fallbackConfig = engineConfig.createFallbackConfig();
+          const fallbackConfig = engineConfig.createWorkerFallbackConfig();
           if (engineConfig.onFallback) {
             engineConfig.onFallback({
               requestedConfig: engineConfig.toConfig(),

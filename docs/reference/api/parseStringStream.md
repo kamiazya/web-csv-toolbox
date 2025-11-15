@@ -86,7 +86,7 @@ import { parseStringStream, EnginePresets } from 'web-csv-toolbox';
 
 // Use worker with stream-transfer (auto-fallback)
 for await (const record of parseStringStream(stream, {
-  engine: EnginePresets.workerStreamTransfer()
+  engine: EnginePresets.memoryEfficient()
 })) {
   console.log(record);
 }
@@ -173,7 +173,7 @@ const textStream = response.body
 
 // Non-blocking parsing in worker
 for await (const record of parseStringStream(textStream, {
-  engine: EnginePresets.workerStreamTransfer()
+  engine: EnginePresets.memoryEfficient()
 })) {
   console.log(record);
   // UI stays responsive!

@@ -3,8 +3,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
-import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
@@ -131,7 +131,8 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
     } else {
       // Main thread execution
       if (engineConfig.hasWasm()) {
-        yield* parseStringToArraySyncWASM(csv, options);
+        // WASM execution with implicit initialization
+        yield* parseStringInWASM(csv, options);
       } else {
         yield* parseStringToIterableIterator(csv, options);
       }

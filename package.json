@@ -41,10 +41,20 @@
       "types": "./dist/utils/*.d.ts",
       "default": "./dist/utils/*.js"
     },
-    "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
+    "./csv.wasm": "./dist/csv.wasm",
     "./package.json": "./package.json"
   },
   "imports": {
+    "#/wasm/loadWASM.js": {
+      "types": "./dist/wasm/loaders/loadWASM.d.ts",
+      "node": "./dist/wasm/loaders/loadWASM.node.js",
+      "browser": "./dist/wasm/loaders/loadWASM.web.js",
+      "default": "./dist/wasm/loaders/loadWASM.web.js"
+    },
+    "#/wasm/loadWASMSync.js": {
+      "types": "./dist/wasm/loaders/loadWASMSync.d.ts",
+      "default": "./dist/wasm/loaders/loadWASMSync.js"
+    },
     "#/worker/helpers/createWorker.js": {
       "types": "./dist/worker/helpers/createWorker.d.ts",
       "node": "./dist/worker/helpers/createWorker.node.js",
