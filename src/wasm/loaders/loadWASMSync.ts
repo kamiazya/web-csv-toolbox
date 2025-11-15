@@ -6,7 +6,11 @@ import {
 // @ts-expect-error - WASM file imported as ArrayBuffer via vite-plugin-wasm-pack
 import wasmBuffer from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer";
 
-import { isWasmInitialized, markWasmInitialized, resetWasmState } from "./wasmState.js";
+import {
+  isWasmInitialized,
+  markWasmInitialized,
+  resetWasmState,
+} from "./wasmState.js";
 
 /**
  * Re-export all WASM functions from this module to ensure they share the same WASM instance.

@@ -5,10 +5,10 @@ import {
   resetInit,
 } from "#/wasm/loadWASM.js";
 import {
+  getWasmModule,
   loadWASMSync as internalLoadWASMSync,
   isSyncInitialized,
   resetSyncInit,
-  getWasmModule,
 } from "#/wasm/loadWASMSync.js";
 
 /**

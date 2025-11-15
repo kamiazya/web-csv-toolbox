@@ -16,7 +16,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       const records = [];
       for await (const record of parseStringStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         records.push(record);
       }
@@ -38,7 +38,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       const records = [];
       for await (const record of parseStringStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         records.push(record);
       }
@@ -59,7 +59,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       let count = 0;
       for await (const record of parseStringStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         expect(record).toHaveProperty("name");
         expect(record).toHaveProperty("value");
@@ -80,7 +80,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       const records = [];
       for await (const record of parseStringStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         records.push(record);
       }
@@ -107,7 +107,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       const records = [];
       for await (const record of parseUint8ArrayStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         records.push(record);
       }
@@ -132,7 +132,7 @@ describe("TransferableStreamStrategy in browser", () => {
 
       const records = [];
       for await (const record of parseUint8ArrayStream(stream, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
         charset: "utf-8",
       })) {
         records.push(record);
@@ -190,7 +190,7 @@ describe("TransferableStreamStrategy in browser", () => {
       });
       const records1 = [];
       for await (const record of parseStringStream(stream1, {
-        engine: EnginePresets.workerStreamTransfer(),
+        engine: EnginePresets.memoryEfficient(),
       })) {
         records1.push(record);
       }
@@ -251,7 +251,7 @@ describe("TransferableStreamStrategy in browser", () => {
         (async () => {
           const records = [];
           for await (const record of parseStringStream(stream1, {
-            engine: EnginePresets.workerStreamTransfer(),
+            engine: EnginePresets.memoryEfficient(),
           })) {
             records.push(record);
           }
@@ -260,7 +260,7 @@ describe("TransferableStreamStrategy in browser", () => {
         (async () => {
           const records = [];
           for await (const record of parseStringStream(stream2, {
-            engine: EnginePresets.workerStreamTransfer(),
+            engine: EnginePresets.memoryEfficient(),
           })) {
             records.push(record);
           }
@@ -269,7 +269,7 @@ describe("TransferableStreamStrategy in browser", () => {
         (async () => {
           const records = [];
           for await (const record of parseStringStream(stream3, {
-            engine: EnginePresets.workerStreamTransfer(),
+            engine: EnginePresets.memoryEfficient(),
           })) {
             records.push(record);
           }
@@ -301,7 +301,7 @@ describe("TransferableStreamStrategy in browser", () => {
       const records = [];
       try {
         for await (const record of parseStringStream(stream, {
-          engine: EnginePresets.workerStreamTransfer(),
+          engine: EnginePresets.memoryEfficient(),
         })) {
           records.push(record);
         }
