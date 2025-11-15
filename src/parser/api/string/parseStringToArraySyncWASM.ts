@@ -1,8 +1,5 @@
 import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loadWASM.js";
-import {
-  isSyncInitialized,
-  loadWASMSync,
-} from "#/wasm/loadWASMSync.js";
+import { isSyncInitialized, loadWASMSync } from "#/wasm/loadWASMSync.js";
 import {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,

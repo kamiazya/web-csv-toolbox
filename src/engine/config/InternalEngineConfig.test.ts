@@ -194,9 +194,7 @@ describe("InternalEngineConfig", () => {
         strict: true,
       });
       expect(config.getBitmask()).toBe(
-        EngineFlags.WORKER |
-          EngineFlags.STREAM_TRANSFER |
-          EngineFlags.STRICT,
+        EngineFlags.WORKER | EngineFlags.STREAM_TRANSFER | EngineFlags.STRICT,
       );
     });
   });
