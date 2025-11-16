@@ -71,6 +71,7 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🔤 Charset specification for diverse encoding.
 - 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
   - 📦 WebAssembly is used for high performance parsing.
+  - ⚠️ **Experimental**: WASM automatic initialization (base64-embedded) is experimental and may change in future versions.
 - 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
 - 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
 
@@ -130,6 +131,7 @@ const records = parseStringToArraySyncWASM(csv);
 
 - ✅ Full features including synchronous WASM APIs
 - ✅ Automatic WASM initialization (just works!)
+- ⚠️ **Experimental**: WASM auto-init embeds WASM as base64 (~110KB), may change in future
 - ✅ Bundle size: ~200KB
 
 ### `web-csv-toolbox/lite` (Lightweight - Size Optimized)
@@ -592,6 +594,12 @@ These APIs are experimental and may change in the future.
 
 You can use WebAssembly to parse CSV data for high performance.
 
+⚠️ **Experimental Notice**:
+- WASM automatic initialization is experimental and may change in future versions
+- Currently embeds WASM as base64 (~110KB) in the main bundle
+- Future versions may change the loading strategy for better bundle size optimization
+
+**WASM Limitations:**
 - Parsing with WebAssembly is faster than parsing with JavaScript,
 but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.

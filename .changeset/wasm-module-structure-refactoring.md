@@ -6,6 +6,8 @@ refactor: reorganize WASM module structure with unified API
 
 This change contains internal refactoring to improve code organization and maintainability. **No changes to the public API** - all existing code will continue to work without modification.
 
+⚠️ **Experimental Notice**: WASM automatic initialization (base64-embedded) is experimental and may change in future versions. The current implementation embeds WASM as base64 (~110KB) in the JavaScript bundle for automatic initialization. Future versions may change this loading strategy to optimize bundle size.
+
 ## Internal Changes
 
 ### 1. WASM Module Organization
