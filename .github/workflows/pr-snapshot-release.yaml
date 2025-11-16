@@ -31,6 +31,8 @@ jobs:
   # Build the package and upload it as an artifact
   build:
     name: Build
+    permissions:
+      contents: read
     uses: ./.github/workflows/.build.yaml
     needs: check
   snapshot:
