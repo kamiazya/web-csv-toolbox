@@ -39,7 +39,7 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   }
 
   if (input) {
-    await init(input);
+    await init({ module_or_path: input });
     markWasmInitialized();
     return;
   }
@@ -58,6 +58,6 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   );
   const wasmPath = fileURLToPath(wasmUrl);
   const wasmBuffer = await readFile(wasmPath);
-  await init(wasmBuffer);
+  await init({ module_or_path: wasmBuffer });
   markWasmInitialized();
 }

@@ -39,6 +39,10 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   }
 
   // Browser environment: use default fetch-based initialization
-  await init(input);
+  if (input) {
+    await init({ module_or_path: input });
+  } else {
+    await init();
+  }
   markWasmInitialized();
 }

@@ -53,7 +53,9 @@
     },
     "#/wasm/loadWASMSync.js": {
       "types": "./dist/wasm/loaders/loadWASMSync.d.ts",
-      "default": "./dist/wasm/loaders/loadWASMSync.js"
+      "node": "./dist/wasm/loaders/loadWASMSync.node.js",
+      "browser": "./dist/wasm/loaders/loadWASMSync.web.js",
+      "default": "./dist/wasm/loaders/loadWASMSync.web.js"
     },
     "#/worker/helpers/createWorker.js": {
       "types": "./dist/worker/helpers/createWorker.d.ts",

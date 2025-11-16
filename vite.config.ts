@@ -2,6 +2,7 @@ import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { webdriverio } from "@vitest/browser-webdriverio";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
+import { wasmArrayBuffer } from "./config/vite-plugin-wasm-arraybuffer.ts";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
 export default defineConfig(() => ({
@@ -14,7 +15,7 @@ export default defineConfig(() => ({
       "@": "/src",
       // Aliases for development - production uses package.json "imports"
       "#/wasm/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
-      "#/wasm/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.ts",
+      "#/wasm/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
       "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
       "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
       "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
@@ -27,7 +28,8 @@ export default defineConfig(() => ({
         "src/web-csv-toolbox.ts",
         "src/wasm/loaders/loadWASM.web.ts",
         "src/wasm/loaders/loadWASM.node.ts",
-        "src/wasm/loaders/loadWASMSync.ts",
+        "src/wasm/loaders/loadWASMSync.web.ts",
+        "src/wasm/loaders/loadWASMSync.node.ts",
         "src/worker.web.ts",
         "src/worker.node.ts",
         "src/worker/helpers/createWorker.web.ts",
@@ -83,6 +85,7 @@ export default defineConfig(() => ({
     minifySyntax: true,
   },
   plugins: [
+    wasmArrayBuffer(), // Must come before wasmPack to handle ?arraybuffer imports
     wasmPack({
       crates: ["./web-csv-toolbox-wasm"],
     }),

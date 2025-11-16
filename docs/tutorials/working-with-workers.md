@@ -39,7 +39,7 @@ Worker threads allow you to run CPU-intensive tasks off the main thread, keeping
 - Browser applications requiring responsive UI
 
 **❌ Skip workers when:**
-- Stability is the highest priority (use `mainThread` preset instead)
+- Stability is the highest priority (use `stable` preset instead)
 - Worker initialization overhead outweighs benefits for your use case
 - Running in environments without worker support
 - Server-side where UI blocking is acceptable
@@ -100,7 +100,7 @@ for await (const record of parse(csv, {
 | `memoryEfficient` | Memory efficiency | ✅ | ❌ | ⚠️ Experimental |
 | `fast` | Parse speed | ❌ | ✅ | ✅ Stable |
 | `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | ✅ Stable |
-| `balanced` | Balanced (general-purpose) | ✅ | ❌ | ⚠️ Experimental |
+| `balanced` | Balanced (general-purpose) | ✅ | ❌ | ✅ Stable |
 
 **Recommendation:** Use `EnginePresets.balanced()` for general-purpose CSV processing. It provides non-blocking execution with WHATWG Encoding Standard encodings support and has automatic stable fallback on Safari.
 

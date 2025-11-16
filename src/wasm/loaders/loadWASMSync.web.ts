@@ -3,7 +3,7 @@ import {
   initSync,
   type SyncInitInput,
 } from "web-csv-toolbox-wasm";
-// @ts-expect-error - WASM file imported as ArrayBuffer via vite-plugin-wasm-pack
+// @ts-expect-error - WASM file imported as ArrayBuffer via vite-plugin-wasm-arraybuffer
 import wasmBuffer from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer";
 
 import {
@@ -34,7 +34,7 @@ export * from "web-csv-toolbox-wasm";
 let wasmModule: InitOutput | undefined;
 
 /**
- * Synchronously load WASM module.
+ * Synchronously load WASM module for browser environment.
  *
  * This function uses the inlined WASM module (base64-encoded at build time)
  * to enable synchronous initialization. This is useful for:
@@ -47,8 +47,7 @@ let wasmModule: InitOutput | undefined;
  * - ❌ Larger bundle size (WASM inlined as base64)
  * - ❌ Slower initial load time
  *
- * **Note:** Works in both browser and Node.js environments.
- * The inlined ArrayBuffer is the same for both platforms.
+ * **Note:** This is the browser-specific version that uses atob for decoding.
  *
  * @param input - Optional custom initialization input. If not provided, uses inlined WASM.
  * @returns void

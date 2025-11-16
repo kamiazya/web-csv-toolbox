@@ -16,7 +16,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "#/wasm/loadWASM.js": ["./src/wasm/loaders/loadWASM.web.ts"],
-      "#/wasm/loadWASMSync.js": ["./src/wasm/loaders/loadWASMSync.ts"],
+      "#/wasm/loadWASMSync.js": ["./src/wasm/loaders/loadWASMSync.web.ts"],
       "#/worker/helpers/createWorker.js": ["./src/worker/helpers/createWorker.web.ts"],
       "#/utils/response/getOptionsFromResponse.constants.js": ["./src/utils/response/getOptionsFromResponse.constants.web.ts"],
       "#/utils/charset/getCharsetValidation.constants.js": ["./src/utils/charset/getCharsetValidation.constants.web.ts"]

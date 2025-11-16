@@ -45,7 +45,7 @@ import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
  * - Only supports UTF-8 string (not UTF-16)
  * - Only supports double quote (`"`) as quotation character
  * - Only supports single character as delimiter
- * - Requires prior WASM initialization (synchronous limitation)
+ * - WASM is automatically initialized on first use (optional preloading via {@link loadWASM} improves first-parse performance)
  *
  * @example Recommended usage with loadWASM
  * ```ts
@@ -152,12 +152,15 @@ export function parseStringToArraySyncWASM<
     try {
       loadWASMSync();
     } catch (error) {
-      // In Node.js or when sync init fails, throw helpful error
+      // Throw helpful error with troubleshooting hints
       throw new RangeError(
-        "WASM module is not initialized. " +
-          "In browser: WASM will be auto-initialized on first use. " +
-          "In Node.js: WASM will be auto-initialized on first use (with inlined WASM). " +
-          `Original error: ${error instanceof Error ? error.message : String(error)}`,
+        "WASM initialization failed. " +
+          `Original error: ${error instanceof Error ? error.message : String(error)}. ` +
+          "Possible causes: " +
+          "(1) Unsupported runtime (WASM not available), " +
+          "(2) WASM binary inaccessible or corrupted, " +
+          "(3) Bundler configuration issues (ensure WASM file is included in bundle). " +
+          "Try: Check browser/runtime supports WebAssembly, verify bundler settings, or use async loadWASM() for better error details.",
       );
     }
   }

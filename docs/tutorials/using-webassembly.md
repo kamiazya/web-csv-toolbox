@@ -486,9 +486,9 @@ You've learned how to:
 **Solution:**
 - WASM has initialization overhead - benchmark your specific use case
 - Worker + WASM adds worker communication overhead - may be slower than main thread WASM
-- For fastest execution time, use `wasm` preset on main thread (blocks UI)
+- For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI)
 - For non-blocking UI, accept the worker communication overhead trade-off
-- Ensure `loadWASM()` is called once at startup, not before every parse
+- Optionally call `loadWASM()` once at startup to avoid repeated initialization overhead (auto-initialization works but adds latency on first use)
 
 ### Encoding errors
 

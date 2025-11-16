@@ -740,7 +740,7 @@ for await (const record of parseString(csv, {
 - **Limitations:** UTF-8 only, double-quote only
 - **Use case:** Browser applications requiring non-blocking parsing of UTF-8 CSV files
 
-**Note:** Despite the name "fastest", this preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use main thread with WASM (`{ wasm: true }`).
+**Note:** This preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI).
 
 **Performance Note:**
 Actual performance depends on many factors including CSV structure, file size, runtime environment, and system capabilities. Benchmark your specific use case to determine the best approach. See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.

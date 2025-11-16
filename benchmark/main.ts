@@ -297,9 +297,9 @@ if (isWorkerAvailable) {
       }
     });
 
-  // workerWasm requires both Worker and WASM
+  // responsiveFast requires both Worker and WASM
   if (wasmAvailable) {
-    bench = bench.add('parseString engine:responsiveWasm (50 rows)', async () => {
+    bench = bench.add('parseString engine:responsiveFast (50 rows)', async () => {
       for await (const _ of parseString(stringCSV, { engine: EnginePresets.responsiveFast() })) {
         // noop
       }
@@ -318,8 +318,8 @@ bench = bench
 // WASM preset benchmark (1000 rows)
 if (wasmAvailable) {
   bench = bench
-    .add('parseString engine:wasm (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.wasm() })) {
+    .add('parseString engine:fast (1000 rows)', async () => {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.fast() })) {
         // noop
       }
     });
@@ -351,11 +351,6 @@ if (isWorkerAvailable) {
   bench = bench
     .add('parseString engine:balanced (1000 rows)', async () => {
       for await (const _ of parseString(largeCSV, { engine: EnginePresets.balanced() })) {
-        // noop
-      }
-    })
-    .add('parseString engine:responsiveFast (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.responsiveFast() })) {
         // noop
       }
     });

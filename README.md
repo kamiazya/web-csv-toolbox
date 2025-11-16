@@ -134,43 +134,9 @@ const records = parseStringToArraySyncWASM(csv);
 - ⚠️ **Experimental**: WASM auto-init embeds WASM as base64 (~110KB), may change in future
 - ✅ Bundle size: ~200KB
 
-### `web-csv-toolbox/lite` (Lightweight - Size Optimized)
-
-**Best for**: Users who prioritize bundle size and use async APIs
-
-```typescript
-import { parseString } from 'web-csv-toolbox/lite';
-
-// Async-only, smaller bundle
-const records = await parseString.toArray(csv);
-```
-
-- ✅ All async APIs (parseString, parseBlob, parseFile, etc.)
-- ✅ Worker-based parsing support
-- ✅ Streaming WASM support (manual initialization)
-- ✅ Bundle size: **~50KB** (150KB smaller!)
-- ❌ No synchronous WASM APIs
-
-**Using WASM with lite:**
-
-```typescript
-import { parseString, loadWASM } from 'web-csv-toolbox/lite';
-import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
-
-// Manual WASM initialization for streaming
-await loadWASM({
-  wasm: await fetch(wasmUrl).then(r => r.arrayBuffer())
-});
-
-// Now use WASM with async APIs
-const records = await parseString.toArray(csv, { engine: { wasm: true } });
-```
-
-> **📖 For more details**: See [Package Exports Documentation](./docs/explanation/package-exports.md)
-
 ## Usage 📘
 
-> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.worker()`, `EnginePresets.workerWasm()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/use-with-bundlers.md) for configuration details.
+> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.responsive()`, `EnginePresets.responsiveFast()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/use-with-bundlers.md) for configuration details.
 
 ### Parsing CSV files from strings
 
