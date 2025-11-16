@@ -5,6 +5,7 @@ import { createReadStream, readFileSync } from "fs";
 import fs from "node:fs/promises";
 import path from "path";
 import { PluginOption } from "vite";
+import { escapeRegExp } from "../src/helpers/string/escapeRegExp.ts";
 
 async function exists(filepath: string) {
   try {
@@ -67,7 +68,7 @@ function vitePluginWasmPack({
           const wasmFile = crateName.replace(/\-/g, "_") + "_bg.wasm";
           // Match: from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer"
           const importPattern = new RegExp(
-            `from\\s+["']${crateName.replace(/-/g, "\\-")}/${wasmFile.replace(/_/g, "\\_")}\\?arraybuffer["']`,
+            `from\\s+["']${escapeRegExp(crateName)}/${escapeRegExp(wasmFile)}\\?arraybuffer["']`,
             'g'
           );
           if (importPattern.test(code)) {
