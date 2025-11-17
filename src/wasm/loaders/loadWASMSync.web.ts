@@ -3,8 +3,7 @@ import {
   initSync,
   type SyncInitInput,
 } from "web-csv-toolbox-wasm";
-// @ts-expect-error - WASM file imported as ArrayBuffer via vite-plugin-wasm-arraybuffer
-import wasmBuffer from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm?arraybuffer";
+import wasmBuffer from "#/csv.wasm";
 
 import {
   isWasmInitialized,

@@ -3,8 +3,8 @@
   "version": "0.13.0",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "module": "dist/web-csv-toolbox.js",
-  "types": "dist/web-csv-toolbox.d.ts",
+  "module": "dist/main.web.js",
+  "types": "dist/main.web.d.ts",
   "packageManager": "pnpm@9.3.0",
   "engines": {
     "node": ">=20.0.0"
@@ -12,8 +12,16 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/web-csv-toolbox.d.ts",
-      "default": "./dist/web-csv-toolbox.js"
+      "types": "./dist/main.web.d.ts",
+      "node": "./dist/main.node.js",
+      "browser": "./dist/main.web.js",
+      "default": "./dist/main.web.js"
+    },
+    "./lite": {
+      "types": "./dist/lite.web.d.ts",
+      "node": "./dist/lite.node.js",
+      "browser": "./dist/lite.web.js",
+      "default": "./dist/lite.web.js"
     },
     "./worker": {
       "node": {
@@ -27,6 +35,20 @@
       "default": {
         "types": "./dist/worker.web.d.ts",
         "default": "./dist/worker.web.js"
+      }
+    },
+    "./worker.bundle": {
+      "node": {
+        "types": "./dist/worker.node.d.ts",
+        "default": "./dist/worker.node.bundle.js"
+      },
+      "browser": {
+        "types": "./dist/worker.web.d.ts",
+        "default": "./dist/worker.web.bundle.js"
+      },
+      "default": {
+        "types": "./dist/worker.web.d.ts",
+        "default": "./dist/worker.web.bundle.js"
       }
     },
     "./*": {
@@ -45,13 +67,19 @@
     "./package.json": "./package.json"
   },
   "imports": {
-    "#/wasm/loadWASM.js": {
+    "#/csv.wasm": {
+      "types": "./dist/_virtual/web_csv_toolbox_wasm_bg.wasm.d.ts",
+      "browser": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js",
+      "node": "./dist/_virtual/web_csv_toolbox_wasm_bg.node.wasm.js",
+      "default": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js"
+    },
+    "#/wasm/loaders/loadWASM.js": {
       "types": "./dist/wasm/loaders/loadWASM.d.ts",
       "node": "./dist/wasm/loaders/loadWASM.node.js",
       "browser": "./dist/wasm/loaders/loadWASM.web.js",
       "default": "./dist/wasm/loaders/loadWASM.web.js"
     },
-    "#/wasm/loadWASMSync.js": {
+    "#/wasm/loaders/loadWASMSync.js": {
       "types": "./dist/wasm/loaders/loadWASMSync.d.ts",
       "node": "./dist/wasm/loaders/loadWASMSync.node.js",
       "browser": "./dist/wasm/loaders/loadWASMSync.web.js",
@@ -95,7 +123,7 @@
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
     "graph": "madge --extensions ts --image graph.svg src/",
-    "graph:main": "madge --extensions ts --image graph-main.svg src/web-csv-toolbox.ts",
+    "graph:main": "madge --extensions ts --image graph-main.svg src/main.ts",
     "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker.node.ts src/worker.web.ts",
     "graph:json": "madge --extensions ts --json src/",
     "graph:summary": "madge --extensions ts --summary src/",
@@ -104,9 +132,10 @@
     "test:browser": "vitest --browser --project browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
-    "build": "pnpm build:wasm && pnpm build:js",
+    "build": "pnpm build:wasm && pnpm build:js && pnpm build:worker-bundle",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
+    "build:worker-bundle": "TARGET=web vite build --config vite.config.worker-bundle.ts && TARGET=node vite build --config vite.config.worker-bundle.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",

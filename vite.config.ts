@@ -2,10 +2,11 @@ import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { webdriverio } from "@vitest/browser-webdriverio";
 import dts from "vite-plugin-dts";
 import { defineConfig } from "vitest/config";
+import { resolveImportsPlugin } from "./config/vite-plugin-resolve-imports.ts";
 import { wasmArrayBuffer } from "./config/vite-plugin-wasm-arraybuffer.ts";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
-export default defineConfig(() => ({
+export default defineConfig(({ command }) => ({
   assetsInclude: ["**/*.wasm", "**/*.wasm?*"],
   optimizeDeps: {
     exclude: ["web-csv-toolbox-wasm"],
@@ -13,39 +14,48 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": "/src",
-      // Aliases for development - production uses package.json "imports"
-      "#/wasm/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
-      "#/wasm/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
-      "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
-      "#/utils/response/getOptionsFromResponse.constants.js": "/src/utils/response/getOptionsFromResponse.constants.web.ts",
-      "#/utils/charset/getCharsetValidation.constants.js": "/src/utils/charset/getCharsetValidation.constants.web.ts",
+      // Aliases for development only - build uses relative imports
+      ...(command === "serve"
+        ? {
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.web.ts",
+          }
+        : {}),
     },
   },
   build: {
     target: "esnext",
     lib: {
-      entry: [
-        "src/web-csv-toolbox.ts",
-        "src/wasm/loaders/loadWASM.web.ts",
-        "src/wasm/loaders/loadWASM.node.ts",
-        "src/wasm/loaders/loadWASMSync.web.ts",
-        "src/wasm/loaders/loadWASMSync.node.ts",
-        "src/worker.web.ts",
-        "src/worker.node.ts",
-        "src/worker/helpers/createWorker.web.ts",
-        "src/worker/helpers/createWorker.node.ts",
-        "src/parser/execution/worker/parseStringInWorker.ts",
-        "src/parser/execution/worker/parseStringInWorkerWASM.ts",
-        "src/parser/execution/worker/parseBinaryInWorker.ts",
-        "src/parser/execution/worker/parseBinaryInWorkerWASM.ts",
-        "src/parser/execution/worker/parseStreamInWorker.ts",
-        "src/parser/execution/worker/parseUint8ArrayStreamInWorker.ts",
-        "src/parser/execution/worker/parseUint8ArrayStreamInWorkerWASM.ts",
-        "src/utils/response/getOptionsFromResponse.constants.web.ts",
-        "src/utils/response/getOptionsFromResponse.constants.node.ts",
-        "src/utils/charset/getCharsetValidation.constants.web.ts",
-        "src/utils/charset/getCharsetValidation.constants.node.ts",
-      ],
+      entry: {
+        "main.web": "src/main.web.ts", // Browser/Web version
+        "main.node": "src/main.node.ts", // Node.js version
+        "lite.web": "src/lite.web.ts", // Browser/Web version
+        "lite.node": "src/lite.node.ts", // Node.js version
+        "wasm/loaders/loadWASM.web": "src/wasm/loaders/loadWASM.web.ts",
+        "wasm/loaders/loadWASM.node": "src/wasm/loaders/loadWASM.node.ts",
+        "wasm/loaders/loadWASMSync.web": "src/wasm/loaders/loadWASMSync.web.ts",
+        "wasm/loaders/loadWASMSync.node": "src/wasm/loaders/loadWASMSync.node.ts",
+        "worker.web": "src/worker.web.ts",
+        "worker.node": "src/worker.node.ts",
+        "worker/helpers/createWorker.web": "src/worker/helpers/createWorker.web.ts",
+        "worker/helpers/createWorker.node": "src/worker/helpers/createWorker.node.ts",
+        "parser/execution/worker/parseStringInWorker": "src/parser/execution/worker/parseStringInWorker.ts",
+        "parser/execution/worker/parseStringInWorkerWASM": "src/parser/execution/worker/parseStringInWorkerWASM.ts",
+        "parser/execution/worker/parseBinaryInWorker": "src/parser/execution/worker/parseBinaryInWorker.ts",
+        "parser/execution/worker/parseBinaryInWorkerWASM": "src/parser/execution/worker/parseBinaryInWorkerWASM.ts",
+        "parser/execution/worker/parseStreamInWorker": "src/parser/execution/worker/parseStreamInWorker.ts",
+        "parser/execution/worker/parseUint8ArrayStreamInWorker": "src/parser/execution/worker/parseUint8ArrayStreamInWorker.ts",
+        "parser/execution/worker/parseUint8ArrayStreamInWorkerWASM": "src/parser/execution/worker/parseUint8ArrayStreamInWorkerWASM.ts",
+        "utils/response/getOptionsFromResponse.constants.web": "src/utils/response/getOptionsFromResponse.constants.web.ts",
+        "utils/response/getOptionsFromResponse.constants.node": "src/utils/response/getOptionsFromResponse.constants.node.ts",
+        "utils/charset/getCharsetValidation.constants.web": "src/utils/charset/getCharsetValidation.constants.web.ts",
+        "utils/charset/getCharsetValidation.constants.node": "src/utils/charset/getCharsetValidation.constants.node.ts",
+      },
       name: "CSV",
       formats: ["es"],
       fileName: (_format, entryName) => {
@@ -85,6 +95,7 @@ export default defineConfig(() => ({
     minifySyntax: true,
   },
   plugins: [
+    resolveImportsPlugin(), // Resolve # imports to relative paths during build
     wasmArrayBuffer(), // Must come before wasmPack to handle ?arraybuffer imports
     wasmPack({
       crates: ["./web-csv-toolbox-wasm"],

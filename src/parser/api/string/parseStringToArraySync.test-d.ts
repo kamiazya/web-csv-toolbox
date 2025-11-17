@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
+import type { CSVRecord } from "@/core/types.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
-import type { CSVRecord } from "@/web-csv-toolbox.ts";
 
 describe("parseStringToArraySync function", () => {
   it("parseStringToArraySync should be a function", () => {

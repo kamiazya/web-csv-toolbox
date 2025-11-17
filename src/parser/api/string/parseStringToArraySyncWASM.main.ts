@@ -1,12 +1,15 @@
-import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loadWASM.js";
-import { isSyncInitialized, loadWASMSync } from "#/wasm/loadWASMSync.js";
+import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loaders/loadWASM.js";
 import {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-  DOUBLE_QUOTE,
-} from "@/core/constants.ts";
+  isSyncInitialized,
+  loadWASMSync,
+} from "#/wasm/loaders/loadWASMSync.js";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";
-import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
+import {
+  parseWithWASM,
+  prepareCSVWithHeader,
+  validateWASMOptions,
+} from "./parseStringToArraySyncWASM.shared.ts";
 
 /**
  * Parse CSV string to record of arrays using WebAssembly (synchronous).
@@ -110,42 +113,14 @@ export function parseStringToArraySyncWASM<
   csv: string,
   options: CommonOptions<Delimiter, Quotation> & { header?: Header } = {},
 ): CSVRecord<Header>[] {
-  const {
-    delimiter = DEFAULT_DELIMITER,
-    quotation = DEFAULT_QUOTATION,
-    maxBufferSize = 10485760,
-    source,
-    header,
-  } = options;
-  if (typeof delimiter !== "string" || delimiter.length !== 1) {
-    throw new RangeError(
-      "Invalid delimiter, must be a single character on WASM.",
-    );
-  }
-  if (quotation !== DOUBLE_QUOTE) {
-    throw new RangeError("Invalid quotation, must be double quote on WASM.");
-  }
-  assertCommonOptions({ delimiter, quotation, maxBufferSize });
-  const delimiterCode = delimiter.charCodeAt(0);
+  const { header } = options;
 
-  // If custom header is provided, prepend it to the CSV string
-  // so WASM parser treats it as the header row
-  let csvToParse = csv;
-  if (header) {
-    // Escape fields that contain special characters
-    const escapedHeader = header.map((field) => {
-      if (
-        field.includes(delimiter) ||
-        field.includes(quotation) ||
-        field.includes("\n") ||
-        field.includes("\r")
-      ) {
-        return `${quotation}${field.replace(new RegExp(quotation, "g"), quotation + quotation)}${quotation}`;
-      }
-      return field;
-    });
-    csvToParse = `${escapedHeader.join(delimiter)}\n${csv}`;
-  }
+  // Validate options
+  const { delimiter, delimiterCode, quotation, maxBufferSize, source } =
+    validateWASMOptions(options);
+
+  // Prepare CSV with custom header if provided
+  const csvToParse = prepareCSVWithHeader(csv, header, delimiter, quotation);
 
   // Auto-initialize WASM if not already initialized
   if (!isSyncInitialized()) {
@@ -165,13 +140,12 @@ export function parseStringToArraySyncWASM<
     }
   }
 
-  // Use the imported WASM function (initialized by loadWASMSync)
-  return JSON.parse(
-    wasmParseStringToArraySync(
-      csvToParse,
-      delimiterCode,
-      maxBufferSize,
-      source ?? "",
-    ),
+  // Parse using WASM
+  return parseWithWASM(
+    csvToParse,
+    delimiterCode,
+    maxBufferSize,
+    source,
+    wasmParseStringToArraySync,
   );
 }

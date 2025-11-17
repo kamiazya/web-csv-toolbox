@@ -1,0 +1,17 @@
+{
+  "name": "vite-bundle-worker-main",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview",
+    "dev": "vite"
+  },
+  "dependencies": {
+    "web-csv-toolbox": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^7.2.2"
+  }
+}

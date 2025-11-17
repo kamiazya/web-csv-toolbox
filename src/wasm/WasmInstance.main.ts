@@ -3,13 +3,13 @@ import {
   loadWASM as internalLoadWASM,
   isInitialized,
   resetInit,
-} from "#/wasm/loadWASM.js";
+} from "#/wasm/loaders/loadWASM.js";
 import {
   getWasmModule,
   loadWASMSync as internalLoadWASMSync,
   isSyncInitialized,
   resetSyncInit,
-} from "#/wasm/loadWASMSync.js";
+} from "#/wasm/loaders/loadWASMSync.js";
 
 /**
  * Re-export all WASM functions from this module to ensure they share the same WASM instance.

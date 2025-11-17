@@ -35,6 +35,17 @@ export function wasmArrayBuffer(): Plugin {
         return source; // Return as-is to preserve the virtual module ID
       }
 
+      // Handle #/csv.wasm imports
+      if (source === "#/csv.wasm") {
+        console.log(`[vite-plugin-wasm-arraybuffer] resolveId called for #/csv.wasm import: ${source}, importer=${importer}`);
+        // Detect target environment from importer path
+        const isNodeTarget = /\.node\.(ts|js)/.test(importer || "");
+        const env = isNodeTarget ? "node" : "web";
+        const virtualId = `\0_virtual/web_csv_toolbox_wasm_bg.${env}.wasm`;
+        console.log(`[vite-plugin-wasm-arraybuffer] returning virtualId for #/csv.wasm: ${virtualId}`);
+        return virtualId;
+      }
+
       // Preserve the ?arraybuffer query parameter during resolution
       if (source.endsWith("?arraybuffer")) {
         console.log(`[vite-plugin-wasm-arraybuffer] resolveId called: source=${source}, importer=${importer}`);

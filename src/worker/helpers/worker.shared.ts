@@ -316,7 +316,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             // Dynamic import WASM implementation
             try {
               const { parseStringToArraySyncWASM } = await import(
-                "../../parser/api/string/parseStringToArraySyncWASM.ts"
+                "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
               );
               await streamRecordsToMain(
                 workerContext,
@@ -502,7 +502,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               );
             }
             const { parseStringToArraySyncWASM } = await import(
-              "../../parser/api/string/parseStringToArraySyncWASM.ts"
+              "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
             );
             await streamRecordsToMain(
               workerContext,

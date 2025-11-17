@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
-import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
+import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.main.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 // No preload needed - WASM will be auto-initialized on first use with inlined WASM
