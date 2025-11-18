@@ -574,7 +574,7 @@ using session = await WorkerSession.create();
 ### Option 1: Always Reusable (rejected)
 ```typescript
 // ❌ Users must always clean up
-const pool = new WorkerPool({ maxWorkers: 1 });
+const pool = new ReusableWorkerPool({ maxWorkers: 1 });
 const records = await parseString(csv, { engine: { worker: true, workerPool: pool } });
 pool.terminate(); // Forgetting this = process hangs
 ```

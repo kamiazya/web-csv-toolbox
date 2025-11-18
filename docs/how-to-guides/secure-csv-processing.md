@@ -33,12 +33,12 @@ npm install web-csv-toolbox zod hono
 import { Hono } from 'hono';
 import { stream } from 'hono/streaming';
 import { z } from 'zod';
-import { WorkerPool, EnginePresets, parseStringStream } from 'web-csv-toolbox';
+import { ReusableWorkerPool, EnginePresets, parseStringStream } from 'web-csv-toolbox';
 
 const app = new Hono();
 
 // ✅ CRITICAL: Limit concurrent workers
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // Clean up on shutdown
 app.onShutdown(() => {
@@ -164,7 +164,7 @@ const SECURITY_CONFIG = {
   maxFieldCount: 10000,                   // 10k fields/record
 };
 
-const pool = new WorkerPool({ maxWorkers: SECURITY_CONFIG.maxWorkers });
+const pool = new ReusableWorkerPool({ maxWorkers: SECURITY_CONFIG.maxWorkers });
 
 app.post('/validate-csv', async (c) => {
   // 1. Early rejection

@@ -136,10 +136,10 @@ await fetchAndParseCSV('https://example.com/large-data.csv');
 When parsing multiple CSV files, use `WorkerPool` to limit resource usage:
 
 ```typescript
-import { parse, WorkerPool } from 'web-csv-toolbox';
+import { parse, ReusableWorkerPool } from 'web-csv-toolbox';
 
 // Create a worker pool with max 4 concurrent workers
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 const csvFiles = [
   'data1.csv',
@@ -271,12 +271,12 @@ document.getElementById('csv-file').addEventListener('change', (e) => {
 
 ```typescript
 import { Hono } from 'hono';
-import { parse, WorkerPool } from 'web-csv-toolbox';
+import { parse, ReusableWorkerPool } from 'web-csv-toolbox';
 
 const app = new Hono();
 
 // Create shared worker pool
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.post('/parse-csv', async (c) => {
   const csv = await c.req.text();

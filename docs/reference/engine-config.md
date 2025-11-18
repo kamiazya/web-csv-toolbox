@@ -88,12 +88,8 @@ for await (const record of parseString(csv, {
 Enable WebAssembly-based parsing for improved performance.
 
 **Initialization:**
-- `web-csv-toolbox` (main entry): 初回使用時に自動初期化。初回パースのレイテンシ短縮のために `loadWASM()` による事前ロードを推奨します。
-- `web-csv-toolbox/lite` (lite エントリ): `loadWASM()` の呼び出しが必要（バンドラ使用時は `wasmUrl` の指定が必要な場合があります）。
-
-**Limitations:**
-- UTF-8 のみ
-- クオートはダブルクオート (`"`) のみ
+- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWASM()`.
+- `web-csv-toolbox/lite` (lite entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
 
 **Example:**
 ```typescript
@@ -172,7 +168,7 @@ Streams are transferred directly using Transferable Streams (zero-copy).
 
 ### `workerPool`
 
-**Type:** `WorkerPool` (実装クラス: `ReusableWorkerPool`)
+**Type:** `WorkerPool` (implemented by `ReusableWorkerPool`)
 **Default:** Shared singleton pool
 
 Specify a custom WorkerPool for managing worker lifecycle.
@@ -227,7 +223,7 @@ Specify a custom worker script URL.
 
 **Note:** Custom workers must implement the expected message protocol.
 
-**Node.js:** Node 環境では `engine: { worker: true }` のみで動作し、`workerURL` の指定は不要です（バンドル済みの Worker パスが内部で解決されます）。
+**Node.js:** In Node, `engine: { worker: true }` works without `workerURL`. The bundled worker path is resolved internally.
 
 ---
 
@@ -236,26 +232,26 @@ Specify a custom worker script URL.
 **Type:** `boolean`
 **Default:** `false`
 
-ストリクトモードは、`workerStrategy: 'stream-transfer'` 選択時の自動フォールバック（`stream-transfer` → `message-streaming`）を抑止します。
+Strict mode prevents the automatic fallback (`stream-transfer` → `message-streaming`) when `workerStrategy: 'stream-transfer'` is requested.
 
 **Behavior:**
-- `true` の場合: `stream-transfer` が使えないときにエラーを投げ、`message-streaming` へは自動フォールバックしません
-- `false` の場合: 利用不可時に `message-streaming` へ自動フォールバックします（`onFallback` が呼び出されます）
+- When `true`: Throws if `stream-transfer` is unavailable; does not auto-fallback to `message-streaming`.
+- When `false`: Automatically falls back to `message-streaming` and calls `onFallback`.
 
 **Notes:**
-- `strict` は `worker: true` かつ `workerStrategy: 'stream-transfer'` のときのみ有効です。その他の組み合わせではエラーになります。
+- `strict` is valid only when `worker: true` and `workerStrategy: 'stream-transfer'`. Other combinations are invalid and will throw.
 
 **Use Case:**
 - Testing environments
 - Ensuring specific execution mode
 - Debugging worker issues
 
-**Example (Chrome/Firefox/Edge 向けの厳格設定):**
+**Example (strict for Chrome/Firefox/Edge):**
 ```typescript
 {
   worker: true,
   workerStrategy: 'stream-transfer',
-  strict: true  // stream-transfer が利用不可（例: Safari）の場合に例外
+  strict: true  // throws on Safari where stream transfer is unsupported
 }
 ```
 
@@ -621,12 +617,12 @@ const config = EnginePresets.balanced({
 
 ---
 
-## WorkerPool API
+## Worker Pool API
 
 ### Constructor
 
 ```typescript
-new WorkerPool(options?: WorkerPoolOptions)
+new ReusableWorkerPool(options?: { maxWorkers?: number })
 ```
 
 **Options:**
@@ -638,7 +634,7 @@ interface WorkerPoolOptions {
 
 **Example:**
 ```typescript
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 ```
 
 ### Methods

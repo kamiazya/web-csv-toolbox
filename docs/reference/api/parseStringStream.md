@@ -585,10 +585,10 @@ async function csvETL(sourceURL: string, destDB: Database) {
 
 ```typescript
 import { Hono } from 'hono';
-import { parseStringStream, EnginePresets, WorkerPool } from 'web-csv-toolbox';
+import { parseStringStream, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox';
 
 const app = new Hono();
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.post('/validate-csv', async (c) => {
   // Early rejection if pool is saturated

@@ -428,7 +428,7 @@ async function handleFileUpload(file: File) {
 
 ```typescript
 import { Hono } from 'hono';
-import { loadWASM, parse, WorkerPool } from 'web-csv-toolbox';
+import { loadWASM, parse, ReusableWorkerPool } from 'web-csv-toolbox';
 
 const app = new Hono();
 
@@ -437,7 +437,7 @@ await loadWASM();
 console.log('WASM initialized');
 
 // Create worker pool
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.post('/parse-csv', async (c) => {
   const csv = await c.req.text();

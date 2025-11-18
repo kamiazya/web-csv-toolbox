@@ -151,7 +151,7 @@ Request 100 → Worker 100 (💥 system overwhelmed)
 **The Solution: WorkerPool**
 
 ```typescript
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 ```
 
 **How It Works:**
@@ -230,7 +230,7 @@ for each request {
 **Our Solution: WorkerPool (Goldilocks Approach)**
 ```typescript
 // ✅ Balanced
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 for each request {
   await parse(csv, { workerPool: pool });
 }

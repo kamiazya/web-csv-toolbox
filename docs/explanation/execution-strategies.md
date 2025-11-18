@@ -312,12 +312,12 @@ for await (const record of parse(response, {
 
 **Server (concurrent processing):**
 ```typescript
-import { parseStringStream, WorkerPool } from 'web-csv-toolbox';
+import { parseStringStream, ReusableWorkerPool } from 'web-csv-toolbox';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
 // Create worker pool for handling multiple files
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // Process multiple CSV files concurrently with streaming
 await Promise.all(

@@ -238,7 +238,11 @@ for await (const record of parseString(csv, {
 }
 ```
 
-**Important**: The WASM module must be loaded **before** the Worker starts using it. Always call `loadWASM()` before parsing when using `responsiveFast()` or `fastest()` presets.
+**Important**: The WASM module must be available **before** Workers start using it.
+
+- `web-csv-toolbox` (main entry): Auto-initializes on first use, but calling `loadWASM()` ahead of time reduces first-parse latency.
+- `web-csv-toolbox/lite` (lite entry): Call `loadWASM(wasmUrl)` before parsing. Ensure your bundler emits the WASM asset and provides its URL.
+- Presets: When using `responsiveFast()` (Worker + WASM) or `fast()` (Main + WASM), choose the appropriate initialization strategy for your environment.
 
 ## Environment Detection
 

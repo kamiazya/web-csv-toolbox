@@ -244,10 +244,10 @@ for (const file of files) {
 ### ✅ Good: Use Worker Pool
 
 ```typescript
-import { WorkerPool, parse } from 'web-csv-toolbox';
+import { ReusableWorkerPool, parse } from 'web-csv-toolbox';
 
 // Limit concurrent workers
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 const files = ['data1.csv', 'data2.csv', 'data3.csv', 'data4.csv'];
 
@@ -426,9 +426,9 @@ for await (const record of parse(largeCSV, {
 ### ✅ Good: Split and Process in Parallel
 
 ```typescript
-import { WorkerPool, parse } from 'web-csv-toolbox';
+import { ReusableWorkerPool, parse } from 'web-csv-toolbox';
 
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // Split CSV into chunks (by line boundaries)
 const chunks = splitCSVIntoChunks(largeCSV, 4);
@@ -575,7 +575,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 import { Hono } from 'hono';
-import { loadWASM, parse, WorkerPool, EnginePresets } from 'web-csv-toolbox';
+import { loadWASM, parse, ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const app = new Hono();
@@ -584,7 +584,7 @@ const app = new Hono();
 await loadWASM();
 
 // 2. Create worker pool
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // 3. Define validation schema
 const recordSchema = z.object({
