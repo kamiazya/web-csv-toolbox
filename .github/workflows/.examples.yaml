@@ -46,7 +46,6 @@ jobs:
       - name: Build example - ${{ matrix.example.name }}
         run: |
           cd examples/${{ matrix.example.name }}
-          pnpm install
           pnpm run build
         env:
           NODE_ENV: production
@@ -98,11 +97,6 @@ jobs:
           name: dist
           path: dist
 
-      - name: Install example dependencies - ${{ matrix.example }}
-        run: |
-          cd examples/${{ matrix.example }}
-          pnpm install
-
       - name: Run example - ${{ matrix.example }}
         run: |
           cd examples/${{ matrix.example }}
@@ -152,15 +146,8 @@ jobs:
           name: example-${{ matrix.example }}
           path: examples/${{ matrix.example }}/dist
 
-      - name: Install example dependencies - ${{ matrix.example }}
-        run: |
-          cd examples/${{ matrix.example }}
-          pnpm install
-
       - name: Install Playwright browsers
-        run: |
-          cd examples/${{ matrix.example }}
-          pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright tests - ${{ matrix.example }}
         run: |
