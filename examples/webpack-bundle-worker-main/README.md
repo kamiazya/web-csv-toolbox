@@ -68,6 +68,6 @@ The example includes a Webpack configuration that:
 ## Notes
 
 - Workers are automatically detected and imported via `web-csv-toolbox/worker`
-- **Larger bundle**: Main worker bundle is ~128KB (gzipped: 58KB) with embedded WASM
+- **Larger bundle**: Main worker bundle includes embedded WASM
 - **Trade-off**: Faster initialization but larger bundle size compared to lite version
 - Worker cleanup is handled manually using `Symbol.dispose()`

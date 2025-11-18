@@ -267,7 +267,7 @@ Controls the automatic selection between two Blob reading strategies based on fi
 
 **Strategies:**
 1. **Files smaller than threshold:** Use `blob.arrayBuffer()` + `parseBinary()`
-   - ✅ **6-8x faster** for small files (confirmed by benchmarks)
+   - ✅ Faster for small files (prefer arrayBuffer for small sizes)
    - ❌ Loads entire file into memory
    - ❌ Limited by `maxBufferSize` (default 10MB)
 
@@ -282,7 +282,7 @@ Controls the automatic selection between two Blob reading strategies based on fi
 
 **Default Rationale:**
 The 1MB default threshold is determined by benchmarks and provides:
-- Optimal performance for files ≤1MB (6-8x faster)
+- Optimal performance for files ≤1MB
 - Memory efficiency for larger files
 - Safe margin below the default `maxBufferSize` (10MB)
 
@@ -532,7 +532,7 @@ const config = EnginePresets.responsiveFast();
 ```
 
 **Why:**
-- ✅ WASM acceleration (2-3x faster)
+- ✅ WASM acceleration (improves parsing speed)
 - ✅ Zero-copy streams
 - ✅ Non-blocking UI
 
