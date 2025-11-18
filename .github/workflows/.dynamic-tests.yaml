@@ -194,7 +194,7 @@ jobs:
       - name: Run smoke test
         run: |
           deno eval '
-          import { parse } from "./dist/web-csv-toolbox.js";
+          import { parse } from "./dist/main.web.js";
 
           const csv = `name,age
           Alice,42

@@ -97,6 +97,17 @@ jobs:
           name: dist
           path: dist
 
+      - name: Download WASM artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: wasm
+          path: web-csv-toolbox-wasm
+
+      - name: Copy WASM package to node_modules
+        run: |
+          mkdir -p node_modules/web-csv-toolbox-wasm
+          cp -r web-csv-toolbox-wasm/pkg/* node_modules/web-csv-toolbox-wasm/
+
       - name: Run example - ${{ matrix.example }}
         run: |
           cd examples/${{ matrix.example }}
