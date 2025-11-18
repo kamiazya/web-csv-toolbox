@@ -24,7 +24,7 @@ export * from "@/_shared.ts";
 // ============================================================================
 // Worker helpers (Node.js-specific imports)
 // ============================================================================
-export * from "@/worker/helpers/ReusableWorkerPool.ts";
+export * from "@/worker/helpers/ReusableWorkerPool.node.ts";
 export * from "@/worker/helpers/WorkerSession.ts";
 
 // ============================================================================
