@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Worker (Main Version) Example - web-csv-toolbox</title>
+  <title>Worker (Lite Version) Example - web-csv-toolbox</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -67,14 +67,15 @@
   </style>
 </head>
 <body>
-  <h1>🚀 Browser Worker (Main Version) Example</h1>
+  <h1>🚀 Browser Worker (Lite Version) Example</h1>
 
   <div class="status info">
     <strong>Features:</strong>
     <ul>
       <li>Worker-based parsing (offloads parsing to Web Worker, non-blocking main thread)</li>
-      <li>Auto WASM initialization in Worker</li>
+      <li>Manual WASM initialization required (lite version does not auto-initialize)</li>
       <li>Parallel processing with multiple Workers (Test 3 only)</li>
+      <li>Smaller bundle size with external WASM loading</li>
     </ul>
   </div>
 

@@ -105,8 +105,8 @@ for await (const record of parseString(csv, {
 ```
 
 **Performance:**
-- ✅ 2-3x faster than JavaScript implementation
-- ✅ Lower CPU usage
+- ✅ Faster than the JavaScript implementation (compiled WASM)
+- ✅ Often lower CPU usage
 
 **Limitations:**
 - ❌ UTF-8 only (no Shift-JIS, EUC-JP, etc.)
@@ -275,15 +275,6 @@ Controls the automatic selection between two Blob reading strategies based on fi
    - ✅ Memory-efficient streaming
    - ✅ No size limit (processes incrementally)
    - ⚠️ Slight streaming overhead
-
-**Benchmark Results:**
-
-| File Size | Binary (ops/sec) | Stream (ops/sec) | Performance Gain |
-|-----------|------------------|------------------|------------------|
-| 1KB       | 21,691           | 2,685            | **8.08x faster** |
-| 10KB      | 2,187            | 311              | **7.03x faster** |
-| 100KB     | 219              | 32               | **6.84x faster** |
-| 1MB       | 20               | 3                | **6.67x faster** |
 
 **Special Values:**
 - `0` - Always use streaming (maximum memory efficiency)

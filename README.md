@@ -6,7 +6,6 @@
 ![node version](https://img.shields.io/node/v/web-csv-toolbox)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox?ref=badge_shield)
 
-![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/web-csv-toolbox)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kamiazya/web-csv-toolbox)
 ![npm](https://img.shields.io/npm/dm/web-csv-toolbox)
 [![codecov](https://codecov.io/gh/kamiazya/web-csv-toolbox/graph/badge.svg?token=8RbDcXHTFl)](https://codecov.io/gh/kamiazya/web-csv-toolbox)
@@ -592,7 +591,7 @@ You can use WebAssembly to parse CSV data for high performance.
 
 ⚠️ **Experimental Notice**:
 - WASM automatic initialization is experimental and may change in future versions
-- Currently embeds WASM as base64 (~110KB) in the main bundle
+- Currently embeds WASM as base64 in the main bundle
 - Future versions may change the loading strategy for better bundle size optimization
 
 **WASM Limitations:**

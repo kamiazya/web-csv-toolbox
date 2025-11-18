@@ -318,7 +318,7 @@ describe("WasmInstance.lite", () => {
 
     it("should provide smaller bundle size (no inlined WASM)", () => {
       // This test documents the key benefit of lite version:
-      // It doesn't include base64-inlined WASM (~110KB saved)
+      // It doesn't include base64-inlined WASM (smaller main bundle)
 
       // Lite version doesn't import #/csv.wasm
       // Instead, users must provide WASM URL themselves

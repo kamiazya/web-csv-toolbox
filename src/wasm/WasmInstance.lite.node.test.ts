@@ -364,7 +364,7 @@ describe("WasmInstance.lite.node", () => {
     });
 
     it("should provide smaller bundle size (no inlined WASM)", async () => {
-      // Lite version doesn't include base64-inlined WASM (~110KB saved)
+      // Lite version doesn't include base64-inlined WASM (smaller main bundle)
       // Should have async initialization APIs only
       expect(typeof loadWASM).toBe("function");
       expect(typeof ensureWASMInitialized).toBe("function");

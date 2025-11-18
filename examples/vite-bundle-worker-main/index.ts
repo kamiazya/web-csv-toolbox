@@ -9,11 +9,35 @@ Bob,25
 Charlie,35`;
 
 // Helper to display results
-function displayResult(elementId: string, content: string, status: "info" | "success" | "error" = "success") {
+function displayResult(
+  elementId: string,
+  message: string,
+  status: "info" | "success" | "error" = "success",
+  details?: string
+) {
   const element = document.getElementById(elementId);
-  if (element) {
-    element.innerHTML = `<div class="status ${status}">${content}</div>`;
+  if (!element) return;
+
+  // Clear existing content
+  element.innerHTML = "";
+
+  // Create container with status class
+  const container = document.createElement("div");
+  container.className = `status ${status}`;
+
+  // Create header for the main message
+  const header = document.createElement("div");
+  header.textContent = message;
+  container.appendChild(header);
+
+  // Add details in a <pre> element if provided
+  if (details) {
+    const pre = document.createElement("pre");
+    pre.textContent = details;
+    container.appendChild(pre);
   }
+
+  element.appendChild(container);
 }
 
 // Test 0: Basic Parsing (No Worker) - to verify library works
@@ -31,11 +55,12 @@ document.getElementById("test0")?.addEventListener("click", async () => {
 
     displayResult(
       "result0",
-      `✅ Basic parsing works:\n<pre>${JSON.stringify(records, null, 2)}</pre>`,
-      "success"
+      "✅ Basic parsing works:",
+      "success",
+      JSON.stringify(records, null, 2)
     );
   } catch (error) {
-    displayResult("result0", `❌ Error: ${error}<br><pre>${error instanceof Error ? error.stack : ''}</pre>`, "error");
+    displayResult("result0", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 0 error:", error);
   } finally {
     button.disabled = false;
@@ -68,14 +93,15 @@ document.getElementById("test1")?.addEventListener("click", async () => {
 
       displayResult(
         "result1",
-        `✅ Parsed Result (JavaScript):\n<pre>${JSON.stringify(records, null, 2)}</pre>`,
-        "success"
+        "✅ Parsed Result (JavaScript):",
+        "success",
+        JSON.stringify(records, null, 2)
       );
     } finally {
       pool[Symbol.dispose]();
     }
   } catch (error) {
-    displayResult("result1", `❌ Error: ${error}<br><pre>${error instanceof Error ? error.stack : ''}</pre>`, "error");
+    displayResult("result1", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 1 error:", error);
   } finally {
     button.disabled = false;
@@ -109,14 +135,15 @@ document.getElementById("test2")?.addEventListener("click", async () => {
 
       displayResult(
         "result2",
-        `✅ Parsed Result (WASM in Worker):\n<pre>${JSON.stringify(records, null, 2)}</pre>`,
-        "success"
+        "✅ Parsed Result (WASM in Worker):",
+        "success",
+        JSON.stringify(records, null, 2)
       );
     } finally {
       pool[Symbol.dispose]();
     }
   } catch (error) {
-    displayResult("result2", `❌ Error: ${error}<br><pre>${error instanceof Error ? error.stack : ''}</pre>`, "error");
+    displayResult("result2", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 2 error:", error);
   } finally {
     button.disabled = false;
@@ -165,14 +192,15 @@ document.getElementById("test3")?.addEventListener("click", async () => {
 
       displayResult(
         "result3",
-        `✅ Parallel parsing results:\n<pre>${resultText}</pre>`,
-        "success"
+        "✅ Parallel parsing results:",
+        "success",
+        resultText
       );
     } finally {
       pool[Symbol.dispose]();
     }
   } catch (error) {
-    displayResult("result3", `❌ Error: ${error}<br><pre>${error instanceof Error ? error.stack : ''}</pre>`, "error");
+    displayResult("result3", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 3 error:", error);
   } finally {
     button.disabled = false;

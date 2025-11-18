@@ -2,12 +2,12 @@
  * Lite version of web-csv-toolbox with smaller bundle size (Browser/Web version).
  *
  * **Key Differences from main entry:**
- * - Does NOT include base64-inlined WASM (~110KB saved)
+ * - Does NOT include base64-inlined WASM (smaller bundle size)
  * - Requires manual WASM initialization via `loadWASM(wasmUrl)`
  * - Uses streaming WASM loading instead of synchronous base64 loading
  *
  * **Trade-offs:**
- * - ✅ ~110KB smaller bundle size
+ * - ✅ Smaller bundle size
  * - ✅ Uses streaming WASM loading (better for production)
  * - ❌ Requires manual `await loadWASM(wasmUrl)` before using WASM-based APIs
  * - ❌ No automatic WASM initialization

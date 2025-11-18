@@ -49,7 +49,7 @@ export { isInitialized, resetInit } from "#/wasm/loaders/loadWASM.js";
  * **How it works:**
  * - Browser: Fetches WASM from network using streaming initialization
  * - Node.js: Reads WASM from file system
- * - Bundle size: Does NOT include base64-inlined WASM (~110KB saved)
+ * - Bundle size: Does NOT include base64-inlined WASM (smaller main bundle)
  *
  * @param input - WASM module URL (required for lite version)
  *

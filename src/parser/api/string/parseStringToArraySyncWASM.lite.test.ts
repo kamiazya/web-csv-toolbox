@@ -230,7 +230,7 @@ describe("parseStringToArraySyncWASM.lite - manual initialization", () => {
       // Lite version characteristics:
       // - No auto-initialization
       // - Requires explicit loadWASM() call
-      // - Smaller bundle size (~110KB smaller)
+      // - Smaller main bundle (no inlined WASM)
       // - Throws error if not initialized
 
       expect(() => parseStringToArraySyncWASM("")).toThrow(

@@ -150,14 +150,17 @@ const bytes = Buffer.from(base64, 'base64');
 export default bytes.buffer || bytes;
 `;
       } else {
-        // Browser build: Use modern Uint8Array.fromBase64 API
+        // Browser build: Use modern Uint8Array.fromBase64 API with Node.js fallback
         return `
-// WASM file inlined as base64-encoded ArrayBuffer (Browser optimized)
+// WASM file inlined as base64-encoded ArrayBuffer (Browser optimized with Node.js fallback)
 import { base64 } from "${sharedModuleId}";
 // Uses Uint8Array.fromBase64 (Chrome 126+, Firefox 133+, Safari 18.2+, Edge 126+)
+// Falls back to Buffer.from in Node.js environment
 // For older browsers, users should use a polyfill: https://github.com/tc39/proposal-arraybuffer-base64
-const bytes = Uint8Array.fromBase64(base64);
-export default bytes.buffer;
+const bytes = typeof Uint8Array.fromBase64 === 'function'
+  ? Uint8Array.fromBase64(base64)
+  : (typeof Buffer !== 'undefined' ? Buffer.from(base64, 'base64') : new Uint8Array());
+export default bytes.buffer || bytes;
 `;
       }
     },

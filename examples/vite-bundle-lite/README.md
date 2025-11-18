@@ -18,7 +18,7 @@ dist/bundle.js  2.08 kB │ gzip: 0.96 kB
 **Bundle Size Comparison:**
 - Main version: 113.98 kB (gzip: 54.70 kB)
 - Lite version: 2.08 kB (gzip: 0.96 kB)
-- **Savings: 111.90 kB (98.2% reduction!)**
+- **Smaller main bundle by loading WASM externally**
 
 ## Usage
 
@@ -68,7 +68,7 @@ Open DevTools Network tab and verify:
 
 ## Trade-offs
 
-- ✅ Bundle size: ~110KB smaller (98.2% reduction)
+- ✅ Smaller main bundle (WASM external)
 - ✅ Better for production: WASM loaded via streaming
 - ❌ Manual initialization: Must call `await loadWASM()` first
 - ❌ Async requirement: Cannot use sync WASM parser immediately

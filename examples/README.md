@@ -12,8 +12,8 @@ This directory contains example projects demonstrating different usage patterns 
 ### Vite Examples
 - **vite-bundle-lite**: Browser bundle with lite version
 - **vite-bundle-main**: Browser bundle with main version
-- **vite-bundle-worker-lite**: Worker bundle with lite version (16KB)
-- **vite-bundle-worker-main**: Worker bundle with main version (128KB)
+- **vite-bundle-worker-lite**: Worker bundle with lite version
+- **vite-bundle-worker-main**: Worker bundle with main version
 
 ### Webpack Examples
 - **webpack-bundle-worker-lite**: Worker bundle with lite version using Webpack
@@ -105,10 +105,6 @@ To update a dependency version, modify `pnpm-workspace.yaml` and run `pnpm insta
 
 ## Bundle Size Comparison
 
-### Worker Bundles
-| Example | Size (uncompressed) | Size (gzip) | WASM Loading |
-|---------|-------------------|-------------|--------------|
-| worker-main | 128 KB | 58 KB | Embedded (auto-init) |
-| worker-lite | 16 KB | 4.5 KB | External (manual init) |
-
-The lite version achieves **87.5% size reduction** by loading WASM externally.
+Actual bundle sizes vary by bundler, configuration, and features used. As a rule of thumb:
+- The main entry embeds the WASM, resulting in a larger main bundle.
+- The lite entry loads WASM externally, resulting in a smaller main bundle and a separate WASM asset.
