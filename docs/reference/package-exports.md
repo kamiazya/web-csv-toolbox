@@ -13,7 +13,9 @@ group: Reference
 import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 ```
 
-**Resolves to**: `./dist/main.js`
+**Resolves to**: platform-specific builds
+- **Browser**: `./dist/main.web.js`
+- **Node.js**: `./dist/main.node.js`
 
 **Exports**:
 - All parsing functions (`parseString`, `parseBinary`, etc.)
@@ -39,7 +41,9 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
 ```
 
-**Resolves to**: `./dist/lite.js`
+**Resolves to**: platform-specific builds
+- **Browser**: `./dist/lite.web.js`
+- **Node.js**: `./dist/lite.node.js`
 
 **Exports**:
 - All parsing functions (same as main)
