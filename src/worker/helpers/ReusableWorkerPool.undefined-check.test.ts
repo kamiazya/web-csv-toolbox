@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ReusableWorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
+import { ReusableWorkerPool } from "@/worker/helpers/ReusableWorkerPool.node.ts";
 
 /**
  * Tests for undefined checks added for TypeScript 5.9 strict type checking

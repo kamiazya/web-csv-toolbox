@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { WorkerEngineConfig } from "@/core/types.ts";
 import { EnginePresets } from "@/engine/config/EnginePresets.ts";
-import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
+import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.node.ts";
 
 describe("EnginePresets", () => {
   it("should be frozen (immutable)", () => {
