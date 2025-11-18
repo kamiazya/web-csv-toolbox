@@ -51,6 +51,7 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      pages: write
     needs:
       - static_tests
       - build
