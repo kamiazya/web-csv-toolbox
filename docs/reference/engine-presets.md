@@ -32,7 +32,8 @@ engine: EnginePresets.balanced()
 
 **With WorkerPool:**
 ```typescript
-const pool = new WorkerPool({ maxWorkers: 4 });
+import { ReusableWorkerPool } from 'web-csv-toolbox';
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 engine: EnginePresets.balanced({ workerPool: pool })
 ```
 
@@ -339,9 +340,9 @@ for await (const record of parseString(csv, {
 
 **Example:**
 ```typescript
-import { parseStringStream, EnginePresets, WorkerPool } from 'web-csv-toolbox';
+import { parseStringStream, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox';
 
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.post('/validate-csv', async (c) => {
   if (pool.isFull()) {

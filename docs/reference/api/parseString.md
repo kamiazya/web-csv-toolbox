@@ -302,7 +302,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Non-blocking parsing (good for large strings)
 for await (const record of parseString(largeCSV, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
   // UI stays responsive!

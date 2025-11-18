@@ -319,7 +319,7 @@ const buffer = await file.arrayBuffer();
 // Non-blocking parsing
 for await (const record of parseBinary(buffer, {
   charset: 'utf-8',
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
   // UI stays responsive!

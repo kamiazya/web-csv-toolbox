@@ -151,7 +151,10 @@ export class ReusableWorkerPool implements WorkerPool, Disposable {
    * @param createWorkerFn - Function to create worker instances
    * @internal
    */
-  constructor(options: ReusableWorkerPoolOptions = {}, createWorkerFn: CreateWorkerFn) {
+  constructor(
+    options: ReusableWorkerPoolOptions = {},
+    createWorkerFn: CreateWorkerFn,
+  ) {
     this.maxWorkers = options.maxWorkers ?? 1;
     this.customWorkerURL = options.workerURL;
     this.createWorker = createWorkerFn;

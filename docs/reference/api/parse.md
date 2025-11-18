@@ -449,7 +449,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Non-blocking parsing with worker thread
 for await (const record of parse(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -856,7 +856,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Better performance - no input type detection overhead
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
 }
