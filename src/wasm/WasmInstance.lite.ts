@@ -89,9 +89,10 @@ export async function loadWASM(input: InitInput): Promise<void> {
  * @example
  * ```ts
  * import { isWASMReady, loadWASM } from 'web-csv-toolbox/lite';
+ * import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
  *
  * if (!isWASMReady()) {
- *   await loadWASM();
+ *   await loadWASM(wasmUrl);
  * }
  * ```
  */

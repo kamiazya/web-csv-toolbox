@@ -41,17 +41,30 @@ export * from "web-csv-toolbox-wasm";
 export { isInitialized, resetInit };
 
 /**
- * Load and initialize the WebAssembly module using streaming (Node.js optimized).
+ * Load and initialize the WebAssembly module (Node.js optimized).
  *
- * @param input - WASM module URL (required for lite version)
+ * **Node.js behavior:**
+ * - Uses file system reads (node:fs/promises) to load WASM binary
+ * - Auto-detects WASM file from package when input is omitted
+ * - Input parameter is optional for convenience
  *
- * @example From npm package (recommended)
+ * @param input - Optional WASM module path or InitInput. When omitted, auto-detects from package.
+ *
+ * @example Auto-detection (recommended for Node.js)
  * ```ts
  * import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
  *
- * // In Node.js, loadWASM auto-detects the WASM file from the package
+ * // Node.js auto-detects the WASM file from the package
  * await loadWASM();
  * const result = parseStringToArraySyncWASM(csv);
+ * ```
+ *
+ * @example Custom path
+ * ```ts
+ * import { loadWASM } from 'web-csv-toolbox/lite';
+ *
+ * // Load from custom path
+ * await loadWASM('./custom/path/csv.wasm');
  * ```
  */
 export async function loadWASM(input?: InitInput): Promise<void> {

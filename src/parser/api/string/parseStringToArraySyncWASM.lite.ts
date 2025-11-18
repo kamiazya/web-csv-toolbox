@@ -9,7 +9,10 @@ import {
 } from "./parseStringToArraySyncWASM.shared.ts";
 
 /**
- * Parse CSV string to record of arrays using WebAssembly (synchronous).
+ * Parse CSV string to an array of record objects using WebAssembly (synchronous).
+ *
+ * Returns `CSVRecord<Header>[]` - an array where each element is a record object
+ * representing a CSV row with column names as keys.
  *
  * **IMPORTANT for `/lite` version:**
  * You MUST call `loadWASM()` before using this function.
@@ -17,7 +20,7 @@ import {
  *
  * @param csv - CSV string to parse
  * @param options - Parse options
- * @returns Record of arrays
+ * @returns Array of record objects (`CSVRecord<Header>[]`)
  *
  * @throws {RangeError} If WASM module is not initialized or options are invalid
  * @throws {TypeError} If provided options have invalid types
