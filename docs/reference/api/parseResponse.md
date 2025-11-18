@@ -116,7 +116,7 @@ for await (const record of parseResponse(response, {
 
 ##### `decompression`
 
-**Type:** `'gzip' | 'deflate' | 'gzip, deflate'`
+**Type:** `'gzip' | 'deflate'`
 
 **Default:** Auto-detected from `Content-Encoding` header
 
@@ -132,7 +132,9 @@ for await (const record of parseResponse(response, {
 }
 ```
 
-**Note:** Usually auto-detected from `Content-Encoding` header. Manual override rarely needed.
+**Note:**
+- Usually auto-detected from `Content-Encoding` header. Manual override rarely needed.
+- Only single compression format is supported. For multiple encodings, manually apply multi-stage `DecompressionStream` before passing to this function.
 
 ---
 
@@ -200,7 +202,8 @@ Content-Type: text/csv; charset=shift-jis
 **Supported values:**
 - `gzip`
 - `deflate`
-- `gzip, deflate` (multiple encodings)
+
+**Note:** Only single compression format is supported. For responses with multiple encodings (e.g., `Content-Encoding: gzip, deflate`), manually apply multi-stage `DecompressionStream` before passing to this function.
 
 **Example headers:**
 ```

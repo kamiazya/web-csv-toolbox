@@ -21,6 +21,8 @@ export function resolveImportsPlugin(): Plugin {
   // Track which modules belong to which entry
   const moduleToEntry = new Map<string, string>();
   let currentEntry: string | null = null;
+  // Check if we're building for Node.js (from worker bundle build or other node builds)
+  const buildTarget = process.env.TARGET;
 
   return {
     name: "vite-plugin-resolve-imports",
@@ -30,6 +32,9 @@ export function resolveImportsPlugin(): Plugin {
       // Reset state for each build
       moduleToEntry.clear();
       currentEntry = null;
+      if (buildTarget) {
+        console.log(`[resolve-imports] Build target from env: ${buildTarget}`);
+      }
     },
 
     async resolveId(source, importer, options) {
@@ -39,6 +44,14 @@ export function resolveImportsPlugin(): Plugin {
         console.log(`[resolve-imports] Entry point: ${normalizedSource}`);
         currentEntry = normalizedSource;
         moduleToEntry.set(normalizedSource, normalizedSource);
+
+        // If no explicit build target, infer from entry filename
+        if (!buildTarget && normalizedSource.includes(".node.")) {
+          console.log(`[resolve-imports] Inferred Node.js target from entry: ${normalizedSource}`);
+        } else if (!buildTarget && !normalizedSource.includes(".node.")) {
+          console.log(`[resolve-imports] Inferred Web target from entry: ${normalizedSource}`);
+        }
+
         return null; // Let Vite handle the actual resolution
       }
 
@@ -60,32 +73,42 @@ export function resolveImportsPlugin(): Plugin {
         return null;
       }
 
-      // Determine target environment from importer path by checking the module chain
+      // Determine target environment from importer path
       let isNodeFile = false;
 
-      // Check importer's entry by walking up the chain
-      if (importer) {
-        // Skip _shared.ts and other shared files - they should default to web
-        // Also skip .main.ts files as they're imported by both web and node entries
-        const isSharedFile = importer.includes("/_shared.ts") ||
-                            importer.includes("/worker/helpers/ReusableWorkerPool.ts") ||
-                            importer.includes("/worker/helpers/WorkerSession.ts") ||
-                            importer.includes(".main.ts");
+      // Override with build target from environment if available (highest priority)
+      // This is crucial for worker bundles where the entry point detection may not work
+      if (buildTarget === "node") {
+        isNodeFile = true;
+      } else if (buildTarget === "web") {
+        isNodeFile = false;
+      } else if (importer) {
+        // For preserveModules builds, infer from importer's filename directly
+        // This is more reliable than tracking entry points
+        const isSharedFile = importer.includes("/_shared.ts");
 
         if (!isSharedFile) {
-          // First check if the importer itself is tracked
-          let entry = moduleToEntry.get(importer);
-
-          // If not found, try to infer from filename
-          if (!entry && importer.includes(".node.")) {
+          // Check importer's filename for .node. pattern
+          if (importer.includes(".node.")) {
             isNodeFile = true;
-          } else if (entry && entry.includes(".node.")) {
-            isNodeFile = true;
+          } else if (importer.includes(".web.")) {
+            isNodeFile = false;
+          } else {
+            // For files without explicit .node/.web, check the module chain
+            const entry = moduleToEntry.get(importer);
+            if (entry && entry.includes(".node.")) {
+              isNodeFile = true;
+            }
           }
+        }
+      } else if (currentEntry) {
+        // Fallback: infer from current entry filename
+        if (currentEntry.includes(".node.")) {
+          isNodeFile = true;
         }
       }
 
-      console.log(`[resolve-imports] Resolving ${source} from ${importer}, isNodeFile=${isNodeFile}`);
+      console.log(`[resolve-imports] Resolving ${source} from ${importer}, isNodeFile=${isNodeFile}, buildTarget=${buildTarget}`);
 
       // Map # imports to actual source files
       const importMap: Record<string, { node: string; web: string }> = {
@@ -144,6 +167,57 @@ export function resolveImportsPlugin(): Plugin {
         // This is handled in resolveId via moduleToEntry tracking
       }
       return null; // Let other plugins/Vite handle loading
+    },
+
+    // Post-process output to fix imports in shared modules for preserveModules builds
+    generateBundle(options, bundle) {
+      // Only for preserveModules builds
+      if (!options.preserveModules) return;
+
+      // Identify shared modules that import environment-specific modules
+      const sharedModulesNeedingDuplication = new Set<string>();
+      const fileImporters = new Map<string, Set<string>>();
+
+      // First pass: build importer graph
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+
+        for (const importedFile of chunk.imports) {
+          if (!fileImporters.has(importedFile)) {
+            fileImporters.set(importedFile, new Set());
+          }
+          fileImporters.get(importedFile)!.add(fileName);
+        }
+
+        // Check if this module imports environment-specific modules
+        if (chunk.code.match(/\.(node|web)\.js/)) {
+          const importers = fileImporters.get(fileName) || new Set();
+          const hasNodeImporter = Array.from(importers).some(f => f.includes('.node.'));
+          const hasWebImporter = Array.from(importers).some(f => f.includes('.web.'));
+
+          // If imported by both node and web entries, needs duplication
+          if (hasNodeImporter && hasWebImporter && !fileName.includes('.node.') && !fileName.includes('.web.')) {
+            sharedModulesNeedingDuplication.add(fileName);
+          }
+        }
+      }
+
+      // For now, just fix imports by replacing with correct environment variant
+      // based on the importing file
+      for (const [fileName, chunk] of Object.entries(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+
+        const isNodeFile = fileName.includes('.node.');
+        const isWebFile = fileName.includes('.web.') || (!isNodeFile && !fileName.includes('.node.'));
+
+        if (isWebFile && chunk.code.includes('.node.js')) {
+          chunk.code = chunk.code.replace(/\.node\.js/g, '.web.js');
+          console.log(`[resolve-imports] Fixed ${fileName} to use .web.js imports`);
+        } else if (isNodeFile && chunk.code.includes('.web.js')) {
+          chunk.code = chunk.code.replace(/\.web\.js/g, '.node.js');
+          console.log(`[resolve-imports] Fixed ${fileName} to use .node.js imports`);
+        }
+      }
     },
   };
 }

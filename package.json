@@ -5,7 +5,7 @@
   "type": "module",
   "module": "dist/main.web.js",
   "types": "dist/main.web.d.ts",
-  "packageManager": "pnpm@9.3.0",
+  "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -24,6 +24,12 @@
       "default": "./dist/lite.web.js"
     },
     "./worker": {
+      "import": {
+        "types": "./dist/worker.d.ts",
+        "node": "./dist/worker.node.bundle.js",
+        "browser": "./dist/worker.web.bundle.js",
+        "default": "./dist/worker.web.bundle.js"
+      },
       "node": {
         "types": "./dist/worker.node.d.ts",
         "default": "./dist/worker.node.js"
@@ -37,18 +43,24 @@
         "default": "./dist/worker.web.js"
       }
     },
-    "./worker.bundle": {
+    "./worker/lite": {
+      "import": {
+        "types": "./dist/worker.lite.d.ts",
+        "node": "./dist/worker.lite.node.bundle.js",
+        "browser": "./dist/worker.lite.web.bundle.js",
+        "default": "./dist/worker.lite.web.bundle.js"
+      },
       "node": {
-        "types": "./dist/worker.node.d.ts",
-        "default": "./dist/worker.node.bundle.js"
+        "types": "./dist/worker.lite.node.d.ts",
+        "default": "./dist/worker.lite.node.js"
       },
       "browser": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.bundle.js"
+        "types": "./dist/worker.lite.web.d.ts",
+        "default": "./dist/worker.lite.web.js"
       },
       "default": {
-        "types": "./dist/worker.web.d.ts",
-        "default": "./dist/worker.web.bundle.js"
+        "types": "./dist/worker.lite.web.d.ts",
+        "default": "./dist/worker.lite.web.js"
       }
     },
     "./*": {
@@ -123,7 +135,7 @@
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
     "graph": "madge --extensions ts --image graph.svg src/",
-    "graph:main": "madge --extensions ts --image graph-main.svg src/main.ts",
+    "graph:main": "madge --extensions ts --image graph-main.svg src/main.node.ts src/main.web.ts src/_shared.ts",
     "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker.node.ts src/worker.web.ts",
     "graph:json": "madge --extensions ts --json src/",
     "graph:summary": "madge --extensions ts --summary src/",
@@ -132,10 +144,17 @@
     "test:browser": "vitest --browser --project browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
+    "test:examples": "pnpm test:examples:webpack && pnpm test:examples:vite",
+    "test:examples:webpack": "pnpm test:examples:webpack-main && pnpm test:examples:webpack-lite",
+    "test:examples:webpack-main": "cd examples/webpack-bundle-worker-main && pnpm test",
+    "test:examples:webpack-lite": "cd examples/webpack-bundle-worker-lite && pnpm test",
+    "test:examples:vite": "pnpm test:examples:vite-main && pnpm test:examples:vite-lite",
+    "test:examples:vite-main": "cd examples/vite-bundle-worker-main && pnpm test",
+    "test:examples:vite-lite": "cd examples/vite-bundle-worker-lite && pnpm test",
     "build": "pnpm build:wasm && pnpm build:js && pnpm build:worker-bundle",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
-    "build:worker-bundle": "TARGET=web vite build --config vite.config.worker-bundle.ts && TARGET=node vite build --config vite.config.worker-bundle.ts",
+    "build:worker-bundle": "TARGET=web VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=web VARIANT=lite vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=lite vite build --config vite.config.worker-bundle.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",
@@ -167,6 +186,7 @@
     "@codecov/vite-plugin": "^1.9.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.4",
+    "@types/node": "^24.10.1",
     "@vitest/browser-webdriverio": "^4.0.3",
     "@vitest/coverage-istanbul": "4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
@@ -176,8 +196,8 @@
     "terser": "^5.42.0",
     "typedoc": "^0.28.14",
     "typedoc-plugin-mdn-links": "^5.0.2",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.12",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "4.0.3",
     "wasm-pack": "^0.13.1",

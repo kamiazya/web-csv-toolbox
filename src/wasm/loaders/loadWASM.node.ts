@@ -47,9 +47,7 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   // Node.js-specific WASM loading
   // Use import.meta.resolve to find the WASM file from the installed package
   // This works correctly both in development and when distributed as a package
-  // @ts-expect-error - node: protocol imports are valid but may cause type errors
   const { readFile } = await import("node:fs/promises");
-  // @ts-expect-error - node: protocol imports are valid but may cause type errors
   const { fileURLToPath } = await import("node:url");
 
   // Resolve WASM file path from the web-csv-toolbox-wasm package

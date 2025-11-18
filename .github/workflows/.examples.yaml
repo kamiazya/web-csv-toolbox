@@ -1,0 +1,170 @@
+name: Examples
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+        description: The token to upload coverage reports to Codecov
+
+jobs:
+  build_examples:
+    name: Build Examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          # Vite examples
+          - name: vite-bundle-lite
+            type: vite
+          - name: vite-bundle-main
+            type: vite
+          - name: vite-bundle-worker-lite
+            type: vite
+          - name: vite-bundle-worker-main
+            type: vite
+          # Webpack examples
+          - name: webpack-bundle-worker-lite
+            type: webpack
+          - name: webpack-bundle-worker-main
+            type: webpack
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist
+
+      - name: Build example - ${{ matrix.example.name }}
+        run: |
+          cd examples/${{ matrix.example.name }}
+          pnpm install
+          pnpm run build
+        env:
+          NODE_ENV: production
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Verify build artifacts - ${{ matrix.example.name }}
+        run: |
+          cd examples/${{ matrix.example.name }}
+          if [ ! -d "dist" ]; then
+            echo "Error: dist directory not found"
+            exit 1
+          fi
+          # Check if dist has files
+          if [ -z "$(ls -A dist)" ]; then
+            echo "Error: dist directory is empty"
+            exit 1
+          fi
+          echo "✓ Build artifacts verified"
+
+      - name: Upload example artifact - ${{ matrix.example.name }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: example-${{ matrix.example.name }}
+          path: examples/${{ matrix.example.name }}/dist
+          retention-days: 1
+
+  test_node_examples:
+    name: Test Node Examples
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - node-lite
+          - node-main
+          - node-worker-main
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist
+
+      - name: Install example dependencies - ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm install
+
+      - name: Run example - ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          timeout 30s pnpm start || exit_code=$?
+          # Exit code 124 means timeout (success for our purposes)
+          # Exit code 0 means normal completion
+          if [ ${exit_code:-0} -eq 124 ] || [ ${exit_code:-0} -eq 0 ]; then
+            echo "✓ Example ran successfully"
+            exit 0
+          else
+            echo "✗ Example failed with exit code ${exit_code:-0}"
+            exit ${exit_code:-1}
+          fi
+        env:
+          NODE_ENV: production
+
+  test_browser_examples:
+    name: Test Browser Examples
+    runs-on: ubuntu-latest
+    needs: build_examples
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - vite-bundle-worker-main
+          - vite-bundle-worker-lite
+          - webpack-bundle-worker-main
+          - webpack-bundle-worker-lite
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: dist
+          path: dist
+
+      - name: Download example artifact - ${{ matrix.example }}
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: example-${{ matrix.example }}
+          path: examples/${{ matrix.example }}/dist
+
+      - name: Install example dependencies - ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm install
+
+      - name: Install Playwright browsers
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright tests - ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm test
+        env:
+          CI: true

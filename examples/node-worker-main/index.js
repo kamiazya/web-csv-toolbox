@@ -13,9 +13,9 @@ console.log(csv);
 console.log();
 
 async function testWorkerParsing() {
-  console.log("⏳ Parsing with Worker (JavaScript engine)...");
+  console.log("⏳ Parsing with Worker (JavaScript engine, non-blocking)...");
 
-  // Create a worker pool with manual cleanup
+  // Create a worker pool (single task, not parallel processing)
   const pool = new ReusableWorkerPool({ maxWorkers: 2 });
 
   try {
@@ -39,8 +39,9 @@ async function testWorkerParsing() {
 }
 
 async function testWorkerWASMParsing() {
-  console.log("⏳ Parsing with Worker + WASM...");
+  console.log("⏳ Parsing with Worker + WASM (non-blocking)...");
 
+  // Create a worker pool (single task, not parallel processing)
   const pool = new ReusableWorkerPool({ maxWorkers: 2 });
 
   try {
@@ -64,8 +65,9 @@ async function testWorkerWASMParsing() {
 }
 
 async function testParallelParsing() {
-  console.log("⏳ Parallel parsing with multiple Workers...");
+  console.log("⏳ Parallel processing: multiple CSV files with multiple Workers...");
 
+  // Create a worker pool for parallel processing (3 concurrent tasks)
   const pool = new ReusableWorkerPool({ maxWorkers: 3 });
 
   try {

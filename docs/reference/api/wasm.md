@@ -16,7 +16,7 @@ The WASM API provides high-performance CSV parsing using WebAssembly. It offers 
 - Manual preloading is optional but can improve first-parse performance
 - All WASM functions share the same initialized instance
 
-⚠️ **Experimental**: WASM automatic initialization is experimental and may change in future versions. Currently embeds WASM as base64 (~110KB) in the JavaScript bundle for automatic initialization. Future versions may change this loading strategy for better bundle size optimization.
+⚠️ **Experimental**: WASM automatic initialization is experimental and may change in future versions. The loading strategy depends on which entry point you use (`web-csv-toolbox` uses embedded base64, `web-csv-toolbox/lite` uses external loading). Future versions may change this loading strategy for better bundle size optimization.
 
 ---
 

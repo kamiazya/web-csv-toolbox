@@ -22,6 +22,60 @@ By the end of this tutorial, you'll be able to:
 - Node.js LTS or a modern browser
 - Basic understanding of async/await
 
+## Choosing an Entry Point
+
+The library provides two entry points for WASM functionality. Choose based on your needs:
+
+### Main Entry Point (`web-csv-toolbox`) - Recommended for Most Users
+
+```typescript
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// Auto-initialized - works immediately
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Best for:**
+- ✅ Rapid prototyping and development
+- ✅ When you want the simplest API
+- ✅ Applications where bundle size is not critical
+
+**Characteristics:**
+- Automatic WASM initialization (no `loadWASM()` call needed)
+- Larger bundle size (WASM embedded as base64)
+- ⚠️ Experimental auto-initialization may change in future
+
+### Lite Entry Point (`web-csv-toolbox/lite`) - For Bundle Size Optimization
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+
+// Manual initialization required
+await loadWASM();
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Best for:**
+- ✅ Production applications with bundle size budgets
+- ✅ When optimizing initial load time
+- ✅ When you want explicit control over WASM loading
+
+**Characteristics:**
+- Manual `loadWASM()` call required before using WASM features
+- Smaller main bundle size (WASM external)
+- External WASM file for better caching
+
+**Comparison:**
+
+| Aspect | Main | Lite |
+|--------|------|------|
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
+| **Initialization** | Automatic | Manual |
+| **API Complexity** | Simpler | Requires `loadWASM()` |
+| **Use Case** | Convenience | Bundle optimization |
+
+> **Note**: This tutorial uses the **main entry point** (`web-csv-toolbox`) for simplicity. To use the lite version, simply import from `web-csv-toolbox/lite` and add `await loadWASM()` before using WASM functions.
+
 ## What is WebAssembly?
 
 WebAssembly (WASM) is a binary instruction format that runs in modern browsers and runtimes. For CSV parsing, this means:

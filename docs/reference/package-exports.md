@@ -5,15 +5,15 @@ group: Reference
 
 # Package Exports Reference
 
-## Main Export
+## Main Exports
 
-### `web-csv-toolbox`
+### `web-csv-toolbox` (Default - Full Features)
 
 ```typescript
 import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 ```
 
-**Resolves to**: `./dist/web-csv-toolbox.js`
+**Resolves to**: `./dist/main.js`
 
 **Exports**:
 - All parsing functions (`parseString`, `parseBinary`, etc.)
@@ -27,6 +27,45 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 - Low-level APIs (`DefaultStringCSVLexer`, `DefaultCSVRecordAssembler`, etc.)
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
+
+**Characteristics**:
+- ✅ Automatic WASM initialization (works immediately)
+- ✅ All features available
+- ⚠️ Larger bundle size (WASM embedded as base64)
+
+### `web-csv-toolbox/lite` (Lite - Smaller Bundle)
+
+```typescript
+import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+```
+
+**Resolves to**: `./dist/lite.js`
+
+**Exports**:
+- All parsing functions (same as main)
+- Engine configuration (same as main)
+- Low-level APIs (same as main)
+- Worker management (same as main)
+- WASM utilities with **manual initialization required**:
+  - `loadWASM()` - **Must be called before using WASM functions**
+  - `isSyncInitialized()` - Check WASM initialization status
+  - `parseStringToArraySyncWASM()` - Synchronous WASM parsing
+
+**Characteristics**:
+- ✅ Smaller main bundle (WASM not embedded in JavaScript)
+- ✅ External WASM loading for better caching
+- ❌ Requires manual `loadWASM()` call before using WASM features
+
+**Usage pattern**:
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+
+// Must initialize WASM before use
+await loadWASM();
+
+// Now can use WASM functions
+const records = parseStringToArraySyncWASM(csv);
+```
 
 ## Worker Export
 

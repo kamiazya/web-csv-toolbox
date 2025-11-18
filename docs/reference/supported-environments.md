@@ -307,7 +307,7 @@ See [Automatic Fallback Behavior](../explanation/execution-strategies.md#automat
 
 **DecompressionStream:**
 - ✅ Fully supported in Node.js LTS Worker Threads
-- Can decompress gzip, deflate, and deflate-raw formats
+- Can decompress gzip and deflate formats (deflate-raw is experimental and may vary by Node.js version)
 - Works seamlessly with the `decompression` option in worker mode
 
 ```typescript

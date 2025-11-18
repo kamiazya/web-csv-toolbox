@@ -19,7 +19,14 @@ This library provides multiple import paths for different use cases. The appropr
    const records = parseStringToArraySyncWASM(csv); // Auto-initialized
    ```
 
-2. **Worker file** (`web-csv-toolbox/worker`): Only needed when using bundlers with worker-based parsing
+2. **Lite library** (`web-csv-toolbox/lite`): Smaller bundle size, manual WASM initialization required
+   ```typescript
+   import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+   await loadWASM(); // Must call before using WASM functions
+   const records = parseStringToArraySyncWASM(csv);
+   ```
+
+3. **Worker file** (`web-csv-toolbox/worker`): Only needed when using bundlers with worker-based parsing
    ```typescript
    // Vite
    import workerUrl from 'web-csv-toolbox/worker?url';
@@ -28,7 +35,7 @@ This library provides multiple import paths for different use cases. The appropr
    const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url);
    ```
 
-3. **WASM module** (`web-csv-toolbox/csv.wasm`): For advanced deployment scenarios
+4. **WASM module** (`web-csv-toolbox/csv.wasm`): For advanced deployment scenarios
    - Default: WASM is automatically loaded (no manual import needed)
    - Advanced: Import directly for separate caching or custom loading
 
@@ -36,25 +43,90 @@ The library handles environment detection and optimizations automatically using 
 
 ## Available Import Paths
 
-| Import Path | Purpose | Typical Usage |
-|-------------|---------|---------------|
-| `web-csv-toolbox` | Full features (auto-initialization) | ✅ Default choice |
-| `web-csv-toolbox/worker` | Worker implementation | ✅ Via bundler |
-| `web-csv-toolbox/csv.wasm` | WebAssembly module | ⚠️ Advanced scenarios |
+| Import Path | Purpose | Bundle Size | Typical Usage |
+|-------------|---------|-------------|---------------|
+| `web-csv-toolbox` | Full features (auto-initialization) | Larger (WASM embedded in JS) | ✅ Default choice |
+| `web-csv-toolbox/lite` | Smaller bundle (manual initialization) | Smaller (WASM as separate file) | ✅ Bundle size optimization |
+| `web-csv-toolbox/worker` | Worker implementation | - | ✅ Via bundler |
+| `web-csv-toolbox/csv.wasm` | WebAssembly module | WASM binary only | ⚠️ Advanced scenarios |
+
+> **Note**: Bundle sizes vary depending on the bundler, tree-shaking, and build configuration. The lite version reduces the main JavaScript bundle size by not embedding the WASM binary.
 
 ## How It Works
 
-### 1. Main Entry Point (`web-csv-toolbox`)
+### 1. Entry Point Variants: Main vs Lite
 
-The main entry point exports the public API:
+The library provides two entry points with different trade-offs:
+
+#### Main Entry Point (`web-csv-toolbox`)
+
+**Best for**: Most users who want automatic WASM initialization and convenience
+
+```typescript
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// Auto-initialized - works immediately
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Characteristics:**
+- ✅ Automatic WASM initialization (just works!)
+- ✅ All features available immediately
+- ✅ Simpler API (no manual `loadWASM()` call needed)
+- ⚠️ Larger bundle size (WASM binary embedded as base64)
+- ⚠️ **Experimental**: Auto-init may change in future versions
+
+**When to use:**
+- Rapid prototyping and development
+- Applications where bundle size is not critical
+- When you want the simplest possible API
+
+#### Lite Entry Point (`web-csv-toolbox/lite`)
+
+**Best for**: Bundle size-sensitive applications
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+
+// Manual initialization required
+await loadWASM();
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Characteristics:**
+- ✅ Smaller bundle size (no embedded WASM)
+- ✅ External WASM loading for better caching
+- ✅ More control over initialization timing
+- ❌ Requires manual `loadWASM()` call
+- ❌ More code to write
+
+**When to use:**
+- Production applications optimizing bundle size
+- Applications with performance budgets
+- When you want explicit control over WASM loading
+
+**Bundle Size Comparison:**
+
+| Entry Point | Main Bundle | WASM Binary | Total (Approx.) |
+|-------------|-------------|-------------|-----------------|
+| `web-csv-toolbox` | Larger (WASM embedded) | - | Larger |
+| `web-csv-toolbox/lite` | Smaller | Separate file | Smaller overall |
+
+> **Note**: Actual bundle sizes depend on bundler configuration, tree-shaking, and compression. The lite version reduces the main JavaScript bundle size by not embedding the WASM binary (which is instead loaded as a separate asset).
+
+### 2. Main Export API
+
+Both entry points export the same public API:
 
 ```typescript
 import { parseString } from 'web-csv-toolbox';
+// or
+import { parseString } from 'web-csv-toolbox/lite';
 ```
 
-This always resolves to `./dist/web-csv-toolbox.js` regardless of environment.
+The main export resolves to `./dist/main.js` (main) or `./dist/lite.js` (lite) respectively.
 
-### 2. Worker Entry Point (`web-csv-toolbox/worker`)
+### 3. Worker Entry Point (`web-csv-toolbox/worker`)
 
 The worker entry point provides environment-specific implementations:
 
@@ -80,7 +152,7 @@ const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url); // Webpack
    - Uses browser implementation (`worker.web.js`)
    - Covers Deno and other environments
 
-### 3. WASM Module (`web-csv-toolbox/csv.wasm`)
+### 4. WASM Module (`web-csv-toolbox/csv.wasm`)
 
 **What is it?**
 

@@ -315,6 +315,8 @@ for await (const record of parse(binary, {
 
 Decompression method for compressed CSV data.
 
+**Note:** `deflate-raw` support is experimental and runtime-dependent. `gzip` and `deflate` are well-tested and recommended for production use.
+
 **Example:**
 ```typescript
 // Gzipped CSV

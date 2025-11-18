@@ -7,16 +7,14 @@
  */
 export async function createWorker(workerURL?: string | URL): Promise<Worker> {
   // Dynamic import for Node.js Worker and URL utilities
-  // @ts-expect-error: node:worker_threads is only available in Node.js
   const { Worker } = await import("node:worker_threads");
-  // @ts-expect-error: node:url is only available in Node.js
   const { fileURLToPath } = await import("node:url");
-  // @ts-expect-error: node:path is only available in Node.js
   const { dirname, join } = await import("node:path");
 
   if (workerURL) {
     // Use provided worker URL
-    return new Worker(workerURL, { type: "module" });
+    // @ts-expect-error: Node.js Worker accepts { type: "module" } but Web Worker types don't include this
+    return new Worker(workerURL, { type: "module" }) as unknown as Worker;
   }
 
   // Compute worker.node.js path relative to this module
@@ -32,5 +30,6 @@ export async function createWorker(workerURL?: string | URL): Promise<Worker> {
     ? join(currentDir, "..", "..", "..", "dist", "worker.node.js") // From src/worker/helpers to dist/worker.node.js
     : join(currentDir, "..", "..", "worker.node.js"); // From dist/worker/helpers to dist/worker.node.js
 
-  return new Worker(workerPath, { type: "module" });
+  // @ts-expect-error: Node.js Worker accepts { type: "module" } but Web Worker types don't include this
+  return new Worker(workerPath, { type: "module" }) as unknown as Worker;
 }

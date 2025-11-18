@@ -9,8 +9,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
-    "vite": "^7.1.12"
+    "@codecov/vite-plugin": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   },
   "dependencies": {
     "web-csv-toolbox": "workspace:*"

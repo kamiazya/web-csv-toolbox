@@ -49,6 +49,8 @@ jobs:
         run: pnpm run build:js
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Build Worker Bundles
+        run: pnpm run build:worker-bundle
       - name: Check Circular Dependencies
         run: pnpm check:circular
       - name: Type Check

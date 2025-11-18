@@ -52,5 +52,6 @@ export * from "@/utils/file/getOptionsFromFile.ts";
 // ============================================================================
 // Worker helpers
 // ============================================================================
-export * from "@/worker/helpers/ReusableWorkerPool.ts";
-export * from "@/worker/helpers/WorkerSession.ts";
+// Note: ReusableWorkerPool and WorkerSession are exported separately in
+// main.node.ts and main.web.ts to ensure correct environment-specific
+// createWorker implementation is used

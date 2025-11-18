@@ -1,0 +1,21 @@
+{
+  "name": "vite-bundle-worker-lite",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "preview": "vite preview --port 5174",
+    "dev": "vite",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "dependencies": {
+    "web-csv-toolbox": "workspace:*"
+  },
+  "devDependencies": {
+    "@codecov/vite-plugin": "catalog:",
+    "@playwright/test": "catalog:",
+    "vite": "catalog:"
+  }
+}

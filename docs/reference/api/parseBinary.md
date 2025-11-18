@@ -60,7 +60,7 @@ Parsing options including binary-specific settings.
 interface ParseBinaryOptions<Header> extends ParseOptions<Header> {
   // Binary-specific options
   charset?: string;              // Default: 'utf-8'
-  decompression?: 'gzip' | 'deflate' | 'gzip, deflate';
+  decompression?: 'gzip' | 'deflate' | 'deflate-raw';  // deflate-raw is experimental
   ignoreBOM?: boolean;           // Default: false
 
   // Common parsing options
@@ -722,7 +722,7 @@ See: [Supported Environments](../supported-environments.md)
 **Key Features:**
 - ✅ Multiple character encoding support
 - ✅ Automatic BOM handling
-- ✅ Built-in decompression (gzip, deflate)
+- ✅ Built-in decompression (gzip, deflate; deflate-raw is experimental)
 - ✅ Worker and WASM execution support
 - ✅ Full TypeScript support
 - ✅ Platform-standard encoding conversion

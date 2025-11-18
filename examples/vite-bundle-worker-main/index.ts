@@ -1,4 +1,7 @@
 import { parseString, ReusableWorkerPool } from "web-csv-toolbox";
+// Import worker bundle URL from package exports
+// Vite's ?url suffix returns the URL for the module
+import workerUrl from "web-csv-toolbox/worker?url";
 
 const csv = `name,age
 Alice,30
@@ -45,11 +48,11 @@ document.getElementById("test1")?.addEventListener("click", async () => {
   button.disabled = true;
 
   try {
-    displayResult("result1", "⏳ Parsing with Worker (JavaScript engine)...", "info");
+    displayResult("result1", "⏳ Parsing with Worker (JavaScript engine, non-blocking)...", "info");
 
     const pool = new ReusableWorkerPool({
       maxWorkers: 2,
-      workerURL: "./worker.js",  // Built from csv-worker.ts
+      workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
 
     try {
@@ -85,11 +88,11 @@ document.getElementById("test2")?.addEventListener("click", async () => {
   button.disabled = true;
 
   try {
-    displayResult("result2", "⏳ Parsing with Worker + WASM...", "info");
+    displayResult("result2", "⏳ Parsing with Worker + WASM (non-blocking)...", "info");
 
     const pool = new ReusableWorkerPool({
       maxWorkers: 2,
-      workerURL: "./worker.js",  // Built from csv-worker.ts
+      workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
 
     try {
@@ -126,11 +129,11 @@ document.getElementById("test3")?.addEventListener("click", async () => {
   button.disabled = true;
 
   try {
-    displayResult("result3", "⏳ Parallel parsing with multiple Workers...", "info");
+    displayResult("result3", "⏳ Parallel processing: multiple CSV files with multiple Workers...", "info");
 
     const pool = new ReusableWorkerPool({
       maxWorkers: 3,
-      workerURL: "./worker.js",  // Built from csv-worker.ts
+      workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
 
     try {

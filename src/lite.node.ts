@@ -22,6 +22,12 @@
 export * from "@/_shared.ts";
 
 // ============================================================================
+// Worker helpers (Node.js-specific imports)
+// ============================================================================
+export * from "@/worker/helpers/ReusableWorkerPool.ts";
+export * from "@/worker/helpers/WorkerSession.ts";
+
+// ============================================================================
 // Lite-specific: Manual WASM initialization
 // ============================================================================
 export { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.lite.ts";

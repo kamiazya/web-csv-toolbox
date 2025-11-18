@@ -129,10 +129,40 @@ import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 const records = parseStringToArraySyncWASM(csv);
 ```
 
+**Characteristics:**
 - ✅ Full features including synchronous WASM APIs
 - ✅ Automatic WASM initialization (just works!)
-- ⚠️ **Experimental**: WASM auto-init embeds WASM as base64 (~110KB), may change in future
-- ✅ Bundle size: ~200KB
+- ⚠️ **Experimental**: WASM auto-init embeds WASM as base64, may change in future
+- ⚠️ Larger bundle size (WASM embedded in main bundle)
+
+### `web-csv-toolbox/lite` (Lite - Smaller Bundle)
+
+**Best for**: Bundle size-sensitive applications and production optimization
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+
+// Manual initialization required
+await loadWASM();
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Characteristics:**
+- ✅ Smaller main bundle (WASM not embedded)
+- ✅ External WASM loading for better caching
+- ✅ Explicit control over initialization timing
+- ❌ Requires manual `loadWASM()` call before using WASM features
+
+**Comparison:**
+
+| Aspect | Main | Lite |
+|--------|------|------|
+| **Initialization** | Automatic | Manual (`loadWASM()` required) |
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
+| **Caching** | Single bundle | WASM cached separately |
+| **Use Case** | Convenience, prototyping | Production, bundle optimization |
+
+> **Note**: Both entry points export the same full API. The only difference is WASM initialization strategy and bundle size.
 
 ## Usage 📘
 
@@ -611,7 +641,7 @@ console.log(result);
 | --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
 | `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility). Default support: gzip, deflate. deflate-raw is runtime-dependent and experimental (requires `allowExperimentalCompressions: true` for Response/Request inputs). |
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
 | `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
@@ -723,7 +753,8 @@ try {
 ```js
 import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-// 2-3x faster for large CSV strings (UTF-8 only)
+// Compiled WASM code for improved performance (UTF-8 only)
+// See CodSpeed benchmarks for actual performance metrics
 const records = parseStringToArraySyncWASM(csvString);
 ```
 
@@ -788,7 +819,7 @@ try {
 
 #### Using Experimental Compression Formats
 
-By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+By default, the library only supports well-tested compression formats: `gzip` and `deflate`. Some runtimes may support additional formats like `deflate-raw` or Brotli, but these are runtime-dependent and not guaranteed. If you need to use these formats, you can enable experimental mode:
 
 ```js
 import { parse } from 'web-csv-toolbox';

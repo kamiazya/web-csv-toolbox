@@ -104,7 +104,60 @@ export default defineConfig(({ command }) => ({
       insertTypesEntry: true,
       outDir: "dist",
       exclude: ["**/*.test.ts", "**/*.spec.ts", "**/*.test-d.ts", "**/__tests__/**/*"],
-      copyDtsFiles: true,
+      tsconfigPath: "./tsconfig.base.json",
+      entryRoot: "src",
+      rollupTypes: false,
+      afterBuild: async () => {
+        // Fix incorrect relative paths in generated .d.ts files
+        const { readdir, readFile, writeFile, stat } = await import("node:fs/promises");
+        const { join, relative, dirname, resolve } = await import("node:path");
+
+        const distDir = join(process.cwd(), "dist");
+
+        async function fixDtsFiles(dir: string) {
+          const files = await readdir(dir);
+
+          for (const file of files) {
+            const filePath = join(dir, file);
+            const stats = await stat(filePath);
+
+            if (stats.isDirectory()) {
+              // Recursively process subdirectories
+              await fixDtsFiles(filePath);
+            } else if (file.endsWith('.d.ts')) {
+              let content = await readFile(filePath, 'utf-8');
+              const originalContent = content;
+
+              // Replace long incorrect paths like '../../../../../../../src/X.ts' with proper relative paths
+              // Match any number of '../' followed by 'src/'
+              content = content.replace(
+                /from ['"](?:\.\.\/)+src\/([^'"]+)['"]/g,
+                (match, modulePath) => {
+                  // Remove .ts extension if present
+                  const cleanPath = modulePath.replace(/\.ts$/, '');
+
+                  // Calculate relative path from current file's directory to target
+                  const currentDir = dirname(filePath);
+                  const targetPath = join(distDir, cleanPath);
+                  const relativePath = relative(currentDir, targetPath);
+
+                  // Convert to forward slashes and add ./ prefix if needed
+                  const normalizedPath = relativePath.replace(/\\/g, '/');
+                  return `from '${normalizedPath.startsWith('.') ? normalizedPath : './' + normalizedPath}'`;
+                }
+              );
+
+              if (content !== originalContent) {
+                await writeFile(filePath, content, 'utf-8');
+                const relPath = relative(distDir, filePath);
+                console.log(`[vite:dts] Fixed paths in ${relPath}`);
+              }
+            }
+          }
+        }
+
+        await fixDtsFiles(distDir);
+      },
     }),
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,

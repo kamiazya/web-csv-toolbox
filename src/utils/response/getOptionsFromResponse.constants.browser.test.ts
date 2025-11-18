@@ -75,7 +75,9 @@ describe("SUPPORTED_COMPRESSIONS in browser", () => {
 
     // Test that each format in SUPPORTED_COMPRESSIONS actually works
     for (const format of SUPPORTED_COMPRESSIONS) {
-      expect(() => new DecompressionStream(format as CompressionFormat)).not.toThrow();
+      expect(
+        () => new DecompressionStream(format as CompressionFormat),
+      ).not.toThrow();
     }
   });
 });

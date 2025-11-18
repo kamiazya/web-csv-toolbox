@@ -11,6 +11,10 @@ This document explains the WebAssembly (WASM) implementation in web-csv-toolbox 
 
 web-csv-toolbox includes an optional WebAssembly module that provides improved CSV parsing performance compared to the JavaScript implementation. The WASM module is a compiled version of optimized parsing code that runs at near-native speed.
 
+The library provides two entry points for WASM functionality:
+- **Main entry point** (`web-csv-toolbox`): Automatic WASM initialization with embedded binary
+- **Lite entry point** (`web-csv-toolbox/lite`): Manual initialization with external WASM loading
+
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │ High-Level API (parse, parseString, etc.)                   │
@@ -38,6 +42,117 @@ web-csv-toolbox includes an optional WebAssembly module that provides improved C
 - Initialization is automatic when using WASM-enabled features
 - Can be combined with Worker Threads for non-blocking parsing
 - Compiled from Rust code using LLVM optimization
+
+---
+
+## Entry Point Architecture
+
+The library provides two distinct entry points for accessing WASM functionality, each with different trade-offs.
+
+### Main Entry Point (`web-csv-toolbox`)
+
+**Automatic initialization with embedded WASM**
+
+```typescript
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// Works immediately - WASM auto-initialized
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**How it works:**
+1. WASM binary is embedded as base64 in the JavaScript bundle
+2. On first use of a WASM function, initialization happens automatically
+3. Subsequent calls use the already-initialized module
+
+**Implementation:**
+- WASM binary is converted to base64 at build time
+- Embedded in the main bundle as a string constant
+- Decoded and initialized on demand
+
+**Characteristics:**
+- ✅ Convenience: No manual initialization required
+- ✅ Simplicity: One import, ready to use
+- ⚠️ Bundle size: WASM binary embedded in main JavaScript bundle
+- ⚠️ **Experimental**: Auto-init strategy may change in future versions
+
+**When to use:**
+- Rapid prototyping and development
+- Applications where bundle size is not critical
+- When you prioritize developer experience over bundle size
+
+### Lite Entry Point (`web-csv-toolbox/lite`)
+
+**Manual initialization with external WASM loading**
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+
+// Must initialize before use
+await loadWASM();
+
+// Now can use WASM functions
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**How it works:**
+1. WASM binary is distributed as a separate `.wasm` file
+2. User must explicitly call `loadWASM()` before using WASM functions
+3. WASM file is loaded from the network (or local file system in Node.js)
+
+**Implementation:**
+- WASM binary is a separate asset in the distribution
+- Loaded via `fetch()` in browsers or `fs.readFile()` in Node.js
+- Bundlers handle WASM file as a static asset
+
+**Characteristics:**
+- ✅ Smaller main bundle: WASM not embedded (loaded as separate asset)
+- ✅ Better caching: WASM file can be cached separately
+- ✅ Explicit control: Choose when to initialize
+- ❌ Requires manual initialization step
+- ❌ Potential initialization error if `loadWASM()` not called
+
+**When to use:**
+- Production applications with bundle size budgets
+- Applications optimizing for initial load time
+- When you want explicit control over resource loading
+- When you need to defer WASM loading until needed
+
+### Comparison Table
+
+| Aspect | Main (`web-csv-toolbox`) | Lite (`web-csv-toolbox/lite`) |
+|--------|--------------------------|-------------------------------|
+| **Initialization** | Automatic | Manual (`loadWASM()` required) |
+| **WASM Location** | Embedded (base64 in JS) | External (separate .wasm file) |
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
+| **Caching** | Single bundle | WASM cached separately |
+| **API Complexity** | Simpler (just use it) | More explicit (init first) |
+| **Error Handling** | Transparent | Must handle init errors |
+| **Use Case** | Convenience, prototyping | Production, bundle optimization |
+
+**Bundle size note**: Actual sizes depend on bundler configuration, tree-shaking, and compression. The lite version reduces the main JavaScript bundle by not embedding the WASM binary (which is instead loaded as a separate asset). The total download size may be similar, but the benefits are in smaller initial JavaScript bundle and better caching strategy.
+
+### Testing Strategy
+
+Both entry points share the same WASM functionality but have different initialization paths:
+
+**Shared tests** (`*.shared.test.ts`):
+- Test common parsing logic
+- Option validation
+- Error handling
+- Shared utilities
+
+**Main-specific tests** (`*.main.test.ts`):
+- Auto-initialization behavior
+- First-use initialization
+- Error handling for failed auto-init
+
+**Lite-specific tests** (`*.lite.test.ts`):
+- Manual initialization requirement
+- Error when WASM not initialized
+- Explicit `loadWASM()` behavior
+
+This three-tier testing ensures both entry points work correctly while maintaining their distinct initialization semantics.
 
 ---
 

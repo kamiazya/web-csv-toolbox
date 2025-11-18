@@ -20,6 +20,12 @@
 export * from "@/_shared.ts";
 
 // ============================================================================
+// Worker helpers (Web-specific imports)
+// ============================================================================
+export * from "@/worker/helpers/ReusableWorkerPool.ts";
+export * from "@/worker/helpers/WorkerSession.ts";
+
+// ============================================================================
 // Main-specific: WASM with auto-initialization
 // ============================================================================
 export * from "@/parser/api/string/parseStringToArraySyncWASM.main.ts";

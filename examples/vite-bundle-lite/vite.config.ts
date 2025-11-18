@@ -1,3 +1,4 @@
+import { codecovVitePlugin } from '@codecov/vite-plugin';
 import { defineConfig } from 'vite';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -5,6 +6,13 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  plugins: [
+    codecovVitePlugin({
+      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      bundleName: 'example-vite-bundle-lite',
+      uploadToken: process.env.CODECOV_TOKEN,
+    }),
+  ],
   build: {
     outDir: 'dist',
     rollupOptions: {

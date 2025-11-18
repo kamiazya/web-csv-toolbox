@@ -9,18 +9,27 @@ import wasmPack from "./config/vite-plugin-wasm-pack.ts";
  * that include all dependencies for easier deployment
  *
  * Usage:
- *   TARGET=web pnpm build:worker-bundle    # builds worker.web.bundle.js
- *   TARGET=node pnpm build:worker-bundle   # builds worker.node.bundle.js
+ *   TARGET=web VARIANT=main pnpm build:worker-bundle    # builds worker.web.bundle.js
+ *   TARGET=node VARIANT=main pnpm build:worker-bundle   # builds worker.node.bundle.js
+ *   TARGET=web VARIANT=lite pnpm build:worker-bundle    # builds worker.lite.web.bundle.js
+ *   TARGET=node VARIANT=lite pnpm build:worker-bundle   # builds worker.lite.node.bundle.js
  */
 
 const target = process.env.TARGET || "web";
+const variant = process.env.VARIANT || "main";
 const isNode = target === "node";
+const isLite = variant === "lite";
 const entryFile = isNode ? "src/worker.node.ts" : "src/worker.web.ts";
-const outputFile = isNode ? "worker.node.bundle" : "worker.web.bundle";
+const outputFile = isLite
+  ? (isNode ? "worker.lite.node.bundle" : "worker.lite.web.bundle")
+  : (isNode ? "worker.node.bundle" : "worker.web.bundle");
 // Don't clear output dir - preserve files from build:js
 const emptyOutDir = false;
 
 export default defineConfig({
+  define: {
+    __VARIANT__: JSON.stringify(variant),
+  },
   assetsInclude: ["**/*.wasm", "**/*.wasm?*"],
   optimizeDeps: {
     exclude: ["web-csv-toolbox-wasm"],
