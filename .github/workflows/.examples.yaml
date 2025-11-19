@@ -157,6 +157,11 @@ jobs:
           name: example-${{ matrix.example }}
           path: examples/${{ matrix.example }}/dist
 
+      - name: Install example dependencies - ${{ matrix.example }}
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm install
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
