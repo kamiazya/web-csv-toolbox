@@ -139,6 +139,18 @@ importers:
         specifier: workspace:*
         version: link:..
 
+  examples/deno-main:
+    dependencies:
+      web-csv-toolbox:
+        specifier: workspace:*
+        version: link:../..
+
+  examples/deno-slim:
+    dependencies:
+      web-csv-toolbox:
+        specifier: workspace:*
+        version: link:../..
+
   examples/node-main:
     dependencies:
       web-csv-toolbox:
