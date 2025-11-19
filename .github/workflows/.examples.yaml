@@ -106,7 +106,7 @@ jobs:
       - name: Copy WASM package to node_modules
         run: |
           mkdir -p node_modules/web-csv-toolbox-wasm
-          cp -r web-csv-toolbox-wasm/pkg/* node_modules/web-csv-toolbox-wasm/
+          cp -r web-csv-toolbox-wasm/* node_modules/web-csv-toolbox-wasm/
 
       - name: Run example - ${{ matrix.example }}
         run: |
