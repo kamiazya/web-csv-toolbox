@@ -163,7 +163,9 @@ jobs:
           pnpm install
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright tests - ${{ matrix.example }}
         run: |
