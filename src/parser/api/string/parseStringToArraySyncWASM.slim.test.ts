@@ -24,8 +24,8 @@ vi.mock("./parseStringToArraySyncWASM.shared.ts", async () => {
 
 import { parseStringToArraySync as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
 import { isInitialized } from "@/wasm/loaders/wasmState.ts";
-import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.slim.ts";
 import { parseWithWASM } from "./parseStringToArraySyncWASM.shared.ts";
+import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.slim.ts";
 
 describe("parseStringToArraySyncWASM.slim - manual initialization", () => {
   beforeEach(() => {
