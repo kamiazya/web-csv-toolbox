@@ -1,0 +1,11 @@
+{
+  "version": "5",
+  "specifiers": {
+    "npm:web-csv-toolbox@*": "0.13.0"
+  },
+  "npm": {
+    "web-csv-toolbox@0.13.0": {
+      "integrity": "sha512-vcYpbinrZv0oCzLZFZ3qxe6s9Ir1zBROvcFcR9yirX9buCekAKue31kq5Iu48WXUAnS6AcZoNHYkmgyhku1J2Q=="
+    }
+  }
+}
