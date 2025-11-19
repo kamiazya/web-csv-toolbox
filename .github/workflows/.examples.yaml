@@ -177,7 +177,6 @@ jobs:
   test_deno_examples:
     name: Test Deno Examples
     runs-on: ubuntu-latest
-    needs: build_typescript
     permissions:
       contents: read
     strategy:
