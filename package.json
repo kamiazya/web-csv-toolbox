@@ -17,11 +17,11 @@
       "browser": "./dist/main.web.js",
       "default": "./dist/main.web.js"
     },
-    "./lite": {
-      "types": "./dist/lite.web.d.ts",
-      "node": "./dist/lite.node.js",
-      "browser": "./dist/lite.web.js",
-      "default": "./dist/lite.web.js"
+    "./slim": {
+      "types": "./dist/slim.web.d.ts",
+      "node": "./dist/slim.node.js",
+      "browser": "./dist/slim.web.js",
+      "default": "./dist/slim.web.js"
     },
     "./worker": {
       "import": {
@@ -43,24 +43,24 @@
         "default": "./dist/worker.web.js"
       }
     },
-    "./worker/lite": {
+    "./worker/slim": {
       "import": {
-        "types": "./dist/worker.lite.d.ts",
-        "node": "./dist/worker.lite.node.bundle.js",
-        "browser": "./dist/worker.lite.web.bundle.js",
-        "default": "./dist/worker.lite.web.bundle.js"
+        "types": "./dist/worker.slim.d.ts",
+        "node": "./dist/worker.slim.node.bundle.js",
+        "browser": "./dist/worker.slim.web.bundle.js",
+        "default": "./dist/worker.slim.web.bundle.js"
       },
       "node": {
-        "types": "./dist/worker.lite.node.d.ts",
-        "default": "./dist/worker.lite.node.js"
+        "types": "./dist/worker.slim.node.d.ts",
+        "default": "./dist/worker.slim.node.js"
       },
       "browser": {
-        "types": "./dist/worker.lite.web.d.ts",
-        "default": "./dist/worker.lite.web.js"
+        "types": "./dist/worker.slim.web.d.ts",
+        "default": "./dist/worker.slim.web.js"
       },
       "default": {
-        "types": "./dist/worker.lite.web.d.ts",
-        "default": "./dist/worker.lite.web.js"
+        "types": "./dist/worker.slim.web.d.ts",
+        "default": "./dist/worker.slim.web.js"
       }
     },
     "./*": {
@@ -145,16 +145,16 @@
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
     "test:examples": "pnpm test:examples:webpack && pnpm test:examples:vite",
-    "test:examples:webpack": "pnpm test:examples:webpack-main && pnpm test:examples:webpack-lite",
+    "test:examples:webpack": "pnpm test:examples:webpack-main && pnpm test:examples:webpack-slim",
     "test:examples:webpack-main": "cd examples/webpack-bundle-worker-main && pnpm test",
-    "test:examples:webpack-lite": "cd examples/webpack-bundle-worker-lite && pnpm test",
-    "test:examples:vite": "pnpm test:examples:vite-main && pnpm test:examples:vite-lite",
+    "test:examples:webpack-slim": "cd examples/webpack-bundle-worker-slim && pnpm test",
+    "test:examples:vite": "pnpm test:examples:vite-main && pnpm test:examples:vite-slim",
     "test:examples:vite-main": "cd examples/vite-bundle-worker-main && pnpm test",
-    "test:examples:vite-lite": "cd examples/vite-bundle-worker-lite && pnpm test",
+    "test:examples:vite-slim": "cd examples/vite-bundle-worker-slim && pnpm test",
     "build": "pnpm build:wasm && pnpm build:js && pnpm build:worker-bundle",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
-    "build:worker-bundle": "TARGET=web VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=web VARIANT=lite vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=lite vite build --config vite.config.worker-bundle.ts",
+    "build:worker-bundle": "TARGET=web VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=web VARIANT=slim vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=slim vite build --config vite.config.worker-bundle.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",

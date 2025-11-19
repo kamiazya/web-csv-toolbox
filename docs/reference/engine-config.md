@@ -89,7 +89,7 @@ Enable WebAssembly-based parsing for improved performance.
 
 **Initialization:**
 - `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWASM()`.
-- `web-csv-toolbox/lite` (lite entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
+- `web-csv-toolbox/slim` (slim entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
 
 **Example:**
 ```typescript

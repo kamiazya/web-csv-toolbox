@@ -1,8 +1,8 @@
 /**
- * Shared exports between main and lite versions.
+ * Shared exports between main and slim versions.
  *
  * This file contains all common exports that are available in both
- * the main entry point (main.ts) and the lite version (lite.ts).
+ * the main entry point (main.ts) and the slim entry (slim.ts).
  *
  * @internal
  */

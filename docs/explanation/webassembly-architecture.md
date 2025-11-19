@@ -13,7 +13,7 @@ web-csv-toolbox includes an optional WebAssembly module that provides improved C
 
 The library provides two entry points for WASM functionality:
 - **Main entry point** (`web-csv-toolbox`): Automatic WASM initialization with embedded binary
-- **Lite entry point** (`web-csv-toolbox/lite`): Manual initialization with external WASM loading
+- **Slim entry point** (`web-csv-toolbox/slim`): Manual initialization with external WASM loading
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -45,114 +45,11 @@ The library provides two entry points for WASM functionality:
 
 ---
 
-## Entry Point Architecture
+## Entry Points
 
-The library provides two distinct entry points for accessing WASM functionality, each with different trade-offs.
+This project ships two entry points (Main and Slim) that differ only in how WebAssembly is initialized and delivered. For a practical comparison and guidance on when to use each:
 
-### Main Entry Point (`web-csv-toolbox`)
-
-**Automatic initialization with embedded WASM**
-
-```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
-
-// Works immediately - WASM auto-initialized
-const records = parseStringToArraySyncWASM(csv);
-```
-
-**How it works:**
-1. WASM binary is embedded as base64 in the JavaScript bundle
-2. On first use of a WASM function, initialization happens automatically
-3. Subsequent calls use the already-initialized module
-
-**Implementation:**
-- WASM binary is converted to base64 at build time
-- Embedded in the main bundle as a string constant
-- Decoded and initialized on demand
-
-**Characteristics:**
-- ✅ Convenience: No manual initialization required
-- ✅ Simplicity: One import, ready to use
-- ⚠️ Bundle size: WASM binary embedded in main JavaScript bundle
-- ⚠️ **Experimental**: Auto-init strategy may change in future versions
-
-**When to use:**
-- Rapid prototyping and development
-- Applications where bundle size is not critical
-- When you prioritize developer experience over bundle size
-
-### Lite Entry Point (`web-csv-toolbox/lite`)
-
-**Manual initialization with external WASM loading**
-
-```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
-
-// Must initialize before use
-await loadWASM();
-
-// Now can use WASM functions
-const records = parseStringToArraySyncWASM(csv);
-```
-
-**How it works:**
-1. WASM binary is distributed as a separate `.wasm` file
-2. User must explicitly call `loadWASM()` before using WASM functions
-3. WASM file is loaded from the network (or local file system in Node.js)
-
-**Implementation:**
-- WASM binary is a separate asset in the distribution
-- Loaded via `fetch()` in browsers or `fs.readFile()` in Node.js
-- Bundlers handle WASM file as a static asset
-
-**Characteristics:**
-- ✅ Smaller main bundle: WASM not embedded (loaded as separate asset)
-- ✅ Better caching: WASM file can be cached separately
-- ✅ Explicit control: Choose when to initialize
-- ❌ Requires manual initialization step
-- ❌ Potential initialization error if `loadWASM()` not called
-
-**When to use:**
-- Production applications with bundle size budgets
-- Applications optimizing for initial load time
-- When you want explicit control over resource loading
-- When you need to defer WASM loading until needed
-
-### Comparison Table
-
-| Aspect | Main (`web-csv-toolbox`) | Lite (`web-csv-toolbox/lite`) |
-|--------|--------------------------|-------------------------------|
-| **Initialization** | Automatic | Manual (`loadWASM()` required) |
-| **WASM Location** | Embedded (base64 in JS) | External (separate .wasm file) |
-| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
-| **Caching** | Single bundle | WASM cached separately |
-| **API Complexity** | Simpler (just use it) | More explicit (init first) |
-| **Error Handling** | Transparent | Must handle init errors |
-| **Use Case** | Convenience, prototyping | Production, bundle optimization |
-
-**Bundle size note**: Actual sizes depend on bundler configuration, tree-shaking, and compression. The lite version reduces the main JavaScript bundle by not embedding the WASM binary (which is instead loaded as a separate asset). The total download size may be similar, but the benefits are in smaller initial JavaScript bundle and better caching strategy.
-
-### Testing Strategy
-
-Both entry points share the same WASM functionality but have different initialization paths:
-
-**Shared tests** (`*.shared.test.ts`):
-- Test common parsing logic
-- Option validation
-- Error handling
-- Shared utilities
-
-**Main-specific tests** (`*.main.test.ts`):
-- Auto-initialization behavior
-- First-use initialization
-- Error handling for failed auto-init
-
-**Lite-specific tests** (`*.lite.test.ts`):
-- Manual initialization requirement
-- Error when WASM not initialized
-- Explicit `loadWASM()` behavior
-
-This three-tier testing ensures both entry points work correctly while maintaining their distinct initialization semantics.
+→ See: [Main vs Slim Entry Points](./main-vs-slim.md)
 
 ---
 
@@ -219,20 +116,21 @@ WASM is opt-in rather than always-on because:
 ### Module Loading
 
 ```typescript
-// loadWASM.ts
-import init, { type InitInput } from "web-csv-toolbox-wasm";
-import dataURL from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm";
+// loadWASM.ts (conceptual)
+import init, { type InitInput } from 'web-csv-toolbox-wasm';
+// In the web-csv-toolbox distribution, the WASM asset is exported as `web-csv-toolbox/csv.wasm`.
+import wasmUrl from 'web-csv-toolbox/csv.wasm';
 
-export async function loadWASM(input?: InitInput | Promise<InitInput>) {
-  await init(input ?? dataURL);
+export async function loadWASM(input?: InitInput) {
+  await init({ module_or_path: input ?? wasmUrl });
 }
 ```
 
 **How it works:**
-1. WASM binary is bundled as a data URL
-2. `init()` loads and instantiates the WASM module
+1. The WASM binary is distributed as a separate asset (`csv.wasm`)
+2. `init()` loads and instantiates the module (via URL or Buffer)
 3. Module is cached globally for reuse
-4. Subsequent calls are instant (module already loaded)
+4. Subsequent calls are instant (already initialized)
 
 ---
 
@@ -575,49 +473,14 @@ const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Examp
 
 ---
 
-## Browser and Runtime Support
+## Runtime Requirements
 
-WASM is supported across all modern runtimes:
+WASM features in this library depend on your runtime’s native WebAssembly support. Verify your environment before relying on WASM acceleration.
 
-| Runtime | WASM Support | Notes |
-|---------|--------------|-------|
-| Chrome | ✅ | Full support |
-| Firefox | ✅ | Full support |
-| Edge | ✅ | Full support |
-| Safari | ✅ | Full support |
-| Node.js LTS | ✅ | Full support |
-| Deno LTS | ✅ | Full support |
+- WebAssembly docs: [Can I Use](https://caniuse.com/wasm) · [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
+- Library coverage and testing scope: [Supported Environments](../reference/supported-environments.md)
 
-**Browser API Support:**
-- **WebAssembly**: [Can I Use](https://caniuse.com/wasm) | [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
-
-See: [Supported Environments](../reference/supported-environments.md)
-
----
-
-## Build Process
-
-### WASM Compilation
-
-The WASM module is built from Rust source code:
-
-```bash
-# Compile Rust to WASM
-wasm-pack build --target web
-
-# Optimize WASM binary
-wasm-opt -O3 -o output.wasm input.wasm
-
-# Generate TypeScript bindings
-wasm-bindgen --target web
-```
-
-**Output:**
-- `web_csv_toolbox_wasm_bg.wasm` - WASM binary
-- `web_csv_toolbox_wasm.js` - JavaScript glue code
-- `web_csv_toolbox_wasm.d.ts` - TypeScript definitions
-
----
+If your runtime doesn’t support WebAssembly or you choose not to use it, the JavaScript parser remains available as a fallback.
 
 ### Bundle Integration
 
@@ -626,12 +489,12 @@ The WASM binary is bundled with the npm package:
 ```text
 web-csv-toolbox/
 ├── dist/
-│   ├── index.js                          # Main entry point
-│   ├── loadWASM.js                       # WASM loader
+│   ├── main.web.js / main.node.js            # Main entry points
+│   ├── slim.web.js / slim.node.js            # Slim entry points
+│   ├── csv.wasm                               # WASM binary (exported as web-csv-toolbox/csv.wasm)
+│   ├── _virtual/                              # Build-time virtual modules for inlined WASM (main entry)
 │   └── wasm/
-│       ├── web_csv_toolbox_wasm_bg.wasm  # WASM binary
-│       ├── web_csv_toolbox_wasm.js       # Glue code
-│       └── web_csv_toolbox_wasm.d.ts     # Types
+│       └── loaders/                           # loadWASM / loadWASMSync loaders
 ```
 
 **Bundler support:**

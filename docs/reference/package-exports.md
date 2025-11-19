@@ -31,19 +31,19 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 
 **Characteristics**:
-- ✅ Automatic WASM initialization (works immediately)
-- ✅ All features available
+- ✅ Automatic WASM initialization on first use (not at import time)
+- 💡 Optional preloading via `loadWASM()` reduces first‑parse latency
 - ⚠️ Larger bundle size (WASM embedded as base64)
 
-### `web-csv-toolbox/lite` (Lite - Smaller Bundle)
+### `web-csv-toolbox/slim` (Slim Entry - Smaller Bundle)
 
 ```typescript
-import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 ```
 
 **Resolves to**: platform-specific builds
-- **Browser**: `./dist/lite.web.js`
-- **Node.js**: `./dist/lite.node.js`
+- **Browser**: `./dist/slim.web.js`
+- **Node.js**: `./dist/slim.node.js`
 
 **Exports**:
 - All parsing functions (same as main)
@@ -62,7 +62,7 @@ import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolb
 
 **Usage pattern**:
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 
 // Must initialize WASM before use
 await loadWASM();

@@ -31,7 +31,9 @@ The library provides two entry points for WASM functionality. Choose based on yo
 ```typescript
 import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-// Auto-initialized - works immediately
+// Auto-initialization occurs on first WASM use.
+// Optional but recommended: preload to reduce first‑parse latency
+await loadWASM();
 const records = parseStringToArraySyncWASM(csv);
 ```
 
@@ -41,14 +43,15 @@ const records = parseStringToArraySyncWASM(csv);
 - ✅ Applications where bundle size is not critical
 
 **Characteristics:**
-- Automatic WASM initialization (no `loadWASM()` call needed)
+- Automatic WASM initialization on first WASM use (not at import time)
+- Preloading via `loadWASM()` is recommended to minimize first‑parse latency
 - Larger bundle size (WASM embedded as base64)
 - ⚠️ Experimental auto-initialization may change in future
 
-### Lite Entry Point (`web-csv-toolbox/lite`) - For Bundle Size Optimization
+### Slim Entry Point (`web-csv-toolbox/slim`) - For Bundle Size Optimization
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
 await loadWASM();
@@ -67,14 +70,14 @@ const records = parseStringToArraySyncWASM(csv);
 
 **Comparison:**
 
-| Aspect | Main | Lite |
+| Aspect | Main | Slim |
 |--------|------|------|
 | **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
 | **Initialization** | Automatic | Manual |
 | **API Complexity** | Simpler | Requires `loadWASM()` |
 | **Use Case** | Convenience | Bundle optimization |
 
-> **Note**: This tutorial uses the **main entry point** (`web-csv-toolbox`) for simplicity. To use the lite version, simply import from `web-csv-toolbox/lite` and add `await loadWASM()` before using WASM functions.
+> **Note**: This tutorial uses the **main entry point** (`web-csv-toolbox`) for simplicity. To use the slim entry, simply import from `web-csv-toolbox/slim` and add `await loadWASM()` before using WASM functions.
 
 ## What is WebAssembly?
 
@@ -104,7 +107,10 @@ WebAssembly (WASM) is a binary instruction format that runs in modern browsers a
 
 ## Step 1: Load the WASM Module
 
-Before using WASM, you must load the module using `loadWASM()`.
+Load the module using `loadWASM()` once at application startup.
+
+- Main entry: Optional but recommended (reduces first‑parse latency)
+- Slim entry: Required before using any WASM features
 
 ```typescript
 import { loadWASM } from 'web-csv-toolbox';
@@ -115,7 +121,7 @@ await loadWASM();
 console.log('WASM module loaded');
 ```
 
-**Important:** Call `loadWASM()` once at application startup, not before every parse operation.
+**Important:** Call `loadWASM()` once at application startup, not before every parse operation. With the Main entry, this is optional but recommended.
 
 ---
 

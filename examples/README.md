@@ -5,25 +5,35 @@ This directory contains example projects demonstrating different usage patterns 
 ## Directory Structure
 
 ### Node.js Examples
-- **node-lite**: Using the lite version (external WASM loading)
+- **node-slim**: Using the slim entry (external WASM loading)
 - **node-main**: Using the main version (embedded WASM)
 - **node-worker-main**: Using Worker with main version
 
 ### Vite Examples
-- **vite-bundle-lite**: Browser bundle with lite version
+- **vite-bundle-slim**: Browser bundle with slim entry
 - **vite-bundle-main**: Browser bundle with main version
-- **vite-bundle-worker-lite**: Worker bundle with lite version
+- **vite-bundle-worker-slim**: Worker bundle with slim entry
 - **vite-bundle-worker-main**: Worker bundle with main version
 
 ### Webpack Examples
-- **webpack-bundle-worker-lite**: Worker bundle with lite version using Webpack
+- **webpack-bundle-worker-slim**: Worker bundle with slim entry using Webpack
 - **webpack-bundle-worker-main**: Worker bundle with main version using Webpack
 
 ## Running Examples
 
+Before running any example for the first time, set up the workspace at the repository root:
+
+```bash
+pnpm install
+pnpm run build  # Builds the library used by examples
+```
+
+- Requires pnpm (use `corepack enable` on Node 18+)
+- Recommended Node.js: 20.6+
+
 ### Node.js Examples
 ```bash
-cd examples/node-lite
+cd examples/node-slim
 pnpm install
 pnpm start
 ```
@@ -75,11 +85,11 @@ Each example is configured with Codecov bundle analysis to detect size regressio
 - **Vite examples**: Use `@codecov/vite-plugin`
 - **Webpack examples**: Use `@codecov/webpack-plugin`
 - **Bundle names**:
-  - `example-vite-bundle-lite`
+  - `example-vite-bundle-slim`
   - `example-vite-bundle-main`
-  - `example-vite-bundle-worker-lite`
+  - `example-vite-bundle-worker-slim`
   - `example-vite-bundle-worker-main`
-  - `example-webpack-bundle-worker-lite`
+  - `example-webpack-bundle-worker-slim`
   - `example-webpack-bundle-worker-main`
 
 ### Monitoring Benefits
@@ -107,4 +117,4 @@ To update a dependency version, modify `pnpm-workspace.yaml` and run `pnpm insta
 
 Actual bundle sizes vary by bundler, configuration, and features used. As a rule of thumb:
 - The main entry embeds the WASM, resulting in a larger main bundle.
-- The lite entry loads WASM externally, resulting in a smaller main bundle and a separate WASM asset.
+- The slim entry loads WASM externally, resulting in a smaller main bundle and a separate WASM asset.

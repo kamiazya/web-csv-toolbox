@@ -24,15 +24,15 @@ Before optimizing, understand where time is spent:
 │ Total Parsing Time                                          │
 └────────────────────────────────────────────────────────────┘
   │
-  ├─ WASM Initialization (one-time)        ~10-50ms
+  ├─ WASM Initialization (one-time)
   │
-  ├─ Data Transfer (Main → WASM)           ~1-5% of total
+  ├─ Data Transfer (Main → WASM)
   │
-  ├─ CSV Parsing (in WASM)                 ~80-90% of total
+  ├─ CSV Parsing (in WASM)
   │
-  ├─ Result Transfer (WASM → Main)         ~1-5% of total
+  ├─ Result Transfer (WASM → Main)
   │
-  └─ Record Processing (JavaScript)        ~5-10% of total
+  └─ Record Processing (JavaScript)
 ```
 
 **Key insight:** Parsing dominates, so optimizing WASM usage has the biggest impact.

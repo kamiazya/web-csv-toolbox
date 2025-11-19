@@ -17,16 +17,16 @@ jobs:
       matrix:
         example:
           # Vite examples
-          - name: vite-bundle-lite
+          - name: vite-bundle-slim
             type: vite
           - name: vite-bundle-main
             type: vite
-          - name: vite-bundle-worker-lite
+          - name: vite-bundle-worker-slim
             type: vite
           - name: vite-bundle-worker-main
             type: vite
           # Webpack examples
-          - name: webpack-bundle-worker-lite
+          - name: webpack-bundle-worker-slim
             type: webpack
           - name: webpack-bundle-worker-main
             type: webpack
@@ -81,7 +81,7 @@ jobs:
       fail-fast: false
       matrix:
         example:
-          - node-lite
+          - node-slim
           - node-main
           - node-worker-main
     steps:
@@ -135,9 +135,9 @@ jobs:
       matrix:
         example:
           - vite-bundle-worker-main
-          - vite-bundle-worker-lite
+          - vite-bundle-worker-slim
           - webpack-bundle-worker-main
-          - webpack-bundle-worker-lite
+          - webpack-bundle-worker-slim
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

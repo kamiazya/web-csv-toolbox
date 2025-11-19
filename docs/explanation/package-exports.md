@@ -15,13 +15,14 @@ This library provides multiple import paths for different use cases. The appropr
 
 1. **Main library** (`web-csv-toolbox`): Full features with automatic WASM initialization
    ```typescript
-   import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
-   const records = parseStringToArraySyncWASM(csv); // Auto-initialized
+import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+// Auto-initializes on first use; optionally call loadWASM() at startup to reduce first‑parse latency
+const records = parseStringToArraySyncWASM(csv);
    ```
 
-2. **Lite library** (`web-csv-toolbox/lite`): Smaller bundle size, manual WASM initialization required
+2. **Slim library** (`web-csv-toolbox/slim`): Smaller bundle size, manual WASM initialization required
    ```typescript
-   import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+   import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
    await loadWASM(); // Must call before using WASM functions
    const records = parseStringToArraySyncWASM(csv);
    ```
@@ -36,7 +37,7 @@ This library provides multiple import paths for different use cases. The appropr
    ```
 
 4. **WASM module** (`web-csv-toolbox/csv.wasm`): For advanced deployment scenarios
-   - Default: WASM is automatically loaded (no manual import needed)
+   - Default: WASM auto-initializes on first use; you can optionally preload via `loadWASM()` to reduce first‑parse latency
    - Advanced: Import directly for separate caching or custom loading
 
 The library handles environment detection and optimizations automatically using [Conditional Exports](https://nodejs.org/api/packages.html#conditional-exports).
@@ -46,15 +47,17 @@ The library handles environment detection and optimizations automatically using 
 | Import Path | Purpose | Bundle Size | Typical Usage |
 |-------------|---------|-------------|---------------|
 | `web-csv-toolbox` | Full features (auto-initialization) | Larger (WASM embedded in JS) | ✅ Default choice |
-| `web-csv-toolbox/lite` | Smaller bundle (manual initialization) | Smaller (WASM as separate file) | ✅ Bundle size optimization |
+| `web-csv-toolbox/slim` | Smaller bundle (manual initialization) | Smaller (WASM as separate file) | ✅ Bundle size optimization |
 | `web-csv-toolbox/worker` | Worker implementation | - | ✅ Via bundler |
 | `web-csv-toolbox/csv.wasm` | WebAssembly module | WASM binary only | ⚠️ Advanced scenarios |
 
-> **Note**: Bundle sizes vary depending on the bundler, tree-shaking, and build configuration. The lite version reduces the main JavaScript bundle size by not embedding the WASM binary.
+> **Note**: Bundle sizes vary depending on the bundler, tree-shaking, and build configuration. The slim entry reduces the main JavaScript bundle size by not embedding the WASM binary.
+
+> Feature parity: Both Main and Slim export the same public API. Choose based on WASM initialization strategy and bundle packaging, not features.
 
 ## How It Works
 
-### 1. Entry Point Variants: Main vs Lite
+### 1. Entry Point Variants: Main vs Slim
 
 The library provides two entry points with different trade-offs:
 
@@ -65,14 +68,14 @@ The library provides two entry points with different trade-offs:
 ```typescript
 import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-// Auto-initialized - works immediately
+// Auto-initialization occurs on first use; optional preloading recommended for faster first parse
 const records = parseStringToArraySyncWASM(csv);
 ```
 
 **Characteristics:**
-- ✅ Automatic WASM initialization (just works!)
-- ✅ All features available immediately
-- ✅ Simpler API (no manual `loadWASM()` call needed)
+- ✅ Automatic WASM initialization on first use (no required preload)
+- ✅ All features available
+- ✅ Simple API; you may call `loadWASM()` at startup to reduce first‑parse latency
 - ⚠️ Larger bundle size (WASM binary embedded as base64)
 - ⚠️ **Experimental**: Auto-init may change in future versions
 
@@ -81,12 +84,12 @@ const records = parseStringToArraySyncWASM(csv);
 - Applications where bundle size is not critical
 - When you want the simplest possible API
 
-#### Lite Entry Point (`web-csv-toolbox/lite`)
+#### Slim Entry Point (`web-csv-toolbox/slim`)
 
 **Best for**: Bundle size-sensitive applications
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
 await loadWASM();
@@ -110,9 +113,9 @@ const records = parseStringToArraySyncWASM(csv);
 | Entry Point | Main Bundle | WASM Binary | Total (Approx.) |
 |-------------|-------------|-------------|-----------------|
 | `web-csv-toolbox` | Larger (WASM embedded) | - | Larger |
-| `web-csv-toolbox/lite` | Smaller | Separate file | Smaller overall |
+| `web-csv-toolbox/slim` | Smaller | Separate file | Smaller overall |
 
-> **Note**: Actual bundle sizes depend on bundler configuration, tree-shaking, and compression. The lite version reduces the main JavaScript bundle size by not embedding the WASM binary (which is instead loaded as a separate asset).
+> **Note**: Actual bundle sizes depend on bundler configuration, tree-shaking, and compression. The slim entry reduces the main JavaScript bundle size by not embedding the WASM binary (which is instead loaded as a separate asset).
 
 ### 2. Main Export API
 
@@ -121,10 +124,10 @@ Both entry points export the same public API:
 ```typescript
 import { parseString } from 'web-csv-toolbox';
 // or
-import { parseString } from 'web-csv-toolbox/lite';
+import { parseString } from 'web-csv-toolbox/slim';
 ```
 
-The main export resolves to `./dist/main.js` (main) or `./dist/lite.js` (lite) respectively.
+The main exports resolve to `./dist/main.*` (main) or `./dist/slim.*` (slim) respectively.
 
 ### 3. Worker Entry Point (`web-csv-toolbox/worker`)
 
@@ -195,7 +198,7 @@ We are considering improvements to the distribution method to enable:
 These improvements would make the `csv.wasm` export more useful for bundle size optimization. For transparency, we acknowledge that the current architecture does not fully support these scenarios, but we are exploring options for future releases.
 
 **Key points:**
-- ✅ WASM is automatically loaded - no manual import needed in normal usage
+- ✅ WASM auto-initializes on first use; you can optionally preload to reduce first‑parse latency
 - ⚠️ Currently does NOT reduce bundle size (base64 WASM is embedded)
 - 🔮 Future improvements may enable lightweight distribution options
 

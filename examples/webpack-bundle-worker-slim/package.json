@@ -1,0 +1,27 @@
+{
+  "name": "webpack-bundle-worker-slim",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "private": true,
+  "scripts": {
+    "build": "webpack --config webpack.config.js",
+    "serve": "webpack serve --config webpack.config.js",
+    "preview": "serve dist -p 9001",
+    "test": "pnpm run build && playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "dependencies": {
+    "web-csv-toolbox": "workspace:*"
+  },
+  "devDependencies": {
+    "@codecov/webpack-plugin": "catalog:",
+    "@playwright/test": "catalog:",
+    "html-webpack-plugin": "catalog:",
+    "serve": "catalog:",
+    "ts-loader": "catalog:",
+    "typescript": "catalog:",
+    "webpack": "catalog:",
+    "webpack-cli": "catalog:",
+    "webpack-dev-server": "catalog:"
+  }
+}

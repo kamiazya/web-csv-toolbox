@@ -85,7 +85,7 @@ Bob,25,San Francisco`;
 
 // Use the 'balanced' preset (recommended for production)
 for await (const record of parse(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
 }
@@ -116,7 +116,7 @@ async function fetchAndParseCSV(url: string) {
 
   // Parse response using worker
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.balanced
+    engine: EnginePresets.balanced()
   })) {
     console.log(record);
   }
@@ -183,7 +183,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 async function parseWithErrorHandling(csv: string) {
   try {
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced
+      engine: EnginePresets.balanced()
     })) {
       console.log(record);
     }
@@ -240,7 +240,7 @@ async function handleFileUpload(file: File) {
 
     // Parse in worker - UI stays responsive
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced
+      engine: EnginePresets.balanced()
     })) {
       count++;
 

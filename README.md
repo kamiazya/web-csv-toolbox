@@ -117,29 +117,35 @@ import { parse } from "npm:web-csv-toolbox";
 
 This library provides two entry points to suit different needs:
 
+For a deeper comparison and migration guidance, see:
+
+- docs/explanation/main-vs-slim.md
+
 ### `web-csv-toolbox` (Default - Full Features)
 
 **Best for**: Most users who want automatic WASM initialization and all features
 
 ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-// Auto-initialized, works immediately
+// Optional but recommended: preload to reduce first‑parse latency
+await loadWASM();
 const records = parseStringToArraySyncWASM(csv);
 ```
 
 **Characteristics:**
 - ✅ Full features including synchronous WASM APIs
-- ✅ Automatic WASM initialization (just works!)
+- ✅ Automatic WASM initialization on first use (not at import time)
+- 💡 Call `loadWASM()` at startup to reduce first‑parse latency (optional)
 - ⚠️ **Experimental**: WASM auto-init embeds WASM as base64, may change in future
 - ⚠️ Larger bundle size (WASM embedded in main bundle)
 
-### `web-csv-toolbox/lite` (Lite - Smaller Bundle)
+### `web-csv-toolbox/slim` (Slim Entry - Smaller Bundle)
 
 **Best for**: Bundle size-sensitive applications and production optimization
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/lite';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
 await loadWASM();
@@ -154,14 +160,14 @@ const records = parseStringToArraySyncWASM(csv);
 
 **Comparison:**
 
-| Aspect | Main | Lite |
+| Aspect | Main | Slim |
 |--------|------|------|
 | **Initialization** | Automatic | Manual (`loadWASM()` required) |
 | **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
 | **Caching** | Single bundle | WASM cached separately |
 | **Use Case** | Convenience, prototyping | Production, bundle optimization |
 
-> **Note**: Both entry points export the same full API. The only difference is WASM initialization strategy and bundle size.
+> **Note**: Both entry points export the same full API (feature parity). The only difference is WASM initialization strategy and bundle size.
 
 ## Usage 📘
 
@@ -289,7 +295,7 @@ import { parse } from 'web-csv-toolbox';
 const csv = `Alice,42
 Bob,69`;
 
-for await (const record of parse(csv, { headers: ['name', 'age'] })) {
+for await (const record of parse(csv, { header: ['name', 'age'] })) {
   console.log(record);
 }
 // Prints:
@@ -391,6 +397,8 @@ try {
 | 20.x     | ✅     |
 | 22.x     | ✅     |
 | 24.x     | ✅     |
+
+> Note: For Node environments, the WASM loader uses `import.meta.resolve`. Node.js 20.6+ is recommended. On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
 
 
 ### Works on Browser
@@ -602,7 +610,7 @@ but it takes time to load the WebAssembly module.
   - If you pass a different character, it will throw an error.
 
 ```ts
-import { loadWASM, parseStringWASM } from "web-csv-toolbox";
+import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
 
 // load WebAssembly module
 await loadWASM();

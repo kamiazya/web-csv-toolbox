@@ -113,10 +113,10 @@ Unlike Workers which can be bundled as data URLs, WASM modules are loaded at run
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
 
-// Copy node_modules/web-csv-toolbox/dist/web_csv_toolbox_wasm_bg.wasm
-// to public/web_csv_toolbox_wasm_bg.wasm
+// Copy node_modules/web-csv-toolbox/dist/csv.wasm
+// to public/csv.wasm
 
-await loadWASM('/web_csv_toolbox_wasm_bg.wasm');
+await loadWASM('/csv.wasm');
 
 for await (const record of parseString(csv, {
   engine: EnginePresets.responsiveFast()  // Uses WASM + Worker
@@ -130,7 +130,7 @@ Add a build step to copy the WASM file:
 ```json
 {
   "scripts": {
-    "prebuild": "cp node_modules/web-csv-toolbox/dist/web_csv_toolbox_wasm_bg.wasm public/"
+    "prebuild": "cp node_modules/web-csv-toolbox/dist/csv.wasm public/"
   }
 }
 ```
@@ -139,7 +139,7 @@ Add a build step to copy the WASM file:
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
-import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 
 await loadWASM(wasmUrl);
 
@@ -157,11 +157,7 @@ Vite will copy the WASM file to your dist folder automatically.
 ```typescript
 import { loadWASM, parseString } from 'web-csv-toolbox';
 
-const wasmUrl = new URL(
-  'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm',
-  import.meta.url
-);
-
+const wasmUrl = new URL('web-csv-toolbox/csv.wasm', import.meta.url);
 await loadWASM(wasmUrl);
 ```
 
@@ -227,7 +223,7 @@ When using both Workers and WASM (via `EnginePresets.responsiveFast()` or `respo
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
 import workerUrl from 'web-csv-toolbox/worker?url';
-import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 
 await loadWASM(wasmUrl);
 
@@ -241,7 +237,7 @@ for await (const record of parseString(csv, {
 **Important**: The WASM module must be available **before** Workers start using it.
 
 - `web-csv-toolbox` (main entry): Auto-initializes on first use, but calling `loadWASM()` ahead of time reduces first-parse latency.
-- `web-csv-toolbox/lite` (lite entry): Call `loadWASM(wasmUrl)` before parsing. Ensure your bundler emits the WASM asset and provides its URL.
+- `web-csv-toolbox/slim` (slim entry): Call `loadWASM(wasmUrl)` before parsing. Ensure your bundler emits the WASM asset and provides its URL.
 - Presets: When using `responsiveFast()` (Worker + WASM) or `fast()` (Main + WASM), choose the appropriate initialization strategy for your environment.
 
 ## Environment Detection
@@ -257,9 +253,9 @@ This is configured via `package.json` exports:
 {
   "exports": {
     "./worker": {
-      "node": "./dist/execution/worker/helpers/worker.node.js",
-      "browser": "./dist/execution/worker/helpers/worker.web.js",
-      "default": "./dist/execution/worker/helpers/worker.web.js"
+      "node": "./dist/worker.node.js",
+      "browser": "./dist/worker.web.js",
+      "default": "./dist/worker.web.js"
     }
   }
 }
@@ -273,7 +269,7 @@ For better performance when parsing multiple files, use a `WorkerPool`:
 import { parseString, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox';
 import workerUrl from 'web-csv-toolbox/worker?url';
 
-const pool = new ReusableWorkerPool({
+using pool = new ReusableWorkerPool({
   maxWorkers: 4,
   workerURL: workerUrl
 });
@@ -292,8 +288,6 @@ await Promise.all(
     return count;
   })
 );
-
-await pool.terminate();
 ```
 
 ## Common Issues
@@ -318,7 +312,7 @@ Make sure you're importing with the correct syntax for your bundler:
 
 ```typescript
 // ✅ Good: Explicit URL
-import wasmUrl from 'web-csv-toolbox/web_csv_toolbox_wasm_bg.wasm?url';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 await loadWASM(wasmUrl);
 
 // ❌ Bad: Missing loadWASM call

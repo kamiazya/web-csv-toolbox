@@ -11,17 +11,17 @@ import wasmPack from "./config/vite-plugin-wasm-pack.ts";
  * Usage:
  *   TARGET=web VARIANT=main pnpm build:worker-bundle    # builds worker.web.bundle.js
  *   TARGET=node VARIANT=main pnpm build:worker-bundle   # builds worker.node.bundle.js
- *   TARGET=web VARIANT=lite pnpm build:worker-bundle    # builds worker.lite.web.bundle.js
- *   TARGET=node VARIANT=lite pnpm build:worker-bundle   # builds worker.lite.node.bundle.js
+ *   TARGET=web VARIANT=slim pnpm build:worker-bundle    # builds worker.slim.web.bundle.js
+ *   TARGET=node VARIANT=slim pnpm build:worker-bundle   # builds worker.slim.node.bundle.js
  */
 
 const target = process.env.TARGET || "web";
 const variant = process.env.VARIANT || "main";
 const isNode = target === "node";
-const isLite = variant === "lite";
+const isSlim = variant === "slim";
 const entryFile = isNode ? "src/worker.node.ts" : "src/worker.web.ts";
-const outputFile = isLite
-  ? (isNode ? "worker.lite.node.bundle" : "worker.lite.web.bundle")
+const outputFile = isSlim
+  ? (isNode ? "worker.slim.node.bundle" : "worker.slim.web.bundle")
   : (isNode ? "worker.node.bundle" : "worker.web.bundle");
 // Don't clear output dir - preserve files from build:js
 const emptyOutDir = false;

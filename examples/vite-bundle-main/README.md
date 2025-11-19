@@ -11,7 +11,7 @@ This example demonstrates bundling web-csv-toolbox's main entry point with auto-
 
 ## Bundle Size
 
-Actual bundle sizes vary by bundler and configuration. The main entry embeds WASM and typically produces a larger bundle than the lite entry.
+Actual bundle sizes vary by bundler and configuration. The main entry embeds WASM and typically produces a larger bundle than the slim entry.
 
 ## Usage
 
@@ -61,14 +61,14 @@ Open DevTools Network tab and verify:
 - ✅ Convenience: No manual initialization required
 - ✅ Immediate availability: WASM parser works right away
 - ❌ Larger bundle size due to base64-inlined WASM
-- ❌ Not optimal for production: Consider using [lite version](../vite-bundle-lite/) instead
+- ❌ Not optimal for production: Consider using [slim entry](../vite-bundle-slim/) instead
 
-## Comparison with Lite Version
+## Comparison with Slim Entry
 
-| Metric | Main | Lite | Difference |
+| Metric | Main | Slim | Difference |
 |--------|------|------|------------|
-| Bundle size | (varies) | (varies) | Smaller with lite (varies) |
-| Gzipped | (varies) | (varies) | Smaller with lite (varies) |
+| Bundle size | (varies) | (varies) | Smaller with slim (varies) |
+| Gzipped | (varies) | (varies) | Smaller with slim (varies) |
 | Initialization | Automatic | Manual (`await loadWASM()`) | - |
 | WASM loading | Base64-inlined | Streaming fetch | - |
 | Best for | Development/Prototyping | Production | - |

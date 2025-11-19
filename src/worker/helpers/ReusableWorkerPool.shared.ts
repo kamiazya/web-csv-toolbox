@@ -24,7 +24,7 @@ export interface ReusableWorkerPoolOptions {
    * @example
    * ```ts
    * // Recommended for production
-   * const pool = new ReusableReusableWorkerPool({ maxWorkers: 4 });
+   * const pool = new ReusableWorkerPool({ maxWorkers: 4 });
    * ```
    */
   maxWorkers?: number | undefined;

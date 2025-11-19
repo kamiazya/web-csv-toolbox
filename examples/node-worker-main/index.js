@@ -33,8 +33,8 @@ async function testWorkerParsing() {
     console.log(JSON.stringify(records, null, 2));
     console.log();
   } finally {
-    // Manually terminate workers
-    pool[Symbol.dispose]();
+    // Explicitly terminate workers
+    pool.terminate();
   }
 }
 
@@ -60,7 +60,7 @@ async function testWorkerWASMParsing() {
     console.log(JSON.stringify(records, null, 2));
     console.log();
   } finally {
-    pool[Symbol.dispose]();
+    pool.terminate();
   }
 }
 
@@ -99,7 +99,7 @@ async function testParallelParsing() {
     });
     console.log();
   } finally {
-    pool[Symbol.dispose]();
+    pool.terminate();
   }
 }
 

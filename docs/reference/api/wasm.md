@@ -16,7 +16,7 @@ The WASM API provides high-performance CSV parsing using WebAssembly. It offers 
 - Manual preloading is optional but can improve first-parse performance
 - All WASM functions share the same initialized instance
 
-⚠️ **Experimental**: WASM automatic initialization is experimental and may change in future versions. The loading strategy depends on which entry point you use (`web-csv-toolbox` uses embedded base64, `web-csv-toolbox/lite` uses external loading). Future versions may change this loading strategy for better bundle size optimization.
+⚠️ **Experimental**: WASM automatic initialization is experimental and may change in future versions. The loading strategy depends on which entry point you use (`web-csv-toolbox` uses embedded base64, `web-csv-toolbox/slim` uses external loading). Future versions may change this loading strategy for better bundle size optimization.
 
 ---
 
@@ -425,7 +425,8 @@ Instead of calling `parseStringToArraySyncWASM()` directly, use high-level APIs 
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
-// WASM auto-initializes - no manual preloading needed
+// WASM auto-initializes on first use.
+// Optional but recommended: preload at startup to reduce first‑parse latency.
 for await (const record of parse(csv, {
   engine: EnginePresets.fast()
 })) {
@@ -596,7 +597,7 @@ web-csv-toolbox's WASM API provides:
 - Combines with Worker Threads for maximum performance
 
 **Recommendation:**
-- **New code**: Just import and use - WASM auto-initializes
+- **New code**: WASM auto-initializes on first use; for best UX, preload with `loadWASM()` at app startup
 - **Optimal performance**: Call `loadWASM()` at app startup
 - **Fastest parse speed**: Use `parse()` with `EnginePresets.fast()` (blocks main thread)
 - **Non-blocking UI**: Use `parse()` with `EnginePresets.responsiveFast()`

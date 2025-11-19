@@ -32,20 +32,16 @@ pnpm run preview
 The example uses `ReusableWorkerPool` to manage Workers:
 
 ```typescript
-const pool = new ReusableWorkerPool({ maxWorkers: 2 });
+using pool = new ReusableWorkerPool({ maxWorkers: 2 });
 
-try {
-  for await (const record of parseString(csv, {
-    engine: {
-      worker: true,
-      wasm: true,
-      workerPool: pool,
-    }
-  })) {
-    // Process record
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    wasm: true,
+    workerPool: pool,
   }
-} finally {
-  pool[Symbol.dispose](); // Clean up workers
+})) {
+  // Process record
 }
 ```
 
@@ -60,4 +56,4 @@ The example includes a simple Vite configuration that:
 
 - Workers are automatically detected and imported by `web-csv-toolbox/worker`
 - WASM files are loaded dynamically from the same directory as the bundle
-- Worker cleanup is handled manually using `Symbol.dispose()`
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.

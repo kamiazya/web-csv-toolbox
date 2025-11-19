@@ -37,23 +37,19 @@ The example uses `ReusableWorkerPool` to manage Workers:
 ```typescript
 import workerUrl from "web-csv-toolbox/worker";
 
-const pool = new ReusableWorkerPool({
+using pool = new ReusableWorkerPool({
   maxWorkers: 2,
   workerURL: workerUrl,
 });
 
-try {
-  for await (const record of parseString(csv, {
-    engine: {
-      worker: true,
-      wasm: true,
-      workerPool: pool,
-    }
-  })) {
-    // Process record
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    wasm: true,
+    workerPool: pool,
   }
-} finally {
-  pool[Symbol.dispose](); // Clean up workers
+})) {
+  // Process record
 }
 ```
 
@@ -69,5 +65,5 @@ The example includes a Webpack configuration that:
 
 - Workers are automatically detected and imported via `web-csv-toolbox/worker`
 - **Larger bundle**: Main worker bundle includes embedded WASM
-- **Trade-off**: Faster initialization but larger bundle size compared to lite version
-- Worker cleanup is handled manually using `Symbol.dispose()`
+- **Trade-off**: Faster initialization but larger bundle size compared to slim entry
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.

@@ -5,6 +5,8 @@ group: Platform Usage
 
 # File System Streams
 
+> Note: For WASM-enabled features in Node, Node.js 20.6+ is recommended (the WASM loader uses `import.meta.resolve`). On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
+
 Convert Node.js `fs.ReadStream` to Web Streams API.
 
 ```typescript

@@ -15,7 +15,7 @@
 /** biome-ignore-all assist/source/organizeImports: For sort by category */
 
 // ============================================================================
-// Shared exports (common to both main and lite versions)
+// Shared exports (common to both main and slim versions)
 // ============================================================================
 export * from "@/_shared.ts";
 

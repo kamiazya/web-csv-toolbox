@@ -9,7 +9,7 @@ import type {
  * Build-time constant injected by Vite for worker bundle variants
  * @internal
  */
-declare const __VARIANT__: "main" | "lite";
+declare const __VARIANT__: "main" | "slim";
 
 /**
  * Base interface for Worker requests
@@ -322,8 +322,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             // Dynamic import WASM implementation
             try {
               const { parseStringToArraySyncWASM } = await import(
-                typeof __VARIANT__ !== "undefined" && __VARIANT__ === "lite"
-                  ? "../../parser/api/string/parseStringToArraySyncWASM.lite.ts"
+                typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
+                  ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
                   : "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
               );
               await streamRecordsToMain(
@@ -510,8 +510,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               );
             }
             const { parseStringToArraySyncWASM } = await import(
-              typeof __VARIANT__ !== "undefined" && __VARIANT__ === "lite"
-                ? "../../parser/api/string/parseStringToArraySyncWASM.lite.ts"
+              typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
+                ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
                 : "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
             );
             await streamRecordsToMain(

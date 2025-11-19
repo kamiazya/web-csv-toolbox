@@ -34,8 +34,8 @@ export default defineConfig(({ command }) => ({
       entry: {
         "main.web": "src/main.web.ts", // Browser/Web version
         "main.node": "src/main.node.ts", // Node.js version
-        "lite.web": "src/lite.web.ts", // Browser/Web version
-        "lite.node": "src/lite.node.ts", // Node.js version
+        "slim.web": "src/slim.web.ts", // Browser/Web version
+        "slim.node": "src/slim.node.ts", // Node.js version
         "wasm/loaders/loadWASM.web": "src/wasm/loaders/loadWASM.web.ts",
         "wasm/loaders/loadWASM.node": "src/wasm/loaders/loadWASM.node.ts",
         "wasm/loaders/loadWASMSync.web": "src/wasm/loaders/loadWASMSync.web.ts",

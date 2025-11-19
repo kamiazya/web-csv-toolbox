@@ -264,8 +264,8 @@ describe("parseStringToArraySyncWASM.main - auto-initialization", () => {
     });
   });
 
-  describe("comparison with lite version", () => {
-    it("should auto-initialize (unlike lite version)", () => {
+  describe("comparison with slim entry", () => {
+    it("should auto-initialize (unlike slim entry)", () => {
       (isSyncInitialized as Mock).mockReturnValue(false);
       (loadWASMSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
