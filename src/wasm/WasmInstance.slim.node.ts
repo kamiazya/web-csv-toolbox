@@ -19,6 +19,12 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   await internalLoadWASM(input);
 }
 
+/**
+ * Ensure WASM module is initialized. Auto-initializes if not already initialized.
+ *
+ * @param input - Optional `InitInput` or module path for WASM initialization. Auto-detects if not provided.
+ * @internal
+ */
 export async function ensureWASMInitialized(input?: InitInput): Promise<void> {
   if (!isInitialized()) {
     await loadWASM(input);

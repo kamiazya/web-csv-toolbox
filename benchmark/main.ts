@@ -276,7 +276,7 @@ bench = bench
 // WASM preset benchmark (50 rows)
 if (wasmAvailable) {
   bench = bench
-    .add('parseString engine:wasm (50 rows)', async () => {
+    .add('parseString engine:fast (50 rows)', async () => {
       for await (const _ of parseString(stringCSV, { engine: EnginePresets.fast() })) {
         // noop
       }
@@ -773,7 +773,7 @@ console.table(bench.table());
 
 console.log('\n=== Performance Summary ===');
 console.log('✓ Basic parsing operations completed');
-console.log('✓ Engine preset tests (mainThread, wasm, strict, worker variants) completed');
+console.log('✓ Engine preset tests (stable, fast, responsive, memoryEfficient, responsiveFast, balanced) completed');
 console.log('✓ Column variation tests (10-10000 columns) completed');
 console.log('✓ Quoted vs unquoted field tests completed');
 console.log('✓ Worker performance tests completed');

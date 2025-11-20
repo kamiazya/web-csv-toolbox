@@ -214,11 +214,6 @@ jobs:
           mkdir -p node_modules/web-csv-toolbox-wasm
           cp -r web-csv-toolbox-wasm/* node_modules/web-csv-toolbox-wasm/
 
-      - name: Install Deno dependencies - ${{ matrix.example }}
-        run: |
-          cd examples/${{ matrix.example }}
-          deno install
-
       - name: Run example - ${{ matrix.example }}
         run: |
           cd examples/${{ matrix.example }}

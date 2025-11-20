@@ -101,7 +101,7 @@ See: [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md)
 ## Presets and Cleanup
 
 - Prefer `EnginePresets` for common execution modes (e.g., `balanced()`, `responsiveFast()`)
-- Use a `WorkerPool` to bound concurrent workers; prefer `using` if your environment supports Explicit Resource Management, otherwise call `pool.terminate()`
+- Use a `ReusableWorkerPool` to bound concurrent workers; prefer `using` if your environment supports Explicit Resource Management, otherwise call `pool.terminate()`
 
 ## Migration
 

@@ -72,7 +72,7 @@ import {
  * ```
  *
  * @beta
- * @throws {RangeError} If provided options are invalid or WASM module is not initialized
+ * @throws {RangeError} If provided options are invalid or WASM module initialization fails
  * @throws {TypeError} If provided options have invalid types
  */
 export function parseStringToArraySyncWASM<

@@ -131,9 +131,9 @@ await fetchAndParseCSV('https://example.com/large-data.csv');
 - Main thread stays responsive during both operations
 - Automatic handling of Content-Type and Content-Encoding headers
 
-## Step 4: Managing Concurrent Parsing with WorkerPool
+## Step 4: Managing Concurrent Parsing with ReusableWorkerPool
 
-When parsing multiple CSV files, use `WorkerPool` to limit resource usage:
+When parsing multiple CSV files, use a worker pool (`ReusableWorkerPool`) to limit resource usage:
 
 ```typescript
 import { parse, ReusableWorkerPool } from 'web-csv-toolbox';
@@ -219,7 +219,7 @@ for await (const record of parse(csv, {
 ```
 
 **Available Preset Options:**
-- `workerPool`: Shared WorkerPool instance
+- `workerPool`: Shared ReusableWorkerPool instance
 - `workerURL`: Custom worker script URL
 - `onFallback`: Callback when fallback occurs
 
@@ -350,7 +350,7 @@ For detailed browser compatibility information, see [Supported Environments](../
 You've learned how to:
 - ✅ Use worker threads for CSV parsing
 - ✅ Choose the right engine preset
-- ✅ Manage concurrent parsing with WorkerPool
+- ✅ Manage concurrent parsing with ReusableWorkerPool
 - ✅ Handle errors in worker execution
 - ✅ Maintain UI responsiveness in browsers
 - ✅ Process CSV files efficiently on servers

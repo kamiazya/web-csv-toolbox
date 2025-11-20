@@ -171,7 +171,7 @@ const records = parseStringToArraySyncWASM(csv);
 
 ## Usage 📘
 
-> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.responsive()`, `EnginePresets.responsiveFast()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/use-with-bundlers.md) for configuration details.
+> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.responsive()`, `EnginePresets.responsiveFast()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/using-with-bundlers.md) for configuration details.
 
 ### Parsing CSV files from strings
 
