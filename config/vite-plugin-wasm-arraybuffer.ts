@@ -150,24 +150,34 @@ const bytes = Buffer.from(base64, 'base64');
 export default bytes.buffer || bytes;
 `;
       } else {
-        // Browser build: Use modern Uint8Array.fromBase64 API with Node.js fallback
+        // Browser build: Use modern Uint8Array.fromBase64 API with fallbacks
         return `
-// WASM file inlined as base64-encoded ArrayBuffer (Browser optimized with Node.js fallback)
+// WASM file inlined as base64-encoded ArrayBuffer (Browser optimized with fallbacks)
 import { base64 } from "${sharedModuleId}";
 // Uses Uint8Array.fromBase64 (available in modern browsers)
 // Falls back to Buffer.from in Node.js environment (e.g., for SSR or testing)
-// For environments without Uint8Array.fromBase64 or Buffer, a polyfill is required: https://github.com/tc39/proposal-arraybuffer-base64
+// Falls back to atob() for Deno and older browsers
 const bytes = typeof Uint8Array.fromBase64 === 'function'
   ? Uint8Array.fromBase64(base64)
   : (typeof Buffer !== 'undefined'
     ? Buffer.from(base64, 'base64')
-    : (() => {
-        throw new Error(
-          "Runtime does not support 'Uint8Array.fromBase64' or Node.js 'Buffer'. " +
-          "For browser environments, ensure 'Uint8Array.fromBase64' is available (modern browsers) " +
-          "or provide a polyfill: https://github.com/tc39/proposal-arraybuffer-base64"
-        );
-      })());
+    : (typeof atob === 'function'
+      ? (() => {
+          const binaryString = atob(base64);
+          const len = binaryString.length;
+          const bytes = new Uint8Array(len);
+          for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          return bytes;
+        })()
+      : (() => {
+          throw new Error(
+            "Runtime does not support 'Uint8Array.fromBase64', Node.js 'Buffer', or 'atob'. " +
+            "For browser environments, ensure 'Uint8Array.fromBase64' is available (modern browsers) " +
+            "or provide a polyfill: https://github.com/tc39/proposal-arraybuffer-base64"
+          );
+        })()));
 export default bytes.buffer || bytes;
 `;
       }
