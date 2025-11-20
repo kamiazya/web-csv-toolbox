@@ -38,11 +38,29 @@ export async function loadWASM(input?: InitInput): Promise<void> {
     return;
   }
 
-  // Browser environment: use default fetch-based initialization
-  if (input) {
-    await init({ module_or_path: input });
-  } else {
-    await init();
+  try {
+    // Browser environment: use default fetch-based initialization
+    if (input) {
+      await init({ module_or_path: input });
+    } else {
+      await init();
+    }
+    markWasmInitialized();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to initialize WASM module: ${errorMessage}\n\n` +
+        `This error typically occurs when:\n` +
+        `  - WASM file cannot be fetched or loaded\n` +
+        `  - Using Deno with npm: prefix without proper package.json exports\n` +
+        `  - WASM file path is incorrect or inaccessible\n\n` +
+        `For Deno users:\n` +
+        `  The package.json should include "deno" export conditions.\n` +
+        `  If you encounter this error, please ensure you're using the latest version.\n\n` +
+        `For manual WASM loading:\n` +
+        `  import { loadWASM } from 'web-csv-toolbox/slim';\n` +
+        `  await loadWASM(wasmFilePathOrBuffer);\n\n` +
+        `See: https://github.com/kamiazya/web-csv-toolbox#readme`,
+    );
   }
-  markWasmInitialized();
 }

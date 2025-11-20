@@ -3,9 +3,5 @@
   "nodeModulesDir": "manual",
   "tasks": {
     "start": "deno run index.ts"
-  },
-  "imports": {
-    "web-csv-toolbox": "../../dist/main.web.js",
-    "web-csv-toolbox/": "../../dist/"
   }
 }

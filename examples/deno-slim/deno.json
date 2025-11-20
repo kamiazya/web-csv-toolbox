@@ -3,9 +3,5 @@
   "nodeModulesDir": "manual",
   "tasks": {
     "start": "deno run --allow-read index.ts"
-  },
-  "imports": {
-    "web-csv-toolbox/slim": "../../dist/slim.web.js",
-    "web-csv-toolbox/": "../../dist/"
   }
 }

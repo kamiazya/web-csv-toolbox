@@ -39,22 +39,49 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   }
 
   if (input) {
-    await init({ module_or_path: input });
-    markWasmInitialized();
-    return;
+    try {
+      await init({ module_or_path: input });
+      markWasmInitialized();
+      return;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to initialize WASM module with provided input: ${errorMessage}\n\n` +
+          `Please ensure the provided WASM file or buffer is valid.\n\n` +
+          `See: https://github.com/kamiazya/web-csv-toolbox#readme`,
+      );
+    }
   }
 
-  // Node.js-specific WASM loading
-  // Use import.meta.resolve to find the WASM file from the package exports
-  // This works correctly both in development and when distributed as a package
-  const { readFile } = await import("node:fs/promises");
-  const { fileURLToPath } = await import("node:url");
+  try {
+    // Node.js-specific WASM loading
+    // Use import.meta.resolve to find the WASM file from the package exports
+    // This works correctly both in development and when distributed as a package
+    const { readFile } = await import("node:fs/promises");
+    const { fileURLToPath } = await import("node:url");
 
-  // Resolve WASM file path using package exports (./csv.wasm -> ./dist/csv.wasm)
-  // This avoids dependency on the external web-csv-toolbox-wasm package
-  const wasmUrl = import.meta.resolve("web-csv-toolbox/csv.wasm");
-  const wasmPath = fileURLToPath(wasmUrl);
-  const wasmBuffer = await readFile(wasmPath);
-  await init({ module_or_path: wasmBuffer });
-  markWasmInitialized();
+    // Resolve WASM file path using package exports (./csv.wasm -> ./dist/csv.wasm)
+    // This avoids dependency on the external web-csv-toolbox-wasm package
+    const wasmUrl = import.meta.resolve("web-csv-toolbox/csv.wasm");
+    const wasmPath = fileURLToPath(wasmUrl);
+    const wasmBuffer = await readFile(wasmPath);
+    await init({ module_or_path: wasmBuffer });
+    markWasmInitialized();
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to initialize WASM module: ${errorMessage}\n\n` +
+        `This error typically occurs when:\n` +
+        `  - WASM file cannot be found or read from the filesystem\n` +
+        `  - Package exports are not configured correctly\n` +
+        `  - File permissions prevent reading the WASM file\n\n` +
+        `For Deno users with npm: prefix:\n` +
+        `  This should work automatically with the "deno" export condition.\n` +
+        `  If you encounter this error, please ensure you're using the latest version.\n\n` +
+        `For manual WASM loading:\n` +
+        `  import { loadWASM } from 'web-csv-toolbox/slim';\n` +
+        `  await loadWASM(wasmFilePathOrBuffer);\n\n` +
+        `See: https://github.com/kamiazya/web-csv-toolbox#readme`,
+    );
+  }
 }
