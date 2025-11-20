@@ -12,7 +12,9 @@ try {
 
   // Slim entry: Must initialize WASM manually
   console.log('⏳ Initializing WASM...');
-  await loadWASM();
+  // Resolve the path to the WASM file
+  const wasmPath = new URL('../../dist/csv.wasm', import.meta.url);
+  await loadWASM(wasmPath.href);
   console.log('✅ WASM initialized\n');
 
   // Now we can use sync WASM APIs

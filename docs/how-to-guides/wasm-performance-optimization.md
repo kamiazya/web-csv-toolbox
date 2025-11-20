@@ -640,7 +640,7 @@ export default app;
 
 - [ ] Call `loadWASM()` once at startup
 - [ ] Use `EnginePresets.responsiveFast()` for UTF-8 CSV
-- [ ] Use `WorkerPool` to limit concurrent workers
+- [ ] Use `ReusableWorkerPool` to limit concurrent workers
 - [ ] Handle errors gracefully
 - [ ] Set appropriate `maxBufferSize`
 - [ ] Benchmark with realistic data
@@ -673,7 +673,7 @@ export default app;
 
 **Problem:** Not limiting concurrent workers
 
-**Solution:** Use `WorkerPool` with `maxWorkers`
+**Solution:** Use `ReusableWorkerPool` with `maxWorkers`
 
 ---
 

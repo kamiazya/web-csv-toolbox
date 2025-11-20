@@ -189,7 +189,7 @@ export function parseStringToArraySyncWASM<Header>(
 - Input string: Temporary copy in WASM memory
 - Parsing state: Small, constant size
 - Output: JSON string (similar size to input)
-- **Total overhead:** Approximately 2x input size during parsing
+- **Total overhead:** Approximately 3x input size during parsing
 
 ---
 
@@ -431,7 +431,7 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 ```
 
 **Fallback scenarios:**
-1. WASM module not loaded (`loadWASM()` not called)
+1. WASM initialization failed or module could not be loaded
 2. Non-UTF-8 encoding specified
 3. Single-quote quotation character specified
 4. WASM not supported in runtime (rare)

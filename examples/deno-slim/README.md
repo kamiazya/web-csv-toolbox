@@ -17,7 +17,7 @@ deno task start
 Or directly:
 
 ```bash
-deno run index.ts
+deno run --allow-read index.ts
 ```
 
 ## What's tested
