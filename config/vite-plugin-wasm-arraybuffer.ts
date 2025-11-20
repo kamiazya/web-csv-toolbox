@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { createRequire } from "node:module";
 import type { Plugin } from "vite";
 
 /**
@@ -102,8 +103,16 @@ export function wasmArrayBuffer(): Plugin {
         console.log(`[vite-plugin-wasm-arraybuffer] loading shared module: ${baseName}`);
 
         // Resolve absolute path
-        const absolutePath = path.join(process.cwd(), "node_modules", "web-csv-toolbox-wasm", `${baseName}.wasm`);
-        console.log(`[vite-plugin-wasm-arraybuffer] absolutePath=${absolutePath}`);
+        let absolutePath: string;
+        try {
+          const require = createRequire(import.meta.url);
+          const pkgPath = require.resolve("web-csv-toolbox-wasm/package.json");
+          absolutePath = path.join(path.dirname(pkgPath), `${baseName}.wasm`);
+          console.log(`[vite-plugin-wasm-arraybuffer] absolutePath=${absolutePath}`);
+        } catch (error) {
+          console.error(`[vite-plugin-wasm-arraybuffer] Failed to resolve web-csv-toolbox-wasm location. Ensure it is installed or linked. Error:`, error);
+          return null;
+        }
 
         try {
           const buffer = await readFile(absolutePath);
