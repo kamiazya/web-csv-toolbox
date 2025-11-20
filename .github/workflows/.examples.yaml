@@ -208,7 +208,7 @@ jobs:
 
       - name: Copy WASM file to dist directory
         run: |
-          cp web-csv-toolbox-wasm/csv.wasm dist/csv.wasm
+          cp web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm dist/csv.wasm
 
       - name: Run example - ${{ matrix.example }}
         run: |
