@@ -639,7 +639,7 @@ console.log(result);
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
+| `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
 
 ### Advanced Options (Binary-Specific) 🧬

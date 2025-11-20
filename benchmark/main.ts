@@ -277,7 +277,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('parseString engine:wasm (50 rows)', async () => {
-      for await (const _ of parseString(stringCSV, { engine: EnginePresets.wasm() })) {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.fast() })) {
         // noop
       }
     });
@@ -649,7 +649,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('Engine comparison: wasm (500 rows)', async () => {
-      for await (const _ of parseString(csv500rows, { engine: EnginePresets.wasm() })) {
+      for await (const _ of parseString(csv500rows, { engine: EnginePresets.fast() })) {
         // noop
       }
     });
@@ -665,7 +665,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('Engine comparison: wasm (5000 rows)', async () => {
-      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.wasm() })) {
+      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.fast() })) {
         // noop
       }
     });

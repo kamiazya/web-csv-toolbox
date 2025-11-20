@@ -11,6 +11,11 @@ import type {
  */
 declare const __VARIANT__: "main" | "slim";
 
+const parseStringToArrayWasmPath =
+  typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
+    ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
+    : "../../parser/api/string/parseStringToArraySyncWASM.main.ts";
+
 /**
  * Base interface for Worker requests
  * @internal
@@ -322,9 +327,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             // Dynamic import WASM implementation
             try {
               const { parseStringToArraySyncWASM } = await import(
-                typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
-                  ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-                  : "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
+                parseStringToArrayWasmPath
               );
               await streamRecordsToMain(
                 workerContext,
@@ -510,9 +513,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               );
             }
             const { parseStringToArraySyncWASM } = await import(
-              typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
-                ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-                : "../../parser/api/string/parseStringToArraySyncWASM.main.ts"
+              parseStringToArrayWasmPath
             );
             await streamRecordsToMain(
               workerContext,
