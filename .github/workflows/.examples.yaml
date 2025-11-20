@@ -189,9 +189,6 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Setup TypeScript
-        uses: ./.github/actions/setup-typescript
-
       - name: Setup Deno
         uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
         with:
@@ -209,10 +206,9 @@ jobs:
           name: web-csv-toolbox-wasm
           path: web-csv-toolbox-wasm
 
-      - name: Copy WASM package to node_modules
+      - name: Copy WASM file to dist directory
         run: |
-          mkdir -p node_modules/web-csv-toolbox-wasm
-          cp -r web-csv-toolbox-wasm/* node_modules/web-csv-toolbox-wasm/
+          cp web-csv-toolbox-wasm/csv.wasm dist/csv.wasm
 
       - name: Run example - ${{ matrix.example }}
         run: |
