@@ -45,15 +45,14 @@ export async function loadWASM(input?: InitInput): Promise<void> {
   }
 
   // Node.js-specific WASM loading
-  // Use import.meta.resolve to find the WASM file from the installed package
+  // Use import.meta.resolve to find the WASM file from the package exports
   // This works correctly both in development and when distributed as a package
   const { readFile } = await import("node:fs/promises");
   const { fileURLToPath } = await import("node:url");
 
-  // Resolve WASM file path from the web-csv-toolbox-wasm package
-  const wasmUrl = import.meta.resolve(
-    "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm",
-  );
+  // Resolve WASM file path using package exports (./csv.wasm -> ./dist/csv.wasm)
+  // This avoids dependency on the external web-csv-toolbox-wasm package
+  const wasmUrl = import.meta.resolve("web-csv-toolbox/csv.wasm");
   const wasmPath = fileURLToPath(wasmUrl);
   const wasmBuffer = await readFile(wasmPath);
   await init({ module_or_path: wasmBuffer });
