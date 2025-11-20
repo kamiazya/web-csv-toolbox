@@ -271,4 +271,4 @@ Requires `@rollup/plugin-url` or similar plugin to process Worker imports.
 
 - [Worker Pool Architecture](./worker-pool-architecture.md) - How Workers are managed
 - [Execution Strategies](./execution-strategies.md) - When to use Workers
-- [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) - Practical usage guide
+- [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md) - Practical usage guide

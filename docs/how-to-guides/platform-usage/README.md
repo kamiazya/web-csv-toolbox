@@ -109,4 +109,4 @@ try {
 - **[Choosing the Right API](../choosing-the-right-api.md)** - API selection guide
 - **[API Reference](../../reference/api/)** - Complete API documentation
 - **[Security Guide](../secure-csv-processing.md)** - Security best practices
-- **[Use with Bundlers](../use-with-bundlers.md)** - Bundler integration guide
+- **[Use with Bundlers](../using-with-bundlers.md)** - Bundler integration guide

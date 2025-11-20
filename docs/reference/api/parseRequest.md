@@ -733,7 +733,7 @@ export default {
 - **[parseResponse() API Reference](./parseResponse.md)** - Client-side response parser
 - **[parse() API Reference](./parse.md)** - High-level universal API
 - **[Choosing the Right API](../../how-to-guides/choosing-the-right-api.md)** - API selection guide
-- **[Use with Bundlers](../../how-to-guides/use-with-bundlers.md)** - Bundler integration
+- **[Use with Bundlers](../../how-to-guides/using-with-bundlers.md)** - Bundler integration
 
 ---
 

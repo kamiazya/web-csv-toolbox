@@ -7,7 +7,7 @@ group: Explanation
 
 This document explains how different execution strategies work and when to use each one.
 
-> **Note for Bundler Users**: When using Worker-based strategies (worker, workerWasm, etc.) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) for details.
+> **Note for Bundler Users**: When using Worker-based strategies (worker, workerWasm, etc.) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md) for details.
 
 ## Background
 

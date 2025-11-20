@@ -192,4 +192,4 @@ All exports include TypeScript declarations:
 
 - [Engine Presets Reference](./engine-presets.md) - Detailed preset configuration guide
 - [Package Exports Explanation](../explanation/package-exports.md) - How conditional exports work
-- [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) - Practical bundler integration
+- [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md) - Practical bundler integration

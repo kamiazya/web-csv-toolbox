@@ -90,7 +90,7 @@ When using **Workers** and **WASM** together (e.g., `EnginePresets.responsiveFas
 1. Provide `workerURL` to your bundler’s worker asset
 2. For slim, provide `wasmUrl` to `loadWASM()`
 
-See: [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md)
+See: [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md)
 
 ## Node.js Notes
 
@@ -120,4 +120,4 @@ Slim → Main:
 - WASM compile error: Ensure your WASM file is included and served with a correct URL and MIME type
 - CSP: If using data URLs, adjust CSP or configure bundler to emit files instead of data URLs
 
-See: [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md)
+See: [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md)
