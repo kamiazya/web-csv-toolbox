@@ -44,7 +44,8 @@ export async function loadWASM(input?: InitInput): Promise<void> {
       markWasmInitialized();
       return;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new Error(
         `Failed to initialize WASM module with provided input: ${errorMessage}\n\n` +
           `Please ensure the provided WASM file or buffer is valid.\n\n` +
