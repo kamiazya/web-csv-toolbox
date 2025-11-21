@@ -19,6 +19,7 @@ module.exports = {
       'node:url': false,
       'node:path': false,
       'node:fs/promises': false,
+      'node:buffer': false,
     },
   },
   module: {
