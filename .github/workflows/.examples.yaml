@@ -178,16 +178,30 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
+      - name: Setup TypeScript
+        uses: ./.github/actions/setup-typescript
+
+      - name: Download WASM artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
-          deno-version: lts
+          name: web-csv-toolbox-wasm
+          path: web-csv-toolbox-wasm/pkg
 
       - name: Download dist artifact
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
           name: dist
           path: dist
+
+      - name: Install dependencies for example
+        run: |
+          cd examples/${{ matrix.example }}
+          pnpm install
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
+        with:
+          deno-version: lts
 
       - name: Run example - ${{ matrix.example }}
         run: |

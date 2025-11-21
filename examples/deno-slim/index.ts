@@ -1,4 +1,4 @@
-import { loadWASM, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox@^0.13.0/slim';
+import { loadWASM, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox/slim';
 
 console.log('🦕 Deno Slim Entry Test');
 console.log('Features: Manual WASM initialization via npm: prefix, smaller JS bundle\n');

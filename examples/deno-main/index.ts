@@ -1,4 +1,4 @@
-import { parseString, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox@^0.13.0';
+import { parseString, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox';
 
 console.log('🦕 Deno Main Version Test');
 console.log('Features: Auto WASM initialization via npm: prefix\n');
