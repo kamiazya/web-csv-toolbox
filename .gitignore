@@ -140,4 +140,4 @@ graph*.svg
 
 # Deno lock files and cache
 deno.lock
-.deno_cache
+**/.deno_cache
