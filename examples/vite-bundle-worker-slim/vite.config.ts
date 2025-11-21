@@ -10,11 +10,6 @@ export default defineConfig({
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
     }),
   ],
-  resolve: {
-    // Ensure browser build is selected for web-csv-toolbox
-    conditions: ['browser', 'import', 'module', 'default'],
-    mainFields: ['browser', 'module', 'main'],
-  },
   build: {
     outDir: "dist",
     rollupOptions: {
