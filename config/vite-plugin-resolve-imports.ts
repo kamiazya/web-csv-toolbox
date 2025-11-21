@@ -245,19 +245,31 @@ export function resolveImportsPlugin(): Plugin {
       // Only for preserveModules builds
       if (!options.preserveModules) return;
 
-      // Build a map of available files in the bundle by base name
+      // Build a map of available files in the bundle by base name (basename only, not full path)
       const bundleFiles = new Map<string, Set<string>>();
 
       for (const fileName of Object.keys(bundle)) {
-        // Extract base name without .node/.web suffix
-        const baseName = fileName
-          .replace(/\.node\.js$/, ".js")
-          .replace(/\.web\.js$/, ".js");
+        // Extract base name without .node/.web suffix and use only the basename
+        const baseName = path.basename(
+          fileName
+            .replace(/\.node\.js$/, ".js")
+            .replace(/\.web\.js$/, ".js")
+        );
 
         if (!bundleFiles.has(baseName)) {
           bundleFiles.set(baseName, new Set());
         }
-        bundleFiles.get(baseName)!.add(fileName);
+        bundleFiles.get(baseName)!.add(path.basename(fileName));
+      }
+
+      // Debug: Log bundleFiles map
+      if (bundleFiles.size > 0) {
+        console.log(`[resolve-imports] Bundle files map (${bundleFiles.size} entries):`);
+        for (const [key, variants] of bundleFiles.entries()) {
+          if (variants.size > 1) {
+            console.log(`  ${key}: [${Array.from(variants).join(", ")}]`);
+          }
+        }
       }
 
       // Process each chunk
@@ -301,16 +313,22 @@ export function resolveImportsPlugin(): Plugin {
               const baseName = path.basename(baseImport);
               const variants = bundleFiles.get(baseName);
 
+              console.log(`[resolve-imports] Checking import in ${fileName} (target: ${fileTarget}):`);
+              console.log(`  Import: ${importPath} (target: ${importTarget})`);
+              console.log(`  Base: ${baseName}, Expected: ${path.basename(expectedImport)}`);
+              console.log(`  Variants: ${variants ? Array.from(variants).join(", ") : "none"}`);
+
               if (variants && variants.has(path.basename(expectedImport))) {
                 // Rewrite the import in the chunk code
+                // Match with optional ./ prefix
                 const importPattern = new RegExp(
-                  `(['"\`])${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`,
+                  `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
                   "g"
                 );
 
                 const newCode = chunk.code.replace(
                   importPattern,
-                  `$1${expectedImport}$1`
+                  `$1./${expectedImport}$1`
                 );
 
                 if (newCode !== chunk.code) {
@@ -318,7 +336,11 @@ export function resolveImportsPlugin(): Plugin {
                   console.log(
                     `[resolve-imports] Rewrote import in ${fileName}: ${importPath} -> ${expectedImport}`
                   );
+                } else {
+                  console.log(`[resolve-imports] No changes made (pattern not found in code)`);
                 }
+              } else {
+                console.log(`[resolve-imports] Expected variant not found, skipping`);
               }
             }
           } else if (fileTarget !== "shared") {
@@ -332,14 +354,15 @@ export function resolveImportsPlugin(): Plugin {
 
             // Only rewrite if the target variant exists
             if (variants && variants.has(path.basename(targetImport))) {
+              // Match with optional ./ prefix
               const importPattern = new RegExp(
-                `(['"\`])${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`,
+                `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
                 "g"
               );
 
               const newCode = chunk.code.replace(
                 importPattern,
-                `$1${targetImport}$1`
+                `$1./${targetImport}$1`
               );
 
               if (newCode !== chunk.code) {
