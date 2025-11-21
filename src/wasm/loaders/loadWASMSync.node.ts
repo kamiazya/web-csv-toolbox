@@ -1,3 +1,19 @@
+/**
+ * Node.js-specific WASM synchronous loader.
+ *
+ * **IMPORTANT**: This file exists alongside loadWASMSync.web.ts (not a unified loadWASMSync.ts).
+ *
+ * **Why separate .node.ts and .web.ts versions are required:**
+ * - The `#/csv.wasm` import requires Vite plugin resolution at build time
+ * - This plugin-based resolution doesn't work reliably in all test environments
+ * - Separate files allow proper mocking and testing in environment-specific test suites
+ * - During build, package.json "imports" field maps `#/wasm/loaders/loadWASMSync.js`
+ *   to the appropriate `.node.js` or `.web.js` based on the runtime environment
+ *
+ * **Do not consolidate** into a single unified file unless Vite plugin resolution
+ * for `#/csv.wasm` works reliably across all development and test environments.
+ */
+
 import {
   type InitOutput,
   initSync,

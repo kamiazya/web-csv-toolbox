@@ -135,7 +135,7 @@ const pool = new ReusableWorkerPool({ maxWorkers });
 
 ```typescript
 import { performance } from 'node:perf_hooks';
-import { parseString } from 'web-csv-toolbox';
+import { parseString, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox';
 
 async function benchmarkPoolSize(csv: string, poolSize: number) {
   using pool = new ReusableWorkerPool({ maxWorkers: poolSize });
@@ -147,7 +147,7 @@ async function benchmarkPoolSize(csv: string, poolSize: number) {
     Array(10).fill(csv).map(async (c) => {
       const records = [];
       for await (const record of parseString(c, {
-        engine: { worker: true, workerPool: pool }
+        engine: EnginePresets.balanced({ workerPool: pool })
       })) {
         records.push(record);
       }

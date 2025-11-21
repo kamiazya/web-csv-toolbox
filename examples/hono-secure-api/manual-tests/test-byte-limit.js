@@ -1,11 +1,11 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 /**
  * Manual test for byte counting security
  *
  * This test verifies that the server correctly counts actual bytes received
  * and rejects requests that exceed maxRequestBodySize, regardless of Content-Length header.
  *
- * Usage: node manual-tests/test-byte-limit.js
+ * Usage: pnpm test:manual
  */
 
 import { SECURITY_CONFIG } from '../src/app.ts';

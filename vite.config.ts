@@ -14,7 +14,7 @@ export default defineConfig(({ command }) => ({
   resolve: {
     alias: {
       "@": "/src",
-      // Aliases for development only - build uses relative imports
+      // Aliases for development only - build uses relative imports via plugin
       ...(command === "serve"
         ? {
             "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
@@ -192,6 +192,13 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "@": "/src",
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -226,6 +233,13 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "@": "/src",
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.web.ts",
           },
         },
       },
@@ -242,6 +256,13 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "@": "/src",
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },
@@ -256,6 +277,13 @@ export default defineConfig(({ command }) => ({
         resolve: {
           alias: {
             "@": "/src",
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.node.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.node.ts",
           },
         },
       },

@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "test:manual": "node manual-tests/test-byte-limit.js"
+    "test:manual": "tsx manual-tests/test-byte-limit.js"
   },
   "dependencies": {
     "@hono/node-server": "catalog:",
