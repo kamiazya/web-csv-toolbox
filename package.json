@@ -93,7 +93,7 @@
   "imports": {
     "#/csv.wasm": {
       "types": "./dist/_virtual/web_csv_toolbox_wasm_bg.wasm.d.ts",
-      "deno": "./dist/_virtual/web_csv_toolbox_wasm_bg.node.wasm.js",
+      "deno": "./dist/_virtual/web_csv_toolbox_wasm_bg.deno.wasm.js",
       "browser": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js",
       "node": "./dist/_virtual/web_csv_toolbox_wasm_bg.node.wasm.js",
       "default": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js"

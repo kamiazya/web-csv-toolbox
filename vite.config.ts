@@ -117,9 +117,31 @@ export default defineConfig(({ command }) => ({
       afterBuild: async () => {
         // Fix incorrect relative paths in generated .d.ts files
         const { readdir, readFile, writeFile, stat } = await import("node:fs/promises");
-        const { join, relative, dirname, resolve } = await import("node:path");
+        const { join, relative, dirname } = await import("node:path");
 
         const distDir = join(process.cwd(), "dist");
+
+        // Generate Deno-specific WASM loader
+        const denoWasmContent = `// WASM file inlined as base64-encoded ArrayBuffer (Deno)
+import { base64 } from "./web_csv_toolbox_wasm_bg.shared.wasm.js";
+const binaryString = atob(base64);
+const len = binaryString.length;
+const bytes = new Uint8Array(len);
+for (let i = 0; i < len; i++) {
+  bytes[i] = binaryString.charCodeAt(i);
+}
+export default bytes.buffer || bytes;
+//# sourceMappingURL=web_csv_toolbox_wasm_bg.deno.wasm.js.map
+`;
+        const denoWasmPath = join(distDir, "_virtual", "web_csv_toolbox_wasm_bg.deno.wasm.js");
+        await writeFile(denoWasmPath, denoWasmContent, "utf-8");
+
+        // Generate source map for Deno WASM loader
+        const denoMapContent = `{"version":3,"sources":[],"names":[],"mappings":""}`;
+        const denoMapPath = join(distDir, "_virtual", "web_csv_toolbox_wasm_bg.deno.wasm.js.map");
+        await writeFile(denoMapPath, denoMapContent, "utf-8");
+
+        console.log("[vite:dts] Generated Deno WASM loader: web_csv_toolbox_wasm_bg.deno.wasm.js");
 
         async function fixDtsFiles(dir: string) {
           const files = await readdir(dir);

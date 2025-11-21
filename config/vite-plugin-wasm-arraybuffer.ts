@@ -11,12 +11,13 @@ import type { Plugin } from "vite";
  *
  * The generated code is optimized based on the importer file path:
  * - `.node.ts` or `.node.js` files → Node.js-specific code (Buffer.from)
- * - Other files → Browser-specific code (Uint8Array.fromBase64)
+ * - Other files → Browser-specific code (Uint8Array.fromBase64 with atob fallback)
  *
  * Generated files:
  * - `xxx.node.wasm.js` - Node.js environment (uses Buffer.from)
- * - `xxx.web.wasm.js` - Browser environment (uses Uint8Array.fromBase64)
- * - `xxx.shared.wasm.js` - Shared base64 data (imported by both)
+ * - `xxx.deno.wasm.js` - Deno environment (uses atob)
+ * - `xxx.web.wasm.js` - Browser environment (uses Uint8Array.fromBase64 with atob fallback)
+ * - `xxx.shared.wasm.js` - Shared base64 data (imported by all)
  *
  * @example
  * ```ts
@@ -41,7 +42,8 @@ export function wasmArrayBuffer(): Plugin {
         console.log(`[vite-plugin-wasm-arraybuffer] resolveId called for #/csv.wasm import: ${source}, importer=${importer}`);
         // Detect target environment from importer path
         const isNodeTarget = /\.node\.(ts|js)/.test(importer || "");
-        const env = isNodeTarget ? "node" : "web";
+        const isDenoTarget = /\.deno\.(ts|js)/.test(importer || "");
+        const env = isNodeTarget ? "node" : isDenoTarget ? "deno" : "web";
         const virtualId = `\0_virtual/web_csv_toolbox_wasm_bg.${env}.wasm`;
         console.log(`[vite-plugin-wasm-arraybuffer] returning virtualId for #/csv.wasm: ${virtualId}`);
         return virtualId;
@@ -69,10 +71,10 @@ export function wasmArrayBuffer(): Plugin {
           }
 
           // Detect target environment from importer path
-          // If importer contains .node.ts or .node.js, it's for Node.js
           const isNodeTarget = /\.node\.(ts|js)/.test(importer || "");
+          const isDenoTarget = /\.deno\.(ts|js)/.test(importer || "");
           // Include environment in virtual module ID to generate separate modules
-          const env = isNodeTarget ? "node" : "web";
+          const env = isNodeTarget ? "node" : isDenoTarget ? "deno" : "web";
           // Generate virtual ID with file path structure for proper output naming
           const wasmFileName = filePath.replace(/^.*\//, "").replace(".wasm", ""); // Extract filename without extension
           const virtualId = `\0_virtual/${wasmFileName}.${env}.wasm`;
@@ -130,64 +132,63 @@ export const base64 = "${base64}";
 
       // Handle environment-specific module
       // Extract environment from virtual module id
-      // Format: \0_virtual/xxx.node.wasm or \0_virtual/xxx.web.wasm
-      const match = id.match(/\0_virtual\/(.+)\.(node|web)\.wasm/);
+      // Format: \0_virtual/xxx.node.wasm, \0_virtual/xxx.deno.wasm, or \0_virtual/xxx.web.wasm
+      const match = id.match(/\0_virtual\/(.+)\.(node|deno|web)\.wasm/);
       if (!match) {
         console.log(`[vite-plugin-wasm-arraybuffer] invalid format: ${id}`);
         return null;
       }
 
       const baseName = match[1];
-      const env = match[2]; // "node" or "web"
+      const env = match[2]; // "node", "deno", or "web"
 
       console.log(`[vite-plugin-wasm-arraybuffer] env=${env}, baseName=${baseName}`);
-
-      const isNodeTarget = env === "node";
-      console.log(`[vite-plugin-wasm-arraybuffer] isNodeTarget=${isNodeTarget}`);
 
       // Generate import path for shared module
       const sharedModuleId = `\0_virtual/${baseName}.shared.wasm`;
 
       // Return as JavaScript module that exports an ArrayBuffer
       // Import shared base64 data and decode it based on environment
-      if (isNodeTarget) {
-        // Node.js build: Import Buffer for Deno compatibility
+      if (env === "node") {
+        // Node.js build: Use Buffer.from
         return `
-// WASM file inlined as base64-encoded ArrayBuffer (Node.js optimized)
+// WASM file inlined as base64-encoded ArrayBuffer (Node.js)
 import { Buffer } from "node:buffer";
 import { base64 } from "${sharedModuleId}";
 const bytes = Buffer.from(base64, 'base64');
 export default bytes.buffer || bytes;
 `;
-      } else {
-        // Browser build: Use modern Uint8Array.fromBase64 API with fallbacks
+      } else if (env === "deno") {
+        // Deno build: Use atob (Uint8Array.fromBase64 not yet supported in Deno)
         return `
-// WASM file inlined as base64-encoded ArrayBuffer (Browser optimized with fallbacks)
+// WASM file inlined as base64-encoded ArrayBuffer (Deno)
+import { base64 } from "${sharedModuleId}";
+const binaryString = atob(base64);
+const len = binaryString.length;
+const bytes = new Uint8Array(len);
+for (let i = 0; i < len; i++) {
+  bytes[i] = binaryString.charCodeAt(i);
+}
+export default bytes.buffer || bytes;
+`;
+      } else {
+        // Browser build: Use modern Uint8Array.fromBase64 API with atob fallback
+        return `
+// WASM file inlined as base64-encoded ArrayBuffer (Browser)
 import { base64 } from "${sharedModuleId}";
 // Uses Uint8Array.fromBase64 (available in modern browsers)
-// Falls back to Buffer.from in Node.js environment (e.g., for SSR or testing)
-// Falls back to atob() for Deno and older browsers
+// Falls back to atob() for older browsers
 const bytes = typeof Uint8Array.fromBase64 === 'function'
   ? Uint8Array.fromBase64(base64)
-  : (typeof Buffer !== 'undefined'
-    ? Buffer.from(base64, 'base64')
-    : (typeof atob === 'function'
-      ? (() => {
-          const binaryString = atob(base64);
-          const len = binaryString.length;
-          const bytes = new Uint8Array(len);
-          for (let i = 0; i < len; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-          return bytes;
-        })()
-      : (() => {
-          throw new Error(
-            "Runtime does not support 'Uint8Array.fromBase64', Node.js 'Buffer', or 'atob'. " +
-            "For browser environments, ensure 'Uint8Array.fromBase64' is available (modern browsers) " +
-            "or provide a polyfill: https://github.com/tc39/proposal-arraybuffer-base64"
-          );
-        })()));
+  : (() => {
+      const binaryString = atob(base64);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return bytes;
+    })();
 export default bytes.buffer || bytes;
 `;
       }
