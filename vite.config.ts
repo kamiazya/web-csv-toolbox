@@ -78,6 +78,7 @@ export default defineConfig(({ command }) => ({
         "node:url",
         "node:path",
         "node:fs/promises",
+        "node:buffer",
       ],
       output: {
         inlineDynamicImports: false,

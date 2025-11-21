@@ -151,9 +151,10 @@ export const base64 = "${base64}";
       // Return as JavaScript module that exports an ArrayBuffer
       // Import shared base64 data and decode it based on environment
       if (isNodeTarget) {
-        // Node.js build: Only include Buffer.from code
+        // Node.js build: Import Buffer for Deno compatibility
         return `
 // WASM file inlined as base64-encoded ArrayBuffer (Node.js optimized)
+import { Buffer } from "node:buffer";
 import { base64 } from "${sharedModuleId}";
 const bytes = Buffer.from(base64, 'base64');
 export default bytes.buffer || bytes;
