@@ -10,7 +10,7 @@ export default defineConfig({
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
       bundleName: 'example-vite-bundle-main',
-      uploadToken: process.env.CODECOV_TOKEN,
+      ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
     }),
   ],
   build: {

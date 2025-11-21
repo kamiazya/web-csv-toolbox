@@ -6,11 +6,8 @@ export default defineConfig({
     environment: 'node',
     // Run tests sequentially to avoid worker pool conflicts
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    // Note: poolOptions.forks.singleFork is not available in current vitest version
+    // Using pool: 'forks' alone should provide sequential execution
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

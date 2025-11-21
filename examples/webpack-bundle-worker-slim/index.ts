@@ -1,6 +1,7 @@
 import { parseString, ReusableWorkerPool } from "web-csv-toolbox";
 // Import slim worker bundle URL from package exports
 // Webpack's asset/resource type returns the URL for the module
+// @ts-expect-error - Webpack asset/resource returns a string URL, but TypeScript sees it as a module
 import workerUrl from "web-csv-toolbox/worker/slim";
 
 const csv = `name,age
