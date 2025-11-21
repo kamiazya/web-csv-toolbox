@@ -178,15 +178,6 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Setup TypeScript
-        uses: ./.github/actions/setup-typescript
-
-      - name: Download WASM artifact
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
-        with:
-          name: web-csv-toolbox-wasm
-          path: web-csv-toolbox-wasm/pkg
-
       - name: Download dist artifact
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
         with:
@@ -201,17 +192,7 @@ jobs:
       - name: Setup Deno workspace structure
         run: |
           cd examples/deno/${{ matrix.example }}
-          # Get version from package.json
-          VERSION=$(node -p "require('../../../package.json').version")
-          # Create the npm cache directory structure that Deno expects
-          NPM_CACHE_DIR=".deno_cache/npm/registry.npmjs.org/web-csv-toolbox/$VERSION"
-          mkdir -p "$NPM_CACHE_DIR"
-          # Copy built dist and package.json to Deno's npm cache
-          cp -r ../../../dist "$NPM_CACHE_DIR/"
-          cp ../../../package.json "$NPM_CACHE_DIR/"
-          cp ../../../README.md "$NPM_CACHE_DIR/" 2>/dev/null || true
-          cp ../../../LICENSE "$NPM_CACHE_DIR/" 2>/dev/null || true
-          echo "✓ Deno cache populated with workspace build"
+          deno task setup
 
       - name: Run example - ${{ matrix.example }}
         run: |
