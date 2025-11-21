@@ -22,6 +22,11 @@ export default defineConfig({
       output: {
         entryFileNames: 'bundle.js',
       },
+      external: (id) => {
+        // Exclude Node.js-specific files from browser bundle
+        // These files are in dist/node/ but Vite still discovers them via package.json imports
+        return id.includes('/node/') || id.includes('/node\\');
+      },
     },
     minify: true,
   },

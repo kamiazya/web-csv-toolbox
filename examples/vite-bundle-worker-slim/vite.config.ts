@@ -16,6 +16,11 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
       },
+      external: (id) => {
+        // Exclude Node.js-specific files from browser bundle
+        // These files are in dist/node/ but Vite still discovers them via package.json imports
+        return id.includes('/node/') || id.includes('/node\\');
+      },
     },
   },
   // Vite will automatically handle WASM files imported with ?url suffix

@@ -88,6 +88,19 @@ export default defineConfig(({ command }) => ({
         exports: "named",
         // Prevent worker from being inlined as data URL
         assetFileNames: "[name][extname]",
+        // Separate Node.js files into dist/node/ directory
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name.includes('.node')) {
+            return 'node/[name].js';
+          }
+          return '[name].js';
+        },
+        chunkFileNames: (chunkInfo) => {
+          if (chunkInfo.name.includes('.node')) {
+            return 'node/[name]-[hash].js';
+          }
+          return '[name]-[hash].js';
+        },
       },
     },
   },
@@ -122,7 +135,7 @@ export default defineConfig(({ command }) => ({
 
         const distDir = join(process.cwd(), "dist");
 
-        // Generate Deno-specific WASM loader
+        // Generate Deno-specific WASM loader in node/ directory
         const denoWasmContent = `// WASM file inlined as base64-encoded ArrayBuffer (Deno)
 import { base64 } from "./web_csv_toolbox_wasm_bg.shared.wasm.js";
 const binaryString = atob(base64);
@@ -134,15 +147,18 @@ for (let i = 0; i < len; i++) {
 export default bytes.buffer || bytes;
 //# sourceMappingURL=web_csv_toolbox_wasm_bg.deno.wasm.js.map
 `;
-        const denoWasmPath = join(distDir, "_virtual", "web_csv_toolbox_wasm_bg.deno.wasm.js");
+        const nodeVirtualDir = join(distDir, "node", "_virtual");
+        await import("node:fs/promises").then(({ mkdir }) => mkdir(nodeVirtualDir, { recursive: true }));
+
+        const denoWasmPath = join(nodeVirtualDir, "web_csv_toolbox_wasm_bg.deno.wasm.js");
         await writeFile(denoWasmPath, denoWasmContent, "utf-8");
 
         // Generate source map for Deno WASM loader
         const denoMapContent = `{"version":3,"sources":[],"names":[],"mappings":""}`;
-        const denoMapPath = join(distDir, "_virtual", "web_csv_toolbox_wasm_bg.deno.wasm.js.map");
+        const denoMapPath = join(nodeVirtualDir, "web_csv_toolbox_wasm_bg.deno.wasm.js.map");
         await writeFile(denoMapPath, denoMapContent, "utf-8");
 
-        console.log("[vite:dts] Generated Deno WASM loader: web_csv_toolbox_wasm_bg.deno.wasm.js");
+        console.log("[vite:dts] Generated Deno WASM loader: node/_virtual/web_csv_toolbox_wasm_bg.deno.wasm.js");
 
         async function fixDtsFiles(dir: string) {
           const files = await readdir(dir);
@@ -162,7 +178,7 @@ export default bytes.buffer || bytes;
               // Match any number of '../' followed by 'src/'
               content = content.replace(
                 /from ['"](?:\.\.\/)+src\/([^'"]+)['"]/g,
-                (match, modulePath) => {
+                (_match, modulePath) => {
                   // Remove .ts extension if present
                   const cleanPath = modulePath.replace(/\.ts$/, '');
 

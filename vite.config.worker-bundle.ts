@@ -20,9 +20,10 @@ const variant = process.env.VARIANT || "main";
 const isNode = target === "node";
 const isSlim = variant === "slim";
 const entryFile = isNode ? "src/worker.node.ts" : "src/worker.web.ts";
+// Separate Node.js bundles into node/ directory
 const outputFile = isSlim
-  ? (isNode ? "worker.slim.node.bundle" : "worker.slim.web.bundle")
-  : (isNode ? "worker.node.bundle" : "worker.web.bundle");
+  ? (isNode ? "node/worker.slim.node.bundle" : "worker.slim.web.bundle")
+  : (isNode ? "node/worker.node.bundle" : "worker.web.bundle");
 // Don't clear output dir - preserve files from build:js
 const emptyOutDir = false;
 
