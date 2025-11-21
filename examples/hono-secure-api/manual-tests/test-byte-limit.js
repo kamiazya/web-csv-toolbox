@@ -5,13 +5,13 @@
  * This test verifies that the server correctly counts actual bytes received
  * and rejects requests that exceed maxRequestBodySize, regardless of Content-Length header.
  *
- * Usage: node manual-tests/test-byte-limit.mjs
+ * Usage: node manual-tests/test-byte-limit.js
  */
 
-import { Readable } from 'node:stream';
+import { SECURITY_CONFIG } from '../src/app.ts';
 
 const SERVER_URL = 'http://localhost:3000';
-const MAX_REQUEST_BODY_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_REQUEST_BODY_SIZE = SECURITY_CONFIG.maxRequestBodySize;
 const TARGET_SIZE = MAX_REQUEST_BODY_SIZE + 100 * 1024; // 50MB + 100KB
 
 console.log('======================================');
@@ -93,9 +93,9 @@ async function runTest(testName, testFn) {
     if (result.passed) {
       console.log(`✓ ${testName} PASSED`);
       console.log('');
-      if (result.fatalEvent) {
-        console.log('Fatal event content:');
-        console.log(JSON.stringify(result.fatalEvent, null, 2));
+      if (result.details) {
+        console.log('Event details:');
+        console.log(JSON.stringify(result.details, null, 2));
         console.log('');
       }
     } else {
@@ -174,13 +174,13 @@ const test1Passed = await runTest(
       return {
         passed: false,
         error: `bytesRead (${fatalData.bytesRead}) should exceed ${MAX_REQUEST_BODY_SIZE}`,
-        fatalEvent: fatalData,
+        details: fatalData,
       };
     }
 
     return {
       passed: true,
-      fatalEvent: fatalData,
+      details: fatalData,
     };
   }
 );
@@ -237,13 +237,13 @@ const test2Passed = await runTest(
       return {
         passed: false,
         error: `bytesRead (${fatalData.bytesRead}) should exceed ${MAX_REQUEST_BODY_SIZE}`,
-        fatalEvent: fatalData,
+        details: fatalData,
       };
     }
 
     return {
       passed: true,
-      fatalEvent: fatalData,
+      details: fatalData,
     };
   }
 );
@@ -301,7 +301,7 @@ const test3Passed = await runTest(
 
     return {
       passed: true,
-      fatalEvent: summaryData,
+      details: summaryData,
     };
   }
 );

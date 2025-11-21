@@ -80,35 +80,6 @@ app.post('/upload-csv', async (c) => {
     return c.json({ error: error.message }, 400);
   }
 });
-```
-
-**Hono Example:**
-
-```typescript
-import { Hono } from 'hono';
-import { parseRequest, EnginePresets } from 'web-csv-toolbox';
-import { csvWorkerPool } from './worker-pool';
-
-const app = new Hono();
-
-app.post('/upload-csv', async (c) => {
-  if (csvWorkerPool.isFull()) {
-    return c.json({ error: 'Service busy' }, 503);
-  }
-
-  try {
-    const records = [];
-    for await (const record of parseRequest(c.req.raw, {
-      engine: EnginePresets.balanced({ workerPool: csvWorkerPool })
-    })) {
-      records.push(record);
-    }
-
-    return c.json({ success: true, count: records.length });
-  } catch (error) {
-    return c.json({ error: error.message }, 400);
-  }
-});
 
 export default app;
 ```
