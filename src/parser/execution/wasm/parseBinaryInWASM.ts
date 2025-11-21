@@ -1,6 +1,6 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
 import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.main.ts";
+import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.main.node.ts";
 
 /**
  * Parse CSV binary using WebAssembly in main thread.

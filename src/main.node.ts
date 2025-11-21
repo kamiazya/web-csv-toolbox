@@ -20,6 +20,11 @@
 export * from "@/main.shared.ts";
 
 // ============================================================================
+// Node.js-specific: WASM functions
+// ============================================================================
+export * from "@/parser/api/string/parseStringToArraySyncWASM.main.node.ts";
+
+// ============================================================================
 // Node.js-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.node.ts";

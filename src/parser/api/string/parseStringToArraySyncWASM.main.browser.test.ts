@@ -28,7 +28,7 @@ import {
   isSyncInitialized,
   loadWASMSync,
 } from "#/wasm/loaders/loadWASMSync.js";
-import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.main.ts";
+import { parseStringToArraySyncWASM } from "./parseStringToArraySyncWASM.main.web.ts";
 import { parseWithWASM } from "./parseStringToArraySyncWASM.shared.ts";
 
 describe("parseStringToArraySyncWASM.main - auto-initialization", () => {

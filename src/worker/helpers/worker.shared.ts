@@ -14,7 +14,7 @@ declare const __VARIANT__: "main" | "slim";
 const parseStringToArrayWasmPath =
   typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
     ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-    : "../../parser/api/string/parseStringToArraySyncWASM.main.ts";
+    : "../../parser/api/string/parseStringToArraySyncWASM.main.node.ts";
 
 /**
  * Base interface for Worker requests

@@ -19,6 +19,11 @@
 export * from "@/main.shared.ts";
 
 // ============================================================================
+// Web-specific: WASM functions
+// ============================================================================
+export * from "@/parser/api/string/parseStringToArraySyncWASM.main.web.ts";
+
+// ============================================================================
 // Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";

@@ -6,7 +6,7 @@ import { resolveImportsPlugin } from "./config/vite-plugin-resolve-imports.ts";
 import { wasmArrayBuffer } from "./config/vite-plugin-wasm-arraybuffer.ts";
 import wasmPack from "./config/vite-plugin-wasm-pack.ts";
 
-export default defineConfig(() => ({
+export default defineConfig(({ command }) => ({
   assetsInclude: ["**/*.wasm", "**/*.wasm?*"],
   optimizeDeps: {
     exclude: ["web-csv-toolbox-wasm"],
@@ -14,14 +14,18 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": "/src",
-      // Aliases to ensure .web.ts files are used (for both dev and build)
-      "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
-      "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
-      "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
-      "#/utils/response/getOptionsFromResponse.constants.js":
-        "/src/utils/response/getOptionsFromResponse.constants.web.ts",
-      "#/utils/charset/getCharsetValidation.constants.js":
-        "/src/utils/charset/getCharsetValidation.constants.web.ts",
+      // Aliases for dev server only - build uses resolve-imports plugin
+      ...(command === "serve"
+        ? {
+            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
+            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
+            "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
+            "#/utils/response/getOptionsFromResponse.constants.js":
+              "/src/utils/response/getOptionsFromResponse.constants.web.ts",
+            "#/utils/charset/getCharsetValidation.constants.js":
+              "/src/utils/charset/getCharsetValidation.constants.web.ts",
+          }
+        : {}),
       // Note: #/csv.wasm is handled differently during build via plugin
     },
   },
