@@ -169,17 +169,15 @@ The `Content-Encoding` header is automatically processed to decompress the respo
 import { parseResponse } from 'web-csv-toolbox';
 
 // Server responds with: Content-Encoding: gzip
-const response = await fetch('https://example.com/data.csv.gz', {
-  headers: {
-    'Accept-Encoding': 'gzip, deflate'
-  }
-});
+const response = await fetch('https://example.com/data.csv.gz');
 
 // Automatic decompression based on header
 for await (const record of parseResponse(response)) {
   console.log(record);
 }
 ```
+
+> **Note:** Browsers automatically handle `Accept-Encoding` request headers - you cannot set this header from JavaScript in browser contexts as it's a [forbidden header name](https://developer.mozilla.org/en-US/docs/Glossary/Forbidden_header_name). The browser automatically sends appropriate compression preferences to the server. The `Accept-Encoding` header is mainly relevant in server-side or non-browser environments (Node.js, Deno, Bun) where you have full control over request headers.
 
 **Supported encodings:**
 - `gzip`
@@ -207,8 +205,8 @@ async function fetchCompressedCSV(url: string) {
   try {
     const response = await fetch(url, {
       headers: {
-        'Accept': 'text/csv',
-        'Accept-Encoding': 'gzip, deflate'
+        'Accept': 'text/csv'
+        // Note: Accept-Encoding is automatically handled by the browser
       }
     });
 

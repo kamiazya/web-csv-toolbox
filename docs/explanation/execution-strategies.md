@@ -447,7 +447,8 @@ parse("a,'b,c',d", {
 
 ### Example
 
-**Recommended: Pre-load WASM for better performance**
+#### Recommended: Pre-load WASM for better performance
+
 ```typescript
 import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
 
@@ -463,7 +464,8 @@ for await (const record of parse(csv, {
 }
 ```
 
-**Alternative: Automatic initialization (slower on first use)**
+#### Alternative: Automatic initialization (slower on first use)
+
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
@@ -553,7 +555,8 @@ Combines the benefits of both strategies:
 
 ### Example
 
-**Recommended: Pre-load WASM for better performance**
+#### Recommended: Pre-load WASM for better performance
+
 ```typescript
 import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
 
@@ -569,7 +572,8 @@ for await (const record of parse(csv, {
 }
 ```
 
-**Alternative: Automatic initialization (slower on first use)**
+#### Alternative: Automatic initialization (slower on first use)
+
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 

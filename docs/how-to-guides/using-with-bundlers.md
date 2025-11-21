@@ -70,7 +70,7 @@ Unlike Workers which can be bundled as data URLs, WASM modules are loaded at run
 
 ### Vite
 
-**Option 1: Copy WASM to public directory (Recommended)**
+#### Option 1: Copy WASM to public directory (Recommended)
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
@@ -97,7 +97,7 @@ Add a build step to copy the WASM file:
 }
 ```
 
-**Option 2: Use `?url` import with explicit URL (Recommended)**
+#### Option 2: Use `?url` import with explicit URL (Recommended)
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
@@ -114,7 +114,7 @@ for await (const record of parseString(csv, {
 
 Vite will copy the WASM file to your dist folder automatically.
 
-**Option 3: Slim Variant for Smaller Bundle Size**
+#### Option 3: Slim Variant for Smaller Bundle Size
 
 If you want to minimize bundle size, use the slim variant which doesn't include inlined WASM:
 
@@ -142,17 +142,19 @@ for await (const record of parseString(csv, {
 }
 ```
 
-**Bundle Size Comparison:**
+##### Bundle Size Comparison:
+
 - **Main variant** (`web-csv-toolbox`): WASM embedded as base64 - larger initial bundle, auto-initialization
 - **Slim variant** (`web-csv-toolbox/slim`): WASM loaded separately - smaller initial bundle, manual initialization required
 
-**When to use Slim:**
+##### When to use Slim:
 - ✅ Minimizing initial bundle size is critical
 - ✅ You want lazy WASM loading (load only when needed)
 - ✅ You can handle manual WASM initialization
 - ✅ You're building a performance-critical web application
 
-**When to use Main:**
+##### When to use Main:
+
 - ✅ Convenience and simplicity over bundle size
 - ✅ You want zero-configuration auto-initialization
 - ✅ You prefer less boilerplate code
@@ -160,7 +162,7 @@ for await (const record of parseString(csv, {
 
 #### Vite Configuration
 
-**TypeScript Configuration**
+##### TypeScript Configuration
 
 When using `?url` imports, you need to configure TypeScript to recognize these imports:
 
@@ -177,7 +179,7 @@ When using `?url` imports, you need to configure TypeScript to recognize these i
 }
 ```
 
-**Vite Configuration**
+##### Vite Configuration
 
 To ensure WASM files are included in the build output:
 

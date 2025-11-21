@@ -103,7 +103,13 @@ export default defineConfig(({ command }) => ({
     dts({
       insertTypesEntry: true,
       outDir: "dist",
-      exclude: ["**/*.test.ts", "**/*.spec.ts", "**/*.test-d.ts", "**/__tests__/**/*"],
+      exclude: [
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.test-d.ts",
+        "**/__tests__/**/*",
+        "examples/deno/**/*",
+      ],
       tsconfigPath: "./tsconfig.base.json",
       entryRoot: "src",
       rollupTypes: false,

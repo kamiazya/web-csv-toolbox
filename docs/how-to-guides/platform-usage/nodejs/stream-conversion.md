@@ -13,7 +13,7 @@ Node.js frameworks like Express and Fastify use Node.js Streams (`stream.Readabl
 
 ## Solution
 
-Node.js 16.5+ provides `Readable.toWeb()` to convert Node.js streams to Web ReadableStreams.
+Node.js provides `Readable.toWeb()` to convert Node.js streams to Web ReadableStreams.
 
 ## Express
 
@@ -381,15 +381,6 @@ app.listen(3000, () => {
 });
 ```
 
-## Node.js Version Requirements
-
-**Minimum:** Node.js 16.5.0
-
-`Readable.toWeb()` was introduced in Node.js 16.5.0. For older versions, consider:
-
-1. **Upgrade to Node.js LTS** (recommended)
-2. Use a polyfill like [@web-std/stream](https://www.npmjs.com/package/@web-std/stream)
-
 ## Common Pitfalls
 
 ### ❌ Don't Use parseStringStream
@@ -459,5 +450,3 @@ app.post('/upload', async (req, res) => {
 5. Set security limits (`maxBufferSize`, `maxFieldCount`, timeout)
 6. Validate Content-Type headers
 7. Works with Express, Fastify, Koa, NestJS, and other Node.js frameworks
-
-**Minimum Node.js version:** 16.5.0 (for `Readable.toWeb()`)

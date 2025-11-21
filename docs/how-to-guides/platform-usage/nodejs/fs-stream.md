@@ -17,7 +17,7 @@ import { Readable } from 'node:stream';
 // Create Node.js read stream
 const nodeStream = createReadStream('data.csv');
 
-// Convert to Web ReadableStream (Node.js 18+)
+// Convert to Web ReadableStream
 const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
 // Parse from web stream

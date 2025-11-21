@@ -2,6 +2,21 @@ import type { Plugin } from "vite";
 import path from "node:path";
 
 /**
+ * Module target environment
+ */
+type TargetEnvironment = "node" | "web" | "shared";
+
+/**
+ * Module metadata tracked during resolution
+ */
+interface ModuleMetadata {
+  /** The entry point that caused this module to be loaded */
+  entryId: string;
+  /** Target environment for this module */
+  target: TargetEnvironment;
+}
+
+/**
  * Vite plugin to resolve # imports to relative paths during build.
  *
  * This plugin transforms package-internal imports (starting with #/) to relative paths
@@ -16,13 +31,39 @@ import path from "node:path";
  * 1. Detects # imports during the resolveId phase
  * 2. Maps them to the correct file based on environment (.node or .web)
  * 3. Transforms them to relative paths in the output
+ * 4. Fixes cross-environment imports in shared modules during bundle generation
  */
 export function resolveImportsPlugin(): Plugin {
-  // Track which modules belong to which entry
-  const moduleToEntry = new Map<string, string>();
+  // Track metadata for each module using resolved IDs
+  const moduleMetadata = new Map<string, ModuleMetadata>();
+
+  // Track current entry being processed
   let currentEntry: string | null = null;
-  // Check if we're building for Node.js (from worker bundle build or other node builds)
-  const buildTarget = process.env.TARGET;
+
+  // Check if we're building for a specific target (from environment)
+  const buildTarget = process.env.TARGET as TargetEnvironment | undefined;
+
+  /**
+   * Determine target environment from a resolved module ID
+   */
+  function getTargetFromId(id: string): TargetEnvironment {
+    if (id.includes(".node.")) return "node";
+    if (id.includes(".web.")) return "web";
+    if (id.includes("/common.ts")) return "shared";
+    return "shared"; // Default for files without explicit target
+  }
+
+  /**
+   * Normalize a module ID to ensure consistency
+   */
+  function normalizeId(id: string): string {
+    // Remove query strings and hash
+    const normalized = id.split("?")[0]?.split("#")[0] ?? id;
+    // Ensure absolute path
+    return normalized.startsWith("/") || normalized.startsWith(process.cwd())
+      ? path.normalize(normalized)
+      : path.join(process.cwd(), normalized);
+  }
 
   return {
     name: "vite-plugin-resolve-imports",
@@ -30,7 +71,7 @@ export function resolveImportsPlugin(): Plugin {
 
     buildStart() {
       // Reset state for each build
-      moduleToEntry.clear();
+      moduleMetadata.clear();
       currentEntry = null;
       if (buildTarget) {
         console.log(`[resolve-imports] Build target from env: ${buildTarget}`);
@@ -38,31 +79,61 @@ export function resolveImportsPlugin(): Plugin {
     },
 
     async resolveId(source, importer, options) {
-      // Track entry points - store the actual source file path
+      // Track entry points using resolved IDs
       if (options.isEntry && source) {
-        const normalizedSource = source.startsWith("/") ? source : path.join(process.cwd(), source);
-        console.log(`[resolve-imports] Entry point: ${normalizedSource}`);
-        currentEntry = normalizedSource;
-        moduleToEntry.set(normalizedSource, normalizedSource);
+        // Resolve the entry to get consistent ID
+        const resolved = await this.resolve(source, undefined, {
+          ...options,
+          skipSelf: true,
+        });
 
-        // If no explicit build target, infer from entry filename
-        if (!buildTarget && normalizedSource.includes(".node.")) {
-          console.log(`[resolve-imports] Inferred Node.js target from entry: ${normalizedSource}`);
-        } else if (!buildTarget && !normalizedSource.includes(".node.")) {
-          console.log(`[resolve-imports] Inferred Web target from entry: ${normalizedSource}`);
+        if (!resolved || resolved.external) {
+          return null;
         }
+
+        const entryId = normalizeId(resolved.id);
+        currentEntry = entryId;
+
+        // Determine target for this entry
+        const target: TargetEnvironment = buildTarget || getTargetFromId(entryId);
+
+        moduleMetadata.set(entryId, {
+          entryId,
+          target,
+        });
+
+        console.log(
+          `[resolve-imports] Entry point: ${path.relative(process.cwd(), entryId)} (target: ${target})`
+        );
 
         return null; // Let Vite handle the actual resolution
       }
 
       // Track all module resolutions to propagate entry information
       if (importer && !source.startsWith("#/")) {
-        const importerEntry = moduleToEntry.get(importer);
-        if (importerEntry) {
+        // Normalize importer ID before lookup
+        const normalizedImporter = normalizeId(importer);
+        const importerMeta = moduleMetadata.get(normalizedImporter);
+
+        if (importerMeta) {
           // Resolve the module to get its ID
-          const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+          const resolved = await this.resolve(source, importer, {
+            ...options,
+            skipSelf: true,
+          });
+
           if (resolved && !resolved.external) {
-            moduleToEntry.set(resolved.id, importerEntry);
+            const resolvedId = normalizeId(resolved.id);
+
+            // Determine target: explicit if file has .node/.web, otherwise inherit from importer
+            const moduleTarget = getTargetFromId(resolvedId);
+            const target: TargetEnvironment =
+              moduleTarget !== "shared" ? moduleTarget : importerMeta.target;
+
+            moduleMetadata.set(resolvedId, {
+              entryId: importerMeta.entryId,
+              target,
+            });
           }
         }
         return null; // Let Vite handle normal imports
@@ -73,42 +144,34 @@ export function resolveImportsPlugin(): Plugin {
         return null;
       }
 
-      // Determine target environment from importer path
-      let isNodeFile = false;
+      // Determine target environment for this import
+      let targetEnv: TargetEnvironment = "web"; // Default to web
 
-      // Override with build target from environment if available (highest priority)
-      // This is crucial for worker bundles where the entry point detection may not work
-      if (buildTarget === "node") {
-        isNodeFile = true;
-      } else if (buildTarget === "web") {
-        isNodeFile = false;
+      if (buildTarget) {
+        // Use explicit build target if available
+        targetEnv = buildTarget;
       } else if (importer) {
-        // For preserveModules builds, infer from importer's filename directly
-        // This is more reliable than tracking entry points
-        const isSharedFile = importer.includes("/common.ts");
+        // Normalize importer and check metadata
+        const normalizedImporter = normalizeId(importer);
+        const importerMeta = moduleMetadata.get(normalizedImporter);
 
-        if (!isSharedFile) {
-          // Check importer's filename for .node. pattern
-          if (importer.includes(".node.")) {
-            isNodeFile = true;
-          } else if (importer.includes(".web.")) {
-            isNodeFile = false;
-          } else {
-            // For files without explicit .node/.web, check the module chain
-            const entry = moduleToEntry.get(importer);
-            if (entry && entry.includes(".node.")) {
-              isNodeFile = true;
-            }
-          }
+        if (importerMeta) {
+          targetEnv = importerMeta.target;
+        } else {
+          // Fallback: infer from importer filename
+          targetEnv = getTargetFromId(normalizedImporter);
         }
       } else if (currentEntry) {
-        // Fallback: infer from current entry filename
-        if (currentEntry.includes(".node.")) {
-          isNodeFile = true;
+        // Fallback: use current entry's target
+        const entryMeta = moduleMetadata.get(currentEntry);
+        if (entryMeta) {
+          targetEnv = entryMeta.target;
         }
       }
 
-      console.log(`[resolve-imports] Resolving ${source} from ${importer}, isNodeFile=${isNodeFile}, buildTarget=${buildTarget}`);
+      console.log(
+        `[resolve-imports] Resolving ${source} from ${importer ? path.relative(process.cwd(), importer) : "unknown"}, target=${targetEnv}`
+      );
 
       // Map # imports to actual source files
       const importMap: Record<string, { node: string; web: string }> = {
@@ -140,33 +203,41 @@ export function resolveImportsPlugin(): Plugin {
         return null;
       }
 
-      // Default to web if not explicitly node
-      const targetFile = isNodeFile ? mapping.node : mapping.web;
-      const resolved = path.join(process.cwd(), targetFile);
+      // Select target file based on environment (shared modules use web by default)
+      const targetFile = targetEnv === "node" ? mapping.node : mapping.web;
+      const resolvedPath = path.join(process.cwd(), targetFile);
 
-      // Track this resolved module
+      // Resolve this module through Vite to get normalized ID
+      const resolved = await this.resolve(targetFile, importer, {
+        ...options,
+        skipSelf: true,
+      });
+
+      if (!resolved || resolved.external) {
+        console.warn(`[resolve-imports] Failed to resolve ${targetFile}`);
+        return null;
+      }
+
+      const resolvedId = normalizeId(resolved.id);
+
+      // Track metadata for this resolved module
       if (importer) {
-        const importerEntry = moduleToEntry.get(importer);
-        if (importerEntry) {
-          moduleToEntry.set(resolved, importerEntry);
+        const normalizedImporter = normalizeId(importer);
+        const importerMeta = moduleMetadata.get(normalizedImporter);
+
+        if (importerMeta) {
+          moduleMetadata.set(resolvedId, {
+            entryId: importerMeta.entryId,
+            target: getTargetFromId(resolvedId),
+          });
         }
       }
 
       console.log(
-        `[resolve-imports] Resolved ${source} -> ${targetFile} (from ${importer})`,
+        `[resolve-imports] Resolved ${source} -> ${path.relative(process.cwd(), resolvedId)}`
       );
 
-      return resolved;
-    },
-
-    // Also track regular imports to propagate entry information
-    async load(id) {
-      // Track all modules loaded during the build
-      if (id && !id.startsWith("\0")) {
-        // Find which entry this belongs to by checking imports
-        // This is handled in resolveId via moduleToEntry tracking
-      }
-      return null; // Let other plugins/Vite handle loading
+      return resolved.id;
     },
 
     // Post-process output to fix imports in shared modules for preserveModules builds
@@ -174,48 +245,111 @@ export function resolveImportsPlugin(): Plugin {
       // Only for preserveModules builds
       if (!options.preserveModules) return;
 
-      // Identify shared modules that import environment-specific modules
-      const sharedModulesNeedingDuplication = new Set<string>();
-      const fileImporters = new Map<string, Set<string>>();
+      // Build a map of available files in the bundle by base name
+      const bundleFiles = new Map<string, Set<string>>();
 
-      // First pass: build importer graph
-      for (const [fileName, chunk] of Object.entries(bundle)) {
-        if (chunk.type !== 'chunk') continue;
+      for (const fileName of Object.keys(bundle)) {
+        // Extract base name without .node/.web suffix
+        const baseName = fileName
+          .replace(/\.node\.js$/, ".js")
+          .replace(/\.web\.js$/, ".js");
 
-        for (const importedFile of chunk.imports) {
-          if (!fileImporters.has(importedFile)) {
-            fileImporters.set(importedFile, new Set());
-          }
-          fileImporters.get(importedFile)!.add(fileName);
+        if (!bundleFiles.has(baseName)) {
+          bundleFiles.set(baseName, new Set());
         }
-
-        // Check if this module imports environment-specific modules
-        if (chunk.code.match(/\.(node|web)\.js/)) {
-          const importers = fileImporters.get(fileName) || new Set();
-          const hasNodeImporter = Array.from(importers).some(f => f.includes('.node.'));
-          const hasWebImporter = Array.from(importers).some(f => f.includes('.web.'));
-
-          // If imported by both node and web entries, needs duplication
-          if (hasNodeImporter && hasWebImporter && !fileName.includes('.node.') && !fileName.includes('.web.')) {
-            sharedModulesNeedingDuplication.add(fileName);
-          }
-        }
+        bundleFiles.get(baseName)!.add(fileName);
       }
 
-      // For now, just fix imports by replacing with correct environment variant
-      // based on the importing file
+      // Process each chunk
       for (const [fileName, chunk] of Object.entries(bundle)) {
-        if (chunk.type !== 'chunk') continue;
+        if (chunk.type !== "chunk") continue;
 
-        const isNodeFile = fileName.includes('.node.');
-        const isWebFile = fileName.includes('.web.') || (!isNodeFile && !fileName.includes('.node.'));
+        // Determine this file's target
+        const fileTarget = fileName.includes(".node.")
+          ? "node"
+          : fileName.includes(".web.")
+          ? "web"
+          : "shared";
 
-        if (isWebFile && chunk.code.includes('.node.js')) {
-          chunk.code = chunk.code.replace(/\.node\.js/g, '.web.js');
-          console.log(`[resolve-imports] Fixed ${fileName} to use .web.js imports`);
-        } else if (isNodeFile && chunk.code.includes('.web.js')) {
-          chunk.code = chunk.code.replace(/\.web\.js/g, '.node.js');
-          console.log(`[resolve-imports] Fixed ${fileName} to use .node.js imports`);
+        // Process each import in this chunk
+        for (const importPath of chunk.imports) {
+          // Skip external imports
+          if (!importPath.endsWith(".js")) continue;
+
+          // Check if this import has .node or .web variant
+          const hasNodeVariant = importPath.includes(".node.js");
+          const hasWebVariant = importPath.includes(".web.js");
+
+          // If import is already environment-specific, validate it matches file target
+          if (hasNodeVariant || hasWebVariant) {
+            const importTarget = hasNodeVariant ? "node" : "web";
+
+            // Check if we need to rewrite this import
+            if (fileTarget !== "shared" && fileTarget !== importTarget) {
+              // Get base import path
+              const baseImport = importPath
+                .replace(/\.node\.js$/, ".js")
+                .replace(/\.web\.js$/, ".js");
+
+              // Construct expected import path for this file's target
+              const expectedImport = baseImport.replace(
+                /\.js$/,
+                `.${fileTarget}.js`
+              );
+
+              // Check if the expected variant exists in the bundle
+              const baseName = path.basename(baseImport);
+              const variants = bundleFiles.get(baseName);
+
+              if (variants && variants.has(path.basename(expectedImport))) {
+                // Rewrite the import in the chunk code
+                const importPattern = new RegExp(
+                  `(['"\`])${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`,
+                  "g"
+                );
+
+                const newCode = chunk.code.replace(
+                  importPattern,
+                  `$1${expectedImport}$1`
+                );
+
+                if (newCode !== chunk.code) {
+                  chunk.code = newCode;
+                  console.log(
+                    `[resolve-imports] Rewrote import in ${fileName}: ${importPath} -> ${expectedImport}`
+                  );
+                }
+              }
+            }
+          } else if (fileTarget !== "shared") {
+            // Import has no .node/.web suffix, but file has a target
+            // Check if environment-specific variant exists
+            const baseImport = importPath;
+            const targetImport = importPath.replace(/\.js$/, `.${fileTarget}.js`);
+
+            const baseName = path.basename(baseImport);
+            const variants = bundleFiles.get(baseName);
+
+            // Only rewrite if the target variant exists
+            if (variants && variants.has(path.basename(targetImport))) {
+              const importPattern = new RegExp(
+                `(['"\`])${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\1`,
+                "g"
+              );
+
+              const newCode = chunk.code.replace(
+                importPattern,
+                `$1${targetImport}$1`
+              );
+
+              if (newCode !== chunk.code) {
+                chunk.code = newCode;
+                console.log(
+                  `[resolve-imports] Added target suffix in ${fileName}: ${importPath} -> ${targetImport}`
+                );
+              }
+            }
+          }
         }
       }
     },
