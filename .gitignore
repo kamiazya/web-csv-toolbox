@@ -138,5 +138,6 @@ target
 graph*.svg
 .playwright-mcp/
 
-# Deno lock files
+# Deno lock files and cache
 deno.lock
+.deno_cache

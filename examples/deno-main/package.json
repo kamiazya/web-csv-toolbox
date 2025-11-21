@@ -1,9 +1,0 @@
-{
-  "name": "deno-main",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "web-csv-toolbox": "workspace:*"
-  }
-}

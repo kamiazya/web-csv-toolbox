@@ -172,8 +172,8 @@ jobs:
       fail-fast: false
       matrix:
         example:
-          - deno-main
-          - deno-slim
+          - main
+          - slim
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -198,9 +198,24 @@ jobs:
         with:
           deno-version: lts
 
+      - name: Setup Deno workspace structure
+        run: |
+          cd examples/deno/${{ matrix.example }}
+          # Get version from package.json
+          VERSION=$(node -p "require('../../../package.json').version")
+          # Create the npm cache directory structure that Deno expects
+          NPM_CACHE_DIR=".deno_cache/npm/registry.npmjs.org/web-csv-toolbox/$VERSION"
+          mkdir -p "$NPM_CACHE_DIR"
+          # Copy built dist and package.json to Deno's npm cache
+          cp -r ../../../dist "$NPM_CACHE_DIR/"
+          cp ../../../package.json "$NPM_CACHE_DIR/"
+          cp ../../../README.md "$NPM_CACHE_DIR/" 2>/dev/null || true
+          cp ../../../LICENSE "$NPM_CACHE_DIR/" 2>/dev/null || true
+          echo "✓ Deno cache populated with workspace build"
+
       - name: Run example - ${{ matrix.example }}
         run: |
-          cd examples/${{ matrix.example }}
+          cd examples/deno/${{ matrix.example }}
           timeout 30s deno task start || exit_code=$?
           # Exit code 124 means timeout (success for our purposes)
           # Exit code 0 means normal completion
