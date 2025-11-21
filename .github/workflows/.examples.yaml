@@ -184,6 +184,12 @@ jobs:
           name: dist
           path: dist
 
+      - name: Download WASM artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        with:
+          name: wasm
+          path: web-csv-toolbox-wasm/pkg
+
       - name: Setup Deno
         uses: denoland/setup-deno@e95548e56dfa95d4e1a28d6f422fafe75c4c26fb # v2.0.3
         with:
