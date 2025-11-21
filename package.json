@@ -15,6 +15,7 @@
       "types": "./dist/main.web.d.ts",
       "deno": "./dist/main.node.js",
       "node": "./dist/main.node.js",
+      "bundler": "./dist/main.web.js",
       "browser": "./dist/main.web.js",
       "default": "./dist/main.web.js"
     },
@@ -22,6 +23,7 @@
       "types": "./dist/slim.web.d.ts",
       "deno": "./dist/slim.node.js",
       "node": "./dist/slim.node.js",
+      "bundler": "./dist/slim.web.js",
       "browser": "./dist/slim.web.js",
       "default": "./dist/slim.web.js"
     },
