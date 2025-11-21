@@ -104,6 +104,89 @@ What type of input do you have?
 
 ## Detailed API Comparison
 
+### Quick Reference Comparison Tables
+
+#### parse() vs Specialized APIs
+
+| Feature | `parse()` | Specialized APIs (`parseString()`, `parseBlob()`, etc.) |
+|---------|----------|----------------------------------------------------------|
+| **Input types** | All (auto-detect) | Single type |
+| **Performance** | Good | Better (no type detection) |
+| **Type safety** | Lower | Higher |
+| **Use case** | Learning, prototyping | Production |
+| **Type detection overhead** | Yes (small) | No |
+
+**Recommendation:** Use specialized APIs (`parseString`, `parseBlob`, etc.) in production for better performance and type safety.
+
+---
+
+#### parseBlob() vs parse()
+
+| Feature | `parseBlob()` | `parse()` |
+|---------|--------------|-----------|
+| **Input type** | `Blob` only | Any (auto-detect) |
+| **Charset detection** | Automatic from `type` | Automatic (when Blob) |
+| **Type detection** | None | Yes (slight overhead) |
+| **Performance** | Optimal | Slightly slower |
+| **Use case** | Production (file inputs) | Learning, prototyping |
+
+**Recommendation:** Use `parseBlob()` in production when working with file inputs or drag-and-drop.
+
+---
+
+#### parseBlob() vs parseBinary()
+
+| Feature | `parseBlob()` | `parseBinary()` |
+|---------|--------------|-----------------|
+| **Input type** | `Blob` | `Uint8Array` / `ArrayBuffer` |
+| **Charset detection** | Automatic from `type` | Manual specification required |
+| **Use case** | File inputs, drag-and-drop | In-memory binary data |
+| **Typical scenario** | User file uploads | Downloaded/generated binary data |
+
+**Recommendation:** Use `parseBlob()` for file inputs. Use `parseBinary()` when working with binary data that's already in memory.
+
+---
+
+#### Streaming vs toArray()
+
+| Feature | Streaming (default) | `toArray()` |
+|---------|---------------------|-------------|
+| **Memory usage** | O(1) - constant per record | O(n) - proportional to file size |
+| **Processing** | Record-by-record | All records at once |
+| **Best for** | Large files (>10MB) | Small files (<10MB) |
+| **Use case** | Memory-efficient processing | Need all data upfront |
+
+**Recommendation:** Always use streaming for large files to minimize memory usage. Use `toArray()` only when you need all records in memory at once.
+
+```typescript
+// Streaming (memory-efficient)
+for await (const record of parseString(csv)) {
+  await processRecord(record);
+}
+
+// toArray() (loads all into memory)
+const records = await toArray(parseString(csv));
+console.log(`Total: ${records.length} records`);
+```
+
+---
+
+#### Main Thread vs Worker Execution
+
+| Approach | UI Blocking | Communication Overhead | Stability | Best For |
+|----------|-------------|------------------------|-----------|----------|
+| **Main thread** | ✅ Yes | ❌ None | ⭐ Most Stable | Server-side, blocking acceptable |
+| **Worker** | ❌ No | ⚠️ Yes (data transfer) | ✅ Stable | Browser, non-blocking required |
+| **WASM (main)** | ✅ Yes | ❌ None | ✅ Stable | Server-side, UTF-8 only |
+| **Worker + WASM** | ❌ No | ⚠️ Yes (data transfer) | ✅ Stable | Browser, non-blocking, UTF-8 only |
+
+**Recommendation:**
+- **Browser applications:** Use Worker-based execution (`EnginePresets.responsive()`) for non-blocking UI
+- **Server-side:** Use main thread or WASM for optimal performance
+- **Performance-critical:** Benchmark your specific use case to determine the best approach
+
+---
+
 ### parse() - High-Level Universal API
 
 **Input:** `string | Uint8Array | ArrayBuffer | ReadableStream | Response`
@@ -551,7 +634,7 @@ async function processLargeFile(filePath: string) {
   const webStream = Readable.toWeb(nodeStream) as ReadableStream<string>;
 
   for await (const record of parseStringStream(webStream, {
-    engine: EnginePresets.balanced
+    engine: EnginePresets.balanced(),
   })) {
     await processRecord(record);
   }
@@ -955,12 +1038,12 @@ for await (const record of parseResponse(response)) {
 
 ## Related Documentation
 
-- **[parse() API Reference](../reference/api/parse.md)** - High-level universal API
-- **[parseString() API Reference](../reference/api/parseString.md)** - String parser
-- **[parseResponse() API Reference](../reference/api/parseResponse.md)** - Response parser
-- **[parseRequest() API Reference](../reference/api/parseRequest.md)** - Request parser (server-side)
-- **[parseBlob() API Reference](../reference/api/parseBlob.md)** - Blob/File parser
-- **[parseFile() API Reference](../reference/api/parseFile.md)** - File parser with automatic error source
+- **[parse() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parse.html)** - High-level universal API
+- **[parseString() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseString.html)** - String parser
+- **[parseResponse() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse.html)** - Response parser
+- **[parseRequest() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseRequest.html)** - Request parser (server-side)
+- **[parseBlob() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseBlob.html)** - Blob/File parser
+- **[parseFile() API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseFile.html)** - File parser with automatic error source
 - **[Execution Strategies](../explanation/execution-strategies.md)** - Understanding execution modes
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 

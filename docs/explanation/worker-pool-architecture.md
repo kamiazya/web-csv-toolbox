@@ -613,6 +613,7 @@ const records = await parseString(csv, {
 ## Related Documentation
 
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Tutorial on worker usage
-- **[WorkerPool Reference](../reference/api/worker-pool.md)** - API documentation
+- **[Worker Pool Management](../how-to-guides/worker-pool-management.md)** - Production usage guide
 - **[Execution Strategies](./execution-strategies.md)** - Worker execution patterns
 - **[Secure CSV Processing](../how-to-guides/secure-csv-processing.md)** - Security considerations
+- **[ReusableWorkerPool API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/ReusableWorkerPool.html)** - Complete type definitions

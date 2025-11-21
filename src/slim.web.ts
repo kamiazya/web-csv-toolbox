@@ -12,12 +12,11 @@
  * - ❌ Requires manual `await loadWASM(wasmUrl)` before using WASM-based APIs
  * - ❌ No automatic WASM initialization
  *
- * **Note:** This file has an identical implementation to `slim.node.ts`, but they must be
- * kept separate because:
- * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports differently based on entry file name
+ * **Architecture:**
+ * - Common exports are in `slim.shared.ts`
+ * - This file only contains Web-specific exports
+ * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports based on entry file name
  * - WASM loader selection: `.web.ts` → uses `loadWASM.web.ts` (streaming fetch)
- *                          `.node.ts` → uses `loadWASM.node.ts` (fs.readFile)
- * - The import paths are embedded during build, so runtime conditional exports alone cannot fix this
  *
  * @example Basic usage (recommended)
  * ```ts
@@ -46,23 +45,17 @@
 /** biome-ignore-all assist/source/organizeImports: For sort by category */
 
 // ============================================================================
-// Shared exports (common to both main and slim versions)
+// Shared exports (re-export from slim.shared.ts)
 // ============================================================================
-export * from "@/_shared.ts";
+export * from "@/slim.shared.ts";
 
 // ============================================================================
-// Worker helpers (Web-specific imports)
+// Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";
-export * from "@/worker/helpers/WorkerSession.ts";
 
 // ============================================================================
-// Slim-specific: Sync WASM APIs - Require manual loadWASM() first
-// ============================================================================
-export { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.slim.ts";
-
-// ============================================================================
-// Slim-specific: WASM - Streaming initialization only (no base64 inlining)
+// Web-specific: WASM - Streaming initialization only (no base64 inlining)
 // ============================================================================
 export {
   ensureWASMInitialized,

@@ -579,5 +579,6 @@ Workers run in isolated contexts with minimal privileges.
 ## Related Documentation
 
 - **[How-To: Secure CSV Processing](../how-to-guides/secure-csv-processing.md)** - Implementation guide
-- **[Engine Configuration](../reference/engine-config.md)** - Configuration options
 - **[Engine Presets](../reference/engine-presets.md)** - Recommended presets
+
+For advanced configuration options, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).

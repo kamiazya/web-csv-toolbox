@@ -189,7 +189,7 @@ Worker execution works across different JavaScript runtimes with platform-specif
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -205,7 +205,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Worker threads are used automatically
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
 }
@@ -225,7 +225,7 @@ For detailed platform specifications and compatibility information, see **[Suppo
 
 ### Automatic Fallback Behavior
 
-web-csv-toolbox automatically falls back to more compatible execution methods when the requested strategy is not available. This behavior is enabled by default but can be disabled with [strict mode](../reference/engine-config.md#strict-mode).
+web-csv-toolbox automatically falls back to more compatible execution methods when the requested strategy is not available. This behavior is enabled by default but can be disabled with strict mode.
 
 **Stream Transfer → Message Streaming:**
 - Occurs when the browser doesn't support Transferable Streams (e.g., Safari)
@@ -269,7 +269,7 @@ for await (const record of parseString(csv, {
 - When you need to guarantee a specific execution method
 - When you want to explicitly handle unsupported features
 
-For more details, see [Engine Configuration - Strict Mode](../reference/engine-config.md#strict-mode).
+For more details on the `strict` option, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).
 
 ### When to Use Workers
 
@@ -699,7 +699,8 @@ graph TD
 ## Related Documentation
 
 - **[Engine Presets](../reference/engine-presets.md)** - Pre-configured settings
-- **[Engine Configuration](../reference/engine-config.md)** - Configuration reference
 - **[Supported Environments](../reference/supported-environments.md)** - Runtime compatibility and support levels
 - **[Versioning Policy](../reference/versioning-policy.md)** - Version management and stability guarantees
 - **[How-To: Optimize Performance](../how-to-guides/optimize-performance.md)** - Performance tips
+
+For advanced configuration options, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).

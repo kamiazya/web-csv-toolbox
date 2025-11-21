@@ -1,12 +1,15 @@
 /**
  * WASM instance management for slim version (Browser/Web optimized).
  *
- * **Note:** This file has an identical implementation to `WasmInstance.slim.node.ts`, but they must be
- * kept separate because:
- * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports differently based on entry file name
- * - WASM loader selection: `.ts` (web) → uses `loadWASM.web.ts` (streaming fetch)
- *                          `.node.ts` → uses `loadWASM.node.ts` (fs.readFile)
- * - The import paths are embedded during build, so runtime conditional exports alone cannot fix this
+ * **Key Differences from `WasmInstance.slim.node.ts`:**
+ * - `loadWASM(input)`: `input` parameter is **required** (Web needs explicit WASM URL)
+ * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/loadWASM.js` to `loadWASM.web.ts`
+ * - WASM loader: Uses `loadWASM.web.ts` (streaming fetch)
+ *
+ * **Why separate files are needed:**
+ * - Different function signatures (required vs optional parameter)
+ * - Environment-specific WASM loading strategies
+ * - Build-time import path resolution based on file name
  */
 import type { InitInput } from "web-csv-toolbox-wasm";
 import {

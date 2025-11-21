@@ -9,6 +9,14 @@ This directory contains example projects demonstrating different usage patterns 
 - **node-main**: Using the main version (embedded WASM)
 - **node-worker-main**: Using Worker with main version
 
+### API Examples
+- **[hono-secure-api](./hono-secure-api)**: Production-ready secure CSV validation API with Hono
+  - Demonstrates all security layers (early rejection, input validation, resource limits, timeout protection)
+  - Includes comprehensive Vitest security tests
+  - Server-Sent Events (SSE) for real-time validation feedback
+  - Zod schema validation
+  - [View on GitHub](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/hono-secure-api) | [Documentation](https://kamiazya.github.io/web-csv-toolbox/how-to-guides/secure-csv-processing.html)
+
 ### Vite Examples
 - **vite-bundle-slim**: Browser bundle with slim entry
 - **vite-bundle-main**: Browser bundle with main version
@@ -37,6 +45,21 @@ cd examples/node-slim
 pnpm install
 pnpm start
 ```
+
+### API Examples
+```bash
+cd examples/hono-secure-api
+pnpm install
+pnpm dev          # Run development server (http://localhost:3000)
+pnpm test         # Run security tests
+pnpm test:coverage # Run tests with coverage
+```
+
+**API Endpoints:**
+- `GET /health` - Health check
+- `POST /validate-csv` - CSV validation with SSE streaming
+
+See the [README](./hono-secure-api/README.md) for detailed usage and examples.
 
 ### Browser Examples (Vite)
 ```bash

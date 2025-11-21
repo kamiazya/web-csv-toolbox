@@ -15,9 +15,18 @@ catalogs:
     '@codspeed/tinybench-plugin':
       specifier: ^3.1.0
       version: 3.1.1
+    '@hono/node-server':
+      specifier: ^1.19.6
+      version: 1.19.6
     '@playwright/test':
       specifier: ^1.49.1
       version: 1.56.1
+    '@types/node':
+      specifier: ^24.10.1
+      version: 24.10.1
+    hono:
+      specifier: ^4.10.0
+      version: 4.10.6
     html-webpack-plugin:
       specifier: ^5.6.3
       version: 5.6.4
@@ -39,6 +48,9 @@ catalogs:
     vite:
       specifier: ^7.2.2
       version: 7.2.2
+    vitest:
+      specifier: 4.0.3
+      version: 4.0.3
     webpack:
       specifier: ^5.97.1
       version: 5.102.1
@@ -48,6 +60,9 @@ catalogs:
     webpack-dev-server:
       specifier: ^5.2.0
       version: 5.2.2
+    zod:
+      specifier: ^4.1.12
+      version: 4.1.12
 
 overrides:
   axios@<0.30.2: 0.30.2
@@ -116,7 +131,7 @@ importers:
         version: 4.5.4(@types/node@24.10.1)(rollup@4.53.1)(typescript@5.9.3)(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       vitest:
         specifier: 4.0.3
-        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       wasm-pack:
         specifier: ^0.13.1
         version: 0.13.1
@@ -150,6 +165,31 @@ importers:
       web-csv-toolbox:
         specifier: workspace:*
         version: link:../..
+
+  examples/hono-secure-api:
+    dependencies:
+      '@hono/node-server':
+        specifier: 'catalog:'
+        version: 1.19.6(hono@4.10.6)
+      hono:
+        specifier: 'catalog:'
+        version: 4.10.6
+      web-csv-toolbox:
+        specifier: workspace:*
+        version: link:../..
+      zod:
+        specifier: 'catalog:'
+        version: 4.1.12
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.1
+      tsx:
+        specifier: 'catalog:'
+        version: 4.20.6
+      vitest:
+        specifier: 'catalog:'
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/node-main:
     dependencies:
@@ -697,6 +737,12 @@ packages:
 
   '@gerrit0/mini-shiki@3.15.0':
     resolution: {integrity: sha512-L5IHdZIDa4bG4yJaOzfasOH/o22MCesY0mx+n6VATbaiCtMeR59pdRqYk4bEiQkIHfxsHPNgdi7VJlZb2FhdMQ==}
+
+  '@hono/node-server@1.19.6':
+    resolution: {integrity: sha512-Shz/KjlIeAhfiuE93NDKVdZ7HdBVLQAfdbaXEaoAVO3ic9ibRSLGIQGkcBbFyuLr+7/1D5ZCINM8B+6IvXeMtw==}
+    engines: {node: '>=18.14.1'}
+    peerDependencies:
+      hono: ^4
 
   '@iarna/toml@2.2.5':
     resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
@@ -2550,6 +2596,10 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  hono@4.10.6:
+    resolution: {integrity: sha512-BIdolzGpDO9MQ4nu3AUuDwHZZ+KViNm+EZ75Ae55eMXMqLVhDFqEMXxtUe9Qh8hjL+pIna/frs2j6Y2yD5Ua/g==}
+    engines: {node: '>=16.9.0'}
 
   hpack.js@2.1.6:
     resolution: {integrity: sha512-zJxVehUdMGIKsRaNt7apO2Gqp0BdqW5yaiGHXXmbpvxgBYVZnAql+BJb4RO5ad2MgpbZKn5G6nMnegrH1FcNYQ==}
@@ -4442,6 +4492,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.1.12:
+    resolution: {integrity: sha512-JInaHOamG8pt5+Ey8kGmdcAcg3OL9reK8ltczgHTAwNhMys/6ThXHityHxVV2p3fkw/c+MAvBHFVYHFZDmjMCQ==}
+
 snapshots:
 
   '@actions/core@1.11.1':
@@ -4898,6 +4951,10 @@ snapshots:
       '@shikijs/themes': 3.15.0
       '@shikijs/types': 3.15.0
       '@shikijs/vscode-textmate': 10.0.2
+
+  '@hono/node-server@1.19.6(hono@4.10.6)':
+    dependencies:
+      hono: 4.10.6
 
   '@iarna/toml@2.2.5': {}
 
@@ -5467,7 +5524,7 @@ snapshots:
   '@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0)':
     dependencies:
       '@vitest/browser': 4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       webdriverio: 9.20.0
     transitivePeerDependencies:
       - bufferutil
@@ -5484,7 +5541,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -5503,7 +5560,7 @@ snapshots:
       istanbul-reports: 3.2.0
       magicast: 0.3.5
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -6995,6 +7052,8 @@ snapshots:
       function-bind: 1.1.2
 
   he@1.2.0: {}
+
+  hono@4.10.6: {}
 
   hpack.js@2.1.6:
     dependencies:
@@ -8638,7 +8697,7 @@ snapshots:
       tsx: 4.20.6
       yaml: 2.8.1
 
-  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.3
       '@vitest/mocker': 4.0.3(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
@@ -8975,3 +9034,5 @@ snapshots:
       readable-stream: 4.7.0
 
   zod@3.25.76: {}
+
+  zod@4.1.12: {}

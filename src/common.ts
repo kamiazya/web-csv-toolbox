@@ -1,8 +1,15 @@
 /**
- * Shared exports between main and slim versions.
+ * Common exports shared across all entry points and variants.
  *
- * This file contains all common exports that are available in both
- * the main entry point (main.ts) and the slim entry (slim.ts).
+ * This file contains core functionality that is available in both:
+ * - Main and slim variants
+ * - Node.js and Web environments
+ *
+ * **Architecture Pattern:**
+ * - `common.ts` - Core APIs shared across all variants (this file)
+ * - `*.shared.ts` - Variant-specific shared code (e.g., main.shared.ts, slim.shared.ts)
+ * - `*.node.ts` - Node.js-specific code
+ * - `*.web.ts` - Web-specific code
  *
  * @internal
  */

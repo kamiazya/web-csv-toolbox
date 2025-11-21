@@ -31,9 +31,9 @@ The **CSVLexer** converts raw CSV text into a stream of **tokens**.
 **Output:** Stream of tokens (Field, FieldDelimiter, RecordDelimiter)
 
 ```typescript
-import { DefaultCSVLexer } from 'web-csv-toolbox';
+import { DefaultStringCSVLexer } from 'web-csv-toolbox';
 
-const lexer = new DefaultCSVLexer({ delimiter: ',', quotation: '"' });
+const lexer = new DefaultStringCSVLexer({ delimiter: ',', quotation: '"' });
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 
 for (const token of tokens) {
@@ -85,7 +85,7 @@ for (const record of records) {
 Both stages support **streaming** through TransformStream implementations:
 
 ```typescript
-import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -367,8 +367,8 @@ Input → Parser (combined) → Records
 
 ## Related Documentation
 
-- **[CSVLexer API Reference](../reference/api/lexer.md)**: Detailed API documentation
-- **[CSVRecordAssembler API Reference](../reference/api/record-assembler.md)**: Detailed API documentation
+- **[CSVLexer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexer.html)**: Detailed API documentation
+- **[CSVRecordAssembler API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssembler.html)**: Detailed API documentation
 - **[Custom CSV Parser How-To](../how-to-guides/custom-csv-parser.md)**: Practical examples
 - **[Execution Strategies](./execution-strategies.md)**: Worker and WASM execution
 

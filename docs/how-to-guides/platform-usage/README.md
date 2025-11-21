@@ -26,6 +26,7 @@ Working with CSV in Node.js applications:
 - **[File System Streams](./nodejs/fs-stream.md)** - Read CSV files with fs.ReadStream
 - **[HTTP Requests](./nodejs/http.md)** - Fetch and parse CSV over HTTP
 - **[stdin/stdout](./nodejs/stdin-stdout.md)** - Process CSV from pipes
+- **[Stream Conversion](./nodejs/stream-conversion.md)** - Convert Node.js Streams to Web Streams (Express, Fastify, etc.)
 
 ### 🦕 Deno Environments
 
@@ -50,6 +51,7 @@ CSV parsing in Deno runtime:
 | | `fs.ReadStream` | `parseUint8ArrayStream()` | [FS Stream](./nodejs/fs-stream.md) |
 | | `Response` | `parseResponse()` | [HTTP](./nodejs/http.md) |
 | | stdin | `parseUint8ArrayStream()` | [stdin/stdout](./nodejs/stdin-stdout.md) |
+| | `stream.Readable` | `parseUint8ArrayStream()` | [Stream Conversion](./nodejs/stream-conversion.md) |
 | **Deno** | `Uint8Array` | `parseBinary()` | [readFile](./deno/readfile.md) |
 | | `ReadableStream` | `parseUint8ArrayStream()` | [open](./deno/open.md) |
 | | `Response` | `parseResponse()` | [fetch](./deno/fetch.md) |
@@ -104,9 +106,24 @@ try {
 
 ---
 
+## Example Projects
+
+For complete, working examples on different platforms:
+
+- **Node.js:**
+  - [node-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-slim) - Slim entry (external WASM)
+  - [node-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-main) - Main entry (embedded WASM)
+  - [node-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-worker-main) - Worker pool example
+  - [hono-secure-api](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/hono-secure-api) - Production API example
+- **Browser (Vite):**
+  - [vite-bundle-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-slim) / [vite-bundle-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-main)
+  - [vite-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-slim) / [vite-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-main)
+- **Browser (Webpack):**
+  - [webpack-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-slim) / [webpack-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-main)
+
 ## Related Documentation
 
 - **[Choosing the Right API](../choosing-the-right-api.md)** - API selection guide
-- **[API Reference](../../reference/api/)** - Complete API documentation
+- **[API Reference](https://kamiazya.github.io/web-csv-toolbox/)** - Complete API documentation
 - **[Security Guide](../secure-csv-processing.md)** - Security best practices
 - **[Use with Bundlers](../using-with-bundlers.md)** - Bundler integration guide

@@ -1,7 +1,9 @@
-import { parseString, ReusableWorkerPool } from "web-csv-toolbox";
+import { parseString, ReusableWorkerPool, loadWASM } from "web-csv-toolbox/slim";
 // Import slim worker bundle URL from package exports
 // Vite's ?url suffix returns the URL for the module
 import workerUrl from "web-csv-toolbox/worker/slim?url";
+// Import WASM file URL - required for slim variant to include WASM in build output
+import wasmUrl from "web-csv-toolbox/csv.wasm?url";
 
 const csv = `name,age
 Alice,30
@@ -85,6 +87,9 @@ document.getElementById("test2")?.addEventListener("click", async () => {
   try {
     displayResult("result2", "⏳ Parsing with Worker + WASM (non-blocking)...", "info");
 
+    // Initialize WASM module for slim variant
+    await loadWASM(wasmUrl);
+
     using pool = new ReusableWorkerPool({
       maxWorkers: 2,
       workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
@@ -120,6 +125,9 @@ document.getElementById("test3")?.addEventListener("click", async () => {
 
   try {
     displayResult("result3", "⏳ Parallel processing: multiple CSV files with multiple Workers...", "info");
+
+    // Initialize WASM module for slim variant
+    await loadWASM(wasmUrl);
 
     using pool = new ReusableWorkerPool({
       maxWorkers: 3,

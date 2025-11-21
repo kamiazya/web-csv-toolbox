@@ -697,7 +697,8 @@ export default app;
 
 - **[Using WebAssembly](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WebAssembly Architecture](../explanation/webassembly-architecture.md)** - Understanding WASM internals
-- **[WASM API Reference](../reference/api/wasm.md)** - API documentation
+- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
+- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 
 ---

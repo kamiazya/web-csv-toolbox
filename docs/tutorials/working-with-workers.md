@@ -358,7 +358,7 @@ You've learned how to:
 ## What's Next?
 
 - **[Secure CSV Processing](../how-to-guides/secure-csv-processing.md)**: Learn about security best practices
-- **[API Reference](../reference/api/)**: Explore all available options
+- **[API Reference](https://kamiazya.github.io/web-csv-toolbox/)**: Explore all available options
 - **[Execution Strategies](../explanation/execution-strategies.md)**: Deep dive into how workers work internally
 
 ## Troubleshooting
@@ -391,6 +391,18 @@ You've learned how to:
 - Safari doesn't support Transferable Streams
 - Automatic fallback to message-streaming occurs
 - Slightly higher memory usage is expected
+
+## Example Projects
+
+For complete, working examples of worker-based CSV processing, see:
+
+- **Node.js Worker:** [node-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-worker-main) - Worker pool in Node.js
+- **Browser Workers (Vite):**
+  - [vite-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-slim) - Slim entry with external WASM
+  - [vite-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-main) - Main entry with embedded WASM
+- **Browser Workers (Webpack):**
+  - [webpack-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-slim) - Webpack with slim entry
+  - [webpack-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-main) - Webpack with main entry
 
 ---
 

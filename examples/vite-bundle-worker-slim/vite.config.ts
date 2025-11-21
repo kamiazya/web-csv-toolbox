@@ -23,4 +23,6 @@ export default defineConfig({
       },
     },
   },
+  // Vite will automatically handle WASM files imported with ?url suffix
+  assetsInclude: ['**/*.wasm'],
 });

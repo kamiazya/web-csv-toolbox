@@ -491,6 +491,7 @@ Choose the preset that matches your primary optimization goal:
 
 ## Related Documentation
 
-- **[Engine Configuration](./engine-config.md)** - Detailed configuration options
 - **[Execution Strategies](../explanation/execution-strategies.md)** - Understanding how strategies work
 - **[How-To: Secure CSV Processing](../how-to-guides/secure-csv-processing.md)** - Using presets securely
+
+For advanced configuration options beyond presets, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).

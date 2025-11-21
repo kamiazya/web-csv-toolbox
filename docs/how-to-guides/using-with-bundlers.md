@@ -44,44 +44,6 @@ for await (const record of parseString(csv, {
 
 **No configuration needed.** Webpack 5 automatically handles `new URL()` with `import.meta.url`.
 
-### Rollup
-
-Install the plugin:
-
-```bash
-npm install @rollup/plugin-url --save-dev
-```
-
-Configure Rollup:
-
-```javascript
-// rollup.config.js
-import url from '@rollup/plugin-url';
-
-export default {
-  plugins: [
-    url({
-      include: ['**/worker.*.js'],
-      limit: 0, // Always emit as separate files
-      fileName: '[name][extname]'
-    })
-  ]
-};
-```
-
-Use in your code:
-
-```typescript
-import { parseString, EnginePresets } from 'web-csv-toolbox';
-import workerUrl from 'web-csv-toolbox/worker';
-
-for await (const record of parseString(csv, {
-  engine: EnginePresets.responsive({ workerURL: workerUrl })
-})) {
-  console.log(record);
-}
-```
-
 ## Without Workers
 
 If you prefer not to use Workers, use the main thread engine:
@@ -135,7 +97,7 @@ Add a build step to copy the WASM file:
 }
 ```
 
-**Option 2: Use `?url` import with explicit URL**
+**Option 2: Use `?url` import with explicit URL (Recommended)**
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
@@ -151,6 +113,93 @@ for await (const record of parseString(csv, {
 ```
 
 Vite will copy the WASM file to your dist folder automatically.
+
+**Option 3: Slim Variant for Smaller Bundle Size**
+
+If you want to minimize bundle size, use the slim variant which doesn't include inlined WASM:
+
+```typescript
+import { loadWASM, parseString, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox/slim';
+import workerUrl from 'web-csv-toolbox/worker/slim?url';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
+
+// Initialize WASM before using it
+await loadWASM(wasmUrl);
+
+using pool = new ReusableWorkerPool({
+  maxWorkers: 2,
+  workerURL: workerUrl,
+});
+
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    wasm: true,
+    workerPool: pool,
+  }
+})) {
+  console.log(record);
+}
+```
+
+**Bundle Size Comparison:**
+- **Main variant** (`web-csv-toolbox`): WASM embedded as base64 - larger initial bundle, auto-initialization
+- **Slim variant** (`web-csv-toolbox/slim`): WASM loaded separately - smaller initial bundle, manual initialization required
+
+**When to use Slim:**
+- ✅ Minimizing initial bundle size is critical
+- ✅ You want lazy WASM loading (load only when needed)
+- ✅ You can handle manual WASM initialization
+- ✅ You're building a performance-critical web application
+
+**When to use Main:**
+- ✅ Convenience and simplicity over bundle size
+- ✅ You want zero-configuration auto-initialization
+- ✅ You prefer less boilerplate code
+- ✅ Bundle size is not a primary concern
+
+#### Vite Configuration
+
+**TypeScript Configuration**
+
+When using `?url` imports, you need to configure TypeScript to recognize these imports:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM"],
+    "moduleResolution": "bundler",
+    "types": ["vite/client"]  // Required for ?url suffix types
+  }
+}
+```
+
+**Vite Configuration**
+
+To ensure WASM files are included in the build output:
+
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  resolve: {
+    // Ensure browser build is selected
+    conditions: ['browser', 'import', 'module', 'default'],
+    mainFields: ['browser', 'module', 'main'],
+  },
+  // Include WASM files in build output
+  assetsInclude: ['**/*.wasm'],
+});
+```
+
+**Why `assetsInclude` is needed:**
+- Vite may tree-shake unused imports, including `?url` imports
+- `assetsInclude` ensures WASM files are always copied to the build output
+- Without it, WASM files may be missing from the dist folder
 
 ### Webpack 5
 
@@ -180,51 +229,18 @@ module.exports = {
 };
 ```
 
-### Rollup
-
-Install the plugin:
-
-```bash
-npm install @rollup/plugin-wasm --save-dev
-```
-
-Configure Rollup:
-
-```javascript
-// rollup.config.js
-import wasm from '@rollup/plugin-wasm';
-
-export default {
-  plugins: [
-    wasm({
-      maxFileSize: 100000 // 100KB (adjust as needed)
-    })
-  ]
-};
-```
-
-Use in your code:
-
-```typescript
-import { loadWASM, parseString } from 'web-csv-toolbox';
-
-// WASM will be available at runtime via plugin
-await loadWASM();
-
-for await (const record of parseString(csv, { engine: { wasm: true } })) {
-  console.log(record);
-}
-```
-
 ### Worker + WASM Combined
 
-When using both Workers and WASM (via `EnginePresets.responsiveFast()` or `responsiveFast()`), you need to configure **both**:
+When using both Workers and WASM (via `EnginePresets.responsiveFast()`), you need to configure **both**.
+
+#### Main Variant (Auto-initialization)
 
 ```typescript
 import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
 import workerUrl from 'web-csv-toolbox/worker?url';
 import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 
+// Optional: Pre-load WASM to reduce first-parse latency
 await loadWASM(wasmUrl);
 
 for await (const record of parseString(csv, {
@@ -234,11 +250,38 @@ for await (const record of parseString(csv, {
 }
 ```
 
-**Important**: The WASM module must be available **before** Workers start using it.
+#### Slim Variant (Manual initialization required)
 
-- `web-csv-toolbox` (main entry): Auto-initializes on first use, but calling `loadWASM()` ahead of time reduces first-parse latency.
-- `web-csv-toolbox/slim` (slim entry): Call `loadWASM(wasmUrl)` before parsing. Ensure your bundler emits the WASM asset and provides its URL.
-- Presets: When using `responsiveFast()` (Worker + WASM) or `fast()` (Main + WASM), choose the appropriate initialization strategy for your environment.
+```typescript
+import { loadWASM, parseString, ReusableWorkerPool } from 'web-csv-toolbox/slim';
+import workerUrl from 'web-csv-toolbox/worker/slim?url';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
+
+// Required: Initialize WASM before parsing
+await loadWASM(wasmUrl);
+
+using pool = new ReusableWorkerPool({
+  maxWorkers: 2,
+  workerURL: workerUrl,
+});
+
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    wasm: true,
+    workerPool: pool,
+  }
+})) {
+  console.log(record);
+}
+```
+
+**Important Notes:**
+
+- **Main variant**: Auto-initializes WASM on first use. Calling `loadWASM()` ahead of time is optional but reduces first-parse latency.
+- **Slim variant**: **Must** call `loadWASM(wasmUrl)` before parsing. Without it, WASM-based parsing will fail.
+- **WASM initialization**: Must complete **before** Workers start using it.
+- **Bundler configuration**: Ensure your bundler emits the WASM asset and provides its URL (see Vite Configuration section above).
 
 ## Environment Detection
 
@@ -292,6 +335,24 @@ await Promise.all(
 
 ## Common Issues
 
+### TypeScript error: Cannot find module with `?url` suffix
+
+**Symptom**: `Cannot find module 'web-csv-toolbox/worker?url' or its corresponding type declarations`
+
+**Cause**: Missing TypeScript configuration for Vite's `?url` imports.
+
+**Solution**: Add `vite/client` to your `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  }
+}
+```
+
+This enables TypeScript to recognize Vite's special import suffixes like `?url`, `?worker`, etc.
+
 ### Worker fails to load (404)
 
 Make sure you're importing with the correct syntax for your bundler:
@@ -332,6 +393,19 @@ Content-Security-Policy: worker-src 'self' blob: data:; script-src 'self' 'wasm-
 **For WASM**: Add `'wasm-unsafe-eval'` to `script-src` directive.
 
 To avoid data URLs, configure your bundler to emit Workers as separate files.
+
+## Example Projects
+
+For complete, working examples with different bundlers and configurations:
+
+- **Vite Examples:**
+  - [vite-bundle-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-slim) - Browser bundle with slim entry
+  - [vite-bundle-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-main) - Browser bundle with main version
+  - [vite-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-slim) - Worker bundle with slim entry
+  - [vite-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-main) - Worker bundle with main version
+- **Webpack Examples:**
+  - [webpack-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-slim) - Worker bundle with slim entry
+  - [webpack-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-main) - Worker bundle with main version
 
 ## See Also
 

@@ -558,6 +558,21 @@ You've learned how to:
 - WASM only supports UTF-8
 - For other encodings (Shift-JIS, EUC-JP), use JavaScript parser with `{ engine: { wasm: false } }`
 
+## Example Projects
+
+For complete, working examples using WASM with different entry points:
+
+- **Node.js Examples:**
+  - [node-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-slim) - Slim entry (external WASM loading)
+  - [node-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-main) - Main entry (embedded WASM)
+  - [node-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-worker-main) - Worker with main version
+- **Browser Examples (Vite):**
+  - [vite-bundle-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-slim) - Slim entry with external WASM
+  - [vite-bundle-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-main) - Main entry with embedded WASM
+- **Browser Examples (Webpack):**
+  - [webpack-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-slim) - Webpack with slim entry
+  - [webpack-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-main) - Webpack with main entry
+
 ---
 
 **Need help?** Open an issue on [GitHub](https://github.com/kamiazya/web-csv-toolbox/issues).

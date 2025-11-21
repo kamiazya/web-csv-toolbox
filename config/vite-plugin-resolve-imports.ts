@@ -85,7 +85,7 @@ export function resolveImportsPlugin(): Plugin {
       } else if (importer) {
         // For preserveModules builds, infer from importer's filename directly
         // This is more reliable than tracking entry points
-        const isSharedFile = importer.includes("/_shared.ts");
+        const isSharedFile = importer.includes("/common.ts");
 
         if (!isSharedFile) {
           // Check importer's filename for .node. pattern

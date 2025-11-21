@@ -1,8 +1,15 @@
 /**
  * WASM instance management for slim version (Node.js optimized).
  *
- * **Note:** This file has an identical implementation to `WasmInstance.slim.ts`, but they must be
- * kept separate due to build-time loader resolution.
+ * **Key Differences from `WasmInstance.slim.ts`:**
+ * - `loadWASM(input?)`: `input` parameter is **optional** (Node.js can auto-resolve via package exports)
+ * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/loadWASM.js` to `loadWASM.node.ts`
+ * - WASM loader: Uses `loadWASM.node.ts` (fs.readFile with package export resolution)
+ *
+ * **Why separate files are needed:**
+ * - Different function signatures (required vs optional parameter)
+ * - Environment-specific WASM loading strategies
+ * - Build-time import path resolution based on file name
  */
 import type { InitInput } from "web-csv-toolbox-wasm";
 import {

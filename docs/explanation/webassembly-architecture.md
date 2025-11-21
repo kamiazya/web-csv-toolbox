@@ -508,7 +508,8 @@ web-csv-toolbox/
 
 - **[Using WebAssembly Tutorial](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WASM Performance Optimization](../how-to-guides/wasm-performance-optimization.md)** - Optimization techniques
-- **[WASM API Reference](../reference/api/wasm.md)** - API documentation
+- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
+- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
 - **[Execution Strategies](./execution-strategies.md)** - Understanding execution modes
 
 ---

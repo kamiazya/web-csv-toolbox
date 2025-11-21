@@ -48,11 +48,11 @@ See: [Parsing Architecture](../explanation/parsing-architecture.md)
 ### Step 1: Create a Simple Parser
 
 ```typescript
-import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultStringCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseCSV(csv: string) {
   // Stage 1: Tokenization
-  const lexer = new DefaultCSVLexer();
+  const lexer = new DefaultStringCSVLexer();
   const tokens = lexer.lex(csv);
 
   // Stage 2: Record assembly
@@ -76,10 +76,10 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 ### Tab-Separated Values (TSV)
 
 ```typescript
-import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultStringCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parseTSV(tsv: string) {
-  const lexer = new DefaultCSVLexer({ delimiter: '\t' });
+  const lexer = new DefaultStringCSVLexer({ delimiter: '\t' });
   const tokens = lexer.lex(tsv);
 
   const assembler = new DefaultCSVRecordAssembler();
@@ -100,10 +100,10 @@ for (const record of parseTSV('name\tage\r\nAlice\t30\r\n')) {
 ### Pipe-Separated Values
 
 ```typescript
-import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+import { DefaultStringCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
 
 function parsePSV(psv: string) {
-  const lexer = new DefaultCSVLexer({ delimiter: '|' });
+  const lexer = new DefaultStringCSVLexer({ delimiter: '|' });
   const tokens = lexer.lex(psv);
 
   const assembler = new DefaultCSVRecordAssembler();
@@ -373,12 +373,410 @@ for (const record of parseWithFilter(
 
 ---
 
+## Streaming Lexing and Assembly
+
+### Chunked Lexing with stream Option
+
+Process CSV data in chunks with stateful lexing:
+
+```typescript
+import { DefaultCSVLexer } from 'web-csv-toolbox';
+
+const lexer = new DefaultCSVLexer();
+
+// First chunk - incomplete quoted field
+const chunk1 = '"Hello';
+const tokens1 = [...lexer.lex(chunk1, { stream: true })];
+console.log(tokens1); // [] - waiting for closing quote
+
+// Second chunk - completes the field
+const chunk2 = ' World",30\r\n';
+const tokens2 = [...lexer.lex(chunk2, { stream: true })];
+console.log(tokens2);
+// [
+//   { type: 'Field', value: 'Hello World' },
+//   { type: 'FieldDelimiter', value: ',' },
+//   { type: 'Field', value: '30' },
+//   { type: 'RecordDelimiter', value: '\r\n' }
+// ]
+
+// Final chunk - flush remaining data
+const tokens3 = [...lexer.lex()]; // Call without arguments to flush
+```
+
+### Chunked Assembly with stream Option
+
+Process tokens incrementally:
+
+```typescript
+import { DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+const assembler = new DefaultCSVRecordAssembler();
+
+// Partial record (only header)
+const tokens1 = [
+  { type: 'Field', value: 'name' },
+  { type: 'FieldDelimiter', value: ',' },
+  { type: 'Field', value: 'age' },
+  { type: 'RecordDelimiter', value: '\r\n' }
+];
+
+const records1 = [...assembler.assemble(tokens1, { stream: true })];
+console.log(records1); // [] - waiting for data rows
+
+// Complete record
+const tokens2 = [
+  { type: 'Field', value: 'Alice' },
+  { type: 'FieldDelimiter', value: ',' },
+  { type: 'Field', value: '30' },
+  { type: 'RecordDelimiter', value: '\r\n' }
+];
+
+const records2 = [...assembler.assemble(tokens2)]; // Flush
+console.log(records2); // [{ name: 'Alice', age: '30' }]
+```
+
+### Combined Chunked Processing
+
+```typescript
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+async function* processChunks(chunks: string[]) {
+  const lexer = new DefaultCSVLexer();
+  const assembler = new DefaultCSVRecordAssembler();
+
+  for (let i = 0; i < chunks.length; i++) {
+    const isLast = i === chunks.length - 1;
+
+    // Lex chunk
+    const tokens = lexer.lex(chunks[i], { stream: !isLast });
+
+    // Assemble records
+    const records = assembler.assemble(tokens, { stream: !isLast });
+
+    for (const record of records) {
+      yield record;
+    }
+  }
+}
+
+// Usage
+const chunks = [
+  'name,age\r\n',
+  'Alice,30\r\n',
+  'Bob,25\r\n'
+];
+
+for await (const record of processChunks(chunks)) {
+  console.log(record);
+}
+```
+
+---
+
+## Resource Limits and Security
+
+### Set Buffer Size Limits
+
+Protect against malicious CSV files with extremely large fields:
+
+```typescript
+import { DefaultCSVLexer } from 'web-csv-toolbox';
+
+const lexer = new DefaultCSVLexer({
+  maxBufferSize: 1024 * 1024 // 1MB limit per field
+});
+
+try {
+  for (const token of lexer.lex(untrustedCSV)) {
+    console.log(token);
+  }
+} catch (error) {
+  if (error instanceof RangeError) {
+    console.error('Buffer size exceeded - possible CSV bomb attack');
+    console.error(error.message);
+  }
+}
+```
+
+### Set Field Count Limits
+
+Prevent records with excessive field counts:
+
+```typescript
+import { DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+const assembler = new DefaultCSVRecordAssembler({
+  maxFieldCount: 10000 // Maximum 10,000 fields per record
+});
+
+try {
+  for (const record of assembler.assemble(tokens)) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error instanceof RangeError) {
+    console.error('Field count exceeded - possible DoS attack');
+    console.error(error.message);
+  }
+}
+```
+
+### Combined Security Limits
+
+```typescript
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+function* secureParseCSV(csv: string) {
+  // Lexer with buffer size limit
+  const lexer = new DefaultCSVLexer({
+    maxBufferSize: 10 * 1024 * 1024 // 10MB per field
+  });
+
+  // Assembler with field count limit
+  const assembler = new DefaultCSVRecordAssembler({
+    maxFieldCount: 1000 // 1000 fields per record
+  });
+
+  try {
+    const tokens = lexer.lex(csv);
+    const records = assembler.assemble(tokens);
+
+    for (const record of records) {
+      yield record;
+    }
+  } catch (error) {
+    if (error instanceof RangeError) {
+      console.error('Security limit exceeded:', error.message);
+      throw new Error('CSV file exceeds security limits');
+    }
+    throw error;
+  }
+}
+
+// Usage with user-uploaded file
+try {
+  for (const record of secureParseCSV(userUploadedCSV)) {
+    console.log(record);
+  }
+} catch (error) {
+  console.error('Failed to parse CSV:', error.message);
+}
+```
+
+---
+
+## Cancellation with AbortSignal
+
+### Cancel Long-Running Operations
+
+Use AbortSignal to allow user cancellation:
+
+```typescript
+import { DefaultCSVLexer } from 'web-csv-toolbox';
+
+function* parseWithCancellation(
+  csv: string,
+  signal?: AbortSignal
+) {
+  const lexer = new DefaultCSVLexer({ signal });
+  const assembler = new DefaultCSVRecordAssembler();
+
+  try {
+    const tokens = lexer.lex(csv);
+    const records = assembler.assemble(tokens);
+
+    for (const record of records) {
+      // Check if cancelled
+      if (signal?.aborted) {
+        throw new DOMException('Parsing cancelled', 'AbortError');
+      }
+      yield record;
+    }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.log('Parsing was cancelled by user');
+      throw error;
+    }
+    throw error;
+  }
+}
+
+// Usage with timeout
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 5000); // Cancel after 5 seconds
+
+try {
+  for (const record of parseWithCancellation(largeCSV, controller.signal)) {
+    console.log(record);
+  }
+} catch (error) {
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    console.log('Parsing timed out');
+  }
+}
+```
+
+### Cancel Button Example
+
+```typescript
+import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+
+// HTML: <button id="cancel-btn">Cancel</button>
+
+const cancelButton = document.getElementById('cancel-btn');
+const controller = new AbortController();
+
+cancelButton.addEventListener('click', () => {
+  controller.abort();
+  console.log('Cancellation requested');
+});
+
+async function parseWithUI(csv: string) {
+  const lexer = new DefaultCSVLexer({ signal: controller.signal });
+  const assembler = new DefaultCSVRecordAssembler();
+
+  try {
+    let count = 0;
+    const tokens = lexer.lex(csv);
+    const records = assembler.assemble(tokens);
+
+    for (const record of records) {
+      console.log(record);
+      count++;
+
+      // Update UI periodically
+      if (count % 100 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 0)); // Yield to UI
+      }
+    }
+
+    console.log(`Completed: ${count} records`);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      console.log('User cancelled parsing');
+    } else {
+      console.error('Parsing error:', error);
+    }
+  }
+}
+```
+
+---
+
+## Understanding Token Types
+
+### Token Structure
+
+CSVLexer produces three types of tokens:
+
+#### Field Token
+```typescript
+{
+  type: 'Field',
+  value: 'Alice',
+  location: {
+    start: { line: 2, column: 1, offset: 10 },
+    end: { line: 2, column: 6, offset: 15 },
+    rowNumber: 2
+  }
+}
+```
+
+#### FieldDelimiter Token
+```typescript
+{
+  type: 'FieldDelimiter',
+  value: ',',
+  location: {
+    start: { line: 2, column: 6, offset: 15 },
+    end: { line: 2, column: 7, offset: 16 },
+    rowNumber: 2
+  }
+}
+```
+
+#### RecordDelimiter Token
+```typescript
+{
+  type: 'RecordDelimiter',
+  value: '\r\n',
+  location: {
+    start: { line: 2, column: 8, offset: 17 },
+    end: { line: 3, column: 1, offset: 19 },
+    rowNumber: 2
+  }
+}
+```
+
+### Using Token Location
+
+```typescript
+import { DefaultCSVLexer } from 'web-csv-toolbox';
+
+function analyzeTokens(csv: string) {
+  const lexer = new DefaultCSVLexer();
+  const tokens = [...lexer.lex(csv)];
+
+  for (const token of tokens) {
+    if (token.type === 'Field') {
+      console.log(`Field "${token.value}" at line ${token.location.start.line}, column ${token.location.start.column}`);
+    }
+  }
+}
+
+analyzeTokens('name,age\r\nAlice,30\r\n');
+// Field "name" at line 1, column 1
+// Field "age" at line 1, column 6
+// Field "Alice" at line 2, column 1
+// Field "30" at line 2, column 7
+```
+
+---
+
+## When to Use Low-Level APIs
+
+### Use Low-Level APIs When:
+
+- ✅ **Custom CSV dialects** - Non-standard delimiters, quote characters
+- ✅ **Custom validation** - Field-level validation during parsing
+- ✅ **Custom transformations** - Data normalization, type conversion
+- ✅ **Syntax highlighting** - Building CSV editors or viewers
+- ✅ **Performance profiling** - Understanding bottlenecks
+- ✅ **Debugging parsing issues** - Inspecting token stream
+- ✅ **Building higher-level abstractions** - Creating specialized parsers
+
+### Use High-Level APIs When:
+
+- ✅ **Standard CSV files** - RFC 4180 compliant
+- ✅ **Quick prototyping** - Fast development
+- ✅ **Production applications** - Most use cases
+- ✅ **Remote CSV files** - Fetching from network
+- ✅ **File uploads** - User-uploaded files
+- ✅ **Simple data extraction** - No special processing needed
+
+### Decision Matrix
+
+| Requirement | Use High-Level | Use Low-Level |
+|------------|---------------|--------------|
+| Standard CSV format | ✅ | |
+| Custom delimiter | | ✅ |
+| Custom validation | | ✅ |
+| File upload handling | ✅ | |
+| Syntax highlighting | | ✅ |
+| Real-time streaming | ✅ | |
+| Token inspection | | ✅ |
+| Production app | ✅ | |
+| Learning library | ✅ | |
+
+---
+
 ## Streaming Parsers
 
 ### Streaming with TransformStream
 
 ```typescript
-import { DefaultCSVLexerTransformer, DefaultCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Custom validation transform
 class ValidationTransform extends TransformStream {
@@ -670,10 +1068,10 @@ console.log(result);
 
 ## Related Documentation
 
-- **[CSVLexer API Reference](../reference/api/lexer.md)** - Detailed CSVLexer documentation
-- **[CSVRecordAssembler API Reference](../reference/api/record-assembler.md)** - Detailed CSVRecordAssembler documentation
-- **[CSVLexerTransformer API Reference](../reference/api/lexer-transformer.md)** - Streaming lexer
-- **[CSVRecordAssemblerTransformer API Reference](../reference/api/record-assembler-transformer.md)** - Streaming assembler
+- **[CSVLexer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexer.html)** - Detailed CSVLexer documentation
+- **[CSVRecordAssembler API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssembler.html)** - Detailed CSVRecordAssembler documentation
+- **[CSVLexerTransformer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)** - Streaming lexer
+- **[CSVRecordAssemblerTransformer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)** - Streaming assembler
 - **[Parsing Architecture](../explanation/parsing-architecture.md)** - Understanding the pipeline
 - **[Getting Started](../tutorials/getting-started.md)** - High-level API tutorial
 

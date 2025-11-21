@@ -150,7 +150,7 @@
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
     "graph": "madge --extensions ts --image graph.svg src/",
-    "graph:main": "madge --extensions ts --image graph-main.svg src/main.node.ts src/main.web.ts src/_shared.ts",
+    "graph:main": "madge --extensions ts --image graph-main.svg src/main.node.ts src/main.web.ts src/common.ts",
     "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker.node.ts src/worker.web.ts",
     "graph:json": "madge --extensions ts --json src/",
     "graph:summary": "madge --extensions ts --summary src/",
