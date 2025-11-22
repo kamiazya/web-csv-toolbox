@@ -135,6 +135,14 @@
       "node": "./dist/node/utils/charset/getCharsetValidation.constants.node.js",
       "browser": "./dist/utils/charset/getCharsetValidation.constants.web.js",
       "default": "./dist/utils/charset/getCharsetValidation.constants.web.js"
+    },
+    "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
+      "types": "./dist/parser/api/string/parseStringToArraySyncWASM.main.d.ts",
+      "bundler": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
+      "deno": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
+      "node": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
+      "browser": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
+      "default": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js"
     }
   },
   "files": [
