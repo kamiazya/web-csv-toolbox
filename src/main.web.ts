@@ -22,6 +22,7 @@ export * from "@/main.shared.ts";
 // Web-specific: WASM functions
 // ============================================================================
 export * from "@/parser/api/string/parseStringToArraySyncWASM.main.web.ts";
+export * from "@/wasm/WasmInstance.main.web.ts";
 
 // ============================================================================
 // Web-specific: Worker helpers

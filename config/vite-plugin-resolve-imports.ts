@@ -156,7 +156,9 @@ export function resolveImportsPlugin(): Plugin {
         const importerMeta = moduleMetadata.get(normalizedImporter);
 
         if (importerMeta) {
-          targetEnv = importerMeta.target;
+          // If importer is a shared file, default to web for # imports
+          // (shared files go to dist/, not dist/node/)
+          targetEnv = importerMeta.target === "shared" ? "web" : importerMeta.target;
         } else {
           // Fallback: infer from importer filename
           targetEnv = getTargetFromId(normalizedImporter);
@@ -165,7 +167,7 @@ export function resolveImportsPlugin(): Plugin {
         // Fallback: use current entry's target
         const entryMeta = moduleMetadata.get(currentEntry);
         if (entryMeta) {
-          targetEnv = entryMeta.target;
+          targetEnv = entryMeta.target === "shared" ? "web" : entryMeta.target;
         }
       }
 
@@ -194,6 +196,10 @@ export function resolveImportsPlugin(): Plugin {
         "#/utils/charset/getCharsetValidation.constants.js": {
           node: "/src/utils/charset/getCharsetValidation.constants.node.ts",
           web: "/src/utils/charset/getCharsetValidation.constants.web.ts",
+        },
+        "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
+          node: "/src/parser/api/string/parseStringToArraySyncWASM.main.node.ts",
+          web: "/src/parser/api/string/parseStringToArraySyncWASM.main.web.ts",
         },
       };
 
@@ -245,7 +251,7 @@ export function resolveImportsPlugin(): Plugin {
       // Only for preserveModules builds
       if (!options.preserveModules) return;
 
-      // Build a map of available files in the bundle by base name (basename only, not full path)
+      // Build a map of available files in the bundle with their full paths
       const bundleFiles = new Map<string, Set<string>>();
 
       for (const fileName of Object.keys(bundle)) {
@@ -259,7 +265,8 @@ export function resolveImportsPlugin(): Plugin {
         if (!bundleFiles.has(baseName)) {
           bundleFiles.set(baseName, new Set());
         }
-        bundleFiles.get(baseName)!.add(path.basename(fileName));
+        // Store full path (including node/ directory if present)
+        bundleFiles.get(baseName)!.add(fileName);
       }
 
       // Debug: Log bundleFiles map
@@ -318,29 +325,44 @@ export function resolveImportsPlugin(): Plugin {
               console.log(`  Base: ${baseName}, Expected: ${path.basename(expectedImport)}`);
               console.log(`  Variants: ${variants ? Array.from(variants).join(", ") : "none"}`);
 
-              if (variants && variants.has(path.basename(expectedImport))) {
-                // Rewrite the import in the chunk code
-                // Match with optional ./ prefix
-                const importPattern = new RegExp(
-                  `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
-                  "g"
-                );
+              if (variants) {
+                // Find the actual file path with correct target
+                const expectedBasename = path.basename(expectedImport);
+                const actualFile = Array.from(variants).find(v => path.basename(v) === expectedBasename);
 
-                const newCode = chunk.code.replace(
-                  importPattern,
-                  `$1./${expectedImport}$1`
-                );
+                if (actualFile) {
+                  // Calculate relative path from current file to target file
+                  const currentDir = path.dirname(fileName);
+                  const targetPath = actualFile;
+                  const relativePath = path.relative(currentDir, targetPath);
 
-                if (newCode !== chunk.code) {
-                  chunk.code = newCode;
-                  console.log(
-                    `[resolve-imports] Rewrote import in ${fileName}: ${importPath} -> ${expectedImport}`
+                  // Normalize to forward slashes and add ./ prefix
+                  const normalizedPath = relativePath.replace(/\\/g, '/');
+                  const finalPath = normalizedPath.startsWith('.') ? normalizedPath : `./${normalizedPath}`;
+
+                  // Rewrite the import in the chunk code
+                  // Match with optional ./ prefix
+                  const importPattern = new RegExp(
+                    `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
+                    "g"
                   );
+
+                  const newCode = chunk.code.replace(
+                    importPattern,
+                    `$1${finalPath}$1`
+                  );
+
+                  if (newCode !== chunk.code) {
+                    chunk.code = newCode;
+                    console.log(
+                      `[resolve-imports] Rewrote import in ${fileName}: ${importPath} -> ${finalPath}`
+                    );
+                  } else {
+                    console.log(`[resolve-imports] No changes made (pattern not found in code)`);
+                  }
                 } else {
-                  console.log(`[resolve-imports] No changes made (pattern not found in code)`);
+                  console.log(`[resolve-imports] Expected variant not found, skipping`);
                 }
-              } else {
-                console.log(`[resolve-imports] Expected variant not found, skipping`);
               }
             }
           } else if (fileTarget !== "shared") {
@@ -353,23 +375,37 @@ export function resolveImportsPlugin(): Plugin {
             const variants = bundleFiles.get(baseName);
 
             // Only rewrite if the target variant exists
-            if (variants && variants.has(path.basename(targetImport))) {
-              // Match with optional ./ prefix
-              const importPattern = new RegExp(
-                `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
-                "g"
-              );
+            if (variants) {
+              const targetBasename = path.basename(targetImport);
+              const actualFile = Array.from(variants).find(v => path.basename(v) === targetBasename);
 
-              const newCode = chunk.code.replace(
-                importPattern,
-                `$1./${targetImport}$1`
-              );
+              if (actualFile) {
+                // Calculate relative path from current file to target file
+                const currentDir = path.dirname(fileName);
+                const targetPath = actualFile;
+                const relativePath = path.relative(currentDir, targetPath);
 
-              if (newCode !== chunk.code) {
-                chunk.code = newCode;
-                console.log(
-                  `[resolve-imports] Added target suffix in ${fileName}: ${importPath} -> ${targetImport}`
+                // Normalize to forward slashes and add ./ prefix
+                const normalizedPath = relativePath.replace(/\\/g, '/');
+                const finalPath = normalizedPath.startsWith('.') ? normalizedPath : `./${normalizedPath}`;
+
+                // Match with optional ./ prefix
+                const importPattern = new RegExp(
+                  `(['"\`])\\.\\/?(${importPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\1`,
+                  "g"
                 );
+
+                const newCode = chunk.code.replace(
+                  importPattern,
+                  `$1${finalPath}$1`
+                );
+
+                if (newCode !== chunk.code) {
+                  chunk.code = newCode;
+                  console.log(
+                    `[resolve-imports] Added target suffix in ${fileName}: ${importPath} -> ${finalPath}`
+                  );
+                }
               }
             }
           }
