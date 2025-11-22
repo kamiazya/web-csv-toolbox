@@ -1082,17 +1082,34 @@ export type InferFormat<Options> = Options extends { outputFormat: infer F }
   : "object";
 
 /**
+ * Helper type to infer the column count strategy from ParseOptions.
+ *
+ * @category Types
+ *
+ * @remarks
+ * This type extracts the columnCountStrategy from options and defaults to 'keep' if not specified.
+ */
+export type InferStrategy<Options> = Options extends {
+  columnCountStrategy: infer S;
+}
+  ? S extends ColumnCountStrategy
+    ? S
+    : "keep"
+  : "keep";
+
+/**
  * Helper type to get the CSV record type based on header and options.
  *
  * @category Types
  *
  * @remarks
- * This type determines the CSVRecord type based on the header and output format in options.
+ * This type determines the CSVRecord type based on the header, output format, and columnCountStrategy in options.
+ * For array format with 'pad' strategy, fields are typed as `string | undefined`.
  */
 export type InferCSVRecord<
   Header extends ReadonlyArray<string>,
   Options = Record<string, never>,
-> = CSVRecord<Header, InferFormat<Options>>;
+> = CSVRecord<Header, InferFormat<Options>, InferStrategy<Options>>;
 
 /**
  * Parse options for CSV string.
@@ -1177,11 +1194,16 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  *
  * @category Types
  * @template Header Header of the CSV.
+ * @template Strategy Column count strategy that affects field types (default: 'keep')
  *
  * @remarks
  * This type represents a single CSV record as a readonly array.
  * When a header is provided, it creates a named tuple with type-safe indexing.
  * Without a header, it's a variable-length readonly string array.
+ *
+ * **Type safety with columnCountStrategy**:
+ * - `'keep'`, `'strict'`, `'truncate'`: Fields are typed as `string`
+ * - `'pad'`: Fields are typed as `string | undefined` (missing fields padded with undefined)
  *
  * @example With header (named tuple)
  *
@@ -1196,6 +1218,18 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  * row.length; // 3 (compile-time constant)
  * ```
  *
+ * @example With pad strategy (allows undefined)
+ *
+ * ```ts
+ * const header = ["name", "age", "city"] as const;
+ *
+ * type Row = CSVArrayRecord<typeof header, 'pad'>;
+ * // readonly [name: string | undefined, age: string | undefined, city: string | undefined]
+ *
+ * const row: Row = ["Alice", "30", undefined]; // Type-safe!
+ * row[2]; // city: string | undefined
+ * ```
+ *
  * @example Without header (variable-length)
  *
  * ```ts
@@ -1207,9 +1241,13 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  * row.length; // number (runtime determined)
  * ```
  */
-export type CSVArrayRecord<Header extends ReadonlyArray<string>> =
-  Header extends readonly []
-    ? readonly string[]
+export type CSVArrayRecord<
+  Header extends ReadonlyArray<string>,
+  Strategy extends ColumnCountStrategy = "keep",
+> = Header extends readonly []
+  ? readonly string[]
+  : Strategy extends "pad"
+    ? { readonly [K in keyof Header]: string | undefined }
     : { readonly [K in keyof Header]: string };
 
 /**
@@ -1218,6 +1256,7 @@ export type CSVArrayRecord<Header extends ReadonlyArray<string>> =
  * @category Types
  * @template Header Header of the CSV.
  * @template Format Output format: 'object' or 'array' (default: 'object')
+ * @template Strategy Column count strategy for array format (default: 'keep')
  *
  * @remarks
  * This type represents a single CSV record, which can be either an object or an array
@@ -1226,7 +1265,9 @@ export type CSVArrayRecord<Header extends ReadonlyArray<string>> =
  * - When `Format` is `'object'` (default): Returns {@link CSVObjectRecord}
  * - When `Format` is `'array'`: Returns {@link CSVArrayRecord} (named tuple)
  *
- * The format determines both the runtime representation and compile-time types.
+ * For array format, the `Strategy` parameter affects field types:
+ * - `'pad'`: Fields are typed as `string | undefined`
+ * - Other strategies: Fields are typed as `string`
  *
  * @example Object format (default)
  * ```ts
@@ -1242,11 +1283,21 @@ export type CSVArrayRecord<Header extends ReadonlyArray<string>> =
  * const record: CSVRecord<typeof header, 'array'> = ["1", "2"];
  * // Type: readonly [foo: string, bar: string]
  * ```
+ *
+ * @example Array format with pad strategy
+ * ```ts
+ * const header = ["foo", "bar"] as const;
+ * const record: CSVRecord<typeof header, 'array', 'pad'> = ["1", undefined];
+ * // Type: readonly [foo: string | undefined, bar: string | undefined]
+ * ```
  */
 export type CSVRecord<
   Header extends ReadonlyArray<string>,
   Format extends "object" | "array" = "object",
-> = Format extends "array" ? CSVArrayRecord<Header> : CSVObjectRecord<Header>;
+  Strategy extends ColumnCountStrategy = "keep",
+> = Format extends "array"
+  ? CSVArrayRecord<Header, Strategy>
+  : CSVObjectRecord<Header>;
 
 /**
  * Join CSV field array into a CSV-formatted string with proper escaping.
