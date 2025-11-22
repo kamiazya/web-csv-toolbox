@@ -60,7 +60,7 @@ export * from "./utils/file/getOptionsFromFile.ts";
 // src/main.shared.ts
 export * from "./common.ts";                    // Re-export all common APIs
 export * from "./worker/helpers/WorkerSession.ts";  // Variant-specific shared code
-export * from "./wasm/WasmInstance.main.ts";    // Main-specific WASM APIs
+// Note: WasmInstance.main is exported from environment-specific files (main.node.ts/main.web.ts)
 ```
 
 **Used by:** `*.node.ts`, `*.web.ts` of the same variant

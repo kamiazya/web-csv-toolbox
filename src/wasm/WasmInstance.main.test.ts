@@ -20,6 +20,7 @@ import * as loadWASMModule from "#/wasm/loaders/loadWASM.js";
 import * as loadWASMSyncModule from "#/wasm/loaders/loadWASMSync.js";
 
 // Import module under test
+// Note: Using .node.ts variant since this test runs in Node.js environment
 import {
   ensureWASMInitialized,
   getWasmModule,
@@ -30,7 +31,7 @@ import {
   loadWASMSync,
   resetInit,
   resetSyncInit,
-} from "@/wasm/WasmInstance.main.ts";
+} from "@/wasm/WasmInstance.main.node.ts";
 
 describe("WasmInstance.main", () => {
   beforeEach(() => {
