@@ -1,0 +1,1 @@
+import{createMessageHandler as e}from"./worker/helpers/worker.shared.js";"undefined"!=typeof globalThis&&(globalThis.__vitest_browser_runner__||(globalThis.__vitest_browser_runner__={wrapDynamicImport:e=>e()}));const r=self,s=e(r);r.addEventListener("message",e=>{s(e.data)});
