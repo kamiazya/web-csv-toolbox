@@ -17,6 +17,16 @@
   },
   "updateInternalDependencies": "patch",
   "ignore": [
-    "web-csv-toolbox-benchmark"
+    "web-csv-toolbox-benchmark",
+    "node-main",
+    "node-slim",
+    "node-worker-main",
+    "vite-bundle-main",
+    "vite-bundle-slim",
+    "vite-bundle-worker-main",
+    "vite-bundle-worker-slim",
+    "webpack-bundle-worker-main",
+    "webpack-bundle-worker-slim",
+    "hono-secure-api"
   ]
 }
