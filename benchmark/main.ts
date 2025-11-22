@@ -4,7 +4,7 @@ import { Bench } from 'tinybench';
 import {
   FlexibleStringCSVLexer,
   CSVLexerTransformer,
-  FlexibleCSVRecordAssembler,
+  createCSVRecordAssembler,
   CSVRecordAssemblerTransformer,
   EnginePresets,
   loadWASM,
@@ -489,7 +489,7 @@ bench = bench
   .add('Custom delimiter: TSV (100 rows)', () => {
     const lexer = new FlexibleStringCSVLexer({ delimiter: '\t' });
     const tokens = lexer.lex(tsv100);
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
     for (const _ of assembler.assemble(tokens)) {
       // noop
     }
@@ -497,7 +497,7 @@ bench = bench
   .add('Custom delimiter: PSV (100 rows)', () => {
     const lexer = new FlexibleStringCSVLexer({ delimiter: '|' });
     const tokens = lexer.lex(psv100);
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
     for (const _ of assembler.assemble(tokens)) {
       // noop
     }
@@ -548,7 +548,7 @@ bench = bench
 
     await stream
       .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(new FlexibleCSVRecordAssembler(), {}))
+      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {
           // noop
@@ -565,7 +565,7 @@ bench = bench
 
     await stream
       .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(new FlexibleCSVRecordAssembler(), {}))
+      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {
           // noop
@@ -582,7 +582,7 @@ bench = bench
 
     await stream
       .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(new FlexibleCSVRecordAssembler(), {}))
+      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {
           // noop
@@ -691,7 +691,7 @@ bench = bench
   .add('Low-level: CSVLexer + CSVRecordAssembler (1000 rows)', () => {
     const lexer = new FlexibleStringCSVLexer();
     const tokens = lexer.lex(csv1000rows);
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
     for (const _ of assembler.assemble(tokens)) {
       // noop
     }
