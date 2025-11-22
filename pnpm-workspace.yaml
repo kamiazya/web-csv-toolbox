@@ -32,7 +32,7 @@ catalogs:
 
     # Testing
     '@playwright/test': ^1.49.1
-    vitest: 4.0.3
+    vitest: 4.0.13
     '@vitest/coverage-v8': 4.0.3
 
     # Web Frameworks
