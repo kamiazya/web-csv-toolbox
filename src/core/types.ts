@@ -518,27 +518,44 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @remarks
    * Only valid when a `header` is provided.
    *
-   * - `'keep'` (default): Output rows as-is with their actual length
+   * **Available strategies**:
+   * - `'keep'`: Output rows as-is with their actual length (only for array format)
    * - `'pad'`: Pad short rows with undefined, truncate long rows to match header
    * - `'strict'`: Throw error if row length doesn't match header length
    * - `'truncate'`: Truncate long rows, keep short rows as-is
    *
-   * For `'object'` output format, mismatched columns are automatically handled
-   * (extra fields ignored, missing fields become undefined).
+   * **Output format behavior**:
+   * - For `'array'` format: All strategies work as described. Missing fields are `undefined` with 'pad'.
+   * - For `'object'` format: Only `'pad'`, `'strict'`, and `'truncate'` are effective.
+   *   The `'keep'` strategy has no effect and is treated as `'pad'` (extra fields ignored,
+   *   missing fields become undefined).
    *
-   * @default 'keep'
+   * @default 'keep' for array format, 'pad' for object format
    *
    * @throws {Error} If used without a header
    *
-   * @example
+   * @example Array format examples
    * ```ts
    * // Header: ['name', 'age', 'city']
    * // Row: 'Alice,30'
+   * // outputFormat: 'array'
    *
    * // columnCountStrategy: 'keep' → ['Alice', '30']
    * // columnCountStrategy: 'pad' → ['Alice', '30', undefined]
    * // columnCountStrategy: 'strict' → Error thrown
    * // columnCountStrategy: 'truncate' → ['Alice', '30']
+   * ```
+   *
+   * @example Object format examples
+   * ```ts
+   * // Header: ['name', 'age', 'city']
+   * // Row: 'Alice,30'
+   * // outputFormat: 'object'
+   *
+   * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
+   * // columnCountStrategy: 'pad' → { name: 'Alice', age: '30', city: undefined }
+   * // columnCountStrategy: 'strict' → Error thrown
+   * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: undefined }
    * ```
    */
   columnCountStrategy?: ColumnCountStrategy;
@@ -1141,24 +1158,43 @@ export interface ParseBinaryOptions<
  * @category Types
  *
  * @remarks
- * - `keep`: Output rows as-is with their actual length (default)
+ * **Available strategies**:
+ * - `keep`: Output rows as-is with their actual length (only effective for array format)
  * - `pad`: Pad short rows with undefined to match header length, truncate long rows
  * - `strict`: Throw error if row length doesn't match header length
  * - `truncate`: Truncate rows to match header length, don't pad short rows
  *
- * Note: This strategy only applies when a header is provided. For headerless CSV,
+ * **Default values**:
+ * - Array format: `'keep'`
+ * - Object format: `'pad'` (note: `'keep'` is treated as `'pad'` for object format)
+ *
+ * **Note**: This strategy only applies when a header is provided. For headerless CSV,
  * only `keep` is valid (all rows maintain their actual length).
  *
- * @example
+ * @example Array format
  *
  * ```ts
  * // Header: ['name', 'age', 'city']
  * // Input row: 'Alice,30'
+ * // outputFormat: 'array'
  *
  * // keep → ['Alice', '30']
  * // pad → ['Alice', '30', undefined]
  * // strict → Error thrown
  * // truncate → ['Alice', '30']
+ * ```
+ *
+ * @example Object format
+ *
+ * ```ts
+ * // Header: ['name', 'age', 'city']
+ * // Input row: 'Alice,30'
+ * // outputFormat: 'object'
+ *
+ * // keep → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
+ * // pad → { name: 'Alice', age: '30', city: undefined }
+ * // strict → Error thrown
+ * // truncate → { name: 'Alice', age: '30', city: undefined }
  * ```
  */
 export type ColumnCountStrategy = "keep" | "pad" | "strict" | "truncate";
