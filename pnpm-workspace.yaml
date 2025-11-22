@@ -1,3 +1,43 @@
 packages:
   - .
   - benchmark
+  - examples/*
+  - '!examples/deno'
+
+catalogs:
+  default:
+    # Build Tools
+    vite: ^7.2.2
+    typescript: ^5.9.3
+    '@types/node': ^24.10.1
+
+    # Webpack
+    webpack: ^5.97.1
+    webpack-cli: ^6.0.1
+    webpack-dev-server: ^5.2.0
+    ts-loader: ^9.5.1
+    html-webpack-plugin: ^5.6.3
+
+    # Dev Server
+    serve: ^14.2.4
+
+    # Benchmarking
+    tinybench: ^2.6.0
+    tsx: ^4.7.1
+    '@codspeed/tinybench-plugin': ^3.1.0
+
+    # Code Coverage & Analysis
+    '@codecov/vite-plugin': ^1.9.1
+    '@codecov/webpack-plugin': ^1.9.1
+
+    # Testing
+    '@playwright/test': ^1.49.1
+    vitest: 4.0.3
+    '@vitest/coverage-v8': 4.0.3
+
+    # Web Frameworks
+    hono: ^4.10.0
+    '@hono/node-server': ^1.19.6
+
+    # Validation
+    zod: ^4.1.12

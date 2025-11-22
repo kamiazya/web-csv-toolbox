@@ -7,7 +7,7 @@ group: Explanation
 
 This document explains how worker pool management works in web-csv-toolbox and why two different pool implementations exist.
 
-> **Note for Bundler Users**: When using Workers with bundlers, you must specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) for configuration details.
+> **Note for Bundler Users**: When using Workers with bundlers, you must specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md) for configuration details.
 
 ## Background
 
@@ -574,7 +574,7 @@ using session = await WorkerSession.create();
 ### Option 1: Always Reusable (rejected)
 ```typescript
 // ❌ Users must always clean up
-const pool = new WorkerPool({ maxWorkers: 1 });
+const pool = new ReusableWorkerPool({ maxWorkers: 1 });
 const records = await parseString(csv, { engine: { worker: true, workerPool: pool } });
 pool.terminate(); // Forgetting this = process hangs
 ```
@@ -613,6 +613,7 @@ const records = await parseString(csv, {
 ## Related Documentation
 
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Tutorial on worker usage
-- **[WorkerPool Reference](../reference/api/worker-pool.md)** - API documentation
+- **[Worker Pool Management](../how-to-guides/worker-pool-management.md)** - Production usage guide
 - **[Execution Strategies](./execution-strategies.md)** - Worker execution patterns
 - **[Secure CSV Processing](../how-to-guides/secure-csv-processing.md)** - Security considerations
+- **[ReusableWorkerPool API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/ReusableWorkerPool.html)** - Complete type definitions

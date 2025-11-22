@@ -87,10 +87,9 @@ for await (const record of parseString(csv, {
 
 Enable WebAssembly-based parsing for improved performance.
 
-**Requirements:**
-- Must call `loadWASM()` before use
-- Only supports UTF-8 encoding
-- Only supports double-quote (`"`) as quotation character
+**Initialization:**
+- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWASM()`.
+- `web-csv-toolbox/slim` (slim entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
 
 **Example:**
 ```typescript
@@ -106,8 +105,8 @@ for await (const record of parseString(csv, {
 ```
 
 **Performance:**
-- ✅ 2-3x faster than JavaScript implementation
-- ✅ Lower CPU usage
+- ✅ Faster than the JavaScript implementation (compiled WASM)
+- ✅ Often lower CPU usage
 
 **Limitations:**
 - ❌ UTF-8 only (no Shift-JIS, EUC-JP, etc.)
@@ -169,7 +168,7 @@ Streams are transferred directly using Transferable Streams (zero-copy).
 
 ### `workerPool`
 
-**Type:** `WorkerPool`
+**Type:** `WorkerPool` (implemented by `ReusableWorkerPool`)
 **Default:** Shared singleton pool
 
 Specify a custom WorkerPool for managing worker lifecycle.
@@ -181,9 +180,9 @@ Specify a custom WorkerPool for managing worker lifecycle.
 
 **Example:**
 ```typescript
-import { WorkerPool, parseString } from 'web-csv-toolbox';
+import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
 
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.onShutdown(() => {
   pool.terminate();
@@ -224,6 +223,8 @@ Specify a custom worker script URL.
 
 **Note:** Custom workers must implement the expected message protocol.
 
+**Node.js:** In Node, `engine: { worker: true }` works without `workerURL`. The bundled worker path is resolved internally.
+
 ---
 
 ### `strict`
@@ -231,22 +232,26 @@ Specify a custom worker script URL.
 **Type:** `boolean`
 **Default:** `false`
 
-Enable strict mode to prevent automatic fallbacks.
+Strict mode prevents the automatic fallback (`stream-transfer` → `message-streaming`) when `workerStrategy: 'stream-transfer'` is requested.
 
 **Behavior:**
-- When `true`: Throws error if worker/WASM unavailable
-- When `false`: Silently falls back to main thread
+- When `true`: Throws if `stream-transfer` is unavailable; does not auto-fallback to `message-streaming`.
+- When `false`: Automatically falls back to `message-streaming` and calls `onFallback`.
+
+**Notes:**
+- `strict` is valid only when `worker: true` and `workerStrategy: 'stream-transfer'`. Other combinations are invalid and will throw.
 
 **Use Case:**
 - Testing environments
 - Ensuring specific execution mode
 - Debugging worker issues
 
-**Example:**
+**Example (strict for Chrome/Firefox/Edge):**
 ```typescript
 {
   worker: true,
-  strict: true  // Will throw if workers unavailable
+  workerStrategy: 'stream-transfer',
+  strict: true  // throws on Safari where stream transfer is unsupported
 }
 ```
 
@@ -262,7 +267,7 @@ Controls the automatic selection between two Blob reading strategies based on fi
 
 **Strategies:**
 1. **Files smaller than threshold:** Use `blob.arrayBuffer()` + `parseBinary()`
-   - ✅ **6-8x faster** for small files (confirmed by benchmarks)
+   - ✅ Faster for small files (prefer arrayBuffer for small sizes)
    - ❌ Loads entire file into memory
    - ❌ Limited by `maxBufferSize` (default 10MB)
 
@@ -271,22 +276,13 @@ Controls the automatic selection between two Blob reading strategies based on fi
    - ✅ No size limit (processes incrementally)
    - ⚠️ Slight streaming overhead
 
-**Benchmark Results:**
-
-| File Size | Binary (ops/sec) | Stream (ops/sec) | Performance Gain |
-|-----------|------------------|------------------|------------------|
-| 1KB       | 21,691           | 2,685            | **8.08x faster** |
-| 10KB      | 2,187            | 311              | **7.03x faster** |
-| 100KB     | 219              | 32               | **6.84x faster** |
-| 1MB       | 20               | 3                | **6.67x faster** |
-
 **Special Values:**
 - `0` - Always use streaming (maximum memory efficiency)
 - `Infinity` - Always use arrayBuffer (maximum performance for small files)
 
 **Default Rationale:**
 The 1MB default threshold is determined by benchmarks and provides:
-- Optimal performance for files ≤1MB (6-8x faster)
+- Optimal performance for files ≤1MB
 - Memory efficiency for larger files
 - Safe margin below the default `maxBufferSize` (10MB)
 
@@ -511,9 +507,9 @@ Adjusting `highWaterMark` values affects the balance between memory usage and bu
 ### Production (Secure User Uploads)
 
 ```typescript
-import { WorkerPool, EnginePresets } from 'web-csv-toolbox';
+import { ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 const config = EnginePresets.balanced({
   workerPool: pool
@@ -532,18 +528,18 @@ import { EnginePresets, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
-const config = EnginePresets.fastest();
+const config = EnginePresets.responsiveFast();
 ```
 
 **Why:**
-- ✅ WASM acceleration (2-3x faster)
+- ✅ WASM acceleration (improves parsing speed)
 - ✅ Zero-copy streams
 - ✅ Non-blocking UI
 
 ### Maximum Compatibility
 
 ```typescript
-const config = EnginePresets.worker();
+const config = EnginePresets.responsive();
 ```
 
 **Why:**
@@ -551,23 +547,12 @@ const config = EnginePresets.worker();
 - ✅ All encodings supported
 - ✅ Reliable message-streaming
 
-### Testing/Debugging
-
-```typescript
-const config = EnginePresets.strict();
-```
-
-**Why:**
-- ✅ No silent fallbacks
-- ✅ Explicit error handling
-- ✅ Guaranteed execution mode
-
 ### Advanced Performance Tuning 🧪
 
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.fastest({
+const config = EnginePresets.balanced({
   arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB threshold
   backpressureCheckInterval: {
     lexer: 50,      // Check every 50 tokens (more responsive)
@@ -623,12 +608,12 @@ const config = EnginePresets.balanced({
 
 ---
 
-## WorkerPool API
+## Worker Pool API
 
 ### Constructor
 
 ```typescript
-new WorkerPool(options?: WorkerPoolOptions)
+new ReusableWorkerPool(options?: { maxWorkers?: number })
 ```
 
 **Options:**
@@ -640,7 +625,7 @@ interface WorkerPoolOptions {
 
 **Example:**
 ```typescript
-const pool = new WorkerPool({ maxWorkers: 4 });
+const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 ```
 
 ### Methods

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseString } from "@/parser/api/string/parseString.ts";
-import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.ts";
+import { ReusableWorkerPool as WorkerPool } from "@/worker/helpers/ReusableWorkerPool.web.ts";
 
 /**
  * Test to verify WorkerPool with maxWorkers=1 behaves the same as WorkerManager

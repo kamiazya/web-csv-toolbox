@@ -11,6 +11,10 @@ This document explains the WebAssembly (WASM) implementation in web-csv-toolbox 
 
 web-csv-toolbox includes an optional WebAssembly module that provides improved CSV parsing performance compared to the JavaScript implementation. The WASM module is a compiled version of optimized parsing code that runs at near-native speed.
 
+The library provides two entry points for WASM functionality:
+- **Main entry point** (`web-csv-toolbox`): Automatic WASM initialization with embedded binary
+- **Slim entry point** (`web-csv-toolbox/slim`): Manual initialization with external WASM loading
+
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │ High-Level API (parse, parseString, etc.)                   │
@@ -27,17 +31,25 @@ web-csv-toolbox includes an optional WebAssembly module that provides improved C
 │ JavaScript       │              │ WebAssembly      │
 │ Implementation   │              │ Implementation   │
 │                  │              │                  │
-│ - Full features  │              │ - High perf      │
+│ - All features   │              │ - Compiled code  │
 │ - All encodings  │              │ - UTF-8 only     │
 │ - All options    │              │ - Limited options│
 └──────────────────┘              └──────────────────┘
 ```
 
 **Key Points:**
-- WASM is optional and requires explicit initialization
-- Automatic fallback to JavaScript if WASM is unavailable
-- Can be combined with Worker Threads for maximum performance
-- Compiled from Rust code for optimal speed
+- WASM is optional (JavaScript fallback always available)
+- Initialization is automatic when using WASM-enabled features
+- Can be combined with Worker Threads for non-blocking parsing
+- Compiled from Rust code using LLVM optimization
+
+---
+
+## Entry Points
+
+This project ships two entry points (Main and Slim) that differ only in how WebAssembly is initialized and delivered. For a practical comparison and guidance on when to use each:
+
+→ See: [Main vs Slim Entry Points](./main-vs-slim.md)
 
 ---
 
@@ -46,9 +58,9 @@ web-csv-toolbox includes an optional WebAssembly module that provides improved C
 ### Why WebAssembly?
 
 **Performance:**
-- Near-native execution speed
+- Compiled to machine code
 - Efficient memory management
-- Optimized for CPU-intensive parsing
+- Optimized by LLVM compiler
 
 **Portability:**
 - Runs on all major browsers
@@ -88,14 +100,14 @@ The WASM module is compiled from Rust code because:
 WASM is opt-in rather than always-on because:
 
 **Trade-offs:**
-- **Size:** WASM binary adds ~100KB to bundle size
-- **Initialization:** Async loading adds latency
+- **Size:** WASM binary adds to bundle size
+- **Initialization:** Module loading adds overhead
 - **Limitations:** UTF-8 only, double-quote only
 
 **Flexibility:**
 - Users can choose based on their needs
-- Fallback to JavaScript for unsupported features
-- Smaller bundle for users who don't need WASM
+- Automatic fallback to JavaScript for unsupported features
+- JavaScript parser provides full feature compatibility
 
 ---
 
@@ -104,20 +116,21 @@ WASM is opt-in rather than always-on because:
 ### Module Loading
 
 ```typescript
-// loadWASM.ts
-import init, { type InitInput } from "web-csv-toolbox-wasm";
-import dataURL from "web-csv-toolbox-wasm/web_csv_toolbox_wasm_bg.wasm";
+// loadWASM.ts (conceptual)
+import init, { type InitInput } from 'web-csv-toolbox-wasm';
+// In the web-csv-toolbox distribution, the WASM asset is exported as `web-csv-toolbox/csv.wasm`.
+import wasmUrl from 'web-csv-toolbox/csv.wasm';
 
-export async function loadWASM(input?: InitInput | Promise<InitInput>) {
-  await init(input ?? dataURL);
+export async function loadWASM(input?: InitInput) {
+  await init({ module_or_path: input ?? wasmUrl });
 }
 ```
 
 **How it works:**
-1. WASM binary is bundled as a data URL
-2. `init()` loads and instantiates the WASM module
+1. The WASM binary is distributed as a separate asset (`csv.wasm`)
+2. `init()` loads and instantiates the module (via URL or Buffer)
 3. Module is cached globally for reuse
-4. Subsequent calls are instant (module already loaded)
+4. Subsequent calls are instant (already initialized)
 
 ---
 
@@ -174,9 +187,9 @@ export function parseStringToArraySyncWASM<Header>(
 
 **Memory Efficiency:**
 - Input string: Temporary copy in WASM memory
-- Parsing state: Small (few KB), constant size
+- Parsing state: Small, constant size
 - Output: JSON string (similar size to input)
-- **Total overhead:** ~2x input size during parsing
+- **Total overhead:** Approximately 3x input size during parsing
 
 ---
 
@@ -185,7 +198,7 @@ export function parseStringToArraySyncWASM<Header>(
 WASM respects the same `maxBufferSize` limit as JavaScript:
 
 ```typescript
-const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
+const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example: 10MB
 ```
 
 **Why:**
@@ -199,39 +212,36 @@ const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // 10MB
 
 ### Speed Comparison
 
-<!-- TODO: Add actual benchmark results based on measurements -->
+**Performance depends on many factors:**
+- CSV structure and size
+- Runtime environment (browser, Node.js, Deno)
+- System capabilities
 
-**General observations:**
-
-| CSV Size | JavaScript | WASM | Performance |
-|----------|-----------|------|-------------|
-| 100KB | Baseline | Improved | See benchmarks |
-| 1MB | Baseline | Improved | See benchmarks |
-| 10MB | Baseline | Improved | See benchmarks |
-
-**Why WASM offers improved performance:**
+**Theoretical advantages of WASM:**
 - Compiled to machine code (vs interpreted JavaScript)
 - Efficient memory access patterns
 - Optimized by LLVM compiler
-- No garbage collection pauses during parsing
 
-For actual measured performance, see [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox).
+**Actual performance:**
+For measured performance in various scenarios, see [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox).
 
 ---
 
 ### Initialization Overhead
 
 ```typescript
-// First call - slow (module loading)
-await loadWASM(); // ~10-50ms
+// First call - module loading
+await loadWASM();
 
 // Subsequent calls - instant (module cached)
-await loadWASM(); // <1ms
+await loadWASM();
 ```
 
-**Break-even point:**
-- Files >100KB: WASM benefits outweigh initialization overhead
-- Files <100KB: JavaScript may be more efficient (no initialization overhead)
+**Considerations:**
+- Module loading adds initial overhead
+- Once loaded, module is cached for subsequent use
+- Performance trade-offs depend on file size and parsing frequency
+- Benchmark your specific use case to determine the best approach
 
 ---
 
@@ -242,10 +252,10 @@ Both implementations have similar memory usage:
 | Stage | JavaScript | WASM |
 |-------|-----------|------|
 | Input | String (in heap) | String (copied to linear memory) |
-| Parsing | CSVLexer buffer (~10MB max) | Parsing state (~10MB max) |
+| Parsing | CSVLexer buffer (configurable) | Parsing state (configurable) |
 | Output | Objects (in heap) | JSON string → Objects |
 
-**Total:** WASM uses ~2x input size temporarily, same as JavaScript.
+**Total:** Both implementations use approximately 2x input size temporarily during parsing.
 
 ---
 
@@ -272,9 +282,11 @@ Main Thread:
 ```
 
 **Characteristics:**
-- ✅ Improved performance (compiled code)
+- ✅ Uses compiled WASM code
+- ✅ No worker communication overhead
 - ❌ Blocks main thread during parsing
-- Use case: Server-side parsing, small to medium files
+- **Performance trade-off:** Faster execution (no communication cost) but UI becomes unresponsive
+- Use case: Server-side parsing, scenarios where blocking is acceptable
 
 ---
 
@@ -299,9 +311,11 @@ Main Thread:                 Worker Thread:
 
 **Characteristics:**
 - ✅ Non-blocking UI
-- ✅ Improved performance (compiled code)
-- ✅ Best for large files
-- Use case: Browser applications, large files
+- ✅ Uses compiled WASM code
+- ✅ Offloads parsing to worker thread
+- ⚠️ Worker communication adds overhead (data transfer between threads)
+- **Performance trade-off:** Execution time may increase due to communication cost, but UI remains responsive
+- Use case: Browser applications, scenarios requiring UI responsiveness
 
 ---
 
@@ -356,23 +370,23 @@ for await (const record of parse(csv, {
 
 ---
 
-### No Streaming
+### Processes Entire String
 
 **Limitation:**
-WASM parser processes the entire CSV string at once (not streaming).
+WASM parser processes the entire CSV string at once.
 
 **Why:**
 - Simpler implementation
-- Better performance for complete strings
+- Optimized for complete strings
 - Avoids complex state management across calls
 
 **Impact:**
 - Memory usage proportional to file size
 - Not suitable for unbounded streams
-- Fine for files up to ~100MB
+- Choose appropriate approach based on your file size and memory constraints
 
 **Workaround:**
-For streaming, the JavaScript implementation supports chunk-by-chunk parsing:
+For incremental parsing, the JavaScript implementation supports chunk-by-chunk processing:
 
 ```typescript
 const lexer = new DefaultCSVLexer();
@@ -417,7 +431,7 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 ```
 
 **Fallback scenarios:**
-1. WASM module not loaded (`loadWASM()` not called)
+1. WASM initialization failed or module could not be loaded
 2. Non-UTF-8 encoding specified
 3. Single-quote quotation character specified
 4. WASM not supported in runtime (rare)
@@ -449,7 +463,7 @@ WASM respects the same resource limits as JavaScript:
 
 ```typescript
 // maxBufferSize applies to both JS and WASM
-const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
+const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example
 ```
 
 **Why:**
@@ -459,49 +473,14 @@ const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 });
 
 ---
 
-## Browser and Runtime Support
+## Runtime Requirements
 
-WASM is supported across all modern runtimes:
+WASM features in this library depend on your runtime’s native WebAssembly support. Verify your environment before relying on WASM acceleration.
 
-| Runtime | WASM Support | Notes |
-|---------|--------------|-------|
-| Chrome | ✅ | Full support |
-| Firefox | ✅ | Full support |
-| Edge | ✅ | Full support |
-| Safari | ✅ | Full support |
-| Node.js LTS | ✅ | Full support |
-| Deno LTS | ✅ | Full support |
+- WebAssembly docs: [Can I Use](https://caniuse.com/wasm) · [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
+- Library coverage and testing scope: [Supported Environments](../reference/supported-environments.md)
 
-**Browser API Support:**
-- **WebAssembly**: [Can I Use](https://caniuse.com/wasm) | [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
-
-See: [Supported Environments](../reference/supported-environments.md)
-
----
-
-## Build Process
-
-### WASM Compilation
-
-The WASM module is built from Rust source code:
-
-```bash
-# Compile Rust to WASM
-wasm-pack build --target web
-
-# Optimize WASM binary
-wasm-opt -O3 -o output.wasm input.wasm
-
-# Generate TypeScript bindings
-wasm-bindgen --target web
-```
-
-**Output:**
-- `web_csv_toolbox_wasm_bg.wasm` - WASM binary
-- `web_csv_toolbox_wasm.js` - JavaScript glue code
-- `web_csv_toolbox_wasm.d.ts` - TypeScript definitions
-
----
+If your runtime doesn’t support WebAssembly or you choose not to use it, the JavaScript parser remains available as a fallback.
 
 ### Bundle Integration
 
@@ -510,12 +489,12 @@ The WASM binary is bundled with the npm package:
 ```text
 web-csv-toolbox/
 ├── dist/
-│   ├── index.js                          # Main entry point
-│   ├── loadWASM.js                       # WASM loader
+│   ├── main.web.js / main.node.js            # Main entry points
+│   ├── slim.web.js / slim.node.js            # Slim entry points
+│   ├── csv.wasm                               # WASM binary (exported as web-csv-toolbox/csv.wasm)
+│   ├── _virtual/                              # Build-time virtual modules for inlined WASM (main entry)
 │   └── wasm/
-│       ├── web_csv_toolbox_wasm_bg.wasm  # WASM binary
-│       ├── web_csv_toolbox_wasm.js       # Glue code
-│       └── web_csv_toolbox_wasm.d.ts     # Types
+│       └── loaders/                           # loadWASM / loadWASMSync loaders
 ```
 
 **Bundler support:**
@@ -529,7 +508,8 @@ web-csv-toolbox/
 
 - **[Using WebAssembly Tutorial](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WASM Performance Optimization](../how-to-guides/wasm-performance-optimization.md)** - Optimization techniques
-- **[WASM API Reference](../reference/api/wasm.md)** - API documentation
+- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
+- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
 - **[Execution Strategies](./execution-strategies.md)** - Understanding execution modes
 
 ---
@@ -538,18 +518,24 @@ web-csv-toolbox/
 
 web-csv-toolbox's WebAssembly implementation provides:
 
-1. **Performance**: Improved speed through compiled code
+1. **Compiled Execution**: Uses WASM compiled from Rust code
 2. **Portability**: Runs on all modern browsers and runtimes
 3. **Safety**: Memory-safe, sandboxed execution
 4. **Flexibility**: Optional, automatic fallback to JavaScript
-5. **Integration**: Works with Worker Threads for maximum performance
+5. **Integration**: Works with Worker Threads for non-blocking parsing
 
 **Trade-offs:**
 - UTF-8 only (no Shift-JIS, EUC-JP, etc.)
 - Double-quote only (no single-quote)
-- No streaming (processes entire string at once)
-- Initialization overhead (~10-50ms)
+- Processes entire string at once (not incremental)
+- Module loading adds initial overhead
 
-**Recommendation:** Use WASM for large UTF-8 CSV files (>100KB) where performance is critical.
+**When to use WASM:**
+- Evaluate performance for your specific use case
+- Consider WASM when:
+  - Working with UTF-8 CSV files
+  - Using standard double-quote quotation
+  - Processing complete CSV strings
+- Benchmark your actual data to make informed decisions
 
-**Performance:** See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for actual measured performance.
+**Performance:** See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for actual measured performance across different scenarios.

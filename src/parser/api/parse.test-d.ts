@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
+import type { CSVBinary, CSVRecord, CSVString } from "@/core/types.ts";
 import { parse } from "@/parser/api/parse.ts";
-import type { CSVBinary, CSVRecord, CSVString } from "@/web-csv-toolbox.ts";
 
 describe("parse function", () => {
   it("parse should be a function", () => {

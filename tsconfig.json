@@ -4,6 +4,6 @@
     "noEmit": true,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*", "config/**/*"],
+  "exclude": ["node_modules", "examples/deno/**/*"]
 }

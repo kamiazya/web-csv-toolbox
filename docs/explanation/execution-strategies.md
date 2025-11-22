@@ -7,7 +7,7 @@ group: Explanation
 
 This document explains how different execution strategies work and when to use each one.
 
-> **Note for Bundler Users**: When using Worker-based strategies (worker, workerWasm, etc.) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/use-with-bundlers.md) for details.
+> **Note for Bundler Users**: When using Worker-based strategies (worker, workerWasm, etc.) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md) for details.
 
 ## Background
 
@@ -46,10 +46,13 @@ Parsing runs synchronously on the main thread (browser) or event loop (Node.js/D
 ### Characteristics
 
 **Advantages:**
+- ✅ **Most stable**: Uses only standard JavaScript APIs
 - ✅ No initialization overhead
+- ✅ No worker communication overhead
 - ✅ Simple and straightforward
 - ✅ Works everywhere
-- ✅ Lower latency for small files
+- ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
+- ✅ Supports all quotation characters
 
 **Disadvantages:**
 - ❌ Occupies the main thread/event loop
@@ -58,10 +61,11 @@ Parsing runs synchronously on the main thread (browser) or event loop (Node.js/D
 
 ### When to Use
 
-- Small CSV files (< 1MB)
-- Server-side processing where UI doesn't matter
+- When stability is the highest priority
+- Server-side processing where UI blocking is acceptable
 - Quick scripts or prototypes
 - When worker overhead is unacceptable
+- When WHATWG Encoding Standard encodings support is needed
 
 ### Example
 
@@ -118,15 +122,16 @@ sequenceDiagram
 Records are sent one by one via [**postMessage**](https://developer.mozilla.org/docs/Web/API/Worker/postMessage) API.
 
 **Characteristics:**
+- ✅ **Stable**: Uses standard Web Workers API
 - ✅ Works on all browsers (including Safari)
 - ✅ Reliable and well-tested
-- ⚠️ Some serialization overhead
-- ⚠️ Memory copies for each message
+- ⚠️ Worker communication adds overhead (data transfer between threads)
+- ⚠️ Requires bundler configuration for worker URL
 
 **Best For:**
-- Medium files (1-10MB)
 - When Safari support is required
 - When maximum compatibility is needed
+- Non-blocking parsing with stable API
 
 ### Stream Transfer Strategy
 
@@ -149,15 +154,18 @@ sequenceDiagram
 The entire stream is transferred to the worker using Transferable Streams.
 
 **Characteristics:**
+- ⚠️ **Experimental**: Uses Transferable Streams API which is still evolving and may change
 - ✅ Zero-copy transfer (very efficient)
 - ✅ Constant memory usage
-- ✅ Best for large streaming workloads
-- ❌ Not supported on Safari
+- ✅ Good for streaming workloads
+- ✅ Automatic fallback to stable message-streaming on Safari
+- ❌ Not supported on Safari (auto-falls back)
 
 **Best For:**
-- Large streaming files (> 10MB)
+- Streaming workloads
 - Memory-sensitive applications
 - Chrome, Firefox, Edge browsers (Safari will auto-fallback to message-streaming)
+- When stable fallback is acceptable
 
 ### Runtime Support
 
@@ -181,7 +189,7 @@ Worker execution works across different JavaScript runtimes with platform-specif
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -197,7 +205,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Worker threads are used automatically
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
 }
@@ -217,7 +225,7 @@ For detailed platform specifications and compatibility information, see **[Suppo
 
 ### Automatic Fallback Behavior
 
-web-csv-toolbox automatically falls back to more compatible execution methods when the requested strategy is not available. This behavior is enabled by default but can be disabled with [strict mode](../reference/engine-config.md#strict-mode).
+web-csv-toolbox automatically falls back to more compatible execution methods when the requested strategy is not available. This behavior is enabled by default but can be disabled with strict mode.
 
 **Stream Transfer → Message Streaming:**
 - Occurs when the browser doesn't support Transferable Streams (e.g., Safari)
@@ -230,7 +238,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Request stream-transfer strategy
 for await (const record of parseString(csv, {
-  engine: EnginePresets.workerStreamTransfer()
+  engine: EnginePresets.memoryEfficient()
 })) {
   console.log(record);
 }
@@ -261,21 +269,23 @@ for await (const record of parseString(csv, {
 - When you need to guarantee a specific execution method
 - When you want to explicitly handle unsupported features
 
-For more details, see [Engine Configuration - Strict Mode](../reference/engine-config.md#strict-mode).
+For more details on the `strict` option, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).
 
 ### When to Use Workers
 
 ✅ **Use workers when:**
-- File size > 1MB
-- **Browser**: UI responsiveness is critical
+- **Browser**: UI responsiveness is critical (non-blocking parsing required)
 - **Server**: Processing multiple files concurrently
 - **Server**: Spare CPU cores available for parallel processing
+- Need stable non-blocking execution (`worker` preset)
+- Accept experimental API with stable fallback (`balanced` preset)
 
 ❌ **Skip workers when:**
-- Small file size
+- **Stability is highest priority**: Use `mainThread` preset instead
 - Worker initialization overhead is unacceptable for your use case
 - Simple scripts or command-line tools
 - Very tight latency requirements
+- Server-side where UI blocking is acceptable
 
 ### Example
 
@@ -285,7 +295,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Worker with message streaming (Safari compatible)
 for await (const record of parse(csv, {
-  engine: EnginePresets.worker
+  engine: EnginePresets.responsive()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -293,7 +303,7 @@ for await (const record of parse(csv, {
 
 // Worker with stream transfer (best for Chrome/Firefox/Edge)
 for await (const record of parse(response, {
-  engine: EnginePresets.workerStreamTransfer()
+  engine: EnginePresets.memoryEfficient()
 })) {
   console.log(record);
   // Zero-copy streaming!
@@ -302,12 +312,12 @@ for await (const record of parse(response, {
 
 **Server (concurrent processing):**
 ```typescript
-import { parseStringStream, WorkerPool } from 'web-csv-toolbox';
+import { parseStringStream, ReusableWorkerPool } from 'web-csv-toolbox';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
 // Create worker pool for handling multiple files
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // Process multiple CSV files concurrently with streaming
 await Promise.all(
@@ -341,10 +351,12 @@ async function processRecord(record) {
 
 ### How It Works
 
-Parsing uses pre-compiled WebAssembly code for 2-3x faster performance compared to JavaScript.
+Parsing uses pre-compiled WebAssembly code for improved performance compared to JavaScript.
 
-- **In Browsers**: Faster than JavaScript, but still occupies the main thread
-- **On Servers**: Faster parsing with lower CPU usage, but still occupies the event loop
+- **In Browsers**: Generally faster than JavaScript, but still occupies the main thread
+- **On Servers**: Potentially faster parsing with lower CPU usage, but still occupies the event loop
+
+**Performance Note:** Actual performance improvements vary depending on data size, content complexity, and runtime environment. In many cases, WASM can provide significant speedups, but results may differ based on your specific use case.
 
 ### Why WASM is Faster
 
@@ -366,28 +378,29 @@ function parseCSV(text) {
 (func $parse_csv
   ;; Optimized low-level operations
   ;; Direct memory access
-  ;; SIMD instructions
+  ;; Efficient memory operations
 )
 ```
 
-**Performance Gains:**
-- 2-3x faster parsing
-- Lower CPU usage
+**Performance Characteristics:**
+- Generally faster parsing (actual speedup varies by workload)
+- Lower CPU usage in many scenarios
 - More efficient memory access
+- Performance depends on data size, complexity, and runtime
 
 ### Characteristics
 
 **Advantages:**
-- ✅ 2-3x faster than JavaScript
-- ✅ Lower CPU usage
-- ✅ Predictable performance
-- ✅ Small binary size (~50KB)
+- ✅ Generally faster than JavaScript (speedup varies by workload)
+- ✅ Lower CPU usage in many scenarios
+- ✅ Predictable performance characteristics
+- ✅ Small binary size (~82KB WASM module)
 
 **Disadvantages:**
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Still occupies main thread/event loop
-- ❌ Requires `loadWASM()` call
+- ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
 
 ### Limitations
 
@@ -430,23 +443,42 @@ parse("a,'b,c',d", {
 - Non-UTF-8 encoding (e.g., Shift-JIS, EUC-JP)
 - Custom quotation characters
 - Broad format support needed
-- WASM initialization overhead is unacceptable
+- First-time initialization latency is critical (unless you pre-load with `loadWASM()`)
 
 ### Example
+
+#### Recommended: Pre-load WASM for better performance
 
 ```typescript
 import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
 
-// Load WASM module once at startup
+// Recommended: Load WASM module once at startup
+// This prevents initialization overhead on first parse
 await loadWASM();
 
-// Parse with WASM (2-3x faster)
+// Parse with WASM
 for await (const record of parse(csv, {
-  engine: EnginePresets.wasm
+  engine: EnginePresets.fast()
 })) {
   console.log(record);
 }
 ```
+
+#### Alternative: Automatic initialization (slower on first use)
+
+```typescript
+import { parse, EnginePresets } from 'web-csv-toolbox';
+
+// WASM is automatically initialized on first use
+// However, this can cause a noticeable delay on the first parse
+for await (const record of parse(csv, {
+  engine: EnginePresets.fast()
+})) {
+  console.log(record);
+}
+```
+
+**Note:** The first WASM parse without pre-loading can take longer due to module initialization. Pre-loading with `loadWASM()` is recommended to avoid this bottleneck, especially in performance-critical applications.
 
 ---
 
@@ -464,7 +496,7 @@ sequenceDiagram
     Main->>Worker: Send CSV data
     activate Worker
     Note over Main: UI stays responsive ✓
-    Worker->>Worker: WASM Parse<br/>(2-3x faster)
+    Worker->>Worker: WASM Parse<br/>(faster)
     Worker-->>Main: Send results
     deactivate Worker
     Note over Main: Render results
@@ -481,7 +513,7 @@ sequenceDiagram
     EventLoop->>Worker: Send CSV data
     activate Worker
     Note over EventLoop: Can handle other requests ✓
-    Worker->>Worker: WASM Parse<br/>(2-3x faster)
+    Worker->>Worker: WASM Parse<br/>(faster)
     Worker-->>EventLoop: Send results
     deactivate Worker
     Note over EventLoop: Process results
@@ -490,22 +522,22 @@ sequenceDiagram
 
 Combines the benefits of both strategies:
 - Worker offloading (keeps main thread/event loop free)
-- WASM acceleration (2-3x faster parsing)
+- WASM acceleration (generally faster parsing, varies by workload)
 
 ### Characteristics
 
 **Advantages:**
-- ✅ 2-3x faster than JavaScript
+- ✅ Generally faster than JavaScript (speedup varies by workload)
 - ✅ **Browser**: Non-blocking UI, smooth user experience
 - ✅ **Server**: High throughput, can handle concurrent requests
-- ✅ Best overall performance
+- ✅ Best overall performance in many scenarios
 - ✅ Good for large files
 
 **Disadvantages:**
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Worker + WASM initialization overhead
-- ❌ Requires `loadWASM()` call
+- ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
 
 ### When to Use Combined
 
@@ -523,17 +555,34 @@ Combines the benefits of both strategies:
 
 ### Example
 
+#### Recommended: Pre-load WASM for better performance
+
 ```typescript
 import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
 
+// Recommended: Load WASM module once at startup
 await loadWASM();
 
-// Best of both worlds
+// Best of both worlds: Worker + WASM + stream-transfer
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()  // Worker + WASM + stream-transfer
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
   // Fast + non-blocking!
+}
+```
+
+#### Alternative: Automatic initialization (slower on first use)
+
+```typescript
+import { parse, EnginePresets } from 'web-csv-toolbox';
+
+// WASM is automatically initialized on first use
+// However, this can cause a delay on the first parse
+for await (const record of parse(csv, {
+  engine: EnginePresets.responsiveFast()
+})) {
+  console.log(record);
 }
 ```
 
@@ -541,27 +590,30 @@ for await (const record of parse(csv, {
 
 ## Performance Comparison
 
-### Benchmark Results
+### General Characteristics
 
-Based on a 10MB CSV file with 100,000 records (browser environment):
-
-<!-- TODO: Add actual performance measurements from benchmarks -->
+Performance varies significantly based on:
+- **Data size**: Larger files benefit more from optimization
+- **Content complexity**: Simple vs. quoted/escaped content
+- **Runtime environment**: Browser, Node.js, Deno, Bun
+- **Hardware**: CPU architecture, available memory
 
 | Strategy | Parse Time | Main Thread/Event Loop | Memory | CPU Usage |
 |----------|-----------|------------------------|--------|-----------|
-| Main Thread | Baseline | ❌ Occupied | Moderate | High |
-| Worker (message) | Baseline + overhead | ✅ Free | Moderate | High |
-| Worker (stream) | Baseline + overhead | ✅ Free | Moderate | High |
-| WASM | Faster | ❌ Occupied | Lower | Moderate |
-| Worker + WASM | Faster + overhead | ✅ Free | Moderate | Moderate |
+| Main Thread | Baseline | ❌ Occupied | Moderate | Higher |
+| Worker (message) | Baseline + overhead | ✅ Free | Moderate | Higher |
+| Worker (stream) | Baseline + overhead | ✅ Free | Lower | Higher |
+| WASM | Generally faster | ❌ Occupied | Lower | Lower |
+| Worker + WASM | Generally faster + overhead | ✅ Free | Moderate | Lower |
 
 **Key Insights:**
-- WASM provides faster parsing
-- Worker has initialization overhead
+- WASM generally provides faster parsing (actual speedup varies)
+- Worker has initialization overhead but keeps main thread responsive
 - Stream transfer is more memory efficient than message passing
-- Worker + WASM combines benefits of parallelization and speed
+- Worker + WASM combines benefits of parallelization and optimization
+- Performance improvements depend on your specific workload
 
-**Note:** Actual performance varies by hardware, runtime, and CSV complexity. See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured results.
+**Note:** For measured performance data on specific workloads, see [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox). Always benchmark with your actual data to determine the best strategy for your use case.
 
 ### Memory Characteristics
 
@@ -651,7 +703,8 @@ graph TD
 ## Related Documentation
 
 - **[Engine Presets](../reference/engine-presets.md)** - Pre-configured settings
-- **[Engine Configuration](../reference/engine-config.md)** - Configuration reference
 - **[Supported Environments](../reference/supported-environments.md)** - Runtime compatibility and support levels
 - **[Versioning Policy](../reference/versioning-policy.md)** - Version management and stability guarantees
 - **[How-To: Optimize Performance](../how-to-guides/optimize-performance.md)** - Performance tips
+
+For advanced configuration options, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).

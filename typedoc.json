@@ -1,6 +1,6 @@
 {
   "entryPoints": [
-    "src/web-csv-toolbox.ts"
+    "src/main.web.ts"
   ],
   "out": "doc",
   "plugin": [

@@ -35,6 +35,15 @@ jobs:
       - build
       - static_tests
 
+  examples:
+    name: Examples
+    uses: ./.github/workflows/.examples.yaml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    needs:
+      - build
+      - static_tests
+
   release:
     name: Release
     uses: ./.github/workflows/.release.yaml
@@ -42,8 +51,10 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      pages: write
     needs:
       - static_tests
       - build
       - dynamic_tests
+      - examples
     if: ${{ github.repository == 'kamiazya/web-csv-toolbox' && github.ref == 'refs/heads/main' && success() }}

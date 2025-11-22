@@ -3,9 +3,10 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "config/**/*"],
   "exclude": [
     "node_modules",
+    "examples/deno/**/*",
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.test-d.ts",

@@ -33,15 +33,18 @@ Worker threads allow you to run CPU-intensive tasks off the main thread, keeping
 ## When to use Workers
 
 **✅ Use workers when:**
-- Parsing large CSV files (>1000 rows)
-- Maintaining UI responsiveness is critical
+- Maintaining UI responsiveness is critical (non-blocking parsing)
 - Processing multiple CSV files concurrently
 - Working with streaming data
+- Browser applications requiring responsive UI
 
 **❌ Skip workers when:**
-- Parsing small CSV files (<100 rows)
-- Worker initialization overhead outweighs benefits
+- Stability is the highest priority (use `stable` preset instead)
+- Worker initialization overhead outweighs benefits for your use case
 - Running in environments without worker support
+- Server-side where UI blocking is acceptable
+
+**Note:** Workers add communication overhead (data transfer between threads), which may increase execution time. However, they keep the UI responsive, making them ideal for browser applications.
 
 ## Step 1: Basic Worker Usage
 
@@ -82,7 +85,7 @@ Bob,25,San Francisco`;
 
 // Use the 'balanced' preset (recommended for production)
 for await (const record of parse(csv, {
-  engine: EnginePresets.balanced
+  engine: EnginePresets.balanced()
 })) {
   console.log(record);
 }
@@ -90,18 +93,16 @@ for await (const record of parse(csv, {
 
 ### Available Presets
 
-| Preset | Worker | WASM | Best For |
-|--------|--------|------|----------|
-| `mainThread` | ❌ | ❌ | Small files, simple use cases |
-| `worker` | ✅ | ❌ | Medium files, broad encoding support |
-| `workerStreamTransfer` | ✅ | ❌ | Large streaming files (Chrome/Firefox/Edge) |
-| `wasm` | ❌ | ✅ | Medium UTF-8 files, main thread |
-| `workerWasm` | ✅ | ✅ | Large UTF-8 files |
-| `fastest` | ✅ | ✅ | Maximum performance (UTF-8 only) |
-| `balanced` | ✅ | ❌ | **Recommended for production** |
-| `strict` | ✅ | ❌ | No automatic fallbacks |
+| Preset | Optimization Target | Worker | WASM | Stability |
+|--------|---------------------|--------|------|-----------|
+| `stable` | Stability | ❌ | ❌ | ⭐ Most Stable |
+| `responsive` | UI responsiveness | ✅ | ❌ | ✅ Stable |
+| `memoryEfficient` | Memory efficiency | ✅ | ❌ | ⚠️ Experimental |
+| `fast` | Parse speed | ❌ | ✅ | ✅ Stable |
+| `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | ✅ Stable |
+| `balanced` | Balanced (general-purpose) | ✅ | ❌ | ✅ Stable |
 
-**Recommendation:** Use `EnginePresets.balanced()` for most production use cases. It provides good performance while supporting all encodings.
+**Recommendation:** Use `EnginePresets.balanced()` for general-purpose CSV processing. It provides non-blocking execution with WHATWG Encoding Standard encodings support and has automatic stable fallback on Safari.
 
 ## Step 3: Parsing Network Responses with Workers
 
@@ -115,7 +116,7 @@ async function fetchAndParseCSV(url: string) {
 
   // Parse response using worker
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.balanced
+    engine: EnginePresets.balanced()
   })) {
     console.log(record);
   }
@@ -130,15 +131,15 @@ await fetchAndParseCSV('https://example.com/large-data.csv');
 - Main thread stays responsive during both operations
 - Automatic handling of Content-Type and Content-Encoding headers
 
-## Step 4: Managing Concurrent Parsing with WorkerPool
+## Step 4: Managing Concurrent Parsing with ReusableWorkerPool
 
-When parsing multiple CSV files, use `WorkerPool` to limit resource usage:
+When parsing multiple CSV files, use a worker pool (`ReusableWorkerPool`) to limit resource usage:
 
 ```typescript
-import { parse, WorkerPool } from 'web-csv-toolbox';
+import { parse, ReusableWorkerPool } from 'web-csv-toolbox';
 
 // Create a worker pool with max 4 concurrent workers
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 const csvFiles = [
   'data1.csv',
@@ -182,7 +183,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 async function parseWithErrorHandling(csv: string) {
   try {
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced
+      engine: EnginePresets.balanced()
     })) {
       console.log(record);
     }
@@ -218,7 +219,7 @@ for await (const record of parse(csv, {
 ```
 
 **Available Preset Options:**
-- `workerPool`: Shared WorkerPool instance
+- `workerPool`: Shared ReusableWorkerPool instance
 - `workerURL`: Custom worker script URL
 - `onFallback`: Callback when fallback occurs
 
@@ -239,7 +240,7 @@ async function handleFileUpload(file: File) {
 
     // Parse in worker - UI stays responsive
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced
+      engine: EnginePresets.balanced()
     })) {
       count++;
 
@@ -270,12 +271,12 @@ document.getElementById('csv-file').addEventListener('change', (e) => {
 
 ```typescript
 import { Hono } from 'hono';
-import { parse, WorkerPool } from 'web-csv-toolbox';
+import { parse, ReusableWorkerPool } from 'web-csv-toolbox';
 
 const app = new Hono();
 
 // Create shared worker pool
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 app.post('/parse-csv', async (c) => {
   const csv = await c.req.text();
@@ -305,20 +306,25 @@ export default app;
 
 ## Performance Comparison
 
-<!-- TODO: Add actual performance benchmarks based on real measurements -->
+**Performance Characteristics:**
 
-**General Guidelines:**
-- **Small files (<1000 rows)**: Main thread execution is typically faster due to worker initialization overhead
-- **Medium to large files (>1000 rows)**: Worker execution provides performance benefits
-- **Large streaming files**: Workers help maintain UI responsiveness
+| Approach | UI Blocking | Worker Overhead | Stability | Best For |
+|----------|-------------|-----------------|-----------|----------|
+| Main thread | ✅ Yes | ❌ None | ⭐ Most Stable | Server-side, blocking acceptable |
+| Worker | ❌ No | ⚠️ Communication overhead | ✅ Stable | Browser, non-blocking required |
 
-**Note:** Actual performance depends on:
-- Hardware specifications
+**Key Trade-offs:**
+
+- **Main thread**: Faster execution (no worker overhead), but blocks UI
+- **Worker**: Slower execution (communication overhead), but UI remains responsive
+
+**Note:** Actual performance depends on many factors:
+- CSV structure and size
 - Runtime environment (Node.js, browser, Deno)
-- CSV complexity (number of columns, escaping, etc.)
-- Available system resources
+- System capabilities
+- Worker communication overhead
 
-For detailed performance benchmarks, see [CodSpeed](https://codspeed.io/kamiazya/web-csv-toolbox).
+**Recommendation:** Choose based on your requirements (blocking vs non-blocking, stability) rather than file size alone. Benchmark your specific use case. See [CodSpeed](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.
 
 ## Browser Compatibility
 
@@ -344,7 +350,7 @@ For detailed browser compatibility information, see [Supported Environments](../
 You've learned how to:
 - ✅ Use worker threads for CSV parsing
 - ✅ Choose the right engine preset
-- ✅ Manage concurrent parsing with WorkerPool
+- ✅ Manage concurrent parsing with ReusableWorkerPool
 - ✅ Handle errors in worker execution
 - ✅ Maintain UI responsiveness in browsers
 - ✅ Process CSV files efficiently on servers
@@ -352,7 +358,7 @@ You've learned how to:
 ## What's Next?
 
 - **[Secure CSV Processing](../how-to-guides/secure-csv-processing.md)**: Learn about security best practices
-- **[API Reference](../reference/api/)**: Explore all available options
+- **[API Reference](https://kamiazya.github.io/web-csv-toolbox/)**: Explore all available options
 - **[Execution Strategies](../explanation/execution-strategies.md)**: Deep dive into how workers work internally
 
 ## Troubleshooting
@@ -371,8 +377,10 @@ You've learned how to:
 **Problem:** Worker execution is slower than main thread
 
 **Solution:**
-- Check file size - workers have initialization overhead
-- For small files (<1000 rows), use main thread
+- This is expected - workers add communication overhead (data transfer between threads)
+- Workers prioritize UI responsiveness over raw execution speed
+- For fastest execution time, use main thread (but UI will block)
+- For non-blocking UI, accept the worker communication overhead trade-off
 - Use `EnginePresets.balanced()` instead of manual configuration
 
 ### Safari-specific issues
@@ -383,6 +391,18 @@ You've learned how to:
 - Safari doesn't support Transferable Streams
 - Automatic fallback to message-streaming occurs
 - Slightly higher memory usage is expected
+
+## Example Projects
+
+For complete, working examples of worker-based CSV processing, see:
+
+- **Node.js Worker:** [node-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/node-worker-main) - Worker pool in Node.js
+- **Browser Workers (Vite):**
+  - [vite-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-slim) - Slim entry with external WASM
+  - [vite-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-main) - Main entry with embedded WASM
+- **Browser Workers (Webpack):**
+  - [webpack-bundle-worker-slim](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-slim) - Webpack with slim entry
+  - [webpack-bundle-worker-main](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/webpack-bundle-worker-main) - Webpack with main entry
 
 ---
 

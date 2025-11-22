@@ -3,22 +3,50 @@
   "version": "0.13.0",
   "description": "A CSV Toolbox utilizing Web Standard APIs.",
   "type": "module",
-  "module": "dist/web-csv-toolbox.js",
-  "types": "dist/web-csv-toolbox.d.ts",
-  "packageManager": "pnpm@9.3.0",
+  "module": "dist/main.web.js",
+  "types": "dist/main.web.d.ts",
+  "packageManager": "pnpm@9.15.3",
   "engines": {
     "node": ">=20.0.0"
   },
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./dist/web-csv-toolbox.d.ts",
-      "default": "./dist/web-csv-toolbox.js"
+      "types": "./dist/main.web.d.ts",
+      "bundler": "./dist/main.web.js",
+      "deno": "./dist/node/main.node.js",
+      "node": "./dist/node/main.node.js",
+      "browser": "./dist/main.web.js",
+      "default": "./dist/main.web.js"
+    },
+    "./slim": {
+      "types": "./dist/slim.web.d.ts",
+      "bundler": "./dist/slim.web.js",
+      "deno": "./dist/node/slim.node.js",
+      "node": "./dist/node/slim.node.js",
+      "browser": "./dist/slim.web.js",
+      "default": "./dist/slim.web.js"
     },
     "./worker": {
+      "import": {
+        "types": "./dist/worker.d.ts",
+        "bundler": "./dist/worker.web.bundle.js",
+        "deno": "./dist/node/worker.node.bundle.js",
+        "node": "./dist/node/worker.node.bundle.js",
+        "browser": "./dist/worker.web.bundle.js",
+        "default": "./dist/worker.web.bundle.js"
+      },
+      "bundler": {
+        "types": "./dist/worker.web.d.ts",
+        "default": "./dist/worker.web.js"
+      },
+      "deno": {
+        "types": "./dist/worker.node.d.ts",
+        "default": "./dist/node/worker.node.js"
+      },
       "node": {
         "types": "./dist/worker.node.d.ts",
-        "default": "./dist/worker.node.js"
+        "default": "./dist/node/worker.node.js"
       },
       "browser": {
         "types": "./dist/worker.web.d.ts",
@@ -29,39 +57,92 @@
         "default": "./dist/worker.web.js"
       }
     },
-    "./*": {
-      "types": "./dist/*.d.ts",
-      "default": "./dist/*.js"
+    "./worker/slim": {
+      "import": {
+        "types": "./dist/worker.slim.d.ts",
+        "bundler": "./dist/worker.slim.web.bundle.js",
+        "deno": "./dist/node/worker.slim.node.bundle.js",
+        "node": "./dist/node/worker.slim.node.bundle.js",
+        "browser": "./dist/worker.slim.web.bundle.js",
+        "default": "./dist/worker.slim.web.bundle.js"
+      },
+      "bundler": {
+        "types": "./dist/worker.slim.web.d.ts",
+        "default": "./dist/worker.slim.web.js"
+      },
+      "deno": {
+        "types": "./dist/worker.slim.node.d.ts",
+        "default": "./dist/node/worker.slim.node.js"
+      },
+      "node": {
+        "types": "./dist/worker.slim.node.d.ts",
+        "default": "./dist/node/worker.slim.node.js"
+      },
+      "browser": {
+        "types": "./dist/worker.slim.web.d.ts",
+        "default": "./dist/worker.slim.web.js"
+      },
+      "default": {
+        "types": "./dist/worker.slim.web.d.ts",
+        "default": "./dist/worker.slim.web.js"
+      }
     },
-    "./common/*": {
-      "types": "./dist/common/*.d.ts",
-      "default": "./dist/common/*.js"
-    },
-    "./utils/*": {
-      "types": "./dist/utils/*.d.ts",
-      "default": "./dist/utils/*.js"
-    },
-    "./web_csv_toolbox_wasm_bg.wasm": "./dist/web_csv_toolbox_wasm_bg.wasm",
+    "./csv.wasm": "./dist/csv.wasm",
     "./package.json": "./package.json"
   },
   "imports": {
+    "#/csv.wasm": {
+      "types": "./dist/_virtual/web_csv_toolbox_wasm_bg.wasm.d.ts",
+      "bundler": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js",
+      "deno": "./dist/node/_virtual/web_csv_toolbox_wasm_bg.deno.wasm.js",
+      "browser": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js",
+      "node": "./dist/node/_virtual/web_csv_toolbox_wasm_bg.node.wasm.js",
+      "default": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js"
+    },
+    "#/wasm/loaders/loadWASM.js": {
+      "types": "./dist/wasm/loaders/loadWASM.d.ts",
+      "bundler": "./dist/wasm/loaders/loadWASM.web.js",
+      "deno": "./dist/node/wasm/loaders/loadWASM.node.js",
+      "node": "./dist/node/wasm/loaders/loadWASM.node.js",
+      "browser": "./dist/wasm/loaders/loadWASM.web.js",
+      "default": "./dist/wasm/loaders/loadWASM.web.js"
+    },
+    "#/wasm/loaders/loadWASMSync.js": {
+      "types": "./dist/wasm/loaders/loadWASMSync.d.ts",
+      "bundler": "./dist/wasm/loaders/loadWASMSync.web.js",
+      "deno": "./dist/node/wasm/loaders/loadWASMSync.node.js",
+      "node": "./dist/node/wasm/loaders/loadWASMSync.node.js",
+      "browser": "./dist/wasm/loaders/loadWASMSync.web.js",
+      "default": "./dist/wasm/loaders/loadWASMSync.web.js"
+    },
     "#/worker/helpers/createWorker.js": {
       "types": "./dist/worker/helpers/createWorker.d.ts",
-      "node": "./dist/worker/helpers/createWorker.node.js",
+      "bundler": "./dist/worker/helpers/createWorker.web.js",
+      "node": "./dist/node/worker/helpers/createWorker.node.js",
       "browser": "./dist/worker/helpers/createWorker.web.js",
       "default": "./dist/worker/helpers/createWorker.web.js"
     },
     "#/utils/response/getOptionsFromResponse.constants.js": {
       "types": "./dist/utils/response/getOptionsFromResponse.constants.d.ts",
-      "node": "./dist/utils/response/getOptionsFromResponse.constants.node.js",
+      "bundler": "./dist/utils/response/getOptionsFromResponse.constants.web.js",
+      "node": "./dist/node/utils/response/getOptionsFromResponse.constants.node.js",
       "browser": "./dist/utils/response/getOptionsFromResponse.constants.web.js",
       "default": "./dist/utils/response/getOptionsFromResponse.constants.web.js"
     },
     "#/utils/charset/getCharsetValidation.constants.js": {
       "types": "./dist/utils/charset/getCharsetValidation.constants.d.ts",
-      "node": "./dist/utils/charset/getCharsetValidation.constants.node.js",
+      "bundler": "./dist/utils/charset/getCharsetValidation.constants.web.js",
+      "node": "./dist/node/utils/charset/getCharsetValidation.constants.node.js",
       "browser": "./dist/utils/charset/getCharsetValidation.constants.web.js",
       "default": "./dist/utils/charset/getCharsetValidation.constants.web.js"
+    },
+    "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
+      "types": "./dist/parser/api/string/parseStringToArraySyncWASM.main.d.ts",
+      "bundler": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
+      "deno": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
+      "node": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
+      "browser": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
+      "default": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js"
     }
   },
   "files": [
@@ -83,7 +164,7 @@
     "check:format": "pnpm check:format:js",
     "check:format:js": "biome ci .",
     "graph": "madge --extensions ts --image graph.svg src/",
-    "graph:main": "madge --extensions ts --image graph-main.svg src/web-csv-toolbox.ts",
+    "graph:main": "madge --extensions ts --image graph-main.svg src/main.node.ts src/main.web.ts src/common.ts",
     "graph:worker": "madge --extensions ts --image graph-worker.svg src/worker.node.ts src/worker.web.ts",
     "graph:json": "madge --extensions ts --json src/",
     "graph:summary": "madge --extensions ts --summary src/",
@@ -92,9 +173,17 @@
     "test:browser": "vitest --browser --project browser",
     "test:coverage": "vitest --coverage",
     "test:bench": "pnpm --filter web-csv-toolbox-benchmark start",
-    "build": "pnpm build:wasm && pnpm build:js",
+    "test:examples": "pnpm test:examples:webpack && pnpm test:examples:vite",
+    "test:examples:webpack": "pnpm test:examples:webpack-main && pnpm test:examples:webpack-slim",
+    "test:examples:webpack-main": "cd examples/webpack-bundle-worker-main && pnpm test",
+    "test:examples:webpack-slim": "cd examples/webpack-bundle-worker-slim && pnpm test",
+    "test:examples:vite": "pnpm test:examples:vite-main && pnpm test:examples:vite-slim",
+    "test:examples:vite-main": "cd examples/vite-bundle-worker-main && pnpm test",
+    "test:examples:vite-slim": "cd examples/vite-bundle-worker-slim && pnpm test",
+    "build": "pnpm build:wasm && pnpm build:js && pnpm build:worker-bundle",
     "build:wasm": "wasm-pack build web-csv-toolbox-wasm --target web",
     "build:js": "vite build",
+    "build:worker-bundle": "TARGET=web VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=main vite build --config vite.config.worker-bundle.ts && TARGET=web VARIANT=slim vite build --config vite.config.worker-bundle.ts && TARGET=node VARIANT=slim vite build --config vite.config.worker-bundle.ts",
     "serve": "vite serve",
     "format": "pnpm format:js && pnpm format:rust",
     "format:js": "biome check --write .",
@@ -126,6 +215,7 @@
     "@codecov/vite-plugin": "^1.9.1",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/pluginutils": "^5.1.4",
+    "@types/node": "^24.10.1",
     "@vitest/browser-webdriverio": "^4.0.3",
     "@vitest/coverage-istanbul": "4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
@@ -135,8 +225,8 @@
     "terser": "^5.42.0",
     "typedoc": "^0.28.14",
     "typedoc-plugin-mdn-links": "^5.0.2",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.12",
+    "typescript": "catalog:",
+    "vite": "catalog:",
     "vite-plugin-dts": "^4.5.4",
     "vitest": "4.0.3",
     "wasm-pack": "^0.13.1",

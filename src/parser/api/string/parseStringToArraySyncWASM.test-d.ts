@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
-import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.ts";
-import type { CSVRecord } from "@/web-csv-toolbox.ts";
+import type { CSVRecord } from "@/core/types.ts";
+import { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.main.node.ts";
 
 describe("string parsing", () => {
   it("should CSV header of the parsed result will be string array", () => {

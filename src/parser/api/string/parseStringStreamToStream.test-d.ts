@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
+import type { CSVRecord } from "@/core/types.ts";
 import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
-import type { CSVRecord } from "@/web-csv-toolbox.ts";
 
 describe("parseStringStreamToStream function", () => {
   it("parseStringStreamToStream should be a function", () => {

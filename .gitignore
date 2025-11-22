@@ -137,3 +137,7 @@ target
 # Madge dependency graphs
 graph*.svg
 .playwright-mcp/
+
+# Deno lock files and cache
+deno.lock
+**/.deno_cache

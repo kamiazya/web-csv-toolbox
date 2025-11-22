@@ -7,7 +7,7 @@ group: How-to Guides
 
 This guide shows you how to maximize CSV parsing performance using WebAssembly in web-csv-toolbox.
 
-> **Note for Bundler Users**: When using WASM with bundlers (Vite, Webpack, etc.), you must explicitly configure WASM file loading. When combining WASM with Workers (e.g., `EnginePresets.workerWasm()`), you also need to specify the `workerURL` option. See [How to Use with Bundlers](./use-with-bundlers.md) for detailed configuration.
+> **Note for Bundler Users**: When using WASM with bundlers (Vite, Webpack, etc.), you must explicitly configure WASM file loading. When combining WASM with Workers (e.g., `EnginePresets.responsiveFast()`), you also need to specify the `workerURL` option. See [How to Use with Bundlers](./using-with-bundlers.md) for detailed configuration.
 
 ## Prerequisites
 
@@ -24,15 +24,15 @@ Before optimizing, understand where time is spent:
 │ Total Parsing Time                                          │
 └────────────────────────────────────────────────────────────┘
   │
-  ├─ WASM Initialization (one-time)        ~10-50ms
+  ├─ WASM Initialization (one-time)
   │
-  ├─ Data Transfer (Main → WASM)           ~1-5% of total
+  ├─ Data Transfer (Main → WASM)
   │
-  ├─ CSV Parsing (in WASM)                 ~80-90% of total
+  ├─ CSV Parsing (in WASM)
   │
-  ├─ Result Transfer (WASM → Main)         ~1-5% of total
+  ├─ Result Transfer (WASM → Main)
   │
-  └─ Record Processing (JavaScript)        ~5-10% of total
+  └─ Record Processing (JavaScript)
 ```
 
 **Key insight:** Parsing dominates, so optimizing WASM usage has the biggest impact.
@@ -121,7 +121,7 @@ for await (const record of parse(csv, {
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -158,7 +158,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest() // Worker + WASM
+  engine: EnginePresets.responsiveFast() // Worker + WASM
 })) {
   console.log(record);
   // UI stays responsive
@@ -178,7 +178,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   await processRecord(record); // Async operation
   // Wait for each record to complete
@@ -196,7 +196,7 @@ const BATCH_SIZE = 1000;
 let batch: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   batch.push(record);
 
@@ -244,10 +244,10 @@ for (const file of files) {
 ### ✅ Good: Use Worker Pool
 
 ```typescript
-import { WorkerPool, parse } from 'web-csv-toolbox';
+import { ReusableWorkerPool, parse } from 'web-csv-toolbox';
 
 // Limit concurrent workers
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 const files = ['data1.csv', 'data2.csv', 'data3.csv', 'data4.csv'];
 
@@ -283,7 +283,7 @@ await Promise.all(
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   // ❌ Creates new object for each record
   const transformed = {
@@ -306,7 +306,7 @@ for await (const record of parse(csv, {
 const results: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   // ✅ Modify record in-place
   (record as any).fullName = `${record.firstName} ${record.lastName}`;
@@ -327,7 +327,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Default: 10MB
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   console.log(record);
 }
@@ -344,7 +344,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Small fields (typical CSV)
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest(),
+  engine: EnginePresets.responsiveFast(),
   maxBufferSize: 1024 * 1024 // 1MB
 })) {
   console.log(record);
@@ -354,7 +354,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Large fields (e.g., embedded JSON, long text)
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest(),
+  engine: EnginePresets.responsiveFast(),
   maxBufferSize: 50 * 1024 * 1024 // 50MB
 })) {
   console.log(record);
@@ -376,7 +376,7 @@ for await (const record of parse(csv, {
 const records = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   records.push(record);
 }
@@ -393,7 +393,7 @@ processAllRecords(records); // High memory usage
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   // Process immediately
   await processRecord(record);
@@ -413,7 +413,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(largeCSV, {
-  engine: EnginePresets.fastest() // Single worker
+  engine: EnginePresets.responsiveFast() // Single worker
 })) {
   console.log(record);
 }
@@ -426,9 +426,9 @@ for await (const record of parse(largeCSV, {
 ### ✅ Good: Split and Process in Parallel
 
 ```typescript
-import { WorkerPool, parse } from 'web-csv-toolbox';
+import { ReusableWorkerPool, parse } from 'web-csv-toolbox';
 
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // Split CSV into chunks (by line boundaries)
 const chunks = splitCSVIntoChunks(largeCSV, 4);
@@ -468,7 +468,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   // ❌ Expensive validation on every record
   const validated = schema.parse(record);
@@ -492,7 +492,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   // ✅ Quick check first
   if (record.age && Number(record.age) > 0) {
@@ -524,7 +524,7 @@ async function benchmark(csv: string, label: string) {
   let count = 0;
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.fastest()
+    engine: EnginePresets.responsiveFast()
   })) {
     count++;
   }
@@ -563,7 +563,7 @@ for await (const record of parse(csv, {
 
 // Benchmark Worker + WASM
 for await (const record of parse(csv, {
-  engine: EnginePresets.fastest()
+  engine: EnginePresets.responsiveFast()
 })) {
   count++;
 }
@@ -575,7 +575,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 import { Hono } from 'hono';
-import { loadWASM, parse, WorkerPool, EnginePresets } from 'web-csv-toolbox';
+import { loadWASM, parse, ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const app = new Hono();
@@ -584,7 +584,7 @@ const app = new Hono();
 await loadWASM();
 
 // 2. Create worker pool
-using pool = new WorkerPool({ maxWorkers: 4 });
+using pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
 // 3. Define validation schema
 const recordSchema = z.object({
@@ -639,8 +639,8 @@ export default app;
 ### Before Production
 
 - [ ] Call `loadWASM()` once at startup
-- [ ] Use `EnginePresets.fastest()` for UTF-8 CSV
-- [ ] Use `WorkerPool` to limit concurrent workers
+- [ ] Use `EnginePresets.responsiveFast()` for UTF-8 CSV
+- [ ] Use `ReusableWorkerPool` to limit concurrent workers
 - [ ] Handle errors gracefully
 - [ ] Set appropriate `maxBufferSize`
 - [ ] Benchmark with realistic data
@@ -657,7 +657,7 @@ export default app;
 
 **Problem:** Using WASM on main thread in browser
 
-**Solution:** Use `EnginePresets.fastest()` (Worker + WASM)
+**Solution:** Use `EnginePresets.responsiveFast()` (Worker + WASM)
 
 ---
 
@@ -673,7 +673,7 @@ export default app;
 
 **Problem:** Not limiting concurrent workers
 
-**Solution:** Use `WorkerPool` with `maxWorkers`
+**Solution:** Use `ReusableWorkerPool` with `maxWorkers`
 
 ---
 
@@ -697,7 +697,8 @@ export default app;
 
 - **[Using WebAssembly](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WebAssembly Architecture](../explanation/webassembly-architecture.md)** - Understanding WASM internals
-- **[WASM API Reference](../reference/api/wasm.md)** - API documentation
+- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
+- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 
 ---
@@ -707,7 +708,7 @@ export default app;
 To maximize WASM performance:
 
 1. **Initialize once** - Call `loadWASM()` at startup
-2. **Use presets** - `EnginePresets.fastest()` for optimal config
+2. **Use presets** - `EnginePresets.responsiveFast()` for optimal config
 3. **Combine strategies** - Worker + WASM for best results
 4. **Batch processing** - Process records in batches
 5. **Worker pool** - Limit concurrent workers

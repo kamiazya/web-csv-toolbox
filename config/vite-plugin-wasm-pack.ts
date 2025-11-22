@@ -55,7 +55,15 @@ function vitePluginWasmPack({
       isBuild = resolvedConfig.command === 'build';
     },
 
+
     resolveId(id: string) {
+      // ?arraybuffer handling delegated to vite-plugin-wasm-arraybuffer
+      // Skip if this is an arraybuffer import
+      if (id.includes("?arraybuffer")) {
+        console.log(`[vite-plugin-wasm-pack] resolveId: skipping arraybuffer import: ${id}`);
+        return null;
+      }
+
       for (const cratePath of crates) {
         const crateName = path.basename(cratePath);
         // Only match if id is exactly crateName or starts with crateName followed by '/'
@@ -72,6 +80,7 @@ function vitePluginWasmPack({
       return null;
     },
     async load(id: string) {
+
       if (id.indexOf(prefix) === 0) {
         id = id.replace(prefix, "");
 
@@ -88,6 +97,11 @@ function vitePluginWasmPack({
 
         if (!isOurCrate) {
           // Not our module, let other plugins handle it
+          return null;
+        }
+
+        // Skip .wasm imports with ?arraybuffer - let the arraybuffer plugin handle them
+        if (id.includes("?arraybuffer")) {
           return null;
         }
 
@@ -112,9 +126,30 @@ function vitePluginWasmPack({
           id.replace(/\-/g, "_") + ".js",
         );
         try {
-          const code = await fs.readFile(modulejs, {
+          let code = await fs.readFile(modulejs, {
             encoding: "utf-8",
           });
+
+          // Patch: Replace default WASM loading with an error
+          // This library always provides WASM explicitly via ?arraybuffer imports
+          // If this code path is reached, it indicates incorrect usage
+          const originalCode = code;
+          code = code.replace(
+            /if \(typeof module_or_path === ['"]undefined['"]\) \{\s+module_or_path = new URL\(['"]\w+\.wasm['"],\s*import\.meta\.url\);?\s+\}/g,
+            `if (typeof module_or_path === 'undefined') {
+        throw new Error('WASM module must be explicitly provided. Please report this as a bug if you see this error.');
+    }`
+          );
+
+          // Verify the patch was applied successfully
+          if (code === originalCode) {
+            throw new Error(
+              `Failed to apply WASM patch to ${modulejs}. ` +
+              `The wasm-bindgen code structure may have changed. ` +
+              `Please update the patch in vite-plugin-wasm-pack.ts`
+            );
+          }
+
           return code;
         } catch (error) {
           console.error(`[vite-plugin-wasm-pack] Failed to load: ${modulejs}`, error);
@@ -188,9 +223,15 @@ function vitePluginWasmPack({
     buildEnd() {
       if (copyWasm && isBuild) {
         for (const [fileName, crate] of wasmMap.entries()) {
+          // Use user-friendly name instead of internal implementation name
+          // web_csv_toolbox_wasm_bg.wasm -> csv.wasm
+          const outputFileName = fileName === "web_csv_toolbox_wasm_bg.wasm"
+            ? "csv.wasm"
+            : fileName;
+
           this.emitFile({
             type: "asset",
-            fileName: fileName,
+            fileName: outputFileName,
             source: readFileSync(crate.path),
           });
         }

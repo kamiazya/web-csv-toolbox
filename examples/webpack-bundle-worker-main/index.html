@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Worker (Main Version) Example - web-csv-toolbox</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 10px;
+    }
+    .status {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .status.info {
+      background: #e7f3ff;
+      border-left: 4px solid #007bff;
+    }
+    .status.success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .status.error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+    }
+    .section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 Browser Worker (Main Version) Example - Webpack</h1>
+
+  <div class="status info">
+    <strong>Features:</strong>
+    <ul>
+      <li>Worker-based parsing (offloads parsing to Web Worker, non-blocking main thread)</li>
+      <li>Auto WASM initialization in Worker</li>
+      <li>Parallel processing with multiple Workers (Test 3 only)</li>
+      <li>Bundled with Webpack</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>Test 0: Basic Parsing (No Worker)</h2>
+    <button id="test0">Run Test 0</button>
+    <div id="result0"></div>
+  </div>
+
+  <div class="section">
+    <h2>Test 1: Worker (JavaScript Engine)</h2>
+    <button id="test1">Run Test 1</button>
+    <div id="result1"></div>
+  </div>
+
+  <div class="section">
+    <h2>Test 2: Worker + WASM</h2>
+    <button id="test2">Run Test 2</button>
+    <div id="result2"></div>
+  </div>
+
+  <div class="section">
+    <h2>Test 3: Parallel Processing</h2>
+    <button id="test3">Run Test 3</button>
+    <div id="result3"></div>
+  </div>
+
+  <script src="./main.js"></script>
+</body>
+</html>

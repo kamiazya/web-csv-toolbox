@@ -6,7 +6,6 @@
 ![node version](https://img.shields.io/node/v/web-csv-toolbox)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fkamiazya%2Fweb-csv-toolbox?ref=badge_shield)
 
-![npm package minimized gzipped size](https://img.shields.io/bundlejs/size/web-csv-toolbox)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/kamiazya/web-csv-toolbox)
 ![npm](https://img.shields.io/npm/dm/web-csv-toolbox)
 [![codecov](https://codecov.io/gh/kamiazya/web-csv-toolbox/graph/badge.svg?token=8RbDcXHTFl)](https://codecov.io/gh/kamiazya/web-csv-toolbox)
@@ -71,6 +70,7 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🔤 Charset specification for diverse encoding.
 - 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
   - 📦 WebAssembly is used for high performance parsing.
+  - ⚠️ **Experimental**: WASM automatic initialization (base64-embedded) is experimental and may change in future versions.
 - 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
 - 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
 
@@ -113,9 +113,65 @@ You can install and use the package by specifying the following:
 import { parse } from "npm:web-csv-toolbox";
 ```
 
+## Entry Points 🚪
+
+This library provides two entry points to suit different needs:
+
+For a deeper comparison and migration guidance, see:
+
+- docs/explanation/main-vs-slim.md
+
+### `web-csv-toolbox` (Default - Full Features)
+
+**Best for**: Most users who want automatic WASM initialization and all features
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+
+// Optional but recommended: preload to reduce first‑parse latency
+await loadWASM();
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Characteristics:**
+- ✅ Full features including synchronous WASM APIs
+- ✅ Automatic WASM initialization on first use (not at import time)
+- 💡 Call `loadWASM()` at startup to reduce first‑parse latency (optional)
+- ⚠️ **Experimental**: WASM auto-init embeds WASM as base64, may change in future
+- ⚠️ Larger bundle size (WASM embedded in main bundle)
+
+### `web-csv-toolbox/slim` (Slim Entry - Smaller Bundle)
+
+**Best for**: Bundle size-sensitive applications and production optimization
+
+```typescript
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+
+// Manual initialization required
+await loadWASM();
+const records = parseStringToArraySyncWASM(csv);
+```
+
+**Characteristics:**
+- ✅ Smaller main bundle (WASM not embedded)
+- ✅ External WASM loading for better caching
+- ✅ Explicit control over initialization timing
+- ❌ Requires manual `loadWASM()` call before using WASM features
+
+**Comparison:**
+
+| Aspect | Main | Slim |
+|--------|------|------|
+| **Initialization** | Automatic | Manual (`loadWASM()` required) |
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
+| **Caching** | Single bundle | WASM cached separately |
+| **Use Case** | Convenience, prototyping | Production, bundle optimization |
+
+> **Note**: Both entry points export the same full API (feature parity). The only difference is WASM initialization strategy and bundle size.
+
 ## Usage 📘
 
-> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.worker()`, `EnginePresets.workerWasm()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/use-with-bundlers.md) for configuration details.
+> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.responsive()`, `EnginePresets.responsiveFast()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/using-with-bundlers.md) for configuration details.
 
 ### Parsing CSV files from strings
 
@@ -239,7 +295,7 @@ import { parse } from 'web-csv-toolbox';
 const csv = `Alice,42
 Bob,69`;
 
-for await (const record of parse(csv, { headers: ['name', 'age'] })) {
+for await (const record of parse(csv, { header: ['name', 'age'] })) {
   console.log(record);
 }
 // Prints:
@@ -341,6 +397,8 @@ try {
 | 20.x     | ✅     |
 | 22.x     | ✅     |
 | 24.x     | ✅     |
+
+> Note: For Node environments, the WASM loader uses `import.meta.resolve`. Node.js 20.6+ is recommended. On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
 
 
 ### Works on Browser
@@ -539,6 +597,12 @@ These APIs are experimental and may change in the future.
 
 You can use WebAssembly to parse CSV data for high performance.
 
+⚠️ **Experimental Notice**:
+- WASM automatic initialization is experimental and may change in future versions
+- Currently embeds WASM as base64 in the main bundle
+- Future versions may change the loading strategy for better bundle size optimization
+
+**WASM Limitations:**
 - Parsing with WebAssembly is faster than parsing with JavaScript,
 but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.
@@ -546,7 +610,7 @@ but it takes time to load the WebAssembly module.
   - If you pass a different character, it will throw an error.
 
 ```ts
-import { loadWASM, parseStringWASM } from "web-csv-toolbox";
+import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
 
 // load WebAssembly module
 await loadWASM();
@@ -575,7 +639,7 @@ console.log(result);
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `headers`        | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
+| `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
 
 ### Advanced Options (Binary-Specific) 🧬
@@ -584,7 +648,7 @@ console.log(result);
 | --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
 | `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
-| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibilit). Supports: gzip, deflate, deflate-raw |
+| `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility). Default support: gzip, deflate. deflate-raw is runtime-dependent and experimental (requires `allowExperimentalCompressions: true` for Response/Request inputs). |
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
 | `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
@@ -696,7 +760,8 @@ try {
 ```js
 import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
 
-// 2-3x faster for large CSV strings (UTF-8 only)
+// Compiled WASM code for improved performance (UTF-8 only)
+// See CodSpeed benchmarks for actual performance metrics
 const records = parseStringToArraySyncWASM(csvString);
 ```
 
@@ -761,7 +826,7 @@ try {
 
 #### Using Experimental Compression Formats
 
-By default, the library only supports well-tested compression formats: `gzip`, `deflate`, and `deflate-raw`. If you need to use newer formats (like Brotli) that your runtime supports but the library hasn't explicitly added yet, you can enable experimental mode:
+By default, the library only supports well-tested compression formats: `gzip` and `deflate`. Some runtimes may support additional formats like `deflate-raw` or Brotli, but these are runtime-dependent and not guaranteed. If you need to use these formats, you can enable experimental mode:
 
 ```js
 import { parse } from 'web-csv-toolbox';

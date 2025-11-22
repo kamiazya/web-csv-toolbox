@@ -12,5 +12,38 @@ export async function createWorker(workerURL?: string | URL): Promise<Worker> {
   const url =
     workerURL ||
     new URL(/* @vite-ignore */ "../../worker.web.js", import.meta.url);
-  return new Worker(url, { type: "module" });
+
+  try {
+    return new Worker(url, { type: "module" });
+  } catch (error) {
+    const message = [
+      "Failed to create Worker.",
+      "",
+      "In bundled environments (Vite, webpack, etc.), you must explicitly provide workerURL:",
+      "",
+      "Option 1: Create a worker entry file (recommended)",
+      "  // csv-worker.ts",
+      '  export * from "web-csv-toolbox/worker";',
+      "",
+      "  // vite.config.ts",
+      "  build: {",
+      "    rollupOptions: {",
+      "      input: {",
+      '        main: "index.html",',
+      '        worker: "csv-worker.ts"',
+      "      }",
+      "    }",
+      "  }",
+      "",
+      "  // Usage",
+      '  new ReusableWorkerPool({ workerURL: "./worker.js" })',
+      "",
+      "Option 2: Copy worker files and dependencies to dist/",
+      "  See: https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/vite-bundle-worker-main",
+      "",
+      `Original error: ${error}`,
+    ].join("\n");
+
+    throw new Error(message);
+  }
 }

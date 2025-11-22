@@ -75,17 +75,22 @@ export interface WorkerPresetOptions extends BasePresetOptions {
 export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
 
 /**
- * Predefined engine configuration presets for common use cases.
+ * Predefined engine configuration presets optimized for specific performance characteristics.
  *
  * All presets are functions that optionally accept configuration options.
+ * Each preset is optimized for specific performance aspects:
+ * - Parse speed (execution time)
+ * - UI responsiveness (non-blocking)
+ * - Memory efficiency
+ * - Stability
  *
  * @example Basic usage
  * ```ts
  * import { parseString, EnginePresets } from 'web-csv-toolbox';
  *
- * // Use fastest available execution method
+ * // Use balanced preset for general-purpose CSV processing
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.fastest()
+ *   engine: EnginePresets.balanced()
  * })) {
  *   console.log(record);
  * }
@@ -98,7 +103,7 @@ export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
  * const pool = new WorkerPool({ maxWorkers: 4 });
  *
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.fastest({ workerPool: pool })
+ *   engine: EnginePresets.balanced({ workerPool: pool })
  * })) {
  *   console.log(record);
  * }
@@ -106,31 +111,69 @@ export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
  */
 export const EnginePresets = Object.freeze({
   /**
-   * Main thread execution (default).
-   * - No worker overhead
-   * - Synchronous execution on main thread
-   * - Best for small files (< 1MB)
+   * Most stable configuration.
+   *
+   * **Optimization target:** Stability
+   *
+   * **Performance characteristics:**
+   * - Parse speed: Standard (JavaScript execution)
+   * - UI responsiveness: ❌ Blocks main thread
+   * - Memory efficiency: Standard
+   * - Stability: ⭐ Most stable (standard JavaScript APIs only)
+   *
+   * **Trade-offs:**
+   * - ✅ Most stable: Uses only standard JavaScript APIs
+   * - ✅ No worker initialization overhead
+   * - ✅ No worker communication overhead
+   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
+   * - ✅ Supports all quotation characters
+   * - ✅ Works everywhere without configuration
+   * - ❌ Blocks main thread during parsing
+   *
+   * **Use when:**
+   * - Stability is the highest priority
+   * - UI blocking is acceptable
+   * - Server-side parsing
+   * - Maximum compatibility required
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  mainThread: (options?: MainThreadPresetOptions): EngineConfig => ({
+  stable: (options?: MainThreadPresetOptions): EngineConfig => ({
     worker: false,
     wasm: false,
     ...options,
   }),
 
   /**
-   * Worker execution with message streaming.
-   * - Offloads parsing to worker thread
-   * - Records sent via postMessage
-   * - Works on all browsers including Safari
-   * - Best for medium files (1-10MB)
+   * UI responsiveness optimized configuration.
+   *
+   * **Optimization target:** UI responsiveness (non-blocking)
+   *
+   * **Performance characteristics:**
+   * - Parse speed: Slower (worker communication overhead)
+   * - UI responsiveness: ✅ Non-blocking (worker execution)
+   * - Memory efficiency: Standard
+   * - Stability: ✅ Stable (Web Workers API)
+   *
+   * **Trade-offs:**
+   * - ✅ Non-blocking UI: Parsing runs in worker thread
+   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
+   * - ✅ Supports all quotation characters
+   * - ✅ Works on all browsers including Safari
+   * - ⚠️ Worker communication overhead: Data transfer between threads
+   * - ⚠️ Requires bundler configuration for worker URL
+   *
+   * **Use when:**
+   * - UI responsiveness is critical
+   * - Browser applications with interactive UI
+   * - Broad encoding support required
+   * - Safari compatibility needed
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  worker: (options?: WorkerPresetOptions): EngineConfig => ({
+  responsive: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "message-streaming",
@@ -138,17 +181,35 @@ export const EnginePresets = Object.freeze({
   }),
 
   /**
-   * Worker execution with stream transfer (zero-copy).
-   * - Offloads parsing to worker thread
-   * - Streams transferred directly (zero-copy)
-   * - Only works on Chrome, Firefox, Edge (not Safari)
-   * - Best for large streaming files (> 10MB)
-   * - Automatically falls back to message-streaming if not supported
+   * Memory efficiency optimized configuration.
+   *
+   * **Optimization target:** Memory efficiency
+   *
+   * **Performance characteristics:**
+   * - Parse speed: Slower (worker communication overhead)
+   * - UI responsiveness: ✅ Non-blocking (worker execution)
+   * - Memory efficiency: ✅ Optimized (zero-copy stream transfer)
+   * - Stability: ⚠️ Experimental (Transferable Streams API)
+   *
+   * **Trade-offs:**
+   * - ✅ Memory efficient: Zero-copy stream transfer when supported
+   * - ✅ Non-blocking UI: Parsing runs in worker thread
+   * - ✅ Constant memory usage for streaming workloads
+   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
+   * - ✅ Supports all quotation characters
+   * - ✅ Automatic fallback to message-streaming on Safari
+   * - ⚠️ Experimental API: Transferable Streams may change
+   * - ⚠️ Worker communication overhead: Data transfer between threads
+   *
+   * **Use when:**
+   * - Memory efficiency is important
+   * - Streaming large CSV files
+   * - Chrome/Firefox/Edge browsers (auto-fallback on Safari)
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  workerStreamTransfer: (options?: WorkerPresetOptions): EngineConfig => ({
+  memoryEfficient: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",
@@ -156,31 +217,71 @@ export const EnginePresets = Object.freeze({
   }),
 
   /**
-   * WebAssembly execution on main thread.
-   * - Fast parsing with WASM
-   * - Runs on main thread
-   * - Limited to UTF-8 encoding and double-quote (")
-   * - Best for medium-sized UTF-8 files (1-10MB)
+   * Parse speed optimized configuration.
+   *
+   * **Optimization target:** Parse speed (execution time)
+   *
+   * **Performance characteristics:**
+   * - Parse speed: ✅ Fast (compiled WASM code, no worker overhead)
+   * - UI responsiveness: ❌ Blocks main thread
+   * - Memory efficiency: Standard
+   * - Stability: ✅ Stable (WebAssembly standard)
+   *
+   * **Trade-offs:**
+   * - ✅ Fast parse speed: Compiled WASM code
+   * - ✅ No worker initialization overhead
+   * - ✅ No worker communication overhead
+   * - ⚠️ WASM implementation may change in future versions
+   * - ❌ Blocks main thread during parsing
+   * - ❌ UTF-8 encoding only
+   * - ❌ Double-quote (") only
+   * - ❌ Requires loadWASM() initialization
+   *
+   * **Use when:**
+   * - Parse speed is the highest priority
+   * - UI blocking is acceptable
+   * - UTF-8 CSV files with double-quote
+   * - Server-side parsing
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  wasm: (options?: MainThreadPresetOptions): EngineConfig => ({
+  fast: (options?: MainThreadPresetOptions): EngineConfig => ({
     worker: false,
     wasm: true,
     ...options,
   }),
 
   /**
-   * Worker + WASM execution.
-   * - Combines worker offloading with WASM speed
-   * - Best for large UTF-8 files (> 10MB)
-   * - Limited to UTF-8 encoding and double-quote (")
+   * UI responsiveness + parse speed optimized configuration.
+   *
+   * **Optimization target:** UI responsiveness + parse speed
+   *
+   * **Performance characteristics:**
+   * - Parse speed: Fast (compiled WASM code) but slower than fast() due to worker overhead
+   * - UI responsiveness: ✅ Non-blocking (worker execution)
+   * - Memory efficiency: Standard
+   * - Stability: ✅ Stable (Web Workers + WebAssembly)
+   *
+   * **Trade-offs:**
+   * - ✅ Non-blocking UI: Parsing runs in worker thread
+   * - ✅ Fast parse speed: Compiled WASM code
+   * - ⚠️ Worker communication overhead: Slower than fast() on main thread
+   * - ⚠️ Requires bundler configuration for worker URL
+   * - ⚠️ WASM implementation may change in future versions
+   * - ❌ UTF-8 encoding only
+   * - ❌ Double-quote (") only
+   * - ❌ Requires loadWASM() initialization
+   *
+   * **Use when:**
+   * - Both UI responsiveness and parse speed are important
+   * - UTF-8 CSV files with double-quote
+   * - Browser applications requiring non-blocking parsing
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  workerWasm: (options?: WorkerPresetOptions): EngineConfig => ({
+  responsiveFast: (options?: WorkerPresetOptions): EngineConfig => ({
     worker: true,
     wasm: true,
     workerStrategy: "message-streaming",
@@ -188,28 +289,31 @@ export const EnginePresets = Object.freeze({
   }),
 
   /**
-   * Fastest available method.
-   * Automatically selects the best execution strategy:
-   * - For streams: Worker with stream-transfer (falls back to message-streaming)
-   * - For strings/binary: Worker + WASM
-   * - For all inputs: Offloads to worker for better performance
+   * Balanced configuration.
    *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  fastest: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
-    wasm: true,
-    workerStrategy: "stream-transfer",
-    ...options,
-  }),
-
-  /**
-   * Balanced configuration for production use.
-   * - Worker execution for offloading
-   * - No WASM (broader encoding support)
-   * - Stream-transfer with automatic fallback
-   * - Works with all encodings
+   * **Optimization target:** Balanced (UI responsiveness + memory efficiency + broad compatibility)
+   *
+   * **Performance characteristics:**
+   * - Parse speed: Slower (worker communication overhead)
+   * - UI responsiveness: ✅ Non-blocking (worker execution)
+   * - Memory efficiency: ✅ Optimized (zero-copy stream transfer when supported)
+   * - Stability: ⚠️ Experimental (Transferable Streams) with stable fallback
+   *
+   * **Trade-offs:**
+   * - ✅ Non-blocking UI: Parsing runs in worker thread
+   * - ✅ Memory efficient: Zero-copy stream transfer when supported
+   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
+   * - ✅ Supports all quotation characters
+   * - ✅ Automatic fallback to message-streaming on Safari
+   * - ✅ Broad compatibility: Handles user uploads with various encodings
+   * - ⚠️ Experimental API: Transferable Streams may change
+   * - ⚠️ Worker communication overhead: Data transfer between threads
+   *
+   * **Use when:**
+   * - General-purpose CSV processing
+   * - Broad encoding support required
+   * - Safari compatibility needed (auto-fallback)
+   * - User-uploaded files with various encodings
    *
    * @param options - Configuration options
    * @returns Engine configuration
@@ -218,22 +322,6 @@ export const EnginePresets = Object.freeze({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",
-    ...options,
-  }),
-
-  /**
-   * Strict mode: no automatic fallbacks.
-   * - Throws errors instead of falling back to main thread
-   * - Useful for testing or when you need guaranteed execution mode
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  strict: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
-    wasm: false,
-    workerStrategy: "stream-transfer",
-    strict: true,
     ...options,
   }),
 } as const);

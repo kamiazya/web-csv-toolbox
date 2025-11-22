@@ -110,7 +110,7 @@ import { parse } from 'web-csv-toolbox';
 const csv = `Alice,30,New York
 Bob,25,San Francisco`;
 
-for await (const record of parse(csv, { headers: ['name', 'age', 'city'] })) {
+for await (const record of parse(csv, { header: ['name', 'age', 'city'] })) {
   console.log(record);
 }
 ```
