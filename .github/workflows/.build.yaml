@@ -20,7 +20,7 @@ jobs:
       - name: Build WASM module
         run: wasm-pack build web-csv-toolbox-wasm --target web
       - name: Upload WASM artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: web-csv-toolbox-wasm
           path: web-csv-toolbox-wasm/pkg
@@ -56,14 +56,14 @@ jobs:
       - name: Type Check
         run: pnpm check:type
       - name: Upload dist artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: dist
           path: dist
       - name: Build documentation
         run: pnpm run doc
       - name: Upload documentation artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
         with:
           name: doc
           path: doc
