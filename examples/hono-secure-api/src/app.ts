@@ -222,10 +222,11 @@ export function createApp(pool: ReusableWorkerPool) {
             return; // Close stream
           }
           if (error instanceof ParseError) {
+            const parseError = error as ParseError;
             await stream.write(`event: fatal\n`);
             await stream.write(`data: ${JSON.stringify({
               error: 'Invalid CSV format',
-              details: error.message,
+              details: parseError.message,
             })}\n\n`);
             return; // Close stream
           }
@@ -242,7 +243,8 @@ export function createApp(pool: ReusableWorkerPool) {
       // If we reach here, SSE has NOT started yet, so we can return error status codes
 
       if (error instanceof ParseError) {
-        return c.json({ error: 'Invalid CSV format', details: error.message }, 400);
+        const parseError = error as ParseError;
+        return c.json({ error: 'Invalid CSV format', details: parseError.message }, 400);
       }
       return c.json({ error: 'Internal server error' }, 500);
     }
