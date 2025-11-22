@@ -422,7 +422,7 @@ for (const record of parseWithFilter(
 Process CSV data in chunks with stateful lexing:
 
 ```typescript
-import { FlexibleStringCSVLexer } from 'web-csv-toolbox';
+import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
 
 const lexer = new FlexibleStringCSVLexer();
 
