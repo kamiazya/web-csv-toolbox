@@ -125,10 +125,10 @@ export function resolveImportsPlugin(): Plugin {
           if (resolved && !resolved.external) {
             const resolvedId = normalizeId(resolved.id);
 
-            // Determine target: explicit if file has .node/.web, otherwise inherit from importer
+            // Determine target: explicit if file has .node/.web, otherwise keep as shared
             const moduleTarget = getTargetFromId(resolvedId);
             const target: TargetEnvironment =
-              moduleTarget !== "shared" ? moduleTarget : importerMeta.target;
+              moduleTarget !== "shared" ? moduleTarget : "shared";
 
             moduleMetadata.set(resolvedId, {
               entryId: importerMeta.entryId,

@@ -14,22 +14,6 @@ module.exports = {
     extensions: ['.ts', '.js'],
     conditionNames: ['browser', 'import', 'module', 'default'],
     mainFields: ['browser', 'module', 'main'],
-    fallback: {
-      'node:worker_threads': false,
-      'node:url': false,
-      'node:path': false,
-      'node:fs': false,
-      'node:fs/promises': false,
-      'node:buffer': false,
-    },
-  },
-  externals: {
-    'node:worker_threads': '{}',
-    'node:url': '{}',
-    'node:path': '{}',
-    'node:fs': '{}',
-    'node:fs/promises': '{}',
-    'node:buffer': '{}',
   },
   module: {
     rules: [
