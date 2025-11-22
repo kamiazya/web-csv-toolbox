@@ -1,5 +1,5 @@
-import type { CSVRecord, ParseOptions } from "@/core/types.ts";
 import { parseStringToArraySyncWASM } from "#/parser/api/string/parseStringToArraySyncWASM.main.js";
+import type { CSVRecord, ParseOptions } from "@/core/types.ts";
 
 /**
  * Parse CSV string using WebAssembly in main thread.
