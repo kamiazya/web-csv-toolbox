@@ -29,7 +29,7 @@ describe("class RecordAssembler", () => {
     expect(() =>
       createCSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[ParseError: The header must not be empty.]`,
+      `[Error: Headerless mode (header: []) is not supported for outputFormat: 'object'. Use outputFormat: 'array' for headerless CSV, or provide a non-empty header for object format.]`,
     );
   });
 

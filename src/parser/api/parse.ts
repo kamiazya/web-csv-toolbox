@@ -140,13 +140,6 @@ export function parse<const Header extends ReadonlyArray<string>>(
   csv: CSVString,
 ): AsyncIterableIterator<CSVRecord<Header, "object">>;
 export function parse<
-  const Header extends ReadonlyArray<string>,
-  const Options extends ParseOptions<Header> = ParseOptions<Header>,
->(
-  csv: CSVString,
-  options: Options,
-): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-export function parse<
   const CSVSource extends CSVString,
   const Delimiter extends string = DEFAULT_DELIMITER,
   const Quotation extends string = DEFAULT_QUOTATION,
@@ -162,6 +155,13 @@ export function parse<
   > = ParseOptions<Header, Delimiter, Quotation>,
 >(
   csv: CSVSource,
+  options: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+export function parse<
+  const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
+  csv: CSVString,
   options: Options,
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
 /**

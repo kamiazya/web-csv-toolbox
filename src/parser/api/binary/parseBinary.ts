@@ -1,6 +1,5 @@
 import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type {
   CSVRecord,
   InferCSVRecord,

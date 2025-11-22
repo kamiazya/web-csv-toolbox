@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type {
+  CSVRecordAssemblerOptions,
   EngineConfig,
   MainThreadEngineConfig,
   WorkerEngineConfig,
@@ -232,6 +233,84 @@ describe("EngineConfig", () => {
       // Test with worker: undefined - extends MainThreadEngineConfig
       const defaultConfig: EngineConfig = {};
       expectTypeOf(defaultConfig).toExtend<MainThreadEngineConfig>();
+    });
+  });
+});
+
+describe("CSVRecordAssemblerOptions", () => {
+  describe("Type-level constraints for headerless mode", () => {
+    it("Headerless mode (header: []) requires outputFormat: 'array'", () => {
+      const opts1: CSVRecordAssemblerOptions<readonly []> = {
+        header: [],
+        outputFormat: "array",
+      };
+
+      expectTypeOf(opts1.header).toEqualTypeOf<readonly []>();
+      expectTypeOf(opts1.outputFormat).toEqualTypeOf<"array">();
+      expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
+        "keep" | undefined
+      >();
+    });
+
+    it("Headerless mode only allows columnCountStrategy: 'keep'", () => {
+      const opts: CSVRecordAssemblerOptions<readonly []> = {
+        header: [],
+        outputFormat: "array",
+        columnCountStrategy: "keep",
+      };
+
+      expectTypeOf(opts.columnCountStrategy).toEqualTypeOf<
+        "keep" | undefined
+      >();
+    });
+
+    it("Normal mode allows all columnCountStrategy options", () => {
+      const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "array",
+        columnCountStrategy: "keep",
+      };
+
+      const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "array",
+        columnCountStrategy: "pad",
+      };
+
+      const opts3: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+        columnCountStrategy: "strict",
+      };
+
+      expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
+        "keep" | "pad" | "strict" | "truncate" | undefined
+      >();
+      expectTypeOf(opts2.columnCountStrategy).toEqualTypeOf<
+        "keep" | "pad" | "strict" | "truncate" | undefined
+      >();
+      expectTypeOf(opts3.columnCountStrategy).toEqualTypeOf<
+        "keep" | "pad" | "strict" | "truncate" | undefined
+      >();
+    });
+
+    it("Normal mode allows both array and object output formats", () => {
+      const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "array",
+      };
+
+      const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+      };
+
+      expectTypeOf(opts1.outputFormat).toEqualTypeOf<
+        "object" | "array" | undefined
+      >();
+      expectTypeOf(opts2.outputFormat).toEqualTypeOf<
+        "object" | "array" | undefined
+      >();
     });
   });
 });

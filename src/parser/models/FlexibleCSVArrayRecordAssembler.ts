@@ -9,7 +9,7 @@ import type {
   CSVArrayRecord,
   CSVArrayRecordAssembler,
   CSVRecordAssemblerAssembleOptions,
-  CSVRecordAssemblerOptions,
+  CSVRecordAssemblerCommonOptions,
   Token,
 } from "@/core/types.ts";
 
@@ -42,9 +42,28 @@ export class FlexibleCSVArrayRecordAssembler<
   #columnCountStrategy: ColumnCountStrategy;
   #headerIncluded = false; // Track if header has been included in output
 
-  constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
+  constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
     // Validate includeHeader option
     this.#includeHeader = options.includeHeader ?? false;
+
+    // Validate headerless mode (header: [])
+    if (
+      options.header !== undefined &&
+      Array.isArray(options.header) &&
+      options.header.length === 0
+    ) {
+      // Headerless mode: only 'keep' strategy is allowed
+      if (
+        options.columnCountStrategy !== undefined &&
+        options.columnCountStrategy !== "keep"
+      ) {
+        throw new Error(
+          `Headerless mode (header: []) only supports columnCountStrategy: 'keep'. ` +
+            `Got '${options.columnCountStrategy}'. ` +
+            `For other strategies, provide a non-empty header.`,
+        );
+      }
+    }
 
     // Validate and set columnCountStrategy
     this.#columnCountStrategy = options.columnCountStrategy ?? "keep";
@@ -203,12 +222,12 @@ export class FlexibleCSVArrayRecordAssembler<
       );
     }
     this.#header = header;
-    if (this.#header.length === 0) {
-      throw new ParseError("The header must not be empty.", {
-        source: this.#source,
-      });
-    }
-    if (new Set(this.#header).size !== this.#header.length) {
+    // Allow empty header for headerless mode (all rows are data)
+    // Only validate duplicates when header is non-empty
+    if (
+      this.#header.length > 0 &&
+      new Set(this.#header).size !== this.#header.length
+    ) {
       throw new ParseError("The header must not contain duplicate fields.", {
         source: this.#source,
       });

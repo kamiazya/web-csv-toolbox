@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 
 describe("CSVRecordAssembler - Object Output", () => {
   describe("columnCountStrategy option", () => {
@@ -254,6 +254,45 @@ Bob,25,LA`;
         expect(records).toHaveLength(1);
         expect(records[0]).toEqual({ a: "x", b: undefined, c: undefined }); // undefined for missing
       });
+    });
+  });
+
+  describe("Headerless mode (header: []) - Runtime Validation Errors", () => {
+    test("should throw error when header: [] with outputFormat: 'object'", () => {
+      // Error should be thrown when creating the assembler (not during assembly)
+      // because header is explicitly provided in options
+      expect(() =>
+        createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "object",
+        }),
+      ).toThrow(
+        /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,
+      );
+    });
+
+    test("should throw error when header: [] with object format and columnCountStrategy: 'pad'", () => {
+      expect(() =>
+        createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "object",
+          columnCountStrategy: "pad",
+        }),
+      ).toThrow(
+        /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,
+      );
+    });
+
+    test("should throw error when header: [] with object format and columnCountStrategy: 'strict'", () => {
+      expect(() =>
+        createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "object",
+          columnCountStrategy: "strict",
+        }),
+      ).toThrow(
+        /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,
+      );
     });
   });
 });

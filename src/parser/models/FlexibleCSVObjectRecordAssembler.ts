@@ -9,7 +9,7 @@ import type {
   CSVObjectRecord,
   CSVObjectRecordAssembler,
   CSVRecordAssemblerAssembleOptions,
-  CSVRecordAssemblerOptions,
+  CSVRecordAssemblerCommonOptions,
   Token,
 } from "@/core/types.ts";
 
@@ -40,7 +40,7 @@ export class FlexibleCSVObjectRecordAssembler<
   #source?: string | undefined;
   #columnCountStrategy: ColumnCountStrategy;
 
-  constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
+  constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
     // Validate and set columnCountStrategy
     this.#columnCountStrategy = options.columnCountStrategy ?? "pad";
     if (this.#columnCountStrategy === "keep") {
@@ -220,9 +220,14 @@ export class FlexibleCSVObjectRecordAssembler<
     }
     this.#header = header;
     if (this.#header.length === 0) {
-      throw new ParseError("The header must not be empty.", {
-        source: this.#source,
-      });
+      throw new ParseError(
+        "Headerless mode (header: []) is not supported for object format. " +
+          "Use array format (outputFormat: 'array') for headerless CSV, " +
+          "or provide a non-empty header for object format.",
+        {
+          source: this.#source,
+        },
+      );
     }
     if (new Set(this.#header).size !== this.#header.length) {
       throw new ParseError("The header must not contain duplicate fields.", {

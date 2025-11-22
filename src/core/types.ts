@@ -445,143 +445,230 @@ export interface CSVLexerTransformerStreamOptions {
 }
 
 /**
- * CSV Record Assembler Options.
+ * Base options shared by all CSV Record Assembler configurations.
+ * @category Types
+ */
+type CSVRecordAssemblerBaseOptions = SourceOption &
+  AbortSignalOptions & {
+    /**
+     * Maximum number of fields allowed in a single record.
+     *
+     * @default 100000
+     */
+    maxFieldCount?: number;
+
+    /**
+     * Skip empty lines during parsing.
+     *
+     * @default false
+     */
+    skipEmptyLines?: boolean;
+  };
+
+/**
+ * Common interface for CSV Record Assembler options (without type constraints).
+ * Use this when you need to extend CSV assembler options in other interfaces.
+ * For type-safe options with compile-time validation, use CSVRecordAssemblerOptions.
+ * @category Types
+ */
+export interface CSVRecordAssemblerCommonOptions<
+  Header extends ReadonlyArray<string>,
+> extends SourceOption,
+    AbortSignalOptions {
+  header?: Header;
+  outputFormat?: "object" | "array";
+  includeHeader?: boolean;
+  columnCountStrategy?: ColumnCountStrategy;
+  maxFieldCount?: number;
+  skipEmptyLines?: boolean;
+}
+
+/**
+ * CSV Record Assembler Options with type-level constraints.
  * @category Types
  *
  * @remarks
- * If you specify `header: ['foo', 'bar']`,
- * the first record will be treated as a normal record.
+ * This type uses conditional types to enforce the following constraints at compile-time:
  *
- * If you don't specify `header`,
- * the first record will be treated as a header.
+ * **Headerless Mode (`header: []`)**:
+ * - Requires `outputFormat: 'array'`
+ * - Only allows `columnCountStrategy: 'keep'` (or omit for default)
+ * - All rows are treated as data (no header inference)
+ *
+ * **Normal Mode (header inferred or explicit)**:
+ * - `header: undefined` → infer from first row
+ * - `header: ['col1', ...]` → explicit header
+ * - Allows any `outputFormat` and `columnCountStrategy`
+ *
+ * @example Type-safe headerless mode
+ * ```ts
+ * // ✓ Valid: headerless with array format
+ * const opts1: CSVRecordAssemblerOptions<readonly []> = {
+ *   header: [],
+ *   outputFormat: 'array',
+ *   columnCountStrategy: 'keep'
+ * };
+ *
+ * // ✗ Type error: headerless requires array format
+ * const opts2: CSVRecordAssemblerOptions<readonly []> = {
+ *   header: [],
+ *   outputFormat: 'object' // Error!
+ * };
+ *
+ * // ✗ Type error: headerless only allows 'keep' strategy
+ * const opts3: CSVRecordAssemblerOptions<readonly []> = {
+ *   header: [],
+ *   outputFormat: 'array',
+ *   columnCountStrategy: 'strict' // Error!
+ * };
+ * ```
  */
-export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
-  extends SourceOption,
-    AbortSignalOptions {
-  /**
-   * CSV header.
-   *
-   * @remarks
-   * If you specify this option,
-   * the first record will be treated as a normal record.
-   *
-   * If you don't specify this option,
-   * the first record will be treated as a header.
-   *
-   * @default undefined
-   */
-  header?: Header;
+export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
+  Header extends readonly []
+    ? // Headerless mode: strict constraints
+      CSVRecordAssemblerBaseOptions & {
+        /**
+         * CSV header specification.
+         * For headerless mode, must be an empty array.
+         */
+        header: readonly [];
 
-  /**
-   * Output format for CSV records.
-   *
-   * @remarks
-   * - `'object'` (default): Records are returned as objects with header keys
-   * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
-   *
-   * @default 'object'
-   *
-   * @example
-   * ```ts
-   * // With 'object' format (default)
-   * { name: 'Alice', age: '30' }
-   *
-   * // With 'array' format
-   * ['Alice', '30'] // Type: readonly [name: string, age: string]
-   * ```
-   */
-  outputFormat?: "object" | "array";
+        /**
+         * Output format for CSV records.
+         * Headerless mode requires array format.
+         */
+        outputFormat: "array";
 
-  /**
-   * Include header row as the first element in array output.
-   *
-   * @remarks
-   * Only valid when `outputFormat` is `'array'`.
-   * When true, the header array will be yielded as the first record.
-   *
-   * @default false
-   *
-   * @throws {Error} If used with `outputFormat: 'object'`
-   *
-   * @example
-   * ```ts
-   * // With includeHeader: true and header: ['name', 'age']
-   * // First record: ['name', 'age']
-   * // Second record: ['Alice', '30']
-   * ```
-   */
-  includeHeader?: boolean;
+        /**
+         * Strategy for handling column count mismatches.
+         * Headerless mode only supports 'keep' strategy.
+         *
+         * @default 'keep'
+         */
+        columnCountStrategy?: "keep";
 
-  /**
-   * Strategy for handling column count mismatches between header and data rows.
-   *
-   * @remarks
-   * Only valid when a `header` is provided.
-   *
-   * **Available strategies**:
-   * - `'keep'`: Output rows as-is with their actual length (only for array format)
-   * - `'pad'`: Pad short rows with undefined, truncate long rows to match header
-   * - `'strict'`: Throw error if row length doesn't match header length
-   * - `'truncate'`: Truncate long rows, keep short rows as-is
-   *
-   * **Output format behavior**:
-   * - For `'array'` format: All strategies work as described. Missing fields are `undefined` with 'pad'.
-   * - For `'object'` format: Only `'pad'`, `'strict'`, and `'truncate'` are effective.
-   *   The `'keep'` strategy has no effect and is treated as `'pad'` (extra fields ignored,
-   *   missing fields become undefined).
-   *
-   * @default 'keep' for array format, 'pad' for object format
-   *
-   * @throws {Error} If used without a header
-   *
-   * @example Array format examples
-   * ```ts
-   * // Header: ['name', 'age', 'city']
-   * // Row: 'Alice,30'
-   * // outputFormat: 'array'
-   *
-   * // columnCountStrategy: 'keep' → ['Alice', '30']
-   * // columnCountStrategy: 'pad' → ['Alice', '30', undefined]
-   * // columnCountStrategy: 'strict' → Error thrown
-   * // columnCountStrategy: 'truncate' → ['Alice', '30']
-   * ```
-   *
-   * @example Object format examples
-   * ```ts
-   * // Header: ['name', 'age', 'city']
-   * // Row: 'Alice,30'
-   * // outputFormat: 'object'
-   *
-   * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
-   * // columnCountStrategy: 'pad' → { name: 'Alice', age: '30', city: undefined }
-   * // columnCountStrategy: 'strict' → Error thrown
-   * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: undefined }
-   * ```
-   */
-  columnCountStrategy?: ColumnCountStrategy;
+        /**
+         * Include header row as the first element in array output.
+         * Not applicable in headerless mode (no header to include).
+         *
+         * @default false
+         */
+        includeHeader?: boolean;
+      }
+    : // Normal mode: flexible configuration
+      CSVRecordAssemblerBaseOptions & {
+        /**
+         * CSV header specification.
+         *
+         * @remarks
+         * **Behavior by value**:
+         * - `undefined` (default): First row is automatically inferred as the header
+         * - `['col1', 'col2', ...]`: Explicit header, first row is treated as data
+         *
+         * @default undefined (infer from first row)
+         *
+         * @example
+         * ```ts
+         * // Infer header from first row
+         * const records = parseStringToArraySync('name,age\nAlice,30', {
+         *   // header: undefined (default)
+         * });
+         * // => [{ name: 'Alice', age: '30' }]
+         *
+         * // Explicit header
+         * const records = parseStringToArraySync('Alice,30\nBob,25', {
+         *   header: ['name', 'age']
+         * });
+         * // => [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+         * ```
+         */
+        header?: Header;
 
-  /**
-   * Maximum number of fields allowed per record.
-   *
-   * @remarks
-   * This option limits the number of columns/fields in a CSV record
-   * to prevent memory exhaustion attacks. When a record exceeds this limit,
-   * a {@link FieldCountLimitError} will be thrown.
-   *
-   * Set to `Number.POSITIVE_INFINITY` to disable the limit (not recommended for untrusted input).
-   *
-   * @default 100000
-   */
-  maxFieldCount?: number;
+        /**
+         * Output format for CSV records.
+         *
+         * @remarks
+         * - `'object'` (default): Records are returned as objects with header keys
+         * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
+         *
+         * @default 'object'
+         *
+         * @example
+         * ```ts
+         * // With 'object' format (default)
+         * { name: 'Alice', age: '30' }
+         *
+         * // With 'array' format
+         * ['Alice', '30'] // Type: readonly [name: string, age: string]
+         * ```
+         */
+        outputFormat?: "object" | "array";
 
-  /**
-   * When true, completely empty lines (with only delimiters or whitespace)
-   * will be skipped during parsing.
-   *
-   * @default false
-   */
-  skipEmptyLines?: boolean;
-}
+        /**
+         * Include header row as the first element in array output.
+         *
+         * @remarks
+         * Only valid when `outputFormat` is `'array'`.
+         * When true, the header array will be yielded as the first record.
+         *
+         * @default false
+         *
+         * @throws {Error} If used with `outputFormat: 'object'`
+         *
+         * @example
+         * ```ts
+         * // With includeHeader: true and header: ['name', 'age']
+         * // First record: ['name', 'age']
+         * // Second record: ['Alice', '30']
+         * ```
+         */
+        includeHeader?: boolean;
+
+        /**
+         * Strategy for handling column count mismatches between header and data rows.
+         *
+         * @remarks
+         * Controls how to handle rows with column counts different from the header.
+         * See {@link ColumnCountStrategy} for detailed strategy descriptions.
+         *
+         * **Strategy overview**:
+         * - `'keep'`: Keep rows as-is (array format varies length; object format acts like `'pad'`)
+         * - `'pad'`: Pad short rows with undefined, truncate long rows
+         * - `'strict'`: Throw error on length mismatch
+         * - `'truncate'`: Truncate long rows, keep short rows as-is (object format: all keys present)
+         *
+         * **Headerless CSV**:
+         * When `header` is undefined or `[]`, this option is accepted but behaves as `'keep'`.
+         * For explicit headerless mode (`header: []`), only `'keep'` is allowed at runtime.
+         *
+         * @default 'keep' for array format, 'pad' for object format
+         *
+         * @example Array format examples
+         * ```ts
+         * // Header: ['name', 'age', 'city']
+         * // Row: 'Alice,30'
+         * // outputFormat: 'array'
+         *
+         * // columnCountStrategy: 'keep' → ['Alice', '30'] (short row kept)
+         * // columnCountStrategy: 'pad' → ['Alice', '30', undefined] (padded)
+         * // columnCountStrategy: 'strict' → Error thrown
+         * // columnCountStrategy: 'truncate' → ['Alice', '30'] (short row kept)
+         * ```
+         *
+         * @example Object format examples
+         * ```ts
+         * // Header: ['name', 'age', 'city']
+         * // Row: 'Alice,30'
+         * // outputFormat: 'object'
+         *
+         * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
+         * // columnCountStrategy: 'pad' → { name: 'Alice', age: '30', city: undefined } (all keys)
+         * // columnCountStrategy: 'strict' → Error thrown
+         * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: undefined } (all keys)
+         * ```
+         */
+        columnCountStrategy?: ColumnCountStrategy;
+      };
 
 /**
  * CSV Record Assembler Transformer Stream Options.
@@ -1137,7 +1224,7 @@ export interface ParseOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
-    CSVRecordAssemblerOptions<Header>,
+    CSVRecordAssemblerCommonOptions<Header>,
     EngineOptions,
     AbortSignalOptions {}
 
@@ -1159,32 +1246,42 @@ export interface ParseBinaryOptions<
  *
  * @remarks
  * **Available strategies**:
- * - `keep`: Output rows as-is with their actual length (only effective for array format)
- * - `pad`: Pad short rows with undefined to match header length, truncate long rows
- * - `strict`: Throw error if row length doesn't match header length
- * - `truncate`: Truncate rows to match header length, don't pad short rows
+ * - `'keep'`: Output rows as-is with their actual length
+ *   - Array format: Row length varies, no padding or truncation
+ *   - Object format: Treated as `'pad'` (all header keys present, missing values = undefined)
+ * - `'pad'`: Ensure all rows match header length
+ *   - Array format: Pad short rows with undefined, truncate long rows
+ *   - Object format: All header keys present, missing values = undefined, extra values ignored
+ * - `'strict'`: Enforce exact header length match
+ *   - Both formats: Throws error if row length ≠ header length
+ * - `'truncate'`: Handle long rows only, keep short rows as-is
+ *   - Array format: Truncate long rows to header length, keep short rows unchanged
+ *   - Object format: All header keys present (like `'pad'`), missing values = undefined
  *
  * **Default values**:
  * - Array format: `'keep'`
- * - Object format: `'pad'` (note: `'keep'` is treated as `'pad'` for object format)
+ * - Object format: `'pad'`
  *
- * **Note**: This strategy only applies when a header is provided. For headerless CSV,
- * only `keep` is valid (all rows maintain their actual length).
+ * **Headerless CSV behavior**:
+ * When no header is provided (`header: undefined` or `header: []`):
+ * - The strategy option is accepted but effectively behaves as `'keep'`
+ * - All rows maintain their actual length with no validation
+ * - For explicit headerless mode (`header: []`), only `'keep'` is allowed at runtime
  *
- * @example Array format
+ * @example Array format examples
  *
  * ```ts
  * // Header: ['name', 'age', 'city']
  * // Input row: 'Alice,30'
  * // outputFormat: 'array'
  *
- * // keep → ['Alice', '30']
- * // pad → ['Alice', '30', undefined]
- * // strict → Error thrown
- * // truncate → ['Alice', '30']
+ * // keep → ['Alice', '30'] (short row kept as-is)
+ * // pad → ['Alice', '30', undefined] (padded to match header)
+ * // strict → Error thrown (length mismatch)
+ * // truncate → ['Alice', '30'] (short row kept as-is, only truncates long rows)
  * ```
  *
- * @example Object format
+ * @example Object format examples
  *
  * ```ts
  * // Header: ['name', 'age', 'city']
@@ -1192,9 +1289,9 @@ export interface ParseBinaryOptions<
  * // outputFormat: 'object'
  *
  * // keep → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
- * // pad → { name: 'Alice', age: '30', city: undefined }
- * // strict → Error thrown
- * // truncate → { name: 'Alice', age: '30', city: undefined }
+ * // pad → { name: 'Alice', age: '30', city: undefined } (all keys present)
+ * // strict → Error thrown (length mismatch)
+ * // truncate → { name: 'Alice', age: '30', city: undefined } (all keys present)
  * ```
  */
 export type ColumnCountStrategy = "keep" | "pad" | "strict" | "truncate";

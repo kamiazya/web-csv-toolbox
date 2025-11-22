@@ -58,23 +58,31 @@ Bob,36,Los Angeles,90001`;
   });
 });
 
-describe("csv literal string parsing with line breaks, quotation, newline", () => {
-  const csv1 = `$name$*$*ag
-e
-$*$city$*$z*i
-p*$
-Alice*24*New York*$1000
-$1$
-Bob*$36$*$Los$
-Angeles$*90001`;
+describe("csv literal string parsing with custom delimiters", () => {
+  const csv1 = `$name$*$age$*$city$*$zip$
+Alice*24*New York*10001
+Bob*36*Los Angeles*90001`;
 
-  it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(parse(csv1 as string)).toMatchTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly string[]>>
+  it("should csv header of the parsed result will be header's tuple with explicit type parameters", () => {
+    expectTypeOf(
+      parse<typeof csv1, "*", "$">(csv1, {
+        delimiter: "*",
+        quotation: "$",
+      }),
+    ).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    expectTypeOf(parse(new ReadableStream<string>())).toMatchTypeOf<
-      AsyncIterableIterator<CSVRecord<readonly string[]>>
+    expectTypeOf(
+      parse<ReadableStream<typeof csv1>, "*", "$">(
+        new ReadableStream<typeof csv1>(),
+        {
+          delimiter: "*",
+          quotation: "$",
+        },
+      ),
+    ).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });
 });

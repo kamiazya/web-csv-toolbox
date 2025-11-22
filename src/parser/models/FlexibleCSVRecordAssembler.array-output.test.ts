@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 
 describe("CSVRecordAssembler - Array Output Format", () => {
   describe("outputFormat option", () => {
@@ -322,6 +322,136 @@ Charlie,35,SF,Extra`;
       expect(records).toHaveLength(2);
       expect(records[0]).toEqual(["Bob", "25", "LA"]);
       expect(records[1]).toEqual(["Charlie", "35", "SF", "Extra"]);
+    });
+  });
+
+  describe("Headerless mode (header: [])", () => {
+    describe("Valid configurations", () => {
+      test("should treat all rows as data when header is empty array", () => {
+        const csv = `Alice,30,NY
+Bob,25,LA
+Charlie,35,SF`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "array",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        // All three rows should be treated as data (no header inference)
+        expect(records).toHaveLength(3);
+        expect(records[0]).toEqual(["Alice", "30", "NY"]);
+        expect(records[1]).toEqual(["Bob", "25", "LA"]);
+        expect(records[2]).toEqual(["Charlie", "35", "SF"]);
+      });
+
+      test("should work with single row CSV in headerless mode", () => {
+        const csv = `Alice,30,NY`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "array",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(1);
+        expect(records[0]).toEqual(["Alice", "30", "NY"]);
+      });
+
+      test("should work with empty CSV in headerless mode", () => {
+        const csv = ``;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "array",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(0);
+      });
+
+      test("should support varying column counts in headerless mode with columnCountStrategy: keep", () => {
+        const csv = `Alice,30
+Bob,25,LA
+Charlie,35,SF,Extra`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "array",
+          columnCountStrategy: "keep",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(3);
+        expect(records[0]).toEqual(["Alice", "30"]);
+        expect(records[1]).toEqual(["Bob", "25", "LA"]);
+        expect(records[2]).toEqual(["Charlie", "35", "SF", "Extra"]);
+      });
+    });
+
+    describe("Runtime validation errors", () => {
+      test("should throw error when header: [] with columnCountStrategy: 'pad'", () => {
+        expect(() =>
+          createCSVRecordAssembler({
+            header: [] as const,
+            outputFormat: "array",
+            columnCountStrategy: "pad",
+          }),
+        ).toThrow(
+          /Headerless mode \(header: \[\]\) only supports columnCountStrategy: 'keep'/,
+        );
+      });
+
+      test("should throw error when header: [] with columnCountStrategy: 'strict'", () => {
+        expect(() =>
+          createCSVRecordAssembler({
+            header: [] as const,
+            outputFormat: "array",
+            columnCountStrategy: "strict",
+          }),
+        ).toThrow(
+          /Headerless mode \(header: \[\]\) only supports columnCountStrategy: 'keep'/,
+        );
+      });
+
+      test("should throw error when header: [] with columnCountStrategy: 'truncate'", () => {
+        expect(() =>
+          createCSVRecordAssembler({
+            header: [] as const,
+            outputFormat: "array",
+            columnCountStrategy: "truncate",
+          }),
+        ).toThrow(
+          /Headerless mode \(header: \[\]\) only supports columnCountStrategy: 'keep'/,
+        );
+      });
+
+      test("should throw error when header: [] with outputFormat: 'object'", () => {
+        expect(() =>
+          createCSVRecordAssembler({
+            header: [] as const,
+            outputFormat: "object",
+          }),
+        ).toThrow(
+          /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,
+        );
+      });
     });
   });
 });

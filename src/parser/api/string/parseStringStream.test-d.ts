@@ -38,19 +38,15 @@ Bob,36,Los Angeles,90001`;
 });
 
 describe("csv literal ReadableStream parsing with line breaks, quotation, newline", () => {
-  const _csv1 = `$name$*$*ag
-e
-$*$city$*$z*i
-p*$
-Alice*24*New York*$1000
-$1$
-Bob*$36$*$Los$
-Angeles$*90001`;
-
-  it("should csv header of the parsed result will be header's tuple", () => {
-    expectTypeOf(
-      parseStringStream<readonly string[]>(new ReadableStream<string>()),
-    ).toEqualTypeOf<AsyncIterableIterator<CSVRecord<readonly string[]>>>();
+  it("should infer header tuple from ReadableStream<typeof csv1>", () => {
+    const csv1 =
+      "name,age,city,zip\nAlice,24,New York,10001\nBob,36,Los Angeles,90001";
+    const result = parseStringStream(new ReadableStream<typeof csv1>(), {
+      header: ["name", "age", "city", "zip"] as const,
+    });
+    expectTypeOf(result).toEqualTypeOf<
+      AsyncIterableIterator<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
   });
 });
 

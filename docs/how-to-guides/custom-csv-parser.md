@@ -818,7 +818,7 @@ analyzeTokens('name,age\r\nAlice,30\r\n');
 ### Streaming with TransformStream
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { FlexibleStringCSVLexerTransformer, FlexibleCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 // Custom validation transform
 class ValidationTransform extends TransformStream {
@@ -852,8 +852,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new CSVLexerTransformer())
-  .pipeThrough(new CSVRecordAssemblerTransformer())
+  .pipeThrough(new FlexibleStringCSVLexerTransformer())
+  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
   .pipeThrough(new ValidationTransform())
   .pipeTo(new WritableStream({
     write(record) {
@@ -887,8 +887,8 @@ class TypeConversionTransform extends TransformStream {
 
 // Usage
 csvStream
-  .pipeThrough(new CSVLexerTransformer())
-  .pipeThrough(new CSVRecordAssemblerTransformer())
+  .pipeThrough(new FlexibleStringCSVLexerTransformer())
+  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
   .pipeThrough(new TypeConversionTransform())
   .pipeTo(new WritableStream({
     write(record) {
