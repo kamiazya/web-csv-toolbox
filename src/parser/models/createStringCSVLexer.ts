@@ -1,8 +1,7 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   AbortSignalOptions,
   CommonOptions,
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
 } from "@/core/types.ts";
 import { FlexibleStringCSVLexer } from "./FlexibleStringCSVLexer.ts";
 
