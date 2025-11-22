@@ -471,6 +471,78 @@ export interface CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>>
    * @default undefined
    */
   header?: Header;
+
+  /**
+   * Output format for CSV records.
+   *
+   * @remarks
+   * - `'object'` (default): Records are returned as objects with header keys
+   * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
+   *
+   * @default 'object'
+   *
+   * @example
+   * ```ts
+   * // With 'object' format (default)
+   * { name: 'Alice', age: '30' }
+   *
+   * // With 'array' format
+   * ['Alice', '30'] // Type: readonly [name: string, age: string]
+   * ```
+   */
+  outputFormat?: "object" | "array";
+
+  /**
+   * Include header row as the first element in array output.
+   *
+   * @remarks
+   * Only valid when `outputFormat` is `'array'`.
+   * When true, the header array will be yielded as the first record.
+   *
+   * @default false
+   *
+   * @throws {Error} If used with `outputFormat: 'object'`
+   *
+   * @example
+   * ```ts
+   * // With includeHeader: true and header: ['name', 'age']
+   * // First record: ['name', 'age']
+   * // Second record: ['Alice', '30']
+   * ```
+   */
+  includeHeader?: boolean;
+
+  /**
+   * Strategy for handling column count mismatches between header and data rows.
+   *
+   * @remarks
+   * Only valid when a `header` is provided.
+   *
+   * - `'keep'` (default): Output rows as-is with their actual length
+   * - `'pad'`: Pad short rows with undefined, truncate long rows to match header
+   * - `'strict'`: Throw error if row length doesn't match header length
+   * - `'truncate'`: Truncate long rows, keep short rows as-is
+   *
+   * For `'object'` output format, mismatched columns are automatically handled
+   * (extra fields ignored, missing fields become undefined).
+   *
+   * @default 'keep'
+   *
+   * @throws {Error} If used without a header
+   *
+   * @example
+   * ```ts
+   * // Header: ['name', 'age', 'city']
+   * // Row: 'Alice,30'
+   *
+   * // columnCountStrategy: 'keep' → ['Alice', '30']
+   * // columnCountStrategy: 'pad' → ['Alice', '30', undefined]
+   * // columnCountStrategy: 'strict' → Error thrown
+   * // columnCountStrategy: 'truncate' → ['Alice', '30']
+   * ```
+   */
+  columnCountStrategy?: ColumnCountStrategy;
+
   /**
    * Maximum number of fields allowed per record.
    *
@@ -996,6 +1068,33 @@ export interface EngineOptions {
 }
 
 /**
+ * Helper type to infer the output format from ParseOptions.
+ *
+ * @category Types
+ *
+ * @remarks
+ * This type extracts the output format from options and defaults to 'object' if not specified.
+ */
+export type InferFormat<Options> = Options extends { outputFormat: infer F }
+  ? F extends "object" | "array"
+    ? F
+    : "object"
+  : "object";
+
+/**
+ * Helper type to get the CSV record type based on header and options.
+ *
+ * @category Types
+ *
+ * @remarks
+ * This type determines the CSVRecord type based on the header and output format in options.
+ */
+export type InferCSVRecord<
+  Header extends ReadonlyArray<string>,
+  Options = Record<string, never>,
+> = CSVRecord<Header, InferFormat<Options>>;
+
+/**
  * Parse options for CSV string.
  * @category Types
  */
@@ -1020,22 +1119,134 @@ export interface ParseBinaryOptions<
     BinaryOptions {}
 
 /**
- * CSV Record.
+ * Strategy for handling column count mismatches between header and data rows.
+ *
+ * @category Types
+ *
+ * @remarks
+ * - `keep`: Output rows as-is with their actual length (default)
+ * - `pad`: Pad short rows with undefined to match header length, truncate long rows
+ * - `strict`: Throw error if row length doesn't match header length
+ * - `truncate`: Truncate rows to match header length, don't pad short rows
+ *
+ * Note: This strategy only applies when a header is provided. For headerless CSV,
+ * only `keep` is valid (all rows maintain their actual length).
+ *
+ * @example
+ *
+ * ```ts
+ * // Header: ['name', 'age', 'city']
+ * // Input row: 'Alice,30'
+ *
+ * // keep → ['Alice', '30']
+ * // pad → ['Alice', '30', undefined]
+ * // strict → Error thrown
+ * // truncate → ['Alice', '30']
+ * ```
+ */
+export type ColumnCountStrategy = "keep" | "pad" | "strict" | "truncate";
+
+/**
+ * CSV record as an object (traditional format).
+ *
  * @category Types
  * @template Header Header of the CSV.
  *
- * @example Header is ["foo", "bar"]
+ * @remarks
+ * This type represents a single CSV record as an object,
+ * where each key corresponds to a header field and the value is the field's string content.
+ *
+ * @example
+ *
+ * ```ts
+ * const header = ["foo", "bar"] as const;
+ *
+ * type Record = CSVObjectRecord<typeof header>;
+ * // { foo: string; bar: string }
+ *
+ * const record: Record = { foo: "1", bar: "2" };
+ * ```
+ */
+export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
+  Header[number],
+  string
+>;
+
+/**
+ * CSV record as an array (named tuple format).
+ *
+ * @category Types
+ * @template Header Header of the CSV.
+ *
+ * @remarks
+ * This type represents a single CSV record as a readonly array.
+ * When a header is provided, it creates a named tuple with type-safe indexing.
+ * Without a header, it's a variable-length readonly string array.
+ *
+ * @example With header (named tuple)
+ *
+ * ```ts
+ * const header = ["name", "age", "city"] as const;
+ *
+ * type Row = CSVArrayRecord<typeof header>;
+ * // readonly [name: string, age: string, city: string]
+ *
+ * const row: Row = ["Alice", "30", "NY"];
+ * row[0]; // name: string (type-safe!)
+ * row.length; // 3 (compile-time constant)
+ * ```
+ *
+ * @example Without header (variable-length)
+ *
+ * ```ts
+ * type Row = CSVArrayRecord<readonly []>;
+ * // readonly string[]
+ *
+ * const row: Row = ["Alice", "30"];
+ * row[0]; // string
+ * row.length; // number (runtime determined)
+ * ```
+ */
+export type CSVArrayRecord<Header extends ReadonlyArray<string>> =
+  Header extends readonly []
+    ? readonly string[]
+    : { readonly [K in keyof Header]: string };
+
+/**
+ * CSV Record.
+ *
+ * @category Types
+ * @template Header Header of the CSV.
+ * @template Format Output format: 'object' or 'array' (default: 'object')
+ *
+ * @remarks
+ * This type represents a single CSV record, which can be either an object or an array
+ * depending on the `Format` type parameter.
+ *
+ * - When `Format` is `'object'` (default): Returns {@link CSVObjectRecord}
+ * - When `Format` is `'array'`: Returns {@link CSVArrayRecord} (named tuple)
+ *
+ * The format determines both the runtime representation and compile-time types.
+ *
+ * @example Object format (default)
  * ```ts
  * const record: CSVRecord<["foo", "bar"]> = {
  *   foo: "1",
  *   bar: "2",
  * };
  * ```
+ *
+ * @example Array format (named tuple)
+ * ```ts
+ * const header = ["foo", "bar"] as const;
+ * const record: CSVRecord<typeof header, 'array'> = ["1", "2"];
+ * // Type: readonly [foo: string, bar: string]
+ * ```
  */
-export type CSVRecord<Header extends ReadonlyArray<string>> = Record<
-  Header[number],
-  string
->;
+export type CSVRecord<
+  Header extends ReadonlyArray<string>,
+  Format extends "object" | "array" = "object",
+> = Format extends "array" ? CSVArrayRecord<Header> : CSVObjectRecord<Header>;
 
 /**
  * Join CSV field array into a CSV-formatted string with proper escaping.
@@ -1364,22 +1575,84 @@ export interface CSVRecordAssemblerAssembleOptions {
 }
 
 /**
- * CSV Record Assembler interface.
+ * CSV Object Record Assembler interface.
  *
- * CSVRecordAssembler assembles tokens into CSV records.
+ * CSVObjectRecordAssembler assembles tokens into CSV records in object format.
+ * Each record is returned as an object with header keys mapping to field values.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const assembler: CSVObjectRecordAssembler<['name', 'age']> = ...;
+ * for (const record of assembler.assemble(tokens)) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
  */
-export interface CSVRecordAssembler<Header extends ReadonlyArray<string>> {
+export interface CSVObjectRecordAssembler<
+  Header extends ReadonlyArray<string>,
+> {
   /**
-   * Assembles tokens into CSV records.
+   * Assembles tokens into CSV records in object format.
    * @param input - A token or iterable of tokens to be assembled. Omit to flush remaining data.
    * @param options - Assembler options.
-   * @returns An iterable iterator of CSV records.
+   * @returns An iterable iterator of CSV records as objects.
    */
   assemble(
     input?: Token | Iterable<Token>,
     options?: CSVRecordAssemblerAssembleOptions,
-  ): IterableIterator<CSVRecord<Header>>;
+  ): IterableIterator<CSVObjectRecord<Header>>;
 }
+
+/**
+ * CSV Array Record Assembler interface.
+ *
+ * CSVArrayRecordAssembler assembles tokens into CSV records in array format.
+ * Each record is returned as a tuple/array with values in header order.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names (determines array length and named tuple structure)
+ *
+ * @example
+ * ```typescript
+ * const assembler: CSVArrayRecordAssembler<['name', 'age']> = ...;
+ * for (const record of assembler.assemble(tokens)) {
+ *   console.log(record); // ['Alice', '30'] - typed as named tuple
+ * }
+ * ```
+ */
+export interface CSVArrayRecordAssembler<Header extends ReadonlyArray<string>> {
+  /**
+   * Assembles tokens into CSV records in array format.
+   * @param input - A token or iterable of tokens to be assembled. Omit to flush remaining data.
+   * @param options - Assembler options.
+   * @returns An iterable iterator of CSV records as arrays/tuples.
+   */
+  assemble(
+    input?: Token | Iterable<Token>,
+    options?: CSVRecordAssemblerAssembleOptions,
+  ): IterableIterator<CSVArrayRecord<Header>>;
+}
+
+/**
+ * Unified CSV Record Assembler type.
+ *
+ * This is a discriminated union type that can represent either object or array assemblers.
+ * Use this when you need to work with assemblers in a format-agnostic way.
+ *
+ * @template Header - Array of header field names
+ * @template Format - Output format: 'object' or 'array' (default: 'object')
+ */
+export type CSVRecordAssembler<
+  Header extends ReadonlyArray<string>,
+  Format extends "object" | "array" = "object",
+> = Format extends "array"
+  ? CSVArrayRecordAssembler<Header>
+  : CSVObjectRecordAssembler<Header>;
 
 /**
  * Options for the parse method

@@ -3,6 +3,7 @@ import * as internal from "@/converters/iterators/convertThisAsyncIterableIterat
 import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type {
   CSVRecord,
+  InferCSVRecord,
   ParseBinaryOptions,
   ParseOptions,
 } from "@/core/types.ts";
@@ -39,12 +40,11 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  */
 export async function* parseBinary<
   Header extends ReadonlyArray<string>,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = '"',
+  Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
   bytes: Uint8Array | ArrayBuffer,
-  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
 
@@ -66,20 +66,29 @@ export async function* parseBinary<
           | undefined,
         session,
         engineConfig,
-      );
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
     }
   } else {
     // Main thread execution
     if (engineConfig.hasWasm()) {
+      // Validate that array output format is not used with WASM
+      if (options?.outputFormat === "array") {
+        throw new Error(
+          "Array output format is not supported with WASM execution. " +
+            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+        );
+      }
       yield* parseBinaryInWASM(
         bytes,
         options as ParseBinaryOptions<Header> | undefined,
-      );
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } else {
       const iterator = parseBinaryToIterableIterator(bytes, options);
-      yield* convertIterableIteratorToAsync(iterator);
+      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
     }
   }
 }
@@ -103,10 +112,13 @@ export declare namespace parseBinary {
    * const records = await parseUint8Array.toArray(csv);
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     bytes: Uint8Array | ArrayBuffer,
-    options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+    options?: Options,
+  ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse a binary from an {@link !Uint8Array} to an array of records.
    *
@@ -125,10 +137,13 @@ export declare namespace parseBinary {
    * const records = parseUint8Array.toArraySync(csv);
    * ```
    */
-  export function toArraySync<Header extends ReadonlyArray<string>>(
+  export function toArraySync<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     bytes: Uint8Array | ArrayBuffer,
-    options?: ParseBinaryOptions<Header>,
-  ): CSVRecord<Header>[];
+    options?: Options,
+  ): InferCSVRecord<Header, Options>[];
 
   /**
    * Parse a binary from an {@link !Uint8Array} to an iterable iterator of records.
@@ -149,10 +164,13 @@ export declare namespace parseBinary {
    * }
    * ```
    */
-  export function toIterableIterator<Header extends ReadonlyArray<string>>(
+  export function toIterableIterator<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     bytes: Uint8Array,
-    options?: ParseBinaryOptions<Header>,
-  ): IterableIterator<CSVRecord<Header>>;
+    options?: Options,
+  ): IterableIterator<InferCSVRecord<Header, Options>>;
 
   /**
    * Parse a binary from an {@link !Uint8Array} to a stream of records.
@@ -181,10 +199,13 @@ export declare namespace parseBinary {
    * );
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     bytes: Uint8Array,
-    options?: ParseBinaryOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 
 Object.defineProperties(parseBinary, {

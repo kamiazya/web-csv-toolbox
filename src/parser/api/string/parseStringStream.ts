@@ -1,7 +1,12 @@
 import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
+import type {
+  CSVRecord,
+  InferCSVRecord,
+  ParseOptions,
+  PickCSVHeader,
+} from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
@@ -92,25 +97,37 @@ export function parseStringStream<
     Delimiter,
     Quotation
   >,
+  const Options extends ParseOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseOptions<Header, Delimiter, Quotation>,
 >(
   csv: CSVSource,
-  options: ParseOptions<Header, Delimiter, Quotation>,
-): AsyncIterableIterator<CSVRecord<Header>>;
+  options: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
 export function parseStringStream<
   const CSVSource extends ReadableStream<string>,
   const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(
   csv: CSVSource,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>>;
-export function parseStringStream<const Header extends ReadonlyArray<string>>(
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+export function parseStringStream<
+  const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>>;
-export async function* parseStringStream<Header extends ReadonlyArray<string>>(
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+export async function* parseStringStream<
+  Header extends ReadonlyArray<string>,
+  Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
 
@@ -132,7 +149,7 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
         options,
         session,
         engineConfig,
-      );
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
     }
@@ -145,7 +162,7 @@ export async function* parseStringStream<Header extends ReadonlyArray<string>>(
     const iterator = convertStreamToAsyncIterableIterator(recordStream);
 
     try {
-      yield* iterator;
+      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } catch (error) {
       // If an error occurs (including abort), cancel the record stream
       // to release the lock on the original input stream
@@ -187,10 +204,13 @@ export declare namespace parseStringStream {
    * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     stream: ReadableStream<string>,
-    options?: ParseOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+    options?: Options,
+  ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse CSV string stream to records.
    *
@@ -222,10 +242,13 @@ export declare namespace parseStringStream {
    * );
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     stream: ReadableStream<string>,
-    options?: ParseOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 
 Object.defineProperties(parseStringStream, {

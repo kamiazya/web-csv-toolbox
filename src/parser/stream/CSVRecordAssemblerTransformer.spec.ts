@@ -3,7 +3,7 @@ import { describe as describe_, expect, it as it_, vi } from "vitest";
 import { FC, transform } from "@/__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type { Token } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 const describe = describe_.concurrent;
@@ -25,16 +25,16 @@ const LOCATION_SHAPE = {
 
 describe("CSVRecordAssemblerTransformer", () => {
   it("should throw error if header is empty", () => {
-    expect(
-      () => new DefaultCSVRecordAssembler({ header: [] }),
+    expect(() =>
+      createCSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[ParseError: The header must not be empty.]`,
     );
   });
 
   it("should throw error if header has duplicated fields", () => {
-    expect(
-      () => new DefaultCSVRecordAssembler({ header: ["a", "a"] }),
+    expect(() =>
+      createCSVRecordAssembler({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[ParseError: The header must not contain duplicate fields.]`,
     );
@@ -95,7 +95,7 @@ describe("CSVRecordAssemblerTransformer", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const assembler = new DefaultCSVRecordAssembler({});
+          const assembler = createCSVRecordAssembler({});
           const actual = await transform(
             new CSVRecordAssemblerTransformer(assembler),
             tokens,
@@ -142,7 +142,7 @@ describe("CSVRecordAssemblerTransformer", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const assembler = new DefaultCSVRecordAssembler({ header });
+          const assembler = createCSVRecordAssembler({ header });
           const parser = new CSVRecordAssemblerTransformer(assembler);
           const actual = await transform(parser, tokens);
           expect(actual).toEqual(expected);
@@ -151,7 +151,7 @@ describe("CSVRecordAssemblerTransformer", () => {
     ));
 
   it("should throw an error if throws error during transform", async () => {
-    const assembler = new DefaultCSVRecordAssembler({});
+    const assembler = createCSVRecordAssembler({});
     const transformer = new CSVRecordAssemblerTransformer(assembler);
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(
       // biome-ignore lint/correctness/useYield: Test mock that throws error before yielding
@@ -167,7 +167,7 @@ describe("CSVRecordAssemblerTransformer", () => {
   });
 
   it("should throw an error if throws error during flush", async () => {
-    const assembler = new DefaultCSVRecordAssembler({});
+    const assembler = createCSVRecordAssembler({});
     const transformer = new CSVRecordAssemblerTransformer(assembler);
     // Mock the assemble method to throw error during flush
     vi.spyOn(transformer.assembler, "assemble").mockImplementationOnce(

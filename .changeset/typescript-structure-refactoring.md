@@ -14,18 +14,24 @@ Low-level CSV processing classes have been renamed:
 
 ```diff
 - import { CSVLexer } from 'web-csv-toolbox';
-+ import { DefaultStringCSVLexer } from 'web-csv-toolbox';
++ import { FlexibleStringCSVLexer } from 'web-csv-toolbox';
 
 - const lexer = new CSVLexer(options);
-+ const lexer = new DefaultStringCSVLexer(options);
++ const lexer = new FlexibleStringCSVLexer(options);
 ```
+
+For CSV record assembly, use the factory function or specialized classes:
 
 ```diff
 - import { CSVRecordAssembler } from 'web-csv-toolbox';
-+ import { DefaultCSVRecordAssembler } from 'web-csv-toolbox';
++ import { createCSVRecordAssembler, FlexibleCSVObjectRecordAssembler, FlexibleCSVArrayRecordAssembler } from 'web-csv-toolbox';
 
 - const assembler = new CSVRecordAssembler(options);
-+ const assembler = new DefaultCSVRecordAssembler(options);
++ // Option 1: Use factory function (recommended)
++ const assembler = createCSVRecordAssembler({ outputFormat: 'object', ...options });
++
++ // Option 2: Use specialized class directly
++ const assembler = new FlexibleCSVObjectRecordAssembler(options);
 ```
 
 ### 2. Type Renaming
@@ -54,5 +60,5 @@ The `CSV` type has been renamed to `CSVData`:
 
 **For advanced users** using low-level APIs:
 1. Rename `CSV` type to `CSVData`
-2. Rename `CSVLexer` to `DefaultStringCSVLexer`
-3. Rename `CSVRecordAssembler` to `DefaultCSVRecordAssembler`
+2. Rename `CSVLexer` to `FlexibleStringCSVLexer`
+3. Replace `CSVRecordAssembler` with `createCSVRecordAssembler()` factory function or specialized classes (`FlexibleCSVObjectRecordAssembler` / `FlexibleCSVArrayRecordAssembler`)

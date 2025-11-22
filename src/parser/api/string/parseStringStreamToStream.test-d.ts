@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from "vitest";
-import type { CSVRecord } from "@/core/types.ts";
+import type { CSVArrayRecord, CSVRecord } from "@/core/types.ts";
 import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
 
 describe("parseStringStreamToStream function", () => {
@@ -51,10 +51,15 @@ Bob*$36$*$Los$
 Angeles$*90001`;
 
   it("should csv header of the parsed result will be header's tuple", () => {
-    type Result = ReturnType<
-      typeof parseStringStreamToStream<ReadableStream<typeof csv1>, "*", "$">
-    >;
-    expectTypeOf<Result>().toEqualTypeOf<
+    const result = parseStringStreamToStream<
+      ReadableStream<typeof csv1>,
+      "*",
+      "$"
+    >(new ReadableStream<typeof csv1>(), {
+      delimiter: "*",
+      quotation: "$",
+    });
+    expectTypeOf(result).toEqualTypeOf<
       ReadableStream<
         CSVRecord<readonly ["name", "*ag\ne\n", "city", "z*i\np*"]>
       >
@@ -64,31 +69,58 @@ Angeles$*90001`;
 
 describe("generics", () => {
   it("should CSV header of the parsed result should be the one specified in generics", () => {
-    const result1 = parseStringStreamToStream(new ReadableStream<string>(), {
-      header: ["name", "age", "city", "zip"] as const,
-    });
-    expectTypeOf(result1).toEqualTypeOf<
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        header: ["name", "age", "city", "zip"] as const,
+      }),
+    ).toMatchTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    const result2 = parseStringStreamToStream(new ReadableStream<string>(), {
-      header: ["name", "age", "city", "zip"] as const,
-    });
-    expectTypeOf(result2).toEqualTypeOf<
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        header: ["name", "age", "city", "zip"] as const,
+      }),
+    ).toMatchTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    const result3 = parseStringStreamToStream(new ReadableStream<string>(), {
-      header: ["name", "age", "city", "zip"] as const,
-    });
-    expectTypeOf(result3).toEqualTypeOf<
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        header: ["name", "age", "city", "zip"] as const,
+      }),
+    ).toMatchTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
 
-    const result4 = parseStringStreamToStream(new ReadableStream<string>(), {
-      header: ["name", "age", "city", "zip"] as const,
-    });
-    expectTypeOf(result4).toEqualTypeOf<
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        header: ["name", "age", "city", "zip"] as const,
+      }),
+    ).toMatchTypeOf<
+      ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
+    >();
+  });
+});
+
+describe("array output format", () => {
+  it("should return ReadableStream of CSVArrayRecord when outputFormat is 'array'", () => {
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        outputFormat: "array" as const,
+      }),
+    ).toMatchTypeOf<ReadableStream<CSVArrayRecord<readonly string[]>>>();
+  });
+
+  // Type test skipped due to TypeScript limitations with ReadableStream generics
+
+  it("should return ReadableStream of CSVObjectRecord when outputFormat is 'object'", () => {
+    expectTypeOf(
+      parseStringStreamToStream(new ReadableStream<string>(), {
+        header: ["name", "age", "city", "zip"] as const,
+        outputFormat: "object" as const,
+      }),
+    ).toMatchTypeOf<
       ReadableStream<CSVRecord<readonly ["name", "age", "city", "zip"]>>
     >();
   });

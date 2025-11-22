@@ -478,12 +478,18 @@ catering to users who need more detailed and fine-tuned functionality.
 These APIs are built for **Advanced Customization and Pipeline Design**,
 ideal for developers looking for in-depth control and flexibility.
 
-- **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
-  - A TransformStream class for lexical analysis of CSV data.
-  - Supports custom queuing strategies for controlling backpressure and memory usage.
-- **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
-  - Handles the assembly of parsed data into records.
-  - Supports custom queuing strategies for controlling backpressure and memory usage.
+- **`function createStringCSVLexer(options?)` / `class FlexibleStringCSVLexer`**
+  - Factory helper plus underlying class for the standalone lexer used across the toolkit.
+  - Configure delimiters, quotation, buffer limits, and cancellation per stream.
+- **`function createCSVRecordAssembler(options)`**
+  - Factory that returns either an object- or array-format assembler based on `outputFormat`.
+  - Applies new options like `includeHeader` and `columnCountStrategy` consistently across environments.
+- **`class FlexibleCSVObjectRecordAssembler` / `class FlexibleCSVArrayRecordAssembler`**
+  - Specialized assemblers when you need full control over object vs tuple output or want to extend behavior.
+  - `FlexibleCSVRecordAssembler` remains for backward compatibility but now delegates to these focused implementations.
+- **Streaming transformers**
+  - **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html) — A TransformStream wrapper around the lexer with customizable queuing strategies.
+  - **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html) — Converts token streams into records with cooperative backpressure support.
 
 #### Customizing Queuing Strategies
 
@@ -608,6 +614,7 @@ but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.
 - Quotation characters are only `"`. (Double quotation mark)
   - If you pass a different character, it will throw an error.
+- Record output is always object-shaped; `outputFormat: 'array'` requires the JavaScript engine (`engine: { wasm: false }`).
 
 ```ts
 import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
@@ -640,7 +647,45 @@ console.log(result);
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
+| `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples; not available when running through WASM today |
+| `includeHeader`  | Emit header row when using array output | `false` | Only valid with `outputFormat: 'array'` — the header becomes the first emitted record |
+| `columnCountStrategy` | Handle column-count mismatches when a header is provided | `'keep'` for array format / `'pad'` for object format | Choose between `keep`, `pad`, `strict`, or `truncate` to control how rows align with the header |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
+
+#### Record Output Formats
+
+High-level and mid-level parsers now let you choose whether records come back as objects (default) or as tuple-like arrays:
+
+```ts
+const header = ["name", "age"] as const;
+
+// Object output (default)
+for await (const record of parse(csv, { header })) {
+  record.name; // string
+}
+
+// Array output with named tuples
+const rows = await parse.toArray(csv, {
+  header,
+  outputFormat: "array",
+  includeHeader: true,
+  columnCountStrategy: "pad",
+  engine: { wasm: false }, // Array output currently runs on the JS engine only
+});
+// rows[0] === ['name', 'age'] (header row)
+// rows[1] has type readonly [name: string, age: string]
+```
+
+- `outputFormat: 'object'` (default) returns familiar `{ column: value }` objects.
+- `outputFormat: 'array'` returns readonly tuples whose indices inherit names from the header for stronger TypeScript inference.
+- `includeHeader: true` prepends the header row when you also set `outputFormat: 'array'`.
+- `columnCountStrategy` controls how rows with too many or too few columns are treated when a header is present:
+  - `keep`: emit rows exactly as they appear (default for array output with inferred headers)
+  - `pad`: fill short rows with `undefined` and truncate long rows (default for object output)
+  - `strict`: throw if the row length differs from the header
+  - `truncate`: discard columns beyond the header length without padding short rows
+
+> ⚠️ Array output is not yet available inside the WebAssembly execution path. If you request `outputFormat: 'array'`, force the JavaScript engine with `engine: { wasm: false }` (or run in an environment where WASM is disabled).
 
 ### Advanced Options (Binary-Specific) 🧬
 

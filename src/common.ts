@@ -44,10 +44,8 @@ export * from "@/parser/api/string/parseStringStream.ts";
 // ============================================================================
 // Parser models and transformers
 // ============================================================================
-export * from "@/parser/models/DefaultCSVRecordAssembler.ts";
-export * from "@/parser/models/DefaultStringCSVLexer.ts";
-export * from "@/parser/models/FlexibleCSVRecordAssembler.ts";
-export * from "@/parser/models/FlexibleStringCSVLexer.ts";
+export * from "@/parser/models/createStringCSVLexer.ts";
+export * from "@/parser/models/createCSVRecordAssembler.ts";
 export * from "@/parser/stream/CSVLexerTransformer.ts";
 export * from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 

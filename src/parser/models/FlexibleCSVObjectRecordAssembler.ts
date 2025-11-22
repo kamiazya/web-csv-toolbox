@@ -5,17 +5,18 @@ import {
 } from "@/core/constants.ts";
 import { ParseError } from "@/core/errors.ts";
 import type {
-  CSVRecord,
-  CSVRecordAssembler,
+  ColumnCountStrategy,
+  CSVObjectRecord,
+  CSVObjectRecordAssembler,
   CSVRecordAssemblerAssembleOptions,
   CSVRecordAssemblerOptions,
   Token,
 } from "@/core/types.ts";
 
 /**
- * Flexible CSV Record Assembler implementation.
+ * Flexible CSV Object Record Assembler implementation.
  *
- * A balanced implementation that assembles tokens into CSV records,
+ * A balanced implementation that assembles tokens into CSV records as objects,
  * optimizing for both performance and memory efficiency.
  *
  * @remarks
@@ -24,8 +25,9 @@ import type {
  * future implementations may provide optimizations for specific scenarios
  * (e.g., speed-optimized, memory-optimized).
  */
-export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
-  implements CSVRecordAssembler<Header>
+export class FlexibleCSVObjectRecordAssembler<
+  Header extends ReadonlyArray<string>,
+> implements CSVObjectRecordAssembler<Header>
 {
   #fieldIndex = 0;
   #row: string[] = [];
@@ -36,8 +38,26 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
   #skipEmptyLines: boolean;
   #currentRowNumber?: number | undefined;
   #source?: string | undefined;
+  #columnCountStrategy: ColumnCountStrategy;
 
   constructor(options: CSVRecordAssemblerOptions<Header> = {}) {
+    // Validate and set columnCountStrategy
+    this.#columnCountStrategy = options.columnCountStrategy ?? "pad";
+    if (this.#columnCountStrategy === "keep") {
+      console.warn(
+        "columnCountStrategy 'keep' has no effect in object format. " +
+          "Object format always maps to header keys. " +
+          "Falling back to 'pad' strategy.",
+      );
+      this.#columnCountStrategy = "pad";
+    }
+    if (this.#columnCountStrategy !== "pad" && options.header === undefined) {
+      throw new Error(
+        `columnCountStrategy '${this.#columnCountStrategy}' requires header option. ` +
+          `Use 'pad' or omit columnCountStrategy for headerless CSV.`,
+      );
+    }
+
     const mfc = options.maxFieldCount ?? DEFAULT_ASSEMBLER_MAX_FIELD_COUNT;
     // Validate maxFieldCount
     if (
@@ -68,7 +88,7 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
   public *assemble(
     input?: Token | Iterable<Token>,
     options?: CSVRecordAssemblerAssembleOptions,
-  ): IterableIterator<CSVRecord<Header>> {
+  ): IterableIterator<CSVObjectRecord<Header>> {
     const stream = options?.stream ?? false;
 
     if (input !== undefined) {
@@ -98,7 +118,7 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
   /**
    * Processes a single token and yields a record if one is completed.
    */
-  *#processToken(token: Token): IterableIterator<CSVRecord<Header>> {
+  *#processToken(token: Token): IterableIterator<CSVObjectRecord<Header>> {
     this.#signal?.throwIfAborted();
 
     // Track the current record number for error reporting
@@ -108,38 +128,40 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
 
     switch (token.type) {
       case FieldDelimiter:
+        // Set empty string for empty fields
+        if (this.#row[this.#fieldIndex] === undefined) {
+          this.#row[this.#fieldIndex] = "";
+        }
         this.#fieldIndex++;
         this.#checkFieldCount();
         this.#dirty = true;
         break;
       case RecordDelimiter:
+        // Set empty string for the last field if empty
+        if (this.#row[this.#fieldIndex] === undefined) {
+          this.#row[this.#fieldIndex] = "";
+        }
         if (this.#header === undefined) {
           this.#setHeader(this.#row as unknown as Header);
         } else {
           if (this.#dirty) {
-            // SAFETY: Object.fromEntries() is safe from prototype pollution.
-            // See CSVRecordAssembler.prototype-safety.test.ts for details.
-            yield Object.fromEntries(
-              this.#header
-                .map((header, index) => [header, index] as const)
-                .filter(([header]) => header)
-                .map(([header, index]) => [header, this.#row.at(index)]),
-            ) as unknown as CSVRecord<Header>;
+            yield this.#assembleRecord();
           } else {
             if (!this.#skipEmptyLines) {
+              // For empty lines, generate empty record
               // SAFETY: Object.fromEntries() is safe from prototype pollution.
               // See CSVRecordAssembler.prototype-safety.test.ts for details.
               yield Object.fromEntries(
                 this.#header
                   .filter((header) => header)
                   .map((header) => [header, ""]),
-              ) as CSVRecord<Header>;
+              ) as CSVObjectRecord<Header>;
             }
           }
         }
         // Reset the row fields buffer.
         this.#fieldIndex = 0;
-        this.#row = new Array(this.#header?.length).fill("");
+        this.#row = [];
         this.#dirty = false;
         break;
       default:
@@ -166,18 +188,14 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
    * This safety is verified by regression tests in:
    * CSVRecordAssembler.prototype-safety.test.ts
    */
-  *#flush(): IterableIterator<CSVRecord<Header>> {
+  *#flush(): IterableIterator<CSVObjectRecord<Header>> {
     if (this.#header !== undefined) {
       if (this.#dirty) {
-        // SAFETY: Object.fromEntries() creates own properties, preventing prototype pollution
-        // even when CSV headers contain dangerous property names like __proto__, constructor, etc.
-        // See CSVRecordAssembler.prototype-safety.test.ts for verification tests.
-        yield Object.fromEntries(
-          this.#header
-            .map((header, index) => [header, index] as const)
-            .filter(([header]) => header)
-            .map(([header, index]) => [header, this.#row.at(index)]),
-        ) as unknown as CSVRecord<Header>;
+        // Set empty string for the last field if empty
+        if (this.#row[this.#fieldIndex] === undefined) {
+          this.#row[this.#fieldIndex] = "";
+        }
+        yield this.#assembleRecord();
       }
     }
   }
@@ -210,6 +228,73 @@ export class FlexibleCSVRecordAssembler<Header extends ReadonlyArray<string>>
       throw new ParseError("The header must not contain duplicate fields.", {
         source: this.#source,
       });
+    }
+  }
+
+  /**
+   * Assembles a record in object format.
+   * Applies column count strategy if header is defined.
+   *
+   * @remarks
+   * SAFETY: Object.fromEntries() is safe from prototype pollution.
+   * See CSVRecordAssembler.prototype-safety.test.ts for details.
+   */
+  #assembleRecord(): CSVObjectRecord<Header> {
+    if (!this.#header) {
+      // Headerless: return empty object (shouldn't happen in normal flow)
+      return {} as CSVObjectRecord<Header>;
+    }
+
+    // Apply column count strategy
+    const headerLength = this.#header.length;
+    const rowLength = this.#row.length;
+
+    switch (this.#columnCountStrategy) {
+      case "pad":
+        // Default behavior: map all header keys, use undefined for missing values
+        return Object.fromEntries(
+          this.#header
+            .map((header, index) => [header, index] as const)
+            .filter(([header]) => header)
+            .map(([header, index]) => [header, this.#row.at(index)]),
+        ) as unknown as CSVObjectRecord<Header>;
+
+      case "strict":
+        // Throw error if length doesn't match
+        if (rowLength !== headerLength) {
+          throw new ParseError(
+            `Expected ${headerLength} columns, got ${rowLength}${
+              this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
+            }${this.#source ? ` in ${JSON.stringify(this.#source)}` : ""}`,
+            {
+              source: this.#source,
+            },
+          );
+        }
+        return Object.fromEntries(
+          this.#header
+            .map((header, index) => [header, index] as const)
+            .filter(([header]) => header)
+            .map(([header, index]) => [header, this.#row[index]]),
+        ) as unknown as CSVObjectRecord<Header>;
+
+      case "truncate":
+        // Only include fields up to header length, ignore extras
+        return Object.fromEntries(
+          this.#header
+            .map((header, index) => [header, index] as const)
+            .filter(([header]) => header)
+            .map(([header, index]) => [header, this.#row[index]]),
+        ) as unknown as CSVObjectRecord<Header>;
+
+      default:
+        // Fallback to pad behavior
+        return Object.fromEntries(
+          this.#header
+            .map((header, index) => [header, index] as const)
+            .filter(([header]) => header)
+            .map(([header, index]) => [header, this.#row.at(index)]),
+        ) as unknown as CSVObjectRecord<Header>;
     }
   }
 }

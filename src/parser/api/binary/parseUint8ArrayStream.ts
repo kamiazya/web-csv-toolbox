@@ -3,6 +3,7 @@ import * as internal from "@/converters/iterators/convertThisAsyncIterableIterat
 import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
 import type {
   CSVRecord,
+  InferCSVRecord,
   ParseBinaryOptions,
   ParseOptions,
 } from "@/core/types.ts";
@@ -49,10 +50,15 @@ export async function* parseUint8ArrayStream<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = '"',
+  Options extends ParseBinaryOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseBinaryOptions<Header, Delimiter, Quotation>,
 >(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
 
@@ -77,20 +83,25 @@ export async function* parseUint8ArrayStream<
           | undefined,
         session,
         engineConfig,
-      );
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
     }
   } else {
     // Main thread execution (default for streams)
-    const recordStream = parseUint8ArrayStreamToStream(stream, options);
+    const recordStream = parseUint8ArrayStreamToStream<
+      Header,
+      Delimiter,
+      Quotation,
+      Options
+    >(stream, options);
 
     // Create iterator from the record stream
     // Note: convertStreamToAsyncIterableIterator will handle abort signal cleanup
     const iterator = convertStreamToAsyncIterableIterator(recordStream);
 
     try {
-      yield* iterator;
+      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } catch (error) {
       // If an error occurs (including abort), cancel the record stream
       // to release the lock on the original input stream
@@ -130,10 +141,13 @@ export declare namespace parseUint8ArrayStream {
    * console.log(records);
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     stream: ReadableStream<Uint8Array>,
-    options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+    options?: Options,
+  ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse CSV binary to array of records.
    *
@@ -163,10 +177,13 @@ export declare namespace parseUint8ArrayStream {
    * );
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     stream: ReadableStream<Uint8Array>,
-    options?: ParseBinaryOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 Object.defineProperties(parseUint8ArrayStream, {
   toArray: {

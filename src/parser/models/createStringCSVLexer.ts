@@ -1,0 +1,42 @@
+import type {
+  AbortSignalOptions,
+  CommonOptions,
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "@/core/types.ts";
+import { FlexibleStringCSVLexer } from "./FlexibleStringCSVLexer.ts";
+
+// Re-export the lexer class
+export { FlexibleStringCSVLexer } from "./FlexibleStringCSVLexer.ts";
+
+/**
+ * Factory function to create a string CSV lexer instance.
+ *
+ * @param options - Lexer options including delimiter, quotation, and abort signal
+ * @returns A FlexibleStringCSVLexer instance configured with the specified options
+ *
+ * @example
+ * ```ts
+ * // Create a lexer with default options
+ * const lexer = createStringCSVLexer();
+ *
+ * // Create a lexer with custom delimiter
+ * const tsvLexer = createStringCSVLexer({
+ *   delimiter: '\t'
+ * });
+ *
+ * // Create a lexer with abort signal
+ * const controller = new AbortController();
+ * const lexer = createStringCSVLexer({
+ *   signal: controller.signal
+ * });
+ * ```
+ */
+export function createStringCSVLexer<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+>(
+  options?: CommonOptions<Delimiter, Quotation> & AbortSignalOptions,
+): FlexibleStringCSVLexer<Delimiter, Quotation> {
+  return new FlexibleStringCSVLexer<Delimiter, Quotation>(options ?? {});
+}

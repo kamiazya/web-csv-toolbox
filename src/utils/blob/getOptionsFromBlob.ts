@@ -1,4 +1,4 @@
-import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { ParseBinaryOptions } from "@/core/types.ts";
 import { parseMime } from "@/helpers/mime/parseMime.ts";
 
@@ -12,13 +12,15 @@ import { parseMime } from "@/helpers/mime/parseMime.ts";
 export function getOptionsFromBlob<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 >(
   blob: Blob,
-  options: ParseBinaryOptions<Header, Delimiter> = {} as ParseBinaryOptions<
+  options: ParseBinaryOptions<
     Header,
-    Delimiter
-  >,
-): ParseBinaryOptions<Header, Delimiter> {
+    Delimiter,
+    Quotation
+  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+): ParseBinaryOptions<Header, Delimiter, Quotation> {
   // If blob has a type, try to extract charset information
   if (blob.type) {
     const mime = parseMime(blob.type);

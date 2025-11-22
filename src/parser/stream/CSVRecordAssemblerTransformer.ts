@@ -4,6 +4,8 @@ import type {
   CSVRecordAssemblerTransformerStreamOptions,
   Token,
 } from "@/core/types.ts";
+import type { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
+import type { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 
 /**
  * Default queuing strategy for the writable side (token input).
@@ -25,6 +27,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * A transform stream that converts a stream of tokens into a stream of CSV records.
  *
  * @template Header The type of the header row.
+ * @template Format The output format ('object' or 'array').
  * @param options - CSV-specific options (header, maxFieldCount, checkInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
@@ -100,8 +103,12 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  */
 export class CSVRecordAssemblerTransformer<
   Header extends ReadonlyArray<string>,
-> extends TransformStream<Token, CSVRecord<Header>> {
-  public readonly assembler: CSVRecordAssembler<Header>;
+  Format extends "object" | "array" = "object",
+> extends TransformStream<Token, CSVRecord<Header, Format>> {
+  public readonly assembler:
+    | CSVRecordAssembler<Header, Format>
+    | FlexibleCSVObjectRecordAssembler<Header>
+    | FlexibleCSVArrayRecordAssembler<Header>;
 
   /**
    * Yields to the event loop to allow backpressure handling.
@@ -113,11 +120,14 @@ export class CSVRecordAssemblerTransformer<
   }
 
   constructor(
-    assembler: CSVRecordAssembler<Header>,
+    assembler:
+      | CSVRecordAssembler<Header, Format>
+      | FlexibleCSVObjectRecordAssembler<Header>
+      | FlexibleCSVArrayRecordAssembler<Header>,
     options: CSVRecordAssemblerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<Token> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<
-      CSVRecord<Header>
+      CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
     const checkInterval = options.backpressureCheckInterval ?? 10;
@@ -129,7 +139,7 @@ export class CSVRecordAssemblerTransformer<
             let recordCount = 0;
             // Pass single token directly to assemble (no array creation)
             for (const record of assembler.assemble(token, { stream: true })) {
-              controller.enqueue(record);
+              controller.enqueue(record as CSVRecord<Header, Format>);
               recordCount++;
 
               // Check backpressure periodically based on checkInterval
@@ -151,7 +161,7 @@ export class CSVRecordAssemblerTransformer<
             let recordCount = 0;
             // Call assemble without arguments to flush
             for (const record of assembler.assemble()) {
-              controller.enqueue(record);
+              controller.enqueue(record as CSVRecord<Header, Format>);
               recordCount++;
 
               // Check backpressure periodically based on checkInterval

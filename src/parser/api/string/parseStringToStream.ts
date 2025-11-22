@@ -1,7 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
+import type {
+  InferCSVRecord,
+  ParseOptions,
+  PickCSVHeader,
+} from "@/core/types.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 export function parseStringToStream<
@@ -13,33 +17,45 @@ export function parseStringToStream<
     Delimiter,
     Quotation
   >,
+  const Options extends ParseOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseOptions<Header, Delimiter, Quotation>,
 >(
   stream: CSVSource,
-  options: ParseOptions<Header, Delimiter, Quotation>,
-): ReadableStream<CSVRecord<Header>>;
+  options: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
 export function parseStringToStream<
   const CSVSource extends string,
   const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(
   stream: CSVSource,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>>;
-export function parseStringToStream<const Header extends ReadonlyArray<string>>(
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
+export function parseStringToStream<
+  const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   stream: string,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>>;
-export function parseStringToStream<const Header extends ReadonlyArray<string>>(
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
+export function parseStringToStream<
+  const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   csv: string,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>> {
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>> {
   try {
-    const lexer = new DefaultStringCSVLexer(options);
-    const assembler = new DefaultCSVRecordAssembler(options);
-    return new ReadableStream({
+    const lexer = new FlexibleStringCSVLexer(options);
+    const assembler = createCSVRecordAssembler<Header>(options);
+    return new ReadableStream<InferCSVRecord<Header, Options>>({
       start(controller) {
         const tokens = lexer.lex(csv);
         for (const record of assembler.assemble(tokens)) {
-          controller.enqueue(record);
+          controller.enqueue(record as InferCSVRecord<Header, Options>);
         }
         controller.close();
       },

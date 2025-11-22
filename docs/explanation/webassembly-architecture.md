@@ -102,7 +102,7 @@ WASM is opt-in rather than always-on because:
 **Trade-offs:**
 - **Size:** WASM binary adds to bundle size
 - **Initialization:** Module loading adds overhead
-- **Limitations:** UTF-8 only, double-quote only
+- **Limitations:** UTF-8 only, double-quote only, object output only (array tuples require the JavaScript engine)
 
 **Flexibility:**
 - Users can choose based on their needs
@@ -198,7 +198,7 @@ export function parseStringToArraySyncWASM<Header>(
 WASM respects the same `maxBufferSize` limit as JavaScript:
 
 ```typescript
-const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example: 10MB
+const lexer = new FlexibleStringCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example: 10MB
 ```
 
 **Why:**
@@ -366,6 +366,28 @@ for await (const record of parse(csv, {
 })) {
   console.log(record);
 }
+
+---
+
+### Object Output Only
+
+**Limitation:**
+WASM parser always emits object-shaped records. `outputFormat: 'array'` (named tuples) currently runs only on the JavaScript engine.
+
+**Why:**
+- WASM returns JSON that maps headers to values (object form)
+- Supporting tuple output would require a different serialization path and additional memory copying
+
+**Workaround:**
+Force the JavaScript engine whenever you need array output or `includeHeader`:
+
+```typescript
+const rows = await parse.toArray(csv, {
+  header: ["name", "age"] as const,
+  outputFormat: "array",
+  includeHeader: true,
+  engine: { wasm: false }, // Skip WASM, use JS implementation
+});
 ```
 
 ---
@@ -389,7 +411,7 @@ WASM parser processes the entire CSV string at once.
 For incremental parsing, the JavaScript implementation supports chunk-by-chunk processing:
 
 ```typescript
-const lexer = new DefaultCSVLexer();
+const lexer = new FlexibleStringCSVLexer();
 
 for (const chunk of chunks) {
   for (const token of lexer.lex(chunk, true)) {
@@ -463,7 +485,7 @@ WASM respects the same resource limits as JavaScript:
 
 ```typescript
 // maxBufferSize applies to both JS and WASM
-const lexer = new DefaultCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example
+const lexer = new FlexibleStringCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); // Example
 ```
 
 **Why:**
