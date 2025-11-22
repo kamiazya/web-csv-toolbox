@@ -34,8 +34,8 @@ catalogs:
       specifier: ^14.2.4
       version: 14.2.5
     tinybench:
-      specifier: ^2.6.0
-      version: 2.9.0
+      specifier: ^5.1.0
+      version: 5.1.0
     ts-loader:
       specifier: ^9.5.1
       version: 9.5.4
@@ -143,28 +143,16 @@ importers:
     dependencies:
       '@codspeed/tinybench-plugin':
         specifier: 'catalog:'
-        version: 3.1.1(tinybench@2.9.0)
+        version: 3.1.1(tinybench@5.1.0)
       tinybench:
         specifier: 'catalog:'
-        version: 2.9.0
+        version: 5.1.0
       tsx:
         specifier: 'catalog:'
         version: 4.20.6
       web-csv-toolbox:
         specifier: workspace:*
         version: link:..
-
-  examples/deno-main:
-    dependencies:
-      web-csv-toolbox:
-        specifier: workspace:*
-        version: link:../..
-
-  examples/deno-slim:
-    dependencies:
-      web-csv-toolbox:
-        specifier: workspace:*
-        version: link:../..
 
   examples/hono-secure-api:
     dependencies:
@@ -4014,6 +4002,10 @@ packages:
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
+  tinybench@5.1.0:
+    resolution: {integrity: sha512-LXKNtFualiKOm6gADe1UXPtf8+Nfn1CtPMEHAT33Fd2YjQatrujkDcK0+4wRC1X6t7fxUDXUs6BsvuIgfkDgDg==}
+    engines: {node: '>=20.0.0'}
+
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
 
@@ -4849,11 +4841,11 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@codspeed/tinybench-plugin@3.1.1(tinybench@2.9.0)':
+  '@codspeed/tinybench-plugin@3.1.1(tinybench@5.1.0)':
     dependencies:
       '@codspeed/core': 3.1.1
       stack-trace: 1.0.0-pre2
-      tinybench: 2.9.0
+      tinybench: 5.1.0
     transitivePeerDependencies:
       - debug
 
@@ -8514,6 +8506,8 @@ snapshots:
   thunky@1.1.0: {}
 
   tinybench@2.9.0: {}
+
+  tinybench@5.1.0: {}
 
   tinyexec@0.3.2: {}
 
