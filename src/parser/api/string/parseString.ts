@@ -1,6 +1,12 @@
+import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
+import type {
+  CSVRecord,
+  InferCSVRecord,
+  ParseOptions,
+  PickCSVHeader,
+} from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
@@ -76,14 +82,17 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  */
 export function parseString<const CSVSource extends string>(
   csv: CSVSource,
-): AsyncIterableIterator<CSVRecord<PickCSVHeader<CSVSource>>>;
+): AsyncIterableIterator<CSVRecord<PickCSVHeader<CSVSource>, "object">>;
 export function parseString<const Header extends ReadonlyArray<string>>(
   csv: string,
-): AsyncIterableIterator<CSVRecord<Header>>;
-export function parseString<const Header extends ReadonlyArray<string>>(
+): AsyncIterableIterator<CSVRecord<Header, "object">>;
+export function parseString<
+  const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   csv: string,
-  options: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>>;
+  options: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
 export function parseString<
   const CSVSource extends string,
   const Delimiter extends string = DEFAULT_DELIMITER,
@@ -93,18 +102,26 @@ export function parseString<
     Delimiter,
     Quotation
   >,
+  const Options extends ParseOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseOptions<Header, Delimiter, Quotation>,
 >(
   csv: CSVSource,
-  options?: ParseOptions<Header, Delimiter, Quotation>,
-): AsyncIterableIterator<CSVRecord<Header>>;
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>>;
 export function parseString(
   csv: string,
   options?: ParseOptions,
 ): AsyncIterableIterator<CSVRecord<string[]>>;
-export async function* parseString<Header extends ReadonlyArray<string>>(
+export async function* parseString<
+  Header extends ReadonlyArray<string>,
+  Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   csv: string,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   try {
     // Parse engine configuration
     const engineConfig = new InternalEngineConfig(options?.engine);
@@ -124,17 +141,29 @@ export async function* parseString<Header extends ReadonlyArray<string>>(
           options,
           session,
           engineConfig,
-        );
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       } finally {
         session?.[Symbol.dispose]();
       }
     } else {
       // Main thread execution
       if (engineConfig.hasWasm()) {
+        // Validate that array output format is not used with WASM
+        if (options?.outputFormat === "array") {
+          throw new Error(
+            "Array output format is not supported with WASM execution. " +
+              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+          );
+        }
         // WASM execution with implicit initialization
-        yield* parseStringInWASM(csv, options);
+        yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
+          InferCSVRecord<Header, Options>
+        >;
       } else {
-        yield* parseStringToIterableIterator(csv, options);
+        const iterator = parseStringToIterableIterator(csv, options);
+        yield* convertIterableIteratorToAsync(
+          iterator,
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       }
     }
   } catch (error) {
@@ -161,10 +190,10 @@ export declare namespace parseString {
    * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
-    csv: string,
-    options?: ParseOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(csv: string, options?: Options): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse CSV string to records.
    *
@@ -185,10 +214,10 @@ export declare namespace parseString {
    * // [ { name: 'Alice', age: '42' }, { name: 'Bob', age: '69' } ]
    * ```
    */
-  export function toArraySync<Header extends ReadonlyArray<string>>(
-    csv: string,
-    options?: ParseOptions<Header>,
-  ): CSVRecord<Header>[];
+  export function toArraySync<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(csv: string, options?: Options): InferCSVRecord<Header, Options>[];
   /**
    * Parse CSV string to records.
    *
@@ -210,10 +239,13 @@ export declare namespace parseString {
    * // { name: 'Bob', age: '69' }
    * ```
    */
-  export function toIterableIterator<Header extends ReadonlyArray<string>>(
+  export function toIterableIterator<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     csv: string,
-    options?: ParseOptions<Header>,
-  ): IterableIterator<CSVRecord<Header>>;
+    options?: Options,
+  ): IterableIterator<InferCSVRecord<Header, Options>>;
   /**
    * Parse CSV string to records.
    *
@@ -240,10 +272,13 @@ export declare namespace parseString {
    * // { name: 'Bob', age: '69' }
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     csv: string,
-    options?: ParseOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 Object.defineProperties(parseString, {
   toArray: {

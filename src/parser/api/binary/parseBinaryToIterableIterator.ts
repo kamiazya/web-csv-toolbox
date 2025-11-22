@@ -1,6 +1,5 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
@@ -23,18 +22,13 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  */
 export function parseBinaryToIterableIterator<
   Header extends ReadonlyArray<string>,
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
+  Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
   binary: Uint8Array | ArrayBuffer,
-  options: ParseBinaryOptions<
-    Header,
-    Delimiter,
-    Quotation
-  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
-): IterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): IterableIterator<InferCSVRecord<Header, Options>> {
   try {
-    const csv = convertBinaryToString(binary, options);
+    const csv = convertBinaryToString(binary, options ?? {});
     return parseStringToIterableIterator(csv, options);
   } catch (error) {
     commonParseErrorHandling(error);

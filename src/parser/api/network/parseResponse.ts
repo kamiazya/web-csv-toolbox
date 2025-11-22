@@ -1,5 +1,5 @@
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
-import type { CSVRecord, ParseOptions } from "@/core/types.ts";
+import type { InferCSVRecord, ParseOptions } from "@/core/types.ts";
 import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
 import { parseResponseToStream } from "@/parser/api/network/parseResponseToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
@@ -37,10 +37,13 @@ import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.
  * }
  * ```
  */
-export function parseResponse<Header extends ReadonlyArray<string>>(
+export function parseResponse<
+  Header extends ReadonlyArray<string>,
+  Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(
   response: Response,
-  options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Validate synchronously before creating async generator
   const options_ = getOptionsFromResponse(response, options);
   if (response.body === null) {
@@ -50,7 +53,10 @@ export function parseResponse<Header extends ReadonlyArray<string>>(
   // Return wrapper async generator for error handling
   return (async function* () {
     try {
-      yield* parseUint8ArrayStream(response.body!, options_);
+      yield* parseUint8ArrayStream(
+        response.body!,
+        options_,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } catch (error) {
       commonParseErrorHandling(error);
     }
@@ -74,10 +80,13 @@ export declare namespace parseResponse {
    * console.log(records);
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     response: Response,
-    options?: ParseOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+    options?: Options,
+  ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse CSV Response to stream of records.
    *
@@ -104,10 +113,13 @@ export declare namespace parseResponse {
    * // { name: 'Bob', age: '69' }
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseOptions<Header> = ParseOptions<Header>,
+  >(
     response: Response,
-    options?: ParseOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 
 Object.defineProperties(parseResponse, {

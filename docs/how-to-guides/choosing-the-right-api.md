@@ -94,8 +94,8 @@ What type of input do you have?
 - Building higher-level abstractions
 
 **APIs:**
-- `CSVLexer` / `CSVLexerTransformer` - Tokenization
-- `CSVRecordAssembler` / `CSVRecordAssemblerTransformer` - Record assembly
+- `FlexibleStringCSVLexer` / `CSVLexerTransformer` - Tokenization (direct class or streaming Transform)
+- `createCSVRecordAssembler()` (factory), `FlexibleCSVObjectRecordAssembler`, `FlexibleCSVArrayRecordAssembler` / `CSVRecordAssemblerTransformer` - Record assembly with control over record shape
 
 **Trade-off:**
 - Maximum flexibility vs. complexity

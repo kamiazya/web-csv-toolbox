@@ -1,4 +1,4 @@
-import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { ParseBinaryOptions } from "@/core/types.ts";
 import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
 
@@ -16,13 +16,15 @@ import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
 export function getOptionsFromFile<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
 >(
   file: File,
-  options: ParseBinaryOptions<Header, Delimiter> = {} as ParseBinaryOptions<
+  options: ParseBinaryOptions<
     Header,
-    Delimiter
-  >,
-): ParseBinaryOptions<Header, Delimiter> {
+    Delimiter,
+    Quotation
+  > = {} as ParseBinaryOptions<Header, Delimiter, Quotation>,
+): ParseBinaryOptions<Header, Delimiter, Quotation> {
   // Get options from blob (charset extraction)
   const blobOptions = getOptionsFromBlob(file, options);
 

@@ -26,7 +26,7 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - `EnginePresets.fast()` - Parse speed optimized
   - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
   - `EnginePresets.balanced()` - Balanced (general-purpose)
-- Low-level APIs (`DefaultStringCSVLexer`, `DefaultCSVRecordAssembler`, etc.)
+- Low-level APIs (`createStringCSVLexer`, `FlexibleStringCSVLexer`, `createCSVRecordAssembler`, etc.)
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 

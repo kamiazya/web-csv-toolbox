@@ -8,7 +8,7 @@ import {
   RecordDelimiter,
 } from "@/core/constants.ts";
 import type { Token } from "@/core/types.ts";
-import { FlexibleCSVRecordAssembler } from "@/parser/models/FlexibleCSVRecordAssembler.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
 
 const LOCATION_SHAPE = {
   start: {
@@ -26,16 +26,16 @@ const LOCATION_SHAPE = {
 
 describe("class RecordAssembler", () => {
   it("should throw an error for empty headers", () => {
-    expect(
-      () => new FlexibleCSVRecordAssembler({ header: [] }),
+    expect(() =>
+      createCSVRecordAssembler({ header: [] }),
     ).toThrowErrorMatchingInlineSnapshot(
-      `[ParseError: The header must not be empty.]`,
+      `[Error: Headerless mode (header: []) is not supported for outputFormat: 'object'. Use outputFormat: 'array' for headerless CSV, or provide a non-empty header for object format.]`,
     );
   });
 
   it("should throw an error for duplicate headers", () => {
-    expect(
-      () => new FlexibleCSVRecordAssembler({ header: ["a", "a"] }),
+    expect(() =>
+      createCSVRecordAssembler({ header: ["a", "a"] }),
     ).toThrowErrorMatchingInlineSnapshot(
       `[ParseError: The header must not contain duplicate fields.]`,
     );
@@ -93,7 +93,7 @@ describe("class RecordAssembler", () => {
           return { tokens, expected };
         }),
         async ({ tokens, expected }) => {
-          const assembler = new FlexibleCSVRecordAssembler();
+          const assembler = createCSVRecordAssembler();
           const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },
@@ -134,7 +134,7 @@ describe("class RecordAssembler", () => {
           return { header, tokens, expected };
         }),
         async ({ header, tokens, expected }) => {
-          const assembler = new FlexibleCSVRecordAssembler({ header });
+          const assembler = createCSVRecordAssembler({ header });
           const actual = [...assembler.assemble(tokens)];
           expect(actual).toEqual(expected);
         },

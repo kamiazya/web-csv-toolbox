@@ -55,7 +55,10 @@ describe("parseString function", () => {
 
   it("should throw an error if options is invalid", async () => {
     await expect(async () => {
-      for await (const _ of parseString("", { delimiter: "" as string })) {
+      for await (const _ of parseString("", {
+        // @ts-expect-error - Testing invalid delimiter
+        delimiter: "",
+      })) {
         // Do nothing.
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -299,7 +302,8 @@ describe("parseString with execution strategies", () => {
       await expect(async () => {
         for await (const _ of parseString("", {
           engine: { worker: true },
-          delimiter: "" as string,
+          // @ts-expect-error - Testing invalid delimiter
+          delimiter: "",
         })) {
           // Do nothing.
         }

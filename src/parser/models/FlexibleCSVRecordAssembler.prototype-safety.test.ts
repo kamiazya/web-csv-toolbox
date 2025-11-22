@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { FlexibleCSVRecordAssembler } from "@/parser/models/FlexibleCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 
 /**
  * Regression tests to ensure that CSVRecordAssembler does not cause prototype pollution.
@@ -14,7 +14,7 @@ import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.t
 describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
   test("should not pollute Object.prototype when __proto__ is used as CSV header", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     // CSV with __proto__ as a header
     const csv = "__proto__,name,age\r\nmalicious_value,Alice,30";
@@ -41,7 +41,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should not pollute when constructor is used as CSV header", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     const csv = "constructor,name\r\nmalicious_value,Alice";
 
@@ -65,7 +65,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should not pollute when prototype is used as CSV header", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     const csv = "prototype,name\r\nmalicious_value,Alice";
 
@@ -82,7 +82,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should handle multiple dangerous property names together", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     // Multiple potentially dangerous headers in one CSV
     const csv =
@@ -121,7 +121,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should handle multiple records with __proto__ header without pollution", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     const csv =
       "__proto__,name\r\nvalue1,Alice\r\nvalue2,Bob\r\nvalue3,Charlie";
@@ -170,7 +170,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should handle edge case with object-like notation in quoted values", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     // Object-like syntax must be quoted to be treated as a single field
     const csv = '__proto__,name\r\n"{""polluted"":true}",Alice';
@@ -190,7 +190,7 @@ describe("CSVRecordAssembler - Prototype Pollution Safety (Regression)", () => {
 
   test("should maintain safety with quoted fields containing dangerous names", () => {
     const lexer = new FlexibleStringCSVLexer();
-    const assembler = new FlexibleCSVRecordAssembler();
+    const assembler = createCSVRecordAssembler();
 
     // Using quoted fields with dangerous property names
     const csv = '"__proto__","constructor"\r\n"evil1","evil2"';

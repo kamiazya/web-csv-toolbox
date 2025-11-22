@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -179,7 +179,7 @@ describe("Backpressure handling", () => {
       const csv = "a,b\n1,2\n3,4\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
       const lexer = new CSVLexerTransformer(lexerInstance);
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
         {},
@@ -216,7 +216,7 @@ describe("Backpressure handling", () => {
       const csv = "a,b\n1,2\n3,4\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
       const lexer = new CSVLexerTransformer(lexerInstance);
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
         {},
@@ -257,7 +257,7 @@ describe("Backpressure handling", () => {
       const csv = "a\n1\n2\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
       const lexer = new CSVLexerTransformer(lexerInstance);
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(assemblerInstance);
 
       const stream = new ReadableStream({
@@ -286,7 +286,7 @@ describe("Backpressure handling", () => {
       const csv = "1\n2\n3\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
       const lexer = new CSVLexerTransformer(lexerInstance);
-      const assemblerInstance = new DefaultCSVRecordAssembler({
+      const assemblerInstance = createCSVRecordAssembler({
         header: ["a"],
       });
       const assembler = new CSVRecordAssemblerTransformer(
@@ -319,7 +319,7 @@ describe("Backpressure handling", () => {
     });
 
     it("should verify yieldToEventLoop method exists and is callable", () => {
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(assemblerInstance);
 
       // Verify the method exists
@@ -336,7 +336,7 @@ describe("Backpressure handling", () => {
       const csv = "a,b\n1,";
       const lexerInstance = new FlexibleStringCSVLexer({});
       const lexer = new CSVLexerTransformer(lexerInstance);
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
         {},
@@ -384,7 +384,7 @@ describe("Backpressure handling", () => {
         { highWaterMark: 65536 },
         { highWaterMark: 1024 },
       );
-      const assemblerInstance = new DefaultCSVRecordAssembler({});
+      const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
         {},
@@ -439,7 +439,7 @@ describe("Backpressure handling", () => {
         { highWaterMark: 100 },
       );
 
-      const assemblerInstance1 = new DefaultCSVRecordAssembler({});
+      const assemblerInstance1 = createCSVRecordAssembler({});
       const assemblerWithWritableInterval = new CSVRecordAssemblerTransformer(
         assemblerInstance1,
         {},
@@ -447,7 +447,7 @@ describe("Backpressure handling", () => {
         { highWaterMark: 100 },
       );
 
-      const assemblerInstance2 = new DefaultCSVRecordAssembler({});
+      const assemblerInstance2 = createCSVRecordAssembler({});
       const assemblerWithReadableInterval = new CSVRecordAssemblerTransformer(
         assemblerInstance2,
         {},

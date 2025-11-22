@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import { Field } from "@/core/constants.ts";
 import type { StringCSVLexer } from "@/core/types.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 
 describe("CSVLexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {

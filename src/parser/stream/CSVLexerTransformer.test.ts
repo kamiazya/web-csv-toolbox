@@ -7,7 +7,7 @@ import {
   vi,
 } from "vitest";
 import { transform, waitAbort } from "@/__tests__/helper.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 
 const describe = describe_.concurrent;

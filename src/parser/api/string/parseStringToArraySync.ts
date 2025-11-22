@@ -1,7 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
+import type {
+  InferCSVRecord,
+  ParseOptions,
+  PickCSVHeader,
+} from "@/core/types.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -33,25 +37,30 @@ export function parseStringToArraySync<
     Delimiter,
     Quotation
   >,
->(
-  csv: CSVSource,
-  options: ParseOptions<Header, Delimiter, Quotation>,
-): CSVRecord<Header>[];
+  const Options extends ParseOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseOptions<Header, Delimiter, Quotation>,
+>(csv: CSVSource, options: Options): InferCSVRecord<Header, Options>[];
 export function parseStringToArraySync<
   const CSVSource extends string,
   const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
->(csv: CSVSource, options?: ParseOptions<Header>): CSVRecord<Header>[];
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(csv: CSVSource, options?: Options): InferCSVRecord<Header, Options>[];
 export function parseStringToArraySync<
   const Header extends ReadonlyArray<string>,
->(csv: string, options?: ParseOptions<Header>): CSVRecord<Header>[];
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(csv: string, options?: Options): InferCSVRecord<Header, Options>[];
 export function parseStringToArraySync<
   const Header extends ReadonlyArray<string>,
->(csv: string, options?: ParseOptions<Header>): CSVRecord<Header>[] {
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
+>(csv: string, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
-    const lexer = new DefaultStringCSVLexer(options);
-    const assembler = new DefaultCSVRecordAssembler(options);
+    const lexer = new FlexibleStringCSVLexer(options);
+    const assembler = createCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);
-    return [...assembler.assemble(tokens)];
+    return [...assembler.assemble(tokens)] as InferCSVRecord<Header, Options>[];
   } catch (error) {
     commonParseErrorHandling(error);
   }

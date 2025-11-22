@@ -1,6 +1,6 @@
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import { DEFAULT_ARRAY_BUFFER_THRESHOLD } from "@/core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
 import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
 import { parseBlobToStream } from "@/parser/api/file/parseBlobToStream.ts";
@@ -61,10 +61,13 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * }
  * ```
  */
-export function parseBlob<Header extends ReadonlyArray<string>>(
+export function parseBlob<
+  Header extends ReadonlyArray<string>,
+  Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+>(
   blob: Blob,
-  options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+  options?: Options,
+): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Extract options from blob
   const options_ = getOptionsFromBlob(blob, options);
 
@@ -79,10 +82,16 @@ export function parseBlob<Header extends ReadonlyArray<string>>(
       if (blob.size < threshold) {
         // Small file: use arrayBuffer for better performance
         const buffer = await blob.arrayBuffer();
-        yield* parseBinary(new Uint8Array(buffer), options_);
+        yield* parseBinary(
+          new Uint8Array(buffer),
+          options_,
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       } else {
         // Large file: use streaming for memory efficiency
-        yield* parseUint8ArrayStream(blob.stream(), options_);
+        yield* parseUint8ArrayStream(
+          blob.stream(),
+          options_,
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       }
     } catch (error) {
       commonParseErrorHandling(error);
@@ -107,10 +116,10 @@ export declare namespace parseBlob {
    * console.log(records);
    * ```
    */
-  export function toArray<Header extends ReadonlyArray<string>>(
-    blob: Blob,
-    options?: ParseBinaryOptions<Header>,
-  ): Promise<CSVRecord<Header>[]>;
+  export function toArray<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(blob: Blob, options?: Options): Promise<InferCSVRecord<Header, Options>[]>;
   /**
    * Parse CSV from a {@link !Blob} or {@link !File} to stream of records.
    *
@@ -137,10 +146,13 @@ export declare namespace parseBlob {
    * // { name: 'Bob', age: '69' }
    * ```
    */
-  export function toStream<Header extends ReadonlyArray<string>>(
+  export function toStream<
+    Header extends ReadonlyArray<string>,
+    Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  >(
     blob: Blob,
-    options?: ParseBinaryOptions<Header>,
-  ): ReadableStream<CSVRecord<Header>>;
+    options?: Options,
+  ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
 
 Object.defineProperties(parseBlob, {

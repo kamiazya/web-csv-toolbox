@@ -31,9 +31,9 @@ The **CSVLexer** converts raw CSV text into a stream of **tokens**.
 **Output:** Stream of tokens (Field, FieldDelimiter, RecordDelimiter)
 
 ```typescript
-import { DefaultStringCSVLexer } from 'web-csv-toolbox';
+import { FlexibleStringCSVLexer } from 'web-csv-toolbox';
 
-const lexer = new DefaultStringCSVLexer({ delimiter: ',', quotation: '"' });
+const lexer = new FlexibleStringCSVLexer({ delimiter: ',', quotation: '"' });
 const tokens = lexer.lex('name,age\r\nAlice,30\r\n');
 
 for (const token of tokens) {
@@ -63,9 +63,9 @@ The **CSVRecordAssembler** converts tokens into structured CSV records (objects)
 **Output:** Stream of CSV records (JavaScript objects)
 
 ```typescript
-import { DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+import { FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
 
-const assembler = new DefaultCSVRecordAssembler<['name', 'age']>();
+const assembler = new FlexibleCSVRecordAssembler<['name', 'age']>();
 const records = assembler.assemble(tokens);
 
 for (const record of records) {
@@ -171,7 +171,7 @@ Both CSVLexer and CSVRecordAssembler use **buffering** to handle partial data:
 ### CSVLexer Buffering
 
 ```typescript
-const lexer = new DefaultCSVLexer();
+const lexer = new FlexibleStringCSVLexer();
 
 // First chunk - incomplete quoted field
 const tokens1 = [...lexer.lex('"Hello', true)]; // buffering=true
@@ -188,7 +188,7 @@ const tokens3 = lexer.flush();
 ### CSVRecordAssembler Buffering
 
 ```typescript
-const assembler = new DefaultCSVRecordAssembler();
+const assembler = new FlexibleCSVRecordAssembler();
 
 // Partial record
 const records1 = [...assembler.assemble(tokens, false)]; // flush=false
@@ -226,7 +226,7 @@ try {
 
 ```typescript
 try {
-  const assembler = new DefaultCSVRecordAssembler();
+  const assembler = new FlexibleCSVRecordAssembler();
   // Duplicate headers
   const tokens = [
     { type: 'Field', value: 'name' },
@@ -247,7 +247,7 @@ Both stages enforce configurable resource limits to prevent DoS attacks:
 ### CSVLexer Limits
 
 ```typescript
-const lexer = new DefaultCSVLexer({
+const lexer = new FlexibleStringCSVLexer({
   maxBufferSize: 10 * 1024 * 1024 // 10MB (default)
 });
 
@@ -261,7 +261,7 @@ const lexer = new DefaultCSVLexer({
 ### CSVRecordAssembler Limits
 
 ```typescript
-const assembler = new DefaultCSVRecordAssembler({
+const assembler = new FlexibleCSVRecordAssembler({
   maxFieldCount: 100_000 // Default
 });
 
@@ -285,10 +285,10 @@ for await (const record of parse(csv)) {
 }
 
 // Equivalent low-level implementation
-import { DefaultCSVLexer, DefaultCSVRecordAssembler } from 'web-csv-toolbox';
+import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
 
-const lexer = new DefaultCSVLexer();
-const assembler = new DefaultCSVRecordAssembler();
+const lexer = new FlexibleStringCSVLexer();
+const assembler = new FlexibleCSVRecordAssembler();
 
 const tokens = lexer.lex(csv);
 for (const record of assembler.assemble(tokens)) {

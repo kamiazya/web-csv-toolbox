@@ -1,50 +1,56 @@
-import type { DEFAULT_DELIMITER } from "@/core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
 export function parseUint8ArrayStreamToStream<
   Header extends readonly string[],
   Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = '"',
+  Quotation extends string = DEFAULT_QUOTATION,
+  Options extends ParseBinaryOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseBinaryOptions<Header, Delimiter, Quotation>,
 >(
   stream: ReadableStream<Uint8Array>,
-  options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
-): ReadableStream<CSVRecord<Header>> {
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>> {
   const { charset, fatal, ignoreBOM, decompression } = options ?? {};
 
   const decoderOptions: TextDecoderOptions = {};
   if (fatal !== undefined) decoderOptions.fatal = fatal;
   if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
 
-  const lexer = new DefaultStringCSVLexer(options);
-  const assembler = new DefaultCSVRecordAssembler(options);
+  const lexer = new FlexibleStringCSVLexer(options);
+  const assembler = createCSVRecordAssembler<Header>(options);
 
-  return decompression
-    ? stream
-        .pipeThrough(
-          new DecompressionStream(decompression) as unknown as TransformStream<
-            Uint8Array,
-            Uint8Array
-          >,
-        )
-        .pipeThrough(
-          new TextDecoderStream(
-            charset,
-            decoderOptions,
-          ) as unknown as TransformStream<Uint8Array, string>,
-        )
-        .pipeThrough(new CSVLexerTransformer(lexer))
-        .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
-    : stream
-        .pipeThrough(
-          new TextDecoderStream(
-            charset,
-            decoderOptions,
-          ) as unknown as TransformStream<Uint8Array, string>,
-        )
-        .pipeThrough(new CSVLexerTransformer(lexer))
-        .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
+  return (
+    decompression
+      ? stream
+          .pipeThrough(
+            new DecompressionStream(
+              decompression,
+            ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+          )
+          .pipeThrough(
+            new TextDecoderStream(
+              charset,
+              decoderOptions,
+            ) as unknown as TransformStream<Uint8Array, string>,
+          )
+          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
+      : stream
+          .pipeThrough(
+            new TextDecoderStream(
+              charset,
+              decoderOptions,
+            ) as unknown as TransformStream<Uint8Array, string>,
+          )
+          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
+  ) as ReadableStream<InferCSVRecord<Header, Options>>;
 }

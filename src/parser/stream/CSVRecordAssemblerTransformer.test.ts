@@ -1,7 +1,7 @@
 import { beforeEach, describe as describe_, expect, test } from "vitest";
 import { waitAbort } from "@/__tests__/helper.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -17,7 +17,7 @@ async function processCSV(csv: string, signal?: AbortSignal) {
   });
 
   const lexer = new FlexibleStringCSVLexer({ signal });
-  const assembler = new DefaultCSVRecordAssembler({ signal });
+  const assembler = createCSVRecordAssembler({ signal });
   await stream
     .pipeThrough(new CSVLexerTransformer(lexer))
     .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
@@ -67,7 +67,7 @@ describe("CSVRecordAssemblerTransformer", () => {
 
       try {
         const lexer = new FlexibleStringCSVLexer({ signal: controller.signal });
-        const assembler = new DefaultCSVRecordAssembler({
+        const assembler = createCSVRecordAssembler({
           signal: controller.signal,
         });
         await stream
@@ -97,7 +97,7 @@ describe("CSVRecordAssemblerTransformer", () => {
 
   describe("queuing strategy", () => {
     test("should use default strategies when not specified", () => {
-      const assembler = new DefaultCSVRecordAssembler({});
+      const assembler = createCSVRecordAssembler({});
       const transformer = new CSVRecordAssemblerTransformer(assembler);
       // TransformStream has writable and readable properties
       expect(transformer.writable).toBeDefined();
@@ -115,7 +115,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       });
 
       const lexer = new FlexibleStringCSVLexer({});
-      const assembler = new DefaultCSVRecordAssembler({});
+      const assembler = createCSVRecordAssembler({});
       await stream
         .pipeThrough(new CSVLexerTransformer(lexer))
         .pipeThrough(
@@ -143,7 +143,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       });
 
       const lexer = new FlexibleStringCSVLexer({});
-      const assembler = new DefaultCSVRecordAssembler({});
+      const assembler = createCSVRecordAssembler({});
       await stream
         .pipeThrough(new CSVLexerTransformer(lexer))
         .pipeThrough(
@@ -174,7 +174,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       });
 
       const lexer = new FlexibleStringCSVLexer({});
-      const assembler = new DefaultCSVRecordAssembler({});
+      const assembler = createCSVRecordAssembler({});
       await stream
         .pipeThrough(new CSVLexerTransformer(lexer))
         .pipeThrough(

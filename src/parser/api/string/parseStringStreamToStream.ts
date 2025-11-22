@@ -1,7 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { CSVRecord, ParseOptions, PickCSVHeader } from "@/core/types.ts";
-import { DefaultCSVRecordAssembler } from "@/parser/models/DefaultCSVRecordAssembler.ts";
-import { DefaultStringCSVLexer } from "@/parser/models/DefaultStringCSVLexer.ts";
+import type {
+  InferCSVRecord,
+  ParseOptions,
+  PickCSVHeader,
+} from "@/core/types.ts";
+import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -14,33 +18,43 @@ export function parseStringStreamToStream<
     Delimiter,
     Quotation
   >,
+  const Options extends ParseOptions<
+    Header,
+    Delimiter,
+    Quotation
+  > = ParseOptions<Header, Delimiter, Quotation>,
 >(
   stream: CSVSource,
-  options: ParseOptions<Header, Delimiter, Quotation>,
-): ReadableStream<CSVRecord<Header>>;
+  options: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
 export function parseStringStreamToStream<
   const CSVSource extends ReadableStream<string>,
   const Header extends ReadonlyArray<string> = PickCSVHeader<CSVSource>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(
   stream: CSVSource,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>>;
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
 export function parseStringStreamToStream<
   const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>>;
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>>;
 export function parseStringStreamToStream<
   const Header extends ReadonlyArray<string>,
+  const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(
   stream: ReadableStream<string>,
-  options?: ParseOptions<Header>,
-): ReadableStream<CSVRecord<Header>> {
-  const lexer = new DefaultStringCSVLexer(options);
-  const assembler = new DefaultCSVRecordAssembler(options);
+  options?: Options,
+): ReadableStream<InferCSVRecord<Header, Options>> {
+  const lexer = new FlexibleStringCSVLexer(options);
+  const assembler = createCSVRecordAssembler<Header>(options);
 
   return stream
     .pipeThrough(new CSVLexerTransformer(lexer))
-    .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
+    .pipeThrough(
+      new CSVRecordAssemblerTransformer(assembler),
+    ) as ReadableStream<InferCSVRecord<Header, Options>>;
 }
