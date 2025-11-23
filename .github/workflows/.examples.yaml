@@ -1,10 +1,6 @@
 name: Examples
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
-        description: The token to upload coverage reports to Codecov
 
 jobs:
   build_examples:
@@ -50,7 +46,6 @@ jobs:
           pnpm run build
         env:
           NODE_ENV: production
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Verify build artifacts - ${{ matrix.example.name }}
         run: |

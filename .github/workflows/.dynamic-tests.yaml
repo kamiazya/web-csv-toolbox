@@ -2,9 +2,6 @@ name: Dynamic Tests
 on:
   workflow_call:
     secrets:
-      CODECOV_TOKEN:
-        required: true
-        description: The token to upload coverage reports to Codecov
       CODSPEED_TOKEN:
         required: true
         description: The token to upload benchmarks to CodSpeed
@@ -38,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -60,14 +58,14 @@ jobs:
         with:
           flags: typescript
           name: typescript-coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
   coverage_rust:
     name: Rust Coverage
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -83,8 +81,7 @@ jobs:
           files: lcov-rust.info
           flags: rust
           name: rust-coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
 
   benchmarks_typescript:
     name: TypeScript Benchmarks

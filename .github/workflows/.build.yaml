@@ -1,10 +1,6 @@
 name: Build
 on:
   workflow_call:
-    secrets:
-      CODECOV_TOKEN:
-        required: false
-        description: The token to upload coverage reports to Codecov
 
 jobs:
   build_wasm:
@@ -48,8 +44,6 @@ jobs:
           cp -r web-csv-toolbox-wasm/pkg/* node_modules/web-csv-toolbox-wasm/
       - name: Build TypeScript
         run: pnpm run build:js
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Build Worker Bundles
         run: pnpm run build:worker-bundle
       - name: Check Circular Dependencies

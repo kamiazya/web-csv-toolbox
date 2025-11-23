@@ -209,7 +209,6 @@ export default bytes.buffer || bytes;
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CI === 'true',
       bundleName: "web-csv-toolbox",
-      ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
       oidc: {
         useGitHubOIDC: true,
       },
