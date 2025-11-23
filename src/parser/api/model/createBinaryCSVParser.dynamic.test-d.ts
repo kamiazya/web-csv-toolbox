@@ -1,5 +1,5 @@
-import type { CSVArrayRecord, CSVObjectRecord } from "@/core/types.ts";
 import { describe, test } from "vitest";
+import type { CSVArrayRecord, CSVObjectRecord } from "@/core/types.ts";
 import { createBinaryCSVParser } from "./createBinaryCSVParser.ts";
 
 describe("createBinaryCSVParser with dynamic outputFormat", () => {
@@ -17,9 +17,9 @@ describe("createBinaryCSVParser with dynamic outputFormat", () => {
 
     for (const record of result) {
       // This compiles successfully if union type is correctly inferred
-      const _test: CSVObjectRecord<readonly ["name", "age"]> | CSVArrayRecord<
-        readonly ["name", "age"]
-      > = record;
+      const _test:
+        | CSVObjectRecord<readonly ["name", "age"]>
+        | CSVArrayRecord<readonly ["name", "age"]> = record;
       void _test;
       break;
     }

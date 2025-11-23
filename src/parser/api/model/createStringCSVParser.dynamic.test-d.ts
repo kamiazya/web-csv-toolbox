@@ -1,5 +1,5 @@
-import type { CSVArrayRecord, CSVObjectRecord } from "@/core/types.ts";
 import { describe, test } from "vitest";
+import type { CSVArrayRecord, CSVObjectRecord } from "@/core/types.ts";
 import { createStringCSVParser } from "./createStringCSVParser.ts";
 
 describe("createStringCSVParser with dynamic outputFormat", () => {
@@ -13,9 +13,9 @@ describe("createStringCSVParser with dynamic outputFormat", () => {
     const result = parser.parse("Alice,30\n");
     for (const record of result) {
       // This compiles successfully if union type is correctly inferred
-      const _test: CSVObjectRecord<readonly ["name", "age"]> | CSVArrayRecord<
-        readonly ["name", "age"]
-      > = record;
+      const _test:
+        | CSVObjectRecord<readonly ["name", "age"]>
+        | CSVArrayRecord<readonly ["name", "age"]> = record;
       void _test; // Silence unused variable warning
       break;
     }
