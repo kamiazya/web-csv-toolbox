@@ -64,7 +64,7 @@ export default defineConfig(({ command }) => ({
       },
     },
     minify: "terser",
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress WASM file resolution warnings (intentional runtime resolution)
@@ -153,11 +153,6 @@ export default bytes.buffer || bytes;
 
         const denoWasmPath = join(nodeVirtualDir, "web_csv_toolbox_wasm_bg.deno.wasm.js");
         await writeFile(denoWasmPath, denoWasmContent, "utf-8");
-
-        // Generate source map for Deno WASM loader
-        const denoMapContent = `{"version":3,"sources":[],"names":[],"mappings":""}`;
-        const denoMapPath = join(nodeVirtualDir, "web_csv_toolbox_wasm_bg.deno.wasm.js.map");
-        await writeFile(denoMapPath, denoMapContent, "utf-8");
 
         console.log("[vite:dts] Generated Deno WASM loader: node/_virtual/web_csv_toolbox_wasm_bg.deno.wasm.js");
 

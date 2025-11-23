@@ -50,7 +50,7 @@ export default defineConfig({
       fileName: () => `${outputFile}.js`,
     },
     minify: "terser",
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress WASM file resolution warnings (intentional runtime resolution)
