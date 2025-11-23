@@ -22,7 +22,7 @@ import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
  * - Only supports double-quote (") as quotation character
  */
 export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Convert binary to string with proper option handling

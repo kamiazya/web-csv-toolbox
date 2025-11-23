@@ -8,7 +8,7 @@ import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryTo
  * This is the default binary parsing implementation.
  *
  * @internal
- * @param binary CSV binary to parse (Uint8Array or ArrayBuffer)
+ * @param binary CSV binary to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray)
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
@@ -17,7 +17,7 @@ export function parseBinaryInMain<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 >(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing binary parsing implementation

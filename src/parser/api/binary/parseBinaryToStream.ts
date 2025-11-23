@@ -4,6 +4,16 @@ import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
+/**
+ * Parses binary CSV data into a ReadableStream of records.
+ *
+ * @param binary - The binary CSV data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
+ * @param options - Parsing options.
+ * @returns A ReadableStream of CSV records.
+ * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
+ * @throws {TypeError} If the encoded data is not valid.
+ * @throws {ParseError} When an error occurs while parsing the CSV data.
+ */
 export function parseBinaryToStream<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
@@ -14,7 +24,7 @@ export function parseBinaryToStream<
     Quotation
   > = ParseBinaryOptions<Header, Delimiter, Quotation>,
 >(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
   try {

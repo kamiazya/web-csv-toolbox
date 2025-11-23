@@ -6,7 +6,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
 /**
  * Synchronously parses binary CSV data into an array of records.
  *
- * @param binary - The binary CSV data to parse (Uint8Array or ArrayBuffer).
+ * @param binary - The binary CSV data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
  * @param options - Parsing options including charset, maxBinarySize, etc.
  * @returns An array of CSV records.
  * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
@@ -31,7 +31,7 @@ export function parseBinaryToArraySync<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: Options,
 ): InferCSVRecord<Header, Options>[] {
   try {

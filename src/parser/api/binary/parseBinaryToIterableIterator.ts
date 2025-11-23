@@ -6,7 +6,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
 /**
  * Parses the given binary data into an iterable iterator of CSV records.
  *
- * @param binary - The binary data to parse.
+ * @param binary - The binary data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
  * @param options - The parse options.
  * @returns An iterable iterator of CSV records.
  * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
@@ -25,7 +25,7 @@ export function parseBinaryToIterableIterator<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: Options,
 ): IterableIterator<InferCSVRecord<Header, Options>> {
   try {

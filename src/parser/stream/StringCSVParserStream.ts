@@ -1,15 +1,7 @@
-import type { CSVRecord } from "@/core/types.ts";
-
-/**
- * Options for StringCSVParserStream
- */
-export interface StringCSVParserStreamOptions {
-  /**
-   * Interval (in records) to check for backpressure.
-   * Default: 100
-   */
-  backpressureCheckInterval?: number;
-}
+import type {
+  CSVRecord,
+  StringCSVParserStreamOptions,
+} from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (string input).
@@ -34,7 +26,6 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * Wraps a StringCSVParser instance to provide streaming CSV parsing.
  *
  * @template Header - The type of the header row
- * @template Format - Output format type ('object' | 'array')
  *
  * @category Low-level API
  *

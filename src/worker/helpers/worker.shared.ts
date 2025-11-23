@@ -50,7 +50,7 @@ export interface ParseBinaryRequest<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends BaseParseRequest {
   type: "parseBinary";
-  data: Uint8Array | ArrayBuffer;
+  data: BufferSource;
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>;
 }
 
@@ -482,7 +482,9 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             const asBytes =
               req.data instanceof Uint8Array
                 ? req.data
-                : new Uint8Array(req.data);
+                : req.data instanceof ArrayBuffer
+                  ? new Uint8Array(req.data)
+                  : new Uint8Array(req.data.buffer, req.data.byteOffset, req.data.byteLength);
             let decoded: string;
             if (decompression) {
               // Check for DecompressionStream support (may not be available in all Worker contexts)

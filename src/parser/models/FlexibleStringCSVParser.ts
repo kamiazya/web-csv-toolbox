@@ -11,13 +11,12 @@ import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.t
  * Combines StringCSVLexer and CSVRecordAssembler for efficient CSV parsing.
  *
  * @template Header - The type of the header row
- * @template Format - Output format type ('object' | 'array')
  *
  * @example
  * ```ts
  * const parser = new FlexibleStringCSVParser({ header: ['name', 'age'] });
  * const records = parser.parse('Alice,30\nBob,25');
- * console.log([...records]); // [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+ * console.log(records); // [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
  * ```
  *
  * @example Streaming mode
@@ -43,7 +42,7 @@ export class FlexibleStringCSVParser<
    *
    * @param chunk - CSV string chunk to parse (optional for flush)
    * @param options - Parse options
-   * @returns Array of parsed CSV records (type depends on outputFormat option)
+   * @returns CSVRecord<Header>[] - Array of parsed CSV records
    *
    * @example Object format (default)
    * ```ts

@@ -19,7 +19,7 @@ export async function* parseBinaryInWorkerWASM<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 >(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   using session = await WorkerSession.create(

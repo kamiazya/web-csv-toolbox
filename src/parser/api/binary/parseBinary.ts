@@ -15,11 +15,11 @@ import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts"
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
- * Parse a binary from an {@link !Uint8Array}.
+ * Parse a binary from a BufferSource.
  *
  * @category Middle-level API
  *
- * @param bytes CSV bytes to parse.
+ * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
  * @param options Parsing options
  * @returns Async iterable iterator of records.
  *
@@ -41,7 +41,7 @@ export async function* parseBinary<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
-  bytes: Uint8Array | ArrayBuffer,
+  bytes: BufferSource,
   options?: Options,
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
@@ -94,9 +94,9 @@ export async function* parseBinary<
 
 export declare namespace parseBinary {
   /**
-   * Parse a binary from an {@link !Uint8Array} to an array of records.
+   * Parse a binary from a BufferSource to an array of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Array of records
    *
@@ -115,13 +115,13 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array | ArrayBuffer,
+    bytes: BufferSource,
     options?: Options,
   ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
-   * Parse a binary from an {@link !Uint8Array} to an array of records.
+   * Parse a binary from a BufferSource to an array of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Array of records
    * @example
@@ -140,14 +140,14 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array | ArrayBuffer,
+    bytes: BufferSource,
     options?: Options,
   ): InferCSVRecord<Header, Options>[];
 
   /**
-   * Parse a binary from an {@link !Uint8Array} to an iterable iterator of records.
+   * Parse a binary from a BufferSource to an iterable iterator of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Async iterable iterator of records.
    * @example
@@ -167,14 +167,14 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array,
+    bytes: BufferSource,
     options?: Options,
   ): IterableIterator<InferCSVRecord<Header, Options>>;
 
   /**
-   * Parse a binary from an {@link !Uint8Array} to a stream of records.
+   * Parse a binary from a BufferSource to a stream of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Stream of records.
    *
@@ -202,7 +202,7 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array,
+    bytes: BufferSource,
     options?: Options,
   ): ReadableStream<InferCSVRecord<Header, Options>>;
 }

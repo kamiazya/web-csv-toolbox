@@ -216,7 +216,10 @@ export async function* parse<
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   if (typeof csv === "string") {
     yield* parseString(csv, options);
-  } else if (csv instanceof Uint8Array || csv instanceof ArrayBuffer) {
+  } else if (
+    csv instanceof ArrayBuffer ||
+    ArrayBuffer.isView(csv)
+  ) {
     yield* parseBinary(csv, options);
   } else if (csv instanceof ReadableStream) {
     const [branch1, branch2] = csv.tee();

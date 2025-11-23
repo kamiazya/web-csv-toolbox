@@ -206,6 +206,27 @@ export interface SourceOption {
 }
 
 /**
+ * Backpressure control options for streaming operations.
+ * @category Types
+ */
+export interface BackpressureOptions {
+  /**
+   * Interval (in items) to check for backpressure.
+   *
+   * @remarks
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * The default value varies by implementation:
+   * - Lexer/Parser streams: 100 (per 100 tokens/records)
+   * - Assembler streams: 10 (per 10 records)
+   *
+   * @default varies by implementation
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
  * CSV Common Options.
  * @category Types
  */
@@ -432,13 +453,8 @@ export interface CSVLexerTransformerOptions<
  * Options for CSVLexerTransformer stream behavior.
  * @category Types
  */
-export interface CSVLexerTransformerStreamOptions {
+export interface CSVLexerTransformerStreamOptions extends BackpressureOptions {
   /**
-   * How often to check for backpressure (in number of tokens processed).
-   *
-   * Lower values = more responsive to backpressure but slight performance overhead.
-   * Higher values = less overhead but slower backpressure response.
-   *
    * @default 100
    */
   backpressureCheckInterval?: number;
@@ -675,14 +691,32 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
  * Options for CSVRecordAssemblerTransformer stream behavior.
  * @category Types
  */
-export interface CSVRecordAssemblerTransformerStreamOptions {
+export interface CSVRecordAssemblerTransformerStreamOptions
+  extends BackpressureOptions {
   /**
-   * How often to check for backpressure (in number of records processed).
-   *
-   * Lower values = more responsive to backpressure but slight performance overhead.
-   * Higher values = less overhead but slower backpressure response.
-   *
    * @default 10
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
+ * Options for BinaryCSVParserStream.
+ * @category Types
+ */
+export interface BinaryCSVParserStreamOptions extends BackpressureOptions {
+  /**
+   * @default 100
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
+ * Options for StringCSVParserStream.
+ * @category Types
+ */
+export interface StringCSVParserStreamOptions extends BackpressureOptions {
+  /**
+   * @default 100
    */
   backpressureCheckInterval?: number;
 }
@@ -1555,8 +1589,7 @@ export type CSVString = string | ReadableStream<string>;
  * @category Types
  */
 export type CSVBinary =
-  | Uint8Array
-  | ArrayBuffer
+  | BufferSource
   | ReadableStream<Uint8Array>
   | Response
   | Request
