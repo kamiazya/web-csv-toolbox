@@ -58,7 +58,7 @@ A CSV Toolbox utilizing Web Standard APIs.
     - 🚨 Throws `RangeError` when buffer exceeds the limit.
   - 📊 Configurable maximum field count (default: 100,000 fields/record) to prevent excessive column attacks.
     - ⚠️ Throws `RangeError` when field count exceeds the limit.
-  - 💾 Configurable maximum binary size (default: 100MB bytes) for ArrayBuffer/Uint8Array inputs.
+  - 💾 Configurable maximum binary size (default: 100MB bytes) for BufferSource inputs.
     - 🛑 Throws `RangeError` when binary size exceeds the limit.
 - 🎨 **Flexible Source Support**
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, `Response` objects, `Blob`/`File` objects, or `Request` objects.
@@ -443,8 +443,7 @@ providing an intuitive and straightforward experience for users.
 The `input` paramater can be:
 - a `string`
 - a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream) of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s
-- a [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) object
-- an [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer) object
+- a [BufferSource](https://developer.mozilla.org/docs/Web/API/BufferSource) ([Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or other [TypedArray](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypedArray))
 - a [Response](https://developer.mozilla.org/docs/Web/API/Response) object
 - a [Blob](https://developer.mozilla.org/docs/Web/API/Blob) or [File](https://developer.mozilla.org/docs/Web/API/File) object
 - a [Request](https://developer.mozilla.org/docs/Web/API/Request) object (server-side)
@@ -457,7 +456,7 @@ catering to users who need more detailed and fine-tuned functionality.
 - **`function parseString(string[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseString-1.html)
   - Efficient parsing of CSV strings.
 - **`function parseBinary(buffer[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinary-1.html)
-  - Parse CSV Binary of ArrayBuffer or Uint8Array.
+  - Parse CSV binary data from BufferSource (Uint8Array, ArrayBuffer, or other TypedArray).
 - **`function parseResponse(response[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseResponse-1.html)
   - Customized parsing directly from `Response` objects.
 - **`function parseRequest(request[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseRequest-1.html)
@@ -552,7 +551,7 @@ Web Streams API integration for all processing tiers.
   - Configurable backpressure handling via `backpressureCheckInterval` option.
   - Custom queuing strategies support for fine-tuned performance.
 - **`class BinaryCSVParserStream`**
-  - `TransformStream<Uint8Array, CSVRecord>` for streaming binary parsing.
+  - `TransformStream<BufferSource, CSVRecord>` for streaming binary parsing.
   - Handles UTF-8 multi-byte characters across chunk boundaries.
   - Integration-ready for fetch API and file streaming.
   - Backpressure management with configurable check intervals.
@@ -762,7 +761,7 @@ const rows = await parse.toArray(csv, {
 | Option                            | Description                                       | Default | Notes                                                                                                                                                     |
 | --------------------------------- | ------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `charset`                         | Character encoding for binary CSV inputs          | `utf-8` | See [Encoding API Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Encoding_API/Encodings) for the encoding formats that can be specified. |
-| `maxBinarySize`                   | Maximum binary size for ArrayBuffer/Uint8Array inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `maxBinarySize`                   | Maximum binary size for BufferSource inputs (bytes) | `100 * 1024 * 1024` (100MB) | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `decompression`                   | Decompression algorithm for compressed CSV inputs |         | See [DecompressionStream Compatibility](https://developer.mozilla.org/en-US/docs/Web/API/DecompressionStream#browser_compatibility). Default support: gzip, deflate. deflate-raw is runtime-dependent and experimental (requires `allowExperimentalCompressions: true` for Response/Request inputs). |
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
@@ -890,7 +889,7 @@ const records = parseStringToArraySyncWASM(csvString);
 
 For production use with untrusted input, consider:
 - Setting timeouts using `AbortSignal.timeout()` to prevent resource exhaustion
-- Using `maxBinarySize` option to limit ArrayBuffer/Uint8Array inputs (default: 100MB bytes)
+- Using `maxBinarySize` option to limit BufferSource inputs (default: 100MB bytes)
 - Using `maxBufferSize` option to limit internal buffer size (default: 10M characters)
 - Using `maxFieldCount` option to limit fields per record (default: 100,000)
 - Implementing additional file size limits at the application level
