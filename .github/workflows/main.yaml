@@ -20,12 +20,18 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
+    permissions:
+      contents: read
+      id-token: write
     needs:
       - static_tests
 
   dynamic_tests:
     name: Dynamic Tests
     uses: ./.github/workflows/.dynamic-tests.yaml
+    permissions:
+      contents: read
+      id-token: write
     secrets:
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
     needs:
@@ -35,6 +41,9 @@ jobs:
   examples:
     name: Examples
     uses: ./.github/workflows/.examples.yaml
+    permissions:
+      contents: read
+      id-token: write
     needs:
       - build
       - static_tests
