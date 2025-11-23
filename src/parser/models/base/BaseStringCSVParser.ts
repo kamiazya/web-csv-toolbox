@@ -28,9 +28,7 @@ export abstract class BaseStringCSVParser<
   protected readonly lexer: FlexibleStringCSVLexer;
   protected readonly assembler: ReturnType<typeof createCSVRecordAssembler>;
 
-  constructor(
-    options: CSVProcessingOptions<Header> = {} as CSVProcessingOptions<Header>,
-  ) {
+  constructor(options: CSVProcessingOptions<Header> = {}) {
     this.lexer = new FlexibleStringCSVLexer(options);
     this.assembler = createCSVRecordAssembler(options);
   }

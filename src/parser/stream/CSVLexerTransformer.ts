@@ -1,4 +1,8 @@
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import {
+  DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL,
+  type DEFAULT_DELIMITER,
+  type DEFAULT_QUOTATION,
+} from "@/core/constants.ts";
 import type {
   CSVLexerTransformerStreamOptions,
   StringCSVLexer,
@@ -113,7 +117,9 @@ export class CSVLexerTransformer<
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = options.backpressureCheckInterval ?? 100;
+    const checkInterval =
+      options.backpressureCheckInterval ??
+      DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL;
 
     super(
       {

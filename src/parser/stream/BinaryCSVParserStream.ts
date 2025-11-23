@@ -1,14 +1,15 @@
+import { DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL } from "@/core/constants.ts";
 import type { BinaryCSVParserStreamOptions, CSVRecord } from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (BufferSource input).
  * Counts by byte length for accurate memory tracking.
+ * Uses ByteLengthQueuingStrategy which is compatible at runtime since all BufferSource types have byteLength.
  * @internal
  */
-const DEFAULT_WRITABLE_STRATEGY: QueuingStrategy<BufferSource> = {
+const DEFAULT_WRITABLE_STRATEGY = new ByteLengthQueuingStrategy({
   highWaterMark: 65536, // 64KB worth of bytes
-  size: (chunk) => chunk.byteLength, // Count by byte length
-};
+}) as QueuingStrategy<BufferSource>;
 
 /**
  * Default queuing strategy for the readable side (record output).
@@ -29,8 +30,8 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @param parser - BinaryCSVParser instance to use for parsing
  * @param options - Stream-specific options (backpressureCheckInterval, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.byteLength }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256 }`)
+ * @param writableStrategy - Strategy for the writable side (default: `ByteLengthQueuingStrategy({ highWaterMark: 65536 })`)
+ * @param readableStrategy - Strategy for the readable side (default: `CountQueuingStrategy({ highWaterMark: 256 })`)
  *
  * @remarks
  * Follows the Web Streams API pattern where queuing strategies are passed as
@@ -39,8 +40,8 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * Accepts any BufferSource type (Uint8Array, ArrayBuffer, or other TypedArray views) as input chunks.
  *
  * **Default Queuing Strategy:**
- * - Writable side: Counts by byte length. Default highWaterMark is 65536 bytes (64KB).
- * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
+ * - Writable side: `ByteLengthQueuingStrategy` with highWaterMark of 65536 bytes (64KB).
+ * - Readable side: `CountQueuingStrategy` with highWaterMark of 256 records.
  *
  * **Backpressure Handling:**
  * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
@@ -117,7 +118,9 @@ export class BinaryCSVParserStream<
       CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = options.backpressureCheckInterval ?? 100;
+    const checkInterval =
+      options.backpressureCheckInterval ??
+      DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL;
 
     super(
       {

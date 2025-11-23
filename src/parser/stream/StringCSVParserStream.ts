@@ -1,3 +1,4 @@
+import { DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL } from "@/core/constants.ts";
 import type { CSVRecord, StringCSVParserStreamOptions } from "@/core/types.ts";
 
 /**
@@ -120,7 +121,9 @@ export class StringCSVParserStream<
       CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = options.backpressureCheckInterval ?? 100;
+    const checkInterval =
+      options.backpressureCheckInterval ??
+      DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL;
 
     super(
       {
