@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 export default defineConfig({
   plugins: [
     codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      enableBundleAnalysis: process.env.CI === 'true',
       bundleName: 'example-vite-bundle-worker-main',
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
       oidc: {
