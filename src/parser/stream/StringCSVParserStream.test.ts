@@ -122,7 +122,10 @@ describe("StringCSVParserStream", () => {
       );
 
       // Generate many records to trigger backpressure checks
-      const chunks = Array.from({ length: 10 }, (_, i) => `Person${i},${i * 10}\n`);
+      const chunks = Array.from(
+        { length: 10 },
+        (_, i) => `Person${i},${i * 10}\n`,
+      );
       const records = await transform(stream, chunks);
 
       expect(records).toHaveLength(10);
@@ -142,7 +145,10 @@ describe("StringCSVParserStream", () => {
       const yieldSpy = vi.spyOn(stream as any, "yieldToEventLoop");
 
       // Single chunk with multiple records
-      const chunk = Array.from({ length: 200 }, (_, i) => `Person${i},${i}`).join("\n");
+      const chunk = Array.from(
+        { length: 200 },
+        (_, i) => `Person${i},${i}`,
+      ).join("\n");
       await transform(stream, [chunk]);
 
       // Should have yielded at least once due to backpressure checks
@@ -220,9 +226,7 @@ describe("StringCSVParserStream", () => {
       });
       const stream = new StringCSVParserStream(parser);
 
-      await expect(
-        transform(stream, ["Alice,30,extra\n"]),
-      ).rejects.toThrow();
+      await expect(transform(stream, ["Alice,30,extra\n"])).rejects.toThrow();
     });
   });
 
@@ -242,9 +246,7 @@ describe("StringCSVParserStream", () => {
 
       controller.abort();
 
-      await expect(
-        transform(stream, ["Alice,30\nBob,25"]),
-      ).rejects.toThrow();
+      await expect(transform(stream, ["Alice,30\nBob,25"])).rejects.toThrow();
     });
   });
 

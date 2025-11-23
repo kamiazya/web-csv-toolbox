@@ -47,7 +47,9 @@ describe("BinaryCSVParserStream", () => {
       });
       const stream = new BinaryCSVParserStream(parser);
 
-      const records = await transform(stream, [encoder.encode("Alice,30\nBob,25")]);
+      const records = await transform(stream, [
+        encoder.encode("Alice,30\nBob,25"),
+      ]);
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -233,10 +235,18 @@ describe("BinaryCSVParserStream", () => {
       const stream = new BinaryCSVParserStream(parser);
 
       const uint8_1 = encoder.encode("Alice,30\n");
-      const int8_1 = new Int8Array(uint8_1.buffer, uint8_1.byteOffset, uint8_1.byteLength);
+      const int8_1 = new Int8Array(
+        uint8_1.buffer,
+        uint8_1.byteOffset,
+        uint8_1.byteLength,
+      );
 
       const uint8_2 = encoder.encode("Bob,25\n");
-      const int8_2 = new Int8Array(uint8_2.buffer, uint8_2.byteOffset, uint8_2.byteLength);
+      const int8_2 = new Int8Array(
+        uint8_2.buffer,
+        uint8_2.byteOffset,
+        uint8_2.byteLength,
+      );
 
       const records = await transform(stream, [int8_1, int8_2]);
 
@@ -254,10 +264,18 @@ describe("BinaryCSVParserStream", () => {
       const stream = new BinaryCSVParserStream(parser);
 
       const uint8_1 = encoder.encode("Alice,30\n");
-      const dataView1 = new DataView(uint8_1.buffer, uint8_1.byteOffset, uint8_1.byteLength);
+      const dataView1 = new DataView(
+        uint8_1.buffer,
+        uint8_1.byteOffset,
+        uint8_1.byteLength,
+      );
 
       const uint8_2 = encoder.encode("Bob,25\n");
-      const dataView2 = new DataView(uint8_2.buffer, uint8_2.byteOffset, uint8_2.byteLength);
+      const dataView2 = new DataView(
+        uint8_2.buffer,
+        uint8_2.byteOffset,
+        uint8_2.byteLength,
+      );
 
       const records = await transform(stream, [dataView1, dataView2]);
 
@@ -281,14 +299,27 @@ describe("BinaryCSVParserStream", () => {
       );
 
       const uint8_2 = encoder.encode("Bob,25\n");
-      const int8Array = new Int8Array(uint8_2.buffer, uint8_2.byteOffset, uint8_2.byteLength);
+      const int8Array = new Int8Array(
+        uint8_2.buffer,
+        uint8_2.byteOffset,
+        uint8_2.byteLength,
+      );
 
       const uint8_3 = encoder.encode("Charlie,35\n");
-      const dataView = new DataView(uint8_3.buffer, uint8_3.byteOffset, uint8_3.byteLength);
+      const dataView = new DataView(
+        uint8_3.buffer,
+        uint8_3.byteOffset,
+        uint8_3.byteLength,
+      );
 
       const uint8_4 = encoder.encode("Dave,40\n");
 
-      const records = await transform(stream, [arrayBuffer, int8Array, dataView, uint8_4]);
+      const records = await transform(stream, [
+        arrayBuffer,
+        int8Array,
+        dataView,
+        uint8_4,
+      ]);
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },

@@ -122,7 +122,7 @@ describe("FlexibleStringCSVParser", () => {
 
       expect(records).toEqual([
         ["Alice", "30"],
-        ["Bob", ""],       // empty field → ""
+        ["Bob", ""], // empty field → ""
         ["Charlie", undefined], // missing field → undefined (array format preserves undefined)
       ]);
     });
@@ -165,8 +165,8 @@ describe("FlexibleStringCSVParser", () => {
       const records = parser.parse("Alice,30\nBob,\nCharlie");
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: "" },      // empty field → ""
-        { name: "Charlie", age: undefined },  // missing field → undefined
+        { name: "Bob", age: "" }, // empty field → ""
+        { name: "Charlie", age: undefined }, // missing field → undefined
       ]);
     });
   });

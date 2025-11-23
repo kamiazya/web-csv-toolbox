@@ -226,10 +226,7 @@ export async function* parse<
     if (typeof firstChunk === "string") {
       yield* parseStringStream(branch2 as ReadableStream<string>, options);
     } else if (firstChunk instanceof Uint8Array) {
-      yield* parseBinaryStream(
-        branch2 as ReadableStream<Uint8Array>,
-        options,
-      );
+      yield* parseBinaryStream(branch2 as ReadableStream<Uint8Array>, options);
     }
   } else if (csv instanceof Response) {
     yield* parseResponse(csv, options);

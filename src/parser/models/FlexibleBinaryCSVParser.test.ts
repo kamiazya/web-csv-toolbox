@@ -100,7 +100,11 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should accept Int8Array as input", () => {
       const uint8 = encoder.encode("Alice,30\nBob,25");
-      const int8 = new Int8Array(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+      const int8 = new Int8Array(
+        uint8.buffer,
+        uint8.byteOffset,
+        uint8.byteLength,
+      );
 
       const records = parser.parse(int8);
 
@@ -112,7 +116,11 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should accept DataView as input", () => {
       const uint8 = encoder.encode("Alice,30\nBob,25");
-      const dataView = new DataView(uint8.buffer, uint8.byteOffset, uint8.byteLength);
+      const dataView = new DataView(
+        uint8.buffer,
+        uint8.byteOffset,
+        uint8.byteLength,
+      );
 
       const records = parser.parse(dataView);
 
@@ -147,13 +155,21 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should handle different TypedArray views in streaming mode", () => {
       const uint8_1 = encoder.encode("Alice,30\nBob,");
-      const int8_1 = new Int8Array(uint8_1.buffer, uint8_1.byteOffset, uint8_1.byteLength);
+      const int8_1 = new Int8Array(
+        uint8_1.buffer,
+        uint8_1.byteOffset,
+        uint8_1.byteLength,
+      );
 
       const records1 = parser.parse(int8_1, { stream: true });
       expect(records1).toEqual([{ name: "Alice", age: "30" }]);
 
       const uint8_2 = encoder.encode("25");
-      const dataView = new DataView(uint8_2.buffer, uint8_2.byteOffset, uint8_2.byteLength);
+      const dataView = new DataView(
+        uint8_2.buffer,
+        uint8_2.byteOffset,
+        uint8_2.byteLength,
+      );
 
       const records2 = parser.parse(dataView);
       expect(records2).toEqual([{ name: "Bob", age: "25" }]);
@@ -344,7 +360,9 @@ describe("FlexibleBinaryCSVParser", () => {
         charset: "utf-8",
       });
 
-      const records = parser.parse(encoder.encode("'Alice Smith',30\n'Bob',25"));
+      const records = parser.parse(
+        encoder.encode("'Alice Smith',30\n'Bob',25"),
+      );
       expect(records).toEqual([
         { name: "Alice Smith", age: "30" },
         { name: "Bob", age: "25" },
