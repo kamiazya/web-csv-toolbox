@@ -8,7 +8,7 @@ import {
   FieldDelimiter,
   RecordDelimiter,
 } from "@/core/constants.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 const LOCATION_SHAPE = {

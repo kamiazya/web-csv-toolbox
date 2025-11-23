@@ -8,7 +8,7 @@ import {
   RecordDelimiter,
 } from "@/core/constants.ts";
 import type { Token } from "@/core/types.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 
 const LOCATION_SHAPE = {
   start: {

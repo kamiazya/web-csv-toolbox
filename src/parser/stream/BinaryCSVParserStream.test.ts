@@ -7,7 +7,8 @@ import {
   vi,
 } from "vitest";
 import { transform } from "@/__tests__/helper.ts";
-import { FlexibleBinaryCSVParser } from "@/parser/models/FlexibleBinaryCSVParser.ts";
+import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
+import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
 
 const describe = describe_.concurrent;
@@ -23,7 +24,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Basic functionality", () => {
     it("should parse binary CSV chunks into records", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -41,7 +42,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle single chunk", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -58,7 +59,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle empty chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -78,7 +79,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should flush incomplete records on close", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -98,12 +99,14 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Array output format", () => {
     it("should parse binary CSV into array records", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
         charset: "utf-8",
       });
-      const stream = new BinaryCSVParserStream(parser);
+      const stream = new BinaryCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
 
       const records = await transform(stream, [
         encoder.encode("Alice,30\n"),
@@ -117,13 +120,15 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should include header when includeHeader is true", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
-        includeHeader: true,
         charset: "utf-8",
+        includeHeader: true,
       });
-      const stream = new BinaryCSVParserStream(parser);
+      const stream = new BinaryCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
 
       const records = await transform(stream, [
         encoder.encode("Alice,30\n"),
@@ -136,11 +141,34 @@ describe("BinaryCSVParserStream", () => {
         ["Bob", "25"],
       ]);
     });
+
+    it("should handle records split across chunks in array format", async () => {
+      const parser = new FlexibleBinaryArrayCSVParser({
+        header: ["name", "age"] as const,
+        charset: "utf-8",
+      });
+      const stream = new BinaryCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
+
+      const records = await transform(stream, [
+        encoder.encode("Alice,"),
+        encoder.encode("30\n"),
+        encoder.encode("Bob"),
+        encoder.encode(",25\n"),
+      ]);
+
+      expect(records).toEqual([
+        ["Alice", "30"],
+        ["Bob", "25"],
+      ]);
+    });
   });
 
   describe("UTF-8 handling", () => {
     it("should handle UTF-8 encoded data", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -158,7 +186,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle multi-byte characters across chunk boundaries", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -176,7 +204,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle BOM with ignoreBOM option", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
         ignoreBOM: true,
@@ -201,7 +229,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("BufferSource support", () => {
     it("should accept ArrayBuffer chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -228,7 +256,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should accept Int8Array chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -257,7 +285,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should accept DataView chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -286,7 +314,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle mixed BufferSource types", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -330,7 +358,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle multi-byte characters with ArrayBuffer chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -358,7 +386,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Backpressure handling", () => {
     it("should handle backpressure with custom check interval", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -379,7 +407,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should yield to event loop during backpressure", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -401,7 +429,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Custom queuing strategies", () => {
     it("should accept custom writable strategy", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -429,7 +457,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should accept custom readable strategy", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -459,7 +487,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Error handling", () => {
     it("should propagate parser errors", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -471,7 +499,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle strict column count errors", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "strict",
         charset: "utf-8",
@@ -492,7 +520,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     test("should abort parsing when signal is aborted", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
         charset: "utf-8",
@@ -509,7 +537,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Parser instance access", () => {
     it("should expose parser instance", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -521,7 +549,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Streaming across chunk boundaries", () => {
     it("should handle records split across chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -541,7 +569,7 @@ describe("BinaryCSVParserStream", () => {
     });
 
     it("should handle quoted fields across chunks", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -562,7 +590,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Performance characteristics", () => {
     it("should handle large number of records efficiently", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -585,7 +613,7 @@ describe("BinaryCSVParserStream", () => {
 
   describe("Integration with fetch API", () => {
     it("should work with binary stream pattern", async () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });

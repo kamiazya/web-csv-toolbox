@@ -1,19 +1,20 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { FlexibleStringCSVParser } from "./FlexibleStringCSVParser.ts";
+import { FlexibleStringArrayCSVParser } from "./FlexibleStringArrayCSVParser.ts";
+import { FlexibleStringObjectCSVParser } from "./FlexibleStringObjectCSVParser.ts";
 
-describe("FlexibleStringCSVParser", () => {
+describe("FlexibleStringCSVParser (Object and Array)", () => {
   describe("Object format (default)", () => {
-    let parser: FlexibleStringCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleStringObjectCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleStringCSVParser({
+      parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
     });
 
     test("should parse CSV string into object records", () => {
       const csv = "Alice,30\nBob,25";
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -22,17 +23,17 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should parse empty string", () => {
-      const records = parser.parse("");
+      const records = Array.from(parser.parse(""));
       expect(records).toEqual([]);
     });
 
     test("should parse single record", () => {
-      const records = parser.parse("Alice,30");
+      const records = Array.from(parser.parse("Alice,30"));
       expect(records).toEqual([{ name: "Alice", age: "30" }]);
     });
 
     test("should parse with trailing newline", () => {
-      const records = parser.parse("Alice,30\nBob,25\n");
+      const records = Array.from(parser.parse("Alice,30\nBob,25\n"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -40,7 +41,9 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should handle quoted fields", () => {
-      const records = parser.parse('"Alice Smith",30\n"Bob Jones",25');
+      const records = Array.from(
+        parser.parse('"Alice Smith",30\n"Bob Jones",25'),
+      );
       expect(records).toEqual([
         { name: "Alice Smith", age: "30" },
         { name: "Bob Jones", age: "25" },
@@ -48,7 +51,7 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should handle fields with newlines in quotes", () => {
-      const records = parser.parse('"Alice\nSmith",30\n"Bob",25');
+      const records = Array.from(parser.parse('"Alice\nSmith",30\n"Bob",25'));
       expect(records).toEqual([
         { name: "Alice\nSmith", age: "30" },
         { name: "Bob", age: "25" },
@@ -57,18 +60,17 @@ describe("FlexibleStringCSVParser", () => {
   });
 
   describe("Array format", () => {
-    let parser: FlexibleStringCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleStringArrayCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleStringCSVParser({
+      parser = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
       });
     });
 
     test("should parse CSV string into array records", () => {
       const csv = "Alice,30\nBob,25";
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
 
       expect(records).toEqual([
         ["Alice", "30"],
@@ -77,14 +79,14 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should parse with includeHeader option", () => {
-      const parserWithHeader = new FlexibleStringCSVParser({
+      const parserWithHeader = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
+
         includeHeader: true,
       });
 
       const csv = "Alice,30\nBob,25";
-      const records = parserWithHeader.parse(csv);
+      const records = Array.from(parserWithHeader.parse(csv));
 
       expect(records).toEqual([
         ["name", "age"],
@@ -95,13 +97,13 @@ describe("FlexibleStringCSVParser", () => {
 
     test("should preserve undefined for missing fields in array format (with pad strategy)", () => {
       // In array format with 'pad' strategy, missing fields are filled with undefined
-      const parserWithPad = new FlexibleStringCSVParser({
+      const parserWithPad = new FlexibleStringArrayCSVParser({
         header: ["name", "age", "city"] as const,
-        outputFormat: "array",
+
         columnCountStrategy: "pad",
       });
 
-      const records = parserWithPad.parse("Alice,30\nBob");
+      const records = Array.from(parserWithPad.parse("Alice,30\nBob"));
 
       expect(records).toEqual([
         ["Alice", "30", undefined],
@@ -110,15 +112,17 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should distinguish empty vs missing in array format", () => {
-      const parserWithPad = new FlexibleStringCSVParser({
+      const parserWithPad = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
+
         columnCountStrategy: "pad",
       });
 
       // "Bob," has an empty age field → ""
       // "Charlie" has a missing age field → undefined
-      const records = parserWithPad.parse("Alice,30\nBob,\nCharlie");
+      const records = Array.from(
+        parserWithPad.parse("Alice,30\nBob,\nCharlie"),
+      );
 
       expect(records).toEqual([
         ["Alice", "30"],
@@ -129,21 +133,23 @@ describe("FlexibleStringCSVParser", () => {
   });
 
   describe("Streaming mode", () => {
-    let parser: FlexibleStringCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleStringObjectCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleStringCSVParser({
+      parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
     });
 
     test("should handle incomplete records with stream: true", () => {
       // First chunk with incomplete record
-      const records1 = parser.parse("Alice,30\nBob,", { stream: true });
+      const records1 = Array.from(
+        parser.parse("Alice,30\nBob,", { stream: true }),
+      );
       expect(records1).toEqual([{ name: "Alice", age: "30" }]);
 
       // Second chunk completes the record
-      const records2 = parser.parse("25\nCharlie,35");
+      const records2 = Array.from(parser.parse("25\nCharlie,35"));
       expect(records2).toEqual([
         { name: "Bob", age: "25" },
         { name: "Charlie", age: "35" },
@@ -151,7 +157,7 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should flush incomplete data without stream option", () => {
-      const records = parser.parse("Alice,30\nBob");
+      const records = Array.from(parser.parse("Alice,30\nBob"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: undefined }, // Missing field remains undefined
@@ -162,7 +168,7 @@ describe("FlexibleStringCSVParser", () => {
       // In object format, empty fields stay "", missing fields remain undefined
       // "Bob," has an empty age field (present but empty) → ""
       // "Charlie" has a missing age field (row too short) → undefined
-      const records = parser.parse("Alice,30\nBob,\nCharlie");
+      const records = Array.from(parser.parse("Alice,30\nBob,\nCharlie"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "" }, // empty field → ""
@@ -173,12 +179,12 @@ describe("FlexibleStringCSVParser", () => {
 
   describe("Options validation", () => {
     test("should accept custom delimiter", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         delimiter: "\t" as any,
       });
 
-      const records = parser.parse("Alice\t30\nBob\t25");
+      const records = Array.from(parser.parse("Alice\t30\nBob\t25"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -186,12 +192,12 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should accept custom quotation", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         quotation: "'" as any,
       });
 
-      const records = parser.parse("'Alice Smith',30\n'Bob',25");
+      const records = Array.from(parser.parse("'Alice Smith',30\n'Bob',25"));
       expect(records).toEqual([
         { name: "Alice Smith", age: "30" },
         { name: "Bob", age: "25" },
@@ -199,12 +205,12 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should handle skipEmptyLines option", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         skipEmptyLines: true,
       });
 
-      const records = parser.parse("Alice,30\n\nBob,25\n\n");
+      const records = Array.from(parser.parse("Alice,30\n\nBob,25\n\n"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -214,12 +220,12 @@ describe("FlexibleStringCSVParser", () => {
 
   describe("Column count strategy", () => {
     test("should pad short rows with undefined in object format", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age", "city"] as const,
         columnCountStrategy: "pad",
       });
 
-      const records = parser.parse("Alice,30\nBob,25,NYC");
+      const records = Array.from(parser.parse("Alice,30\nBob,25,NYC"));
       expect(records).toEqual([
         { name: "Alice", age: "30", city: undefined }, // Missing field filled with undefined
         { name: "Bob", age: "25", city: "NYC" },
@@ -227,21 +233,21 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should throw error with 'strict' strategy on mismatch", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "strict",
       });
 
-      expect(() => parser.parse("Alice,30,extra")).toThrow();
+      expect(() => Array.from(parser.parse("Alice,30,extra"))).toThrow();
     });
 
     test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "truncate",
       });
 
-      const records = parser.parse("Alice,30,extra\nBob,25");
+      const records = Array.from(parser.parse("Alice,30,extra\nBob,25"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -257,7 +263,7 @@ describe("FlexibleStringCSVParser", () => {
     });
 
     test("should throw AbortError when signal is aborted", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
       });
@@ -265,7 +271,7 @@ describe("FlexibleStringCSVParser", () => {
       controller.abort();
 
       try {
-        parser.parse("Alice,30\nBob,25");
+        Array.from(parser.parse("Alice,30\nBob,25"));
         expect.unreachable();
       } catch (error) {
         assert(error instanceof DOMException);
@@ -281,26 +287,26 @@ describe("FlexibleStringCSVParser", () => {
         }
       }
 
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
       });
 
       controller.abort(new CustomError("Custom abort"));
 
-      expect(() => parser.parse("Alice,30")).toThrowErrorMatchingInlineSnapshot(
-        `[CustomError: Custom abort]`,
-      );
+      expect(() =>
+        Array.from(parser.parse("Alice,30")),
+      ).toThrowErrorMatchingInlineSnapshot(`[CustomError: Custom abort]`);
     });
   });
 
   describe("Error handling", () => {
     test("should handle malformed quoted fields", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
 
-      expect(() => parser.parse('"Alice,30')).toThrow();
+      expect(() => Array.from(parser.parse('"Alice,30'))).toThrow();
     });
   });
 });

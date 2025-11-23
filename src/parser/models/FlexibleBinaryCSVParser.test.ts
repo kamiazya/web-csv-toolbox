@@ -1,14 +1,15 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { FlexibleBinaryCSVParser } from "./FlexibleBinaryCSVParser.ts";
+import { FlexibleBinaryArrayCSVParser } from "./FlexibleBinaryArrayCSVParser.ts";
+import { FlexibleBinaryObjectCSVParser } from "./FlexibleBinaryObjectCSVParser.ts";
 
-describe("FlexibleBinaryCSVParser", () => {
+describe("FlexibleBinaryCSVParser (Object and Array)", () => {
   const encoder = new TextEncoder();
 
   describe("Object format (default)", () => {
-    let parser: FlexibleBinaryCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleBinaryObjectCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleBinaryCSVParser({
+      parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -16,7 +17,7 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should parse binary CSV data into object records", () => {
       const csv = encoder.encode("Alice,30\nBob,25");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -26,19 +27,19 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should parse empty binary data", () => {
       const csv = encoder.encode("");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([]);
     });
 
     test("should parse single record", () => {
       const csv = encoder.encode("Alice,30");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([{ name: "Alice", age: "30" }]);
     });
 
     test("should parse with trailing newline", () => {
       const csv = encoder.encode("Alice,30\nBob,25\n");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -47,7 +48,7 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should handle quoted fields", () => {
       const csv = encoder.encode('"Alice Smith",30\n"Bob Jones",25');
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([
         { name: "Alice Smith", age: "30" },
         { name: "Bob Jones", age: "25" },
@@ -56,7 +57,7 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should handle fields with newlines in quotes", () => {
       const csv = encoder.encode('"Alice\nSmith",30\n"Bob",25');
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([
         { name: "Alice\nSmith", age: "30" },
         { name: "Bob", age: "25" },
@@ -65,7 +66,7 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should handle UTF-8 encoded data", () => {
       const csv = encoder.encode("日本語,30\n한글,25");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
       expect(records).toEqual([
         { name: "日本語", age: "30" },
         { name: "한글", age: "25" },
@@ -74,10 +75,10 @@ describe("FlexibleBinaryCSVParser", () => {
   });
 
   describe("BufferSource support", () => {
-    let parser: FlexibleBinaryCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleBinaryObjectCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleBinaryCSVParser({
+      parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -90,7 +91,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8.byteOffset + uint8.byteLength,
       );
 
-      const records = parser.parse(arrayBuffer);
+      const records = Array.from(parser.parse(arrayBuffer));
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -106,7 +107,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8.byteLength,
       );
 
-      const records = parser.parse(int8);
+      const records = Array.from(parser.parse(int8));
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -122,7 +123,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8.byteLength,
       );
 
-      const records = parser.parse(dataView);
+      const records = Array.from(parser.parse(dataView));
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -137,7 +138,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8_1.byteOffset + uint8_1.byteLength,
       );
 
-      const records1 = parser.parse(arrayBuffer1, { stream: true });
+      const records1 = Array.from(parser.parse(arrayBuffer1, { stream: true }));
       expect(records1).toEqual([{ name: "Alice", age: "30" }]);
 
       const uint8_2 = encoder.encode("25\nCharlie,35");
@@ -146,7 +147,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8_2.byteOffset + uint8_2.byteLength,
       );
 
-      const records2 = parser.parse(arrayBuffer2);
+      const records2 = Array.from(parser.parse(arrayBuffer2));
       expect(records2).toEqual([
         { name: "Bob", age: "25" },
         { name: "Charlie", age: "35" },
@@ -161,7 +162,7 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8_1.byteLength,
       );
 
-      const records1 = parser.parse(int8_1, { stream: true });
+      const records1 = Array.from(parser.parse(int8_1, { stream: true }));
       expect(records1).toEqual([{ name: "Alice", age: "30" }]);
 
       const uint8_2 = encoder.encode("25");
@@ -171,25 +172,25 @@ describe("FlexibleBinaryCSVParser", () => {
         uint8_2.byteLength,
       );
 
-      const records2 = parser.parse(dataView);
+      const records2 = Array.from(parser.parse(dataView));
       expect(records2).toEqual([{ name: "Bob", age: "25" }]);
     });
   });
 
   describe("Array format", () => {
-    let parser: FlexibleBinaryCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleBinaryArrayCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleBinaryCSVParser({
+      parser = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
+
         charset: "utf-8",
       });
     });
 
     test("should parse binary CSV data into array records", () => {
       const csv = encoder.encode("Alice,30\nBob,25");
-      const records = parser.parse(csv);
+      const records = Array.from(parser.parse(csv));
 
       expect(records).toEqual([
         ["Alice", "30"],
@@ -198,15 +199,15 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should parse with includeHeader option", () => {
-      const parserWithHeader = new FlexibleBinaryCSVParser({
+      const parserWithHeader = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
+
         includeHeader: true,
         charset: "utf-8",
       });
 
       const csv = encoder.encode("Alice,30\nBob,25");
-      const records = parserWithHeader.parse(csv);
+      const records = Array.from(parserWithHeader.parse(csv));
 
       expect(records).toEqual([
         ["name", "age"],
@@ -216,14 +217,16 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should preserve undefined for missing fields in array format (with pad strategy)", () => {
-      const parserWithPad = new FlexibleBinaryCSVParser({
+      const parserWithPad = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age", "city"] as const,
-        outputFormat: "array",
+
         columnCountStrategy: "pad",
         charset: "utf-8",
       });
 
-      const records = parserWithPad.parse(encoder.encode("Alice,30\nBob"));
+      const records = Array.from(
+        parserWithPad.parse(encoder.encode("Alice,30\nBob")),
+      );
 
       expect(records).toEqual([
         ["Alice", "30", undefined],
@@ -233,10 +236,10 @@ describe("FlexibleBinaryCSVParser", () => {
   });
 
   describe("Streaming mode", () => {
-    let parser: FlexibleBinaryCSVParser<readonly ["name", "age"]>;
+    let parser: FlexibleBinaryObjectCSVParser<readonly ["name", "age"]>;
 
     beforeEach(() => {
-      parser = new FlexibleBinaryCSVParser({
+      parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
@@ -244,13 +247,17 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should handle incomplete records with stream: true", () => {
       // First chunk with incomplete record
-      const records1 = parser.parse(encoder.encode("Alice,30\nBob,"), {
-        stream: true,
-      });
+      const records1 = Array.from(
+        parser.parse(encoder.encode("Alice,30\nBob,"), {
+          stream: true,
+        }),
+      );
       expect(records1).toEqual([{ name: "Alice", age: "30" }]);
 
       // Second chunk completes the record
-      const records2 = parser.parse(encoder.encode("25\nCharlie,35"));
+      const records2 = Array.from(
+        parser.parse(encoder.encode("25\nCharlie,35")),
+      );
       expect(records2).toEqual([
         { name: "Bob", age: "25" },
         { name: "Charlie", age: "35" },
@@ -258,7 +265,7 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should flush incomplete data without stream option", () => {
-      const records = parser.parse(encoder.encode("Alice,30\nBob"));
+      const records = Array.from(parser.parse(encoder.encode("Alice,30\nBob")));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: undefined }, // Missing field remains undefined
@@ -271,24 +278,24 @@ describe("FlexibleBinaryCSVParser", () => {
       const chunk1 = utf8Bytes.slice(0, 2); // Incomplete character
       const chunk2 = utf8Bytes.slice(2); // Remaining byte
 
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name"] as const,
         charset: "utf-8",
       });
 
       // First chunk should not produce complete record
-      const records1 = parser.parse(chunk1, { stream: true });
+      const records1 = Array.from(parser.parse(chunk1, { stream: true }));
       expect(records1).toEqual([]);
 
       // Second chunk completes the character
-      const records2 = parser.parse(chunk2);
+      const records2 = Array.from(parser.parse(chunk2));
       expect(records2).toEqual([{ name: "あ" }]);
     });
   });
 
   describe("Charset options", () => {
     test("should accept custom charset", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "shift_jis",
       });
@@ -299,7 +306,7 @@ describe("FlexibleBinaryCSVParser", () => {
 
     test("should throw error for invalid charset", () => {
       expect(() => {
-        new FlexibleBinaryCSVParser({
+        new FlexibleBinaryObjectCSVParser({
           header: ["name", "age"] as const,
           charset: "invalid-charset" as any,
         });
@@ -307,7 +314,7 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should accept ignoreBOM option", () => {
-      const parserWithBOM = new FlexibleBinaryCSVParser({
+      const parserWithBOM = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
         ignoreBOM: true,
@@ -320,7 +327,7 @@ describe("FlexibleBinaryCSVParser", () => {
       withBOM.set(bom);
       withBOM.set(data, bom.length);
 
-      const records = parserWithBOM.parse(withBOM);
+      const records = Array.from(parserWithBOM.parse(withBOM));
       // BOM should be stripped when ignoreBOM is true
       // However, the actual behavior depends on TextDecoder implementation
       expect(records).toHaveLength(1);
@@ -328,7 +335,7 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should accept fatal option", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
         fatal: true,
@@ -340,13 +347,15 @@ describe("FlexibleBinaryCSVParser", () => {
 
   describe("Options validation", () => {
     test("should accept custom delimiter", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         delimiter: "\t" as any,
         charset: "utf-8",
       });
 
-      const records = parser.parse(encoder.encode("Alice\t30\nBob\t25"));
+      const records = Array.from(
+        parser.parse(encoder.encode("Alice\t30\nBob\t25")),
+      );
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -354,14 +363,14 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should accept custom quotation", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         quotation: "'" as any,
         charset: "utf-8",
       });
 
-      const records = parser.parse(
-        encoder.encode("'Alice Smith',30\n'Bob',25"),
+      const records = Array.from(
+        parser.parse(encoder.encode("'Alice Smith',30\n'Bob',25")),
       );
       expect(records).toEqual([
         { name: "Alice Smith", age: "30" },
@@ -370,13 +379,15 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should handle skipEmptyLines option", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         skipEmptyLines: true,
         charset: "utf-8",
       });
 
-      const records = parser.parse(encoder.encode("Alice,30\n\nBob,25\n\n"));
+      const records = Array.from(
+        parser.parse(encoder.encode("Alice,30\n\nBob,25\n\n")),
+      );
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -386,13 +397,15 @@ describe("FlexibleBinaryCSVParser", () => {
 
   describe("Column count strategy", () => {
     test("should pad short rows with undefined in object format", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age", "city"] as const,
         columnCountStrategy: "pad",
         charset: "utf-8",
       });
 
-      const records = parser.parse(encoder.encode("Alice,30\nBob,25,NYC"));
+      const records = Array.from(
+        parser.parse(encoder.encode("Alice,30\nBob,25,NYC")),
+      );
       expect(records).toEqual([
         { name: "Alice", age: "30", city: undefined },
         { name: "Bob", age: "25", city: "NYC" },
@@ -400,23 +413,27 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should throw error with 'strict' strategy on mismatch", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "strict",
         charset: "utf-8",
       });
 
-      expect(() => parser.parse(encoder.encode("Alice,30,extra"))).toThrow();
+      expect(() =>
+        Array.from(parser.parse(encoder.encode("Alice,30,extra"))),
+      ).toThrow();
     });
 
     test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "truncate",
         charset: "utf-8",
       });
 
-      const records = parser.parse(encoder.encode("Alice,30,extra\nBob,25"));
+      const records = Array.from(
+        parser.parse(encoder.encode("Alice,30,extra\nBob,25")),
+      );
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "25" },
@@ -432,7 +449,7 @@ describe("FlexibleBinaryCSVParser", () => {
     });
 
     test("should throw AbortError when signal is aborted", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
         charset: "utf-8",
@@ -441,7 +458,7 @@ describe("FlexibleBinaryCSVParser", () => {
       controller.abort();
 
       try {
-        parser.parse(encoder.encode("Alice,30\nBob,25"));
+        Array.from(parser.parse(encoder.encode("Alice,30\nBob,25")));
         expect.unreachable();
       } catch (error) {
         assert(error instanceof DOMException);
@@ -457,7 +474,7 @@ describe("FlexibleBinaryCSVParser", () => {
         }
       }
 
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
         charset: "utf-8",
@@ -466,33 +483,35 @@ describe("FlexibleBinaryCSVParser", () => {
       controller.abort(new CustomError("Custom abort"));
 
       expect(() =>
-        parser.parse(encoder.encode("Alice,30")),
+        Array.from(parser.parse(encoder.encode("Alice,30"))),
       ).toThrowErrorMatchingInlineSnapshot(`[CustomError: Custom abort]`);
     });
   });
 
   describe("Error handling", () => {
     test("should handle malformed quoted fields", () => {
-      const parser = new FlexibleBinaryCSVParser({
+      const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });
 
-      expect(() => parser.parse(encoder.encode('"Alice,30'))).toThrow();
+      expect(() =>
+        Array.from(parser.parse(encoder.encode('"Alice,30'))),
+      ).toThrow();
     });
   });
 
-  describe("Integration with FlexibleStringCSVParser", () => {
+  describe("Integration with FlexibleStringObjectCSVParser", () => {
     test("should produce same results as string parser for ASCII data", async () => {
-      const { FlexibleStringCSVParser } = await import(
-        "./FlexibleStringCSVParser.ts"
+      const { FlexibleStringObjectCSVParser } = await import(
+        "./FlexibleStringObjectCSVParser.ts"
       );
 
-      const stringParser = new FlexibleStringCSVParser({
+      const stringParser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
 
-      const binaryParser = new FlexibleBinaryCSVParser({
+      const binaryParser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age"] as const,
         charset: "utf-8",
       });

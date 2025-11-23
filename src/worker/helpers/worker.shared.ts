@@ -216,10 +216,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           }
           // Process string stream with TransferableStream strategy
           const { createStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -259,10 +259,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           }
           // Process binary stream with TransferableStream strategy
           const { createStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -366,10 +366,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         if (req.data instanceof ReadableStream) {
           // Stream processing (WASM not supported for streams)
           const { createStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -402,10 +402,10 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         if (req.data instanceof ReadableStream) {
           // Binary stream processing
           const { createStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"

@@ -105,22 +105,22 @@ describe("maxBinarySize validation", () => {
   });
 });
 
-describe("Integration with FlexibleBinaryCSVParser", () => {
+describe("Integration with FlexibleBinaryObjectCSVParser", () => {
   test("should produce same results as using parser directly", async () => {
-    const { FlexibleBinaryCSVParser } = await import(
-      "@/parser/models/FlexibleBinaryCSVParser.ts"
+    const { FlexibleBinaryObjectCSVParser } = await import(
+      "@/parser/models/FlexibleBinaryObjectCSVParser.ts"
     );
 
     const options = {
       header: ["name", "age"] as const,
       charset: "utf-8" as const,
     };
-    const parser = new FlexibleBinaryCSVParser(options);
+    const parser = new FlexibleBinaryObjectCSVParser(options);
 
     const encoder = new TextEncoder();
     const data = encoder.encode("Alice,30\nBob,25");
 
-    const parserResults = parser.parse(data);
+    const parserResults = Array.from(parser.parse(data));
     const iteratorResults = Array.from(
       parseBinaryToIterableIterator(data, options),
     );

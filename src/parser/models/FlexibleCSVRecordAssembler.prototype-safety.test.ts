@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
 /**
  * Regression tests to ensure that CSVRecordAssembler does not cause prototype pollution.

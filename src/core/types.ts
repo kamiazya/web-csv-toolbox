@@ -1906,36 +1906,167 @@ export interface CSVParserOptions<
 }
 
 /**
- * String CSV Parser interface
- * @template Header - The type of the header row
+ * String CSV Parser interface for object output format.
+ *
+ * StringObjectCSVParser parses string CSV data and returns records as objects.
+ * Each record is a key-value object where keys are header field names.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: StringObjectCSVParser<['name', 'age']> = ...;
+ * for (const record of parser.parse('Alice,30\nBob,25')) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
  */
-export interface StringCSVParser<
+export interface StringObjectCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
   /**
-   * Parse a chunk of CSV string data
+   * Parse a chunk of CSV string data into object records.
    * @param chunk - CSV string chunk to parse (optional for flush)
    * @param options - Parse options
-   * @returns Array of parsed CSV records
+   * @returns Iterable iterator of parsed CSV records as objects
    */
-  parse(chunk?: string, options?: CSVParserParseOptions): CSVRecord<Header>[];
+  parse(
+    chunk?: string,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVObjectRecord<Header>>;
 }
 
 /**
- * Binary CSV Parser interface
- * @template Header - The type of the header row
+ * String CSV Parser interface for array output format.
+ *
+ * StringArrayCSVParser parses string CSV data and returns records as arrays.
+ * Each record is returned as a tuple/array with values in header order.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: StringArrayCSVParser<['name', 'age']> = ...;
+ * for (const record of parser.parse('Alice,30\nBob,25')) {
+ *   console.log(record); // ['Alice', '30'] - typed as named tuple
+ * }
+ * ```
  */
-export interface BinaryCSVParser<
+export interface StringArrayCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
   /**
-   * Parse a chunk of CSV binary data
-   * @param chunk - CSV binary chunk (Uint8Array) to parse (optional for flush)
+   * Parse a chunk of CSV string data into array records.
+   * @param chunk - CSV string chunk to parse (optional for flush)
    * @param options - Parse options
-   * @returns Array of parsed CSV records
+   * @returns Iterable iterator of parsed CSV records as arrays/tuples
    */
   parse(
-    chunk?: Uint8Array,
+    chunk?: string,
     options?: CSVParserParseOptions,
-  ): CSVRecord<Header>[];
+  ): IterableIterator<CSVArrayRecord<Header>>;
 }
+
+/**
+ * Unified String CSV Parser type.
+ *
+ * This is a discriminated union type that can represent either object or array parsers.
+ * Use this when you need to work with parsers in a format-agnostic way.
+ *
+ * @template Header - Array of header field names
+ * @template Format - Output format: 'object' or 'array' (default: 'object')
+ */
+export type StringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+  Format extends "object" | "array" = "object",
+> = Format extends "array"
+  ? StringArrayCSVParser<Header>
+  : StringObjectCSVParser<Header>;
+
+/**
+ * Binary CSV Parser interface for object output format.
+ *
+ * BinaryObjectCSVParser parses binary CSV data and returns records as objects.
+ * Each record is a key-value object where keys are header field names.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: BinaryObjectCSVParser<['name', 'age']> = ...;
+ * const data = new TextEncoder().encode('Alice,30\nBob,25');
+ * for (const record of parser.parse(data)) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
+ */
+export interface BinaryObjectCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV binary data into object records.
+   * @param chunk - CSV binary chunk (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Iterable iterator of parsed CSV records as objects
+   */
+  parse(
+    chunk?: BufferSource,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVObjectRecord<Header>>;
+}
+
+/**
+ * Binary CSV Parser interface for array output format.
+ *
+ * BinaryArrayCSVParser parses binary CSV data and returns records as arrays.
+ * Each record is returned as a tuple/array with values in header order.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: BinaryArrayCSVParser<['name', 'age']> = ...;
+ * const data = new TextEncoder().encode('Alice,30\nBob,25');
+ * for (const record of parser.parse(data)) {
+ *   console.log(record); // ['Alice', '30'] - typed as named tuple
+ * }
+ * ```
+ */
+export interface BinaryArrayCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV binary data into array records.
+   * @param chunk - CSV binary chunk (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Iterable iterator of parsed CSV records as arrays/tuples
+   */
+  parse(
+    chunk?: BufferSource,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVArrayRecord<Header>>;
+}
+
+/**
+ * Unified Binary CSV Parser type.
+ *
+ * This is a discriminated union type that can represent either object or array parsers.
+ * Use this when you need to work with parsers in a format-agnostic way.
+ *
+ * @template Header - Array of header field names
+ * @template Format - Output format: 'object' or 'array' (default: 'object')
+ */
+export type BinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+  Format extends "object" | "array" = "object",
+> = Format extends "array"
+  ? BinaryArrayCSVParser<Header>
+  : BinaryObjectCSVParser<Header>;

@@ -1,7 +1,7 @@
 import { beforeEach, describe as describe_, expect, test } from "vitest";
 import { waitAbort } from "@/__tests__/helper.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 

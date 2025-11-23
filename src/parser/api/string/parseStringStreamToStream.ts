@@ -4,8 +4,8 @@ import type {
   ParseOptions,
   PickCSVHeader,
 } from "@/core/types.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { createStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 

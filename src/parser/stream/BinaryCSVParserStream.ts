@@ -23,6 +23,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * Wraps a BinaryCSVParser instance to provide streaming CSV parsing.
  *
  * @template Header - The type of the header row
+ * @template Format - Output format: 'object' or 'array'
  *
  * @category Low-level API
  *
@@ -48,10 +49,10 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example Basic usage
  * ```ts
- * import { FlexibleBinaryCSVParser } from './models/FlexibleBinaryCSVParser.js';
+ * import { FlexibleBinaryObjectCSVParser } from './models/FlexibleBinaryObjectCSVParser.js';
  * import { BinaryCSVParserStream } from './stream/BinaryCSVParserStream.js';
  *
- * const parser = new FlexibleBinaryCSVParser({ header: ['name', 'age'], charset: 'utf-8' });
+ * const parser = new FlexibleBinaryObjectCSVParser({ header: ['name', 'age'], charset: 'utf-8' });
  * const stream = new BinaryCSVParserStream(parser);
  *
  * const encoder = new TextEncoder();
@@ -74,7 +75,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example With fetch API
  * ```ts
- * const parser = new FlexibleBinaryCSVParser({ header: ['name', 'age'] });
+ * const parser = new FlexibleBinaryObjectCSVParser({ header: ['name', 'age'] });
  * const stream = new BinaryCSVParserStream(parser);
  *
  * await fetch('large-file.csv')
@@ -85,12 +86,13 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  */
 export class BinaryCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-> extends TransformStream<BufferSource, CSVRecord<Header>> {
+  Format extends "object" | "array" = "object",
+> extends TransformStream<BufferSource, CSVRecord<Header, Format>> {
   public readonly parser: {
     parse(
       chunk?: BufferSource,
       options?: { stream?: boolean },
-    ): CSVRecord<Header>[];
+    ): IterableIterator<CSVRecord<Header, Format>>;
   };
 
   /**
@@ -107,12 +109,12 @@ export class BinaryCSVParserStream<
       parse(
         chunk?: BufferSource,
         options?: { stream?: boolean },
-      ): CSVRecord<Header>[];
+      ): IterableIterator<CSVRecord<Header, Format>>;
     },
     options: BinaryCSVParserStreamOptions = {},
     writableStrategy: QueuingStrategy<BufferSource> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<
-      CSVRecord<Header>
+      CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
     const checkInterval = options.backpressureCheckInterval ?? 100;
@@ -126,7 +128,7 @@ export class BinaryCSVParserStream<
               let recordCount = 0;
 
               for (const record of records) {
-                controller.enqueue(record as CSVRecord<Header>);
+                controller.enqueue(record as CSVRecord<Header, Format>);
                 recordCount++;
 
                 // Check backpressure periodically based on checkInterval
@@ -150,7 +152,7 @@ export class BinaryCSVParserStream<
             let recordCount = 0;
 
             for (const record of records) {
-              controller.enqueue(record as CSVRecord<Header>);
+              controller.enqueue(record as CSVRecord<Header, Format>);
               recordCount++;
 
               // Check backpressure periodically based on checkInterval

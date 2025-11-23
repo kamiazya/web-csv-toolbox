@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ParseError } from "@/core/errors.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
 /**
  * Tests for undefined checks added for TypeScript 5.9 strict type checking

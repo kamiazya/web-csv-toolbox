@@ -7,7 +7,8 @@ import {
   vi,
 } from "vitest";
 import { transform } from "@/__tests__/helper.ts";
-import { FlexibleStringCSVParser } from "@/parser/models/FlexibleStringCSVParser.ts";
+import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
+import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
 
 const describe = describe_.concurrent;
@@ -21,7 +22,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Basic functionality", () => {
     it("should parse CSV string chunks into records", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -35,7 +36,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should handle single chunk", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -49,7 +50,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should handle empty chunks", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -63,7 +64,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should flush incomplete records on close", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -79,11 +80,13 @@ describe("StringCSVParserStream", () => {
 
   describe("Array output format", () => {
     it("should parse CSV into array records", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
       });
-      const stream = new StringCSVParserStream(parser);
+      const stream = new StringCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
 
       const records = await transform(stream, ["Alice,30\n", "Bob,25\n"]);
 
@@ -94,12 +97,14 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should include header when includeHeader is true", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
-        outputFormat: "array",
         includeHeader: true,
       });
-      const stream = new StringCSVParserStream(parser);
+      const stream = new StringCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
 
       const records = await transform(stream, ["Alice,30\n", "Bob,25\n"]);
 
@@ -109,11 +114,33 @@ describe("StringCSVParserStream", () => {
         ["Bob", "25"],
       ]);
     });
+
+    it("should handle records split across chunks in array format", async () => {
+      const parser = new FlexibleStringArrayCSVParser({
+        header: ["name", "age"] as const,
+      });
+      const stream = new StringCSVParserStream<
+        readonly ["name", "age"],
+        "array"
+      >(parser);
+
+      const records = await transform(stream, [
+        "Alice,",
+        "30\n",
+        "Bob",
+        ",25\n",
+      ]);
+
+      expect(records).toEqual([
+        ["Alice", "30"],
+        ["Bob", "25"],
+      ]);
+    });
   });
 
   describe("Backpressure handling", () => {
     it("should handle backpressure with custom check interval", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(
@@ -134,7 +161,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should yield to event loop during backpressure", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
 
@@ -159,7 +186,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Custom queuing strategies", () => {
     it("should accept custom writable strategy", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
 
@@ -183,7 +210,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should accept custom readable strategy", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
 
@@ -209,7 +236,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Error handling", () => {
     it("should propagate parser errors", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -220,7 +247,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should handle strict column count errors", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         columnCountStrategy: "strict",
       });
@@ -238,7 +265,7 @@ describe("StringCSVParserStream", () => {
     });
 
     test("should abort parsing when signal is aborted", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
         signal: controller.signal,
       });
@@ -252,7 +279,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Parser instance access", () => {
     it("should expose parser instance", () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -263,7 +290,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Streaming across chunk boundaries", () => {
     it("should handle records split across chunks", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -282,7 +309,7 @@ describe("StringCSVParserStream", () => {
     });
 
     it("should handle quoted fields across chunks", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);
@@ -302,7 +329,7 @@ describe("StringCSVParserStream", () => {
 
   describe("Performance characteristics", () => {
     it("should handle large number of records efficiently", async () => {
-      const parser = new FlexibleStringCSVParser({
+      const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age"] as const,
       });
       const stream = new StringCSVParserStream(parser);

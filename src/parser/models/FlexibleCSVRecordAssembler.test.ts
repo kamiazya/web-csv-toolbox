@@ -1,8 +1,8 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
 import { Field } from "@/core/constants";
 import type { CSVRecordAssembler } from "@/core/types.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
 describe("CSVRecordAssembler", () => {
   describe("constructor validation", () => {

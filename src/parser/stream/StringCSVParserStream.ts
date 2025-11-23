@@ -23,6 +23,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * Wraps a StringCSVParser instance to provide streaming CSV parsing.
  *
  * @template Header - The type of the header row
+ * @template Format - Output format: 'object' or 'array'
  *
  * @category Low-level API
  *
@@ -46,10 +47,10 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example Basic usage
  * ```ts
- * import { FlexibleStringCSVParser } from './models/FlexibleStringCSVParser.js';
+ * import { FlexibleStringObjectCSVParser } from './models/FlexibleStringObjectCSVParser.js';
  * import { StringCSVParserStream } from './stream/StringCSVParserStream.js';
  *
- * const parser = new FlexibleStringCSVParser({ header: ['name', 'age'] });
+ * const parser = new FlexibleStringObjectCSVParser({ header: ['name', 'age'] });
  * const stream = new StringCSVParserStream(parser);
  *
  * new ReadableStream({
@@ -71,7 +72,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example With custom queuing strategies
  * ```ts
- * const parser = new FlexibleStringCSVParser({ header: ['name', 'age'] });
+ * const parser = new FlexibleStringObjectCSVParser({ header: ['name', 'age'] });
  * const stream = new StringCSVParserStream(
  *   parser,
  *   { backpressureCheckInterval: 50 },
@@ -88,9 +89,13 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  */
 export class StringCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-> extends TransformStream<string, CSVRecord<Header>> {
+  Format extends "object" | "array" = "object",
+> extends TransformStream<string, CSVRecord<Header, Format>> {
   public readonly parser: {
-    parse(chunk?: string, options?: { stream?: boolean }): CSVRecord<Header>[];
+    parse(
+      chunk?: string,
+      options?: { stream?: boolean },
+    ): IterableIterator<CSVRecord<Header, Format>>;
   };
 
   /**
@@ -107,12 +112,12 @@ export class StringCSVParserStream<
       parse(
         chunk?: string,
         options?: { stream?: boolean },
-      ): CSVRecord<Header>[];
+      ): IterableIterator<CSVRecord<Header, Format>>;
     },
     options: StringCSVParserStreamOptions = {},
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<
-      CSVRecord<Header>
+      CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
     const checkInterval = options.backpressureCheckInterval ?? 100;
@@ -126,7 +131,7 @@ export class StringCSVParserStream<
               let recordCount = 0;
 
               for (const record of records) {
-                controller.enqueue(record as CSVRecord<Header>);
+                controller.enqueue(record as CSVRecord<Header, Format>);
                 recordCount++;
 
                 // Check backpressure periodically based on checkInterval
@@ -150,7 +155,7 @@ export class StringCSVParserStream<
             let recordCount = 0;
 
             for (const record of records) {
-              controller.enqueue(record as CSVRecord<Header>);
+              controller.enqueue(record as CSVRecord<Header, Format>);
               recordCount++;
 
               // Check backpressure periodically based on checkInterval
