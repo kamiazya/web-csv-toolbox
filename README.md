@@ -443,7 +443,7 @@ providing an intuitive and straightforward experience for users.
 The `input` paramater can be:
 - a `string`
 - a [ReadableStream](https://developer.mozilla.org/docs/Web/API/ReadableStream) of `string`s or [Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array)s
-- a [BufferSource](https://developer.mozilla.org/docs/Web/API/BufferSource) ([Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or other [TypedArray](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypedArray))
+- a [BufferSource](https://webidl.spec.whatwg.org/#BufferSource) ([Uint8Array](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array), [ArrayBuffer](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer), or other [TypedArray](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/TypedArray))
 - a [Response](https://developer.mozilla.org/docs/Web/API/Response) object
 - a [Blob](https://developer.mozilla.org/docs/Web/API/Blob) or [File](https://developer.mozilla.org/docs/Web/API/File) object
 - a [Request](https://developer.mozilla.org/docs/Web/API/Request) object (server-side)
