@@ -7,8 +7,9 @@ export default defineConfig({
     codecovVitePlugin({
       enableBundleAnalysis: process.env.CI === 'true',
       bundleName: 'example-vite-bundle-worker-slim',
+      ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
       oidc: {
-        useGitHubOIDC: true,
+        useGitHubOIDC: !process.env.CODECOV_TOKEN,
       },
     }),
   ],

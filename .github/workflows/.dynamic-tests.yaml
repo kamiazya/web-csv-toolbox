@@ -2,6 +2,9 @@ name: Dynamic Tests
 on:
   workflow_call:
     secrets:
+      CODECOV_TOKEN:
+        required: false
+        description: The token to upload coverage reports to Codecov (fallback if OIDC is not configured)
       CODSPEED_TOKEN:
         required: true
         description: The token to upload benchmarks to CodSpeed
@@ -58,7 +61,8 @@ jobs:
         with:
           flags: typescript
           name: typescript-coverage
-          use_oidc: true
+          use_oidc: ${{ secrets.CODECOV_TOKEN == '' }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   coverage_rust:
     name: Rust Coverage
@@ -81,7 +85,8 @@ jobs:
           files: lcov-rust.info
           flags: rust
           name: rust-coverage
-          use_oidc: true
+          use_oidc: ${{ secrets.CODECOV_TOKEN == '' }}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   benchmarks_typescript:
     name: TypeScript Benchmarks

@@ -23,6 +23,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     needs:
       - static_tests
 
@@ -33,6 +35,7 @@ jobs:
       contents: read
       id-token: write
     secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
     needs:
       - build
@@ -44,6 +47,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     needs:
       - build
       - static_tests

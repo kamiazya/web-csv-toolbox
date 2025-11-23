@@ -43,8 +43,9 @@ module.exports = {
     codecovWebpackPlugin({
       enableBundleAnalysis: process.env.CI === 'true',
       bundleName: 'example-webpack-bundle-worker-main',
+      ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
       oidc: {
-        useGitHubOIDC: true,
+        useGitHubOIDC: !process.env.CODECOV_TOKEN,
       },
     }),
   ],
