@@ -1,7 +1,7 @@
 import {
-  DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL,
   type DEFAULT_DELIMITER,
   type DEFAULT_QUOTATION,
+  DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL,
 } from "@/core/constants.ts";
 import type {
   CSVLexerTransformerStreamOptions,
