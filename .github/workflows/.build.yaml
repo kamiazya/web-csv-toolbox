@@ -4,7 +4,7 @@ on:
     secrets:
       CODECOV_TOKEN:
         required: false
-        description: The token to upload coverage reports to Codecov
+        description: The token to upload coverage reports to Codecov (fallback if OIDC is not configured)
 
 jobs:
   build_wasm:
@@ -31,6 +31,7 @@ jobs:
     needs: build_wasm
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

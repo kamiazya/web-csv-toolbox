@@ -207,9 +207,12 @@ export default bytes.buffer || bytes;
       },
     }),
     codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      enableBundleAnalysis: process.env.CI === 'true',
       bundleName: "web-csv-toolbox",
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
+      oidc: {
+        useGitHubOIDC: !process.env.CODECOV_TOKEN, // Use OIDC only when token is not available
+      },
     }),
   ],
   test: {

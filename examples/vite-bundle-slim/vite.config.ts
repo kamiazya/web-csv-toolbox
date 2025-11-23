@@ -8,9 +8,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [
     codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+      enableBundleAnalysis: process.env.CI === 'true',
       bundleName: 'example-vite-bundle-slim',
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
+      oidc: {
+        useGitHubOIDC: !process.env.CODECOV_TOKEN,
+      },
     }),
   ],
   build: {

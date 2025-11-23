@@ -20,14 +20,20 @@ jobs:
   build:
     name: Build
     uses: ./.github/workflows/.build.yaml
-    needs:
-      - static_tests
+    permissions:
+      contents: read
+      id-token: write
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    needs:
+      - static_tests
 
   dynamic_tests:
     name: Dynamic Tests
     uses: ./.github/workflows/.dynamic-tests.yaml
+    permissions:
+      contents: read
+      id-token: write
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       CODSPEED_TOKEN: ${{ secrets.CODSPEED_TOKEN }}
@@ -38,6 +44,9 @@ jobs:
   examples:
     name: Examples
     uses: ./.github/workflows/.examples.yaml
+    permissions:
+      contents: read
+      id-token: write
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     needs:
