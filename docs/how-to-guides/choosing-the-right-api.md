@@ -100,16 +100,32 @@ The low-level APIs follow a **3-tier architecture** providing progressive comple
 - Streaming file uploads or fetch responses
 
 **APIs:**
-- `FlexibleStringCSVParser` / `createStringCSVParser()` - String CSV parser composing Lexer + Assembler
-- `FlexibleBinaryCSVParser` / `createBinaryCSVParser()` - Binary CSV parser with TextDecoder integration
-- `StringCSVParserStream` - TransformStream for string parsing
-- `BinaryCSVParserStream` - TransformStream for binary parsing with multi-byte character support
+
+**String Parsing:**
+- **`createStringCSVParser(options?)`** - Factory function for creating format-specific parsers
+  - Returns `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
+  - Accepts `CSVProcessingOptions` only (no `engine` option - low-level API)
+- **Direct class usage** (format-specific):
+  - `FlexibleStringObjectCSVParser` - Always outputs object records
+  - `FlexibleStringArrayCSVParser` - Always outputs array records
+- **`StringCSVParserStream`** - TransformStream for string parsing
+
+**Binary Parsing:**
+- **`createBinaryCSVParser(options?)`** - Factory function for creating format-specific binary parsers
+  - Returns `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
+  - Accepts `BinaryCSVProcessingOptions` only (no `engine` option - low-level API)
+- **Direct class usage** (format-specific):
+  - `FlexibleBinaryObjectCSVParser` - Always outputs object records
+  - `FlexibleBinaryArrayCSVParser` - Always outputs array records
+- **`BinaryCSVParserStream`** - TransformStream for binary parsing with multi-byte character support
 
 **Benefits:**
-- Simplified API - single class instead of manual Lexer + Assembler composition
+- Simplified API - single factory/class instead of manual Lexer + Assembler composition
+- Format-specific types ensure compile-time safety for object vs array output
 - Stateful streaming support with `{ stream: true }` option
-- Binary data handling with character encoding support
+- Binary data handling with character encoding support (charset, BOM, decompression)
 - Ready for TransformStream integration
+- Low-level API focuses on CSV processing logic only (no execution strategy)
 
 **Trade-off:**
 - Easier than Tier 2 vs. less granular control over tokenization

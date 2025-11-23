@@ -39,9 +39,14 @@ CSV Data → Parser (Lexer + Assembler) → Records
 ```
 
 **Recommended for most custom parsing needs:**
-- `FlexibleStringCSVParser` - String CSV parsing
-- `FlexibleBinaryCSVParser` - Binary CSV parsing with encoding support
+- `createStringCSVParser(options?)` - Factory for string CSV parsers (returns format-specific parser)
+  - `FlexibleStringObjectCSVParser` - Object output format
+  - `FlexibleStringArrayCSVParser` - Array output format
+- `createBinaryCSVParser(options?)` - Factory for binary CSV parsers with encoding support
+  - `FlexibleBinaryObjectCSVParser` - Object output format
+  - `FlexibleBinaryArrayCSVParser` - Array output format
 - Stateful streaming support via `{ stream: true }` option
+- **Note**: Low-level API (accepts `CSVProcessingOptions`, no `engine` option)
 
 ### Tier 2: Low-Level Pipeline (Advanced Control)
 
@@ -68,11 +73,12 @@ See: [Parsing Architecture](../explanation/parsing-architecture.md)
 The simplest way to build a custom parser is using Parser Models (Tier 1):
 
 ```typescript
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
 function parseCSV(csv: string) {
-  const parser = new FlexibleStringCSVParser({
+  const parser = createStringCSVParser({
     header: ['name', 'age'] as const,
+    // outputFormat: 'object' is default
   });
 
   return parser.parse(csv);
@@ -85,6 +91,8 @@ for (const record of parseCSV('Alice,30\nBob,25\n')) {
 // { name: 'Alice', age: '30' }
 // { name: 'Bob', age: '25' }
 ```
+
+**Note**: `createStringCSVParser` accepts `CSVProcessingOptions` (no `engine` option). For high-level APIs with execution strategy support, use `parseString()` instead.
 
 **Benefits:**
 - Single class instead of Lexer + Assembler composition
@@ -131,10 +139,10 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 **Using Parser Model:**
 
 ```typescript
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
 function parseTSV(tsv: string) {
-  const parser = new FlexibleStringCSVParser({ delimiter: '\t' });
+  const parser = createStringCSVParser({ delimiter: '\t' });
   return parser.parse(tsv);
 }
 
@@ -174,10 +182,10 @@ for (const record of parseTSV('name\tage\r\nAlice\t30\r\n')) {
 **Using Parser Model:**
 
 ```typescript
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
 function parsePSV(psv: string) {
-  const parser = new FlexibleStringCSVParser({ delimiter: '|' });
+  const parser = createStringCSVParser({ delimiter: '|' });
   return parser.parse(psv);
 }
 
@@ -491,9 +499,9 @@ for (const record of parseWithFilter(
 Process CSV data in chunks using Parser Models:
 
 ```typescript
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
-const parser = new FlexibleStringCSVParser({
+const parser = createStringCSVParser({
   header: ['name', 'age'] as const,
 });
 
@@ -521,9 +529,9 @@ console.log(records3); // []
 Use `StringCSVParserStream` for Web Streams API integration:
 
 ```typescript
-import { FlexibleStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
-const parser = new FlexibleStringCSVParser({
+const parser = createStringCSVParser({
   header: ['name', 'age'] as const,
 });
 const stream = new StringCSVParserStream(parser);
@@ -542,9 +550,9 @@ await fetch('data.csv')
 For binary data with character encoding:
 
 ```typescript
-import { FlexibleBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
-const parser = new FlexibleBinaryCSVParser({
+const parser = createBinaryCSVParser({
   header: ['name', 'age'] as const,
   charset: 'utf-8',
   ignoreBOM: true,

@@ -27,7 +27,7 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
   - `EnginePresets.balanced()` - Balanced (general-purpose)
 - Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
-  - **Parser Models (Tier 1)**: `FlexibleStringCSVParser`, `FlexibleBinaryCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
+  - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
   - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `CSVLexerTransformer`, `CSVRecordAssemblerTransformer`
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
@@ -166,16 +166,33 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
 #### String Parsing
 
-- **`FlexibleStringCSVParser`** - Class for parsing CSV strings
-  - **Factory**: `createStringCSVParser(options?)` - Create parser instance
+- **`createStringCSVParser(options?)`** - Factory function for creating format-specific parsers
+  - **Returns**: `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
+  - **Options**: `CSVProcessingOptions` (no `engine` option)
   - **Use case**: Stateful parsing with streaming support
   - **Example**:
     ```typescript
-    import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+    import { createStringCSVParser } from 'web-csv-toolbox';
 
-    const parser = new FlexibleStringCSVParser({ header: ['name', 'age'] });
-    const records = parser.parse('Alice,30\nBob,25\n');
+    // Object format (default)
+    const objectParser = createStringCSVParser({
+      header: ['name', 'age'] as const
+    });
+    const records = objectParser.parse('Alice,30\nBob,25\n');
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+    // Array format
+    const arrayParser = createStringCSVParser({
+      header: ['name', 'age'] as const,
+      outputFormat: 'array'
+    });
+    const arrayRecords = arrayParser.parse('Alice,30\nBob,25\n');
+    // arrayRecords: [['Alice', '30'], ['Bob', '25']]
     ```
+
+- **Direct class usage** (format-specific):
+  - **`FlexibleStringObjectCSVParser`** - Always outputs object records
+  - **`FlexibleStringArrayCSVParser`** - Always outputs array records
 
 - **`StringCSVParserStream`** - TransformStream for string CSV parsing
   - **Use case**: Stream-based parsing with backpressure handling
@@ -183,7 +200,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     ```typescript
     import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
-    const parser = createStringCSVParser({ header: ['name', 'age'] });
+    const parser = createStringCSVParser({ header: ['name', 'age'] as const });
     const stream = new StringCSVParserStream(parser);
 
     await stringStream.pipeThrough(stream).pipeTo(yourSink);
@@ -191,20 +208,36 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
 #### Binary Parsing
 
-- **`FlexibleBinaryCSVParser`** - Class for parsing binary CSV data (BufferSource)
-  - **Factory**: `createBinaryCSVParser(options?)` - Create parser instance
+- **`createBinaryCSVParser(options?)`** - Factory function for creating format-specific binary parsers
+  - **Returns**: `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
+  - **Options**: `BinaryCSVProcessingOptions` (no `engine` option)
   - **Use case**: Parse Uint8Array, ArrayBuffer, or other TypedArray with charset handling
   - **Example**:
     ```typescript
-    import { FlexibleBinaryCSVParser } from 'web-csv-toolbox';
+    import { createBinaryCSVParser } from 'web-csv-toolbox';
 
-    const parser = new FlexibleBinaryCSVParser({
-      header: ['name', 'age'],
+    // Object format (default)
+    const objectParser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
       charset: 'utf-8'
     });
     const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
-    const records = parser.parse(buffer);
+    const records = objectParser.parse(buffer);
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+    // Array format
+    const arrayParser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
+      outputFormat: 'array',
+      charset: 'utf-8'
+    });
+    const arrayRecords = arrayParser.parse(buffer);
+    // arrayRecords: [['Alice', '30'], ['Bob', '25']]
     ```
+
+- **Direct class usage** (format-specific):
+  - **`FlexibleBinaryObjectCSVParser`** - Always outputs object records
+  - **`FlexibleBinaryArrayCSVParser`** - Always outputs array records
 
 - **`BinaryCSVParserStream`** - TransformStream for binary CSV parsing
   - **Use case**: Stream-based binary parsing with automatic charset decoding
@@ -212,7 +245,10 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     ```typescript
     import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
-    const parser = createBinaryCSVParser({ header: ['name', 'age'] });
+    const parser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
+      charset: 'utf-8'
+    });
     const stream = new BinaryCSVParserStream(parser);
 
     await fetch('data.csv')

@@ -51,12 +51,37 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  */
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends CSVProcessingOptions<Header> = CSVProcessingOptions<Header>,
 >(
-  options?: Options,
-): Options extends { outputFormat: "array" }
-  ? StringArrayCSVParser<Header>
-  : StringObjectCSVParser<Header> {
+  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "array";
+  },
+): StringArrayCSVParser<Header>;
+
+export function createStringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "object";
+  },
+): StringObjectCSVParser<Header>;
+
+export function createStringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "object" | "array";
+  },
+): StringArrayCSVParser<Header> | StringObjectCSVParser<Header>;
+
+export function createStringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(options?: CSVProcessingOptions<Header>): StringObjectCSVParser<Header>;
+
+export function createStringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options?: CSVProcessingOptions<Header>,
+): StringArrayCSVParser<Header> | StringObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
   // Validate that includeHeader is only used with array format

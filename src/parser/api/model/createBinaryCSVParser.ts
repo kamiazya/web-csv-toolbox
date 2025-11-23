@@ -55,12 +55,37 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  */
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends BinaryCSVProcessingOptions<Header> = BinaryCSVProcessingOptions<Header>,
 >(
-  options?: Options,
-): Options extends { outputFormat: "array" }
-  ? BinaryArrayCSVParser<Header>
-  : BinaryObjectCSVParser<Header> {
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "array";
+  },
+): BinaryArrayCSVParser<Header>;
+
+export function createBinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "object";
+  },
+): BinaryObjectCSVParser<Header>;
+
+export function createBinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+    outputFormat: "object" | "array";
+  },
+): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header>;
+
+export function createBinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(options?: BinaryCSVProcessingOptions<Header>): BinaryObjectCSVParser<Header>;
+
+export function createBinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
+  options?: BinaryCSVProcessingOptions<Header>,
+): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
   // Validate that includeHeader is only used with array format

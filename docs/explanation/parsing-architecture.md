@@ -46,23 +46,41 @@ Parser models provide a simplified API by composing Lexer and Assembler internal
 
 ### String CSV Parser
 
-The **FlexibleStringCSVParser** parses CSV strings by composing `FlexibleStringCSVLexer` and CSV Record Assembler.
+String CSV parsers parse CSV strings by composing `FlexibleStringCSVLexer` and CSV Record Assembler.
+
+**Available implementations:**
+- **Factory function**: `createStringCSVParser(options?)` - Returns format-specific parser
+  - `FlexibleStringObjectCSVParser` (default, `outputFormat: 'object'`)
+  - `FlexibleStringArrayCSVParser` (`outputFormat: 'array'`)
+- **Direct class usage**: Instantiate `FlexibleStringObjectCSVParser` or `FlexibleStringArrayCSVParser` directly
 
 **Input:** CSV string chunks
-**Output:** Array of CSV records
+**Output:** Array of CSV records (object or array format)
+
+**Note:** Low-level API - accepts `CSVProcessingOptions` only (no `engine` option)
 
 ```typescript
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
-const parser = new FlexibleStringCSVParser({
+// Object format (default)
+const objectParser = createStringCSVParser({
   header: ['name', 'age'] as const,
-  outputFormat: 'object', // or 'array'
+  // outputFormat: 'object' is default
 });
 
-// Parse complete data
-const records1 = parser.parse('Alice,30\nBob,25\n');
+const records1 = objectParser.parse('Alice,30\nBob,25\n');
 console.log(records1);
 // [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+// Array format
+const arrayParser = createStringCSVParser({
+  header: ['name', 'age'] as const,
+  outputFormat: 'array',
+});
+
+const records2 = arrayParser.parse('Alice,30\nBob,25\n');
+console.log(records2);
+// [['Alice', '30'], ['Bob', '25']]
 ```
 
 **Streaming Mode - Chunk-by-Chunk Processing**
@@ -71,7 +89,7 @@ When processing data in chunks, you must call `parse()` without arguments at the
 
 ```typescript
 // Streaming mode - parse chunk by chunk
-const parser = new FlexibleStringCSVParser({
+const parser = createStringCSVParser({
   header: ['name', 'age'] as const,
 });
 
@@ -89,20 +107,30 @@ console.log(records3); // [{ name: 'Charlie', age: undefined }] - remaining part
 **Why use String Parser?**
 - Simplified API - no manual Lexer + Assembler composition
 - Stateful streaming support
-- Supports both object and array output formats
+- Format-specific types ensure compile-time safety for object vs array output
 - Full options support (delimiter, quotation, columnCountStrategy, etc.)
+- Low-level API focuses on CSV processing logic only (no execution strategy)
 
 ### Binary CSV Parser
 
-The **FlexibleBinaryCSVParser** parses binary CSV data (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) by composing `TextDecoder` with `FlexibleStringCSVParser`.
+Binary CSV parsers parse binary CSV data (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) by composing `TextDecoder` with String CSV Parser.
+
+**Available implementations:**
+- **Factory function**: `createBinaryCSVParser(options?)` - Returns format-specific parser
+  - `FlexibleBinaryObjectCSVParser` (default, `outputFormat: 'object'`)
+  - `FlexibleBinaryArrayCSVParser` (`outputFormat: 'array'`)
+- **Direct class usage**: Instantiate `FlexibleBinaryObjectCSVParser` or `FlexibleBinaryArrayCSVParser` directly
 
 **Input:** BufferSource (Uint8Array, ArrayBuffer, or other TypedArray) chunks
-**Output:** Array of CSV records
+**Output:** Array of CSV records (object or array format)
+
+**Note:** Low-level API - accepts `BinaryCSVProcessingOptions` only (no `engine` option)
 
 ```typescript
-import { FlexibleBinaryCSVParser } from 'web-csv-toolbox';
+import { createBinaryCSVParser } from 'web-csv-toolbox';
 
-const parser = new FlexibleBinaryCSVParser({
+// Object format (default)
+const objectParser = createBinaryCSVParser({
   header: ['name', 'age'] as const,
   charset: 'utf-8',
   ignoreBOM: true,
@@ -111,13 +139,24 @@ const parser = new FlexibleBinaryCSVParser({
 const encoder = new TextEncoder();
 const data = encoder.encode('Alice,30\nBob,25\n');
 
-const records = parser.parse(data);
-console.log(records);
+const records1 = objectParser.parse(data);
+console.log(records1);
 // [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+// Array format
+const arrayParser = createBinaryCSVParser({
+  header: ['name', 'age'] as const,
+  outputFormat: 'array',
+  charset: 'utf-8',
+});
+
+const records2 = arrayParser.parse(data);
+console.log(records2);
+// [['Alice', '30'], ['Bob', '25']]
 
 // With ArrayBuffer
 const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
-const records = parser.parse(buffer);
+const records3 = objectParser.parse(buffer);
 ```
 
 **Streaming Mode - Multi-byte Character Handling**
@@ -126,7 +165,7 @@ When processing data in chunks, you must call `parse()` without arguments at the
 
 ```typescript
 // Streaming mode - handles multi-byte characters across chunks
-const parser = new FlexibleBinaryCSVParser({
+const parser = createBinaryCSVParser({
   header: ['name', 'age'] as const,
 });
 
@@ -151,16 +190,18 @@ console.log(records3); // [{ name: 'あ', age: '25' }] - remaining data
 - TextDecoder with `stream: true` for multi-byte character support
 - BOM handling via `ignoreBOM` option
 - Fatal error mode via `fatal` option
+- Format-specific types ensure compile-time safety for object vs array output
 - Ideal for file uploads and fetch API responses
+- Low-level API focuses on CSV processing logic only (no execution strategy)
 
 ### Parser Streaming with TransformStream
 
-Both parsers work seamlessly with `StringCSVParserStream` and `BinaryCSVParserStream`:
+Both string and binary parsers work seamlessly with `StringCSVParserStream` and `BinaryCSVParserStream`:
 
 ```typescript
-import { FlexibleStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
-const parser = new FlexibleStringCSVParser({
+const parser = createStringCSVParser({
   header: ['name', 'age'] as const,
 });
 const stream = new StringCSVParserStream(parser);
@@ -177,9 +218,9 @@ await fetch('data.csv')
 ```
 
 ```typescript
-import { FlexibleBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
-const parser = new FlexibleBinaryCSVParser({
+const parser = createBinaryCSVParser({
   header: ['name', 'age'] as const,
   charset: 'utf-8',
 });
@@ -200,6 +241,7 @@ await fetch('data.csv')
 - Configurable backpressure handling
 - Custom queuing strategies support
 - Follows existing Transformer patterns
+- Works with both object and array format parsers
 
 ## Tier 2: Low-Level Pipeline
 
@@ -467,9 +509,9 @@ for await (const record of parse(csv)) {
 }
 
 // Equivalent using Parser (Tier 1)
-import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+import { createStringCSVParser } from 'web-csv-toolbox';
 
-const parser = new FlexibleStringCSVParser();
+const parser = createStringCSVParser();
 for (const record of parser.parse(csv)) {
   console.log(record);
 }
@@ -486,16 +528,19 @@ for (const record of assembler.assemble(tokens)) {
 }
 ```
 
-**High-level APIs add:**
-- Automatic execution strategy selection (Worker, WASM)
+**High-level APIs add over Parser models (Tier 1):**
+- Automatic execution strategy selection (Worker, WASM) via `engine` option
 - Response header parsing (`Content-Type`, `Content-Encoding`)
 - AbortSignal integration
 - Simplified error handling
+- Accepts `ParseOptions` (includes both `CSVProcessingOptions` and `EngineOptions`)
 
 **Parser models (Tier 1) add over raw Lexer + Assembler:**
-- Simplified API - single class instead of manual composition
+- Simplified API - single factory/class instead of manual composition
 - Stateful streaming support with `{ stream: true }` option
 - Binary data handling with TextDecoder integration
+- Format-specific types ensure compile-time safety for object vs array output
+- Accepts `CSVProcessingOptions` or `BinaryCSVProcessingOptions` only (no `engine` option)
 
 ## Choosing the Right Tier
 
@@ -533,8 +578,10 @@ for (const record of assembler.assemble(tokens)) {
 
 | Component | Memory | Notes |
 |-----------|--------|-------|
-| FlexibleStringCSVParser | O(1) | Stateful composition of Lexer + Assembler |
-| FlexibleBinaryCSVParser | O(1) | Adds TextDecoder overhead (minimal) |
+| FlexibleStringObjectCSVParser | O(1) | Stateful composition of Lexer + Assembler (object output) |
+| FlexibleStringArrayCSVParser | O(1) | Stateful composition of Lexer + Assembler (array output) |
+| FlexibleBinaryObjectCSVParser | O(1) | Adds TextDecoder overhead (minimal, object output) |
+| FlexibleBinaryArrayCSVParser | O(1) | Adds TextDecoder overhead (minimal, array output) |
 | StringCSVParserStream | O(1) | Stream-based, no accumulation |
 | BinaryCSVParserStream | O(1) | Stream-based, no accumulation |
 | CSVLexer | O(1) | Constant buffer size (configurable) |

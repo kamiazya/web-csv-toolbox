@@ -483,43 +483,77 @@ The low-level APIs follow a 3-tier architecture:
 
 Combines Lexer and Assembler for streamlined usage without sacrificing flexibility.
 
-- **`function createStringCSVParser(options?)` / `class FlexibleStringCSVParser`**
+- **`function createStringCSVParser(options?)`**
+  - Factory function for creating format-specific CSV parsers.
+  - Returns `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser` based on `outputFormat` option.
   - Parses CSV strings by composing `FlexibleStringCSVLexer` and CSV Record Assembler.
-  - Supports both object and array output formats via `outputFormat` option.
   - Stateful parser maintains internal lexer and assembler instances for streaming.
   - Use with `StringCSVParserStream` for streaming workflows.
+  - **Low-level API**: Accepts `CSVProcessingOptions` only (no `engine` option).
   - **Streaming mode**: When using `parse(chunk, { stream: true })`, you must call `parse()` without arguments at the end to flush any remaining data.
 
   ```typescript
-  const parser = createStringCSVParser({ header: ['name', 'age'] });
+  // Object format (default)
+  const objectParser = createStringCSVParser({
+    header: ['name', 'age'] as const
+  });
+
+  // Array format
+  const arrayParser = createStringCSVParser({
+    header: ['name', 'age'] as const,
+    outputFormat: 'array'
+  });
 
   // Process chunks
-  const records1 = parser.parse('Alice,30\nBob,', { stream: true });
-  const records2 = parser.parse('25\nCharlie,', { stream: true });
+  const records1 = objectParser.parse('Alice,30\nBob,', { stream: true });
+  const records2 = objectParser.parse('25\nCharlie,', { stream: true });
 
   // Flush remaining data (required!)
-  const records3 = parser.parse();
+  const records3 = objectParser.parse();
   ```
 
-- **`function createBinaryCSVParser(options?)` / `class FlexibleBinaryCSVParser`**
-  - Parses binary CSV data (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) by composing `TextDecoder` with `FlexibleStringCSVParser`.
+  - **Direct class usage**:
+    - `FlexibleStringObjectCSVParser` - Always outputs object records
+    - `FlexibleStringArrayCSVParser` - Always outputs array records
+
+- **`function createBinaryCSVParser(options?)`**
+  - Factory function for creating format-specific binary CSV parsers.
+  - Returns `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser` based on `outputFormat` option.
+  - Parses binary CSV data (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) by composing `TextDecoder` with string CSV parser.
   - Uses `TextDecoder` with `stream: true` option for proper multi-byte character handling across chunk boundaries.
   - Supports various character encodings (utf-8, shift_jis, etc.) via `charset` option.
   - BOM handling via `ignoreBOM` option, fatal error mode via `fatal` option.
   - Use with `BinaryCSVParserStream` for streaming workflows.
+  - **Low-level API**: Accepts `BinaryCSVProcessingOptions` only (no `engine` option).
   - **Streaming mode**: When using `parse(chunk, { stream: true })`, you must call `parse()` without arguments at the end to flush TextDecoder and parser buffers.
 
   ```typescript
-  const parser = createBinaryCSVParser({ header: ['name', 'age'] });
+  // Object format (default)
+  const objectParser = createBinaryCSVParser({
+    header: ['name', 'age'] as const,
+    charset: 'utf-8'
+  });
+
+  // Array format
+  const arrayParser = createBinaryCSVParser({
+    header: ['name', 'age'] as const,
+    outputFormat: 'array',
+    charset: 'utf-8'
+  });
+
   const encoder = new TextEncoder();
 
   // Process chunks
-  const records1 = parser.parse(encoder.encode('Alice,30\nBob,'), { stream: true });
-  const records2 = parser.parse(encoder.encode('25\n'), { stream: true });
+  const records1 = objectParser.parse(encoder.encode('Alice,30\nBob,'), { stream: true });
+  const records2 = objectParser.parse(encoder.encode('25\n'), { stream: true });
 
   // Flush remaining data (required!)
-  const records3 = parser.parse();
+  const records3 = objectParser.parse();
   ```
+
+  - **Direct class usage**:
+    - `FlexibleBinaryObjectCSVParser` - Always outputs object records
+    - `FlexibleBinaryArrayCSVParser` - Always outputs array records
 
 #### Lexer (Tier 2: Stage 1 - Tokenization)
 

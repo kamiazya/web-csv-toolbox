@@ -58,10 +58,9 @@ export abstract class BaseBinaryCSVParser<
 
     // Initialize string parser with the same options
     // createStringCSVParser returns the correct type based on outputFormat in options
-    this.stringParser = createStringCSVParser<Header>(options) as StringCSVParser<
-      Header,
-      Format
-    >;
+    this.stringParser = createStringCSVParser<Header>(
+      options,
+    ) as StringCSVParser<Header, Format>;
   }
 
   /**
