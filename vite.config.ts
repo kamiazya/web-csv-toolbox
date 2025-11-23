@@ -210,6 +210,9 @@ export default bytes.buffer || bytes;
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
       bundleName: "web-csv-toolbox",
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
+      oidc: {
+        useGitHubOIDC: true,
+      },
     }),
   ],
   test: {

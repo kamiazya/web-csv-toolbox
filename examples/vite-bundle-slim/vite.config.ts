@@ -11,6 +11,9 @@ export default defineConfig({
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
       bundleName: 'example-vite-bundle-slim',
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
+      oidc: {
+        useGitHubOIDC: true,
+      },
     }),
   ],
   build: {

@@ -44,6 +44,9 @@ module.exports = {
       enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
       bundleName: 'example-webpack-bundle-worker-slim',
       ...(process.env.CODECOV_TOKEN && { uploadToken: process.env.CODECOV_TOKEN }),
+      oidc: {
+        useGitHubOIDC: true,
+      },
     }),
   ],
   devServer: {
