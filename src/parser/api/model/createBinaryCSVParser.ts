@@ -1,7 +1,7 @@
 import type {
   BinaryArrayCSVParser,
+  BinaryCSVProcessingOptions,
   BinaryObjectCSVParser,
-  ParseBinaryOptions,
 } from "@/core/types.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
@@ -10,11 +10,15 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * Factory function to create the appropriate Binary CSV parser based on options.
  *
  * @template Header - The type of the header row
- * @template Options - ParseBinaryOptions type (inferred from arguments)
- * @param options - Parser options including outputFormat, charset, ignoreBOM, fatal
+ * @template Options - BinaryCSVProcessingOptions type (inferred from arguments)
+ * @param options - Binary CSV processing specification (excludes execution strategy)
  * @returns A parser instance configured for the specified output format
  *
  * @remarks
+ * This is a low-level factory function that accepts {@link BinaryCSVProcessingOptions}.
+ * It does NOT accept execution strategy options (engine).
+ * For high-level APIs with execution strategy support, use parseBinary() and related functions.
+ *
  * This function provides both compile-time and runtime type safety.
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → BinaryObjectCSVParser (FlexibleBinaryObjectCSVParser)
@@ -24,7 +28,10 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * ```ts
  * const parser = createBinaryCSVParser({
  *   header: ['name', 'age'] as const,
- *   charset: 'utf-8'
+ *   charset: 'utf-8',
+ *   decompression: 'gzip',
+ *   signal: abortController.signal,
+ *   // engine is NOT available (low-level API)
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -37,7 +44,8 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * const parser = createBinaryCSVParser({
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array',
- *   charset: 'utf-8'
+ *   charset: 'utf-8',
+ *   // engine is NOT available (low-level API)
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -47,7 +55,7 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  */
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+  Options extends BinaryCSVProcessingOptions<Header> = BinaryCSVProcessingOptions<Header>,
 >(
   options?: Options,
 ): Options extends { outputFormat: "array" }

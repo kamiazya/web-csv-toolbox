@@ -1,7 +1,7 @@
 import type {
+  BinaryCSVProcessingOptions,
   CSVParserParseOptions,
   CSVRecord,
-  ParseBinaryOptions,
   StringCSVParser,
 } from "@/core/types.ts";
 import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
@@ -18,16 +18,19 @@ import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.
  * This is an internal base class. Use FlexibleBinaryObjectCSVParser or
  * FlexibleBinaryArrayCSVParser for concrete implementations, or use the
  * createBinaryCSVParser() factory function for type-safe instantiation.
+ *
+ * Uses {@link BinaryCSVProcessingOptions} which excludes execution strategy (engine).
+ * Low-level parsers focus on CSV processing logic only.
  */
 export abstract class BaseBinaryCSVParser<
   Header extends ReadonlyArray<string>,
   Format extends "object" | "array",
 > {
   protected readonly decoder: TextDecoder;
-  protected readonly stringParser: StringCSVParser<Header>;
+  protected readonly stringParser: StringCSVParser<Header, Format>;
 
   constructor(
-    options: ParseBinaryOptions<Header> = {} as ParseBinaryOptions<Header>,
+    options: BinaryCSVProcessingOptions<Header> = {} as BinaryCSVProcessingOptions<Header>,
   ) {
     // Initialize TextDecoder with charset and options
     const decoderOptions: TextDecoderOptions = {};
@@ -54,8 +57,11 @@ export abstract class BaseBinaryCSVParser<
     }
 
     // Initialize string parser with the same options
-    // Type is StringCSVParser<Header> (format-agnostic base type)
-    this.stringParser = createStringCSVParser<Header>(options) as any;
+    // createStringCSVParser returns the correct type based on outputFormat in options
+    this.stringParser = createStringCSVParser<Header>(options) as StringCSVParser<
+      Header,
+      Format
+    >;
   }
 
   /**

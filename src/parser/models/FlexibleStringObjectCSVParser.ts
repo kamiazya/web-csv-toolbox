@@ -1,4 +1,7 @@
-import type { ParseOptions, StringObjectCSVParser } from "@/core/types.ts";
+import type {
+  CSVProcessingOptions,
+  StringObjectCSVParser,
+} from "@/core/types.ts";
 import { BaseStringCSVParser } from "@/parser/models/base/BaseStringCSVParser.ts";
 
 /**
@@ -8,12 +11,20 @@ import { BaseStringCSVParser } from "@/parser/models/base/BaseStringCSVParser.ts
  * @template Header - The type of the header row
  *
  * @remarks
- * This class implements StringObjectCSVParser interface.
+ * This class implements StringObjectCSVParser interface and enforces object output format.
  * For type-safe usage, use the createStringCSVParser() factory function.
+ *
+ * This is a low-level API that accepts {@link CSVProcessingOptions} (excluding execution strategy).
+ * For high-level APIs with execution strategy support, use parseString() and related functions.
  *
  * @example
  * ```ts
- * const parser = new FlexibleStringObjectCSVParser({ header: ['name', 'age'] as const });
+ * const parser = new FlexibleStringObjectCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   delimiter: ',',
+ *   signal: abortController.signal,
+ *   // engine is NOT available (low-level API)
+ * });
  * const records = parser.parse('Alice,30\nBob,25');
  * for (const record of records) {
  *   console.log(record); // { name: 'Alice', age: '30' }
@@ -26,7 +37,9 @@ export class FlexibleStringObjectCSVParser<
   extends BaseStringCSVParser<Header, "object">
   implements StringObjectCSVParser<Header>
 {
-  constructor(options: ParseOptions<Header> = {} as ParseOptions<Header>) {
+  constructor(
+    options: CSVProcessingOptions<Header> = {} as CSVProcessingOptions<Header>,
+  ) {
     // Enforce object output format regardless of what caller passes
     super({ ...options, outputFormat: "object" as const });
   }

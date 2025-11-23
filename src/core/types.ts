@@ -1250,28 +1250,121 @@ export type InferCSVRecord<
 > = CSVRecord<Header, InferFormat<Options>, InferStrategy<Options>>;
 
 /**
- * Parse options for CSV string.
+ * CSV processing specification options.
+ *
  * @category Types
+ *
+ * @remarks
+ * Defines how CSV data should be processed, including parsing behavior, output format,
+ * and data handling strategies. This excludes execution strategy (worker, WASM, etc.)
+ * which is defined separately in {@link EngineOptions}.
+ *
+ * This type is used by low-level Parser classes that focus on CSV processing logic
+ * without concerning themselves with execution strategy. High-level APIs combine this
+ * with {@link EngineOptions} via {@link ParseOptions}.
+ *
+ * **Included settings:**
+ * - CSV syntax: delimiter, quotation, maxBufferSize
+ * - Record assembly: header, outputFormat, includeHeader, columnCountStrategy
+ * - Processing control: signal, source, maxFieldCount, skipEmptyLines
+ *
+ * **Excluded settings:**
+ * - Execution strategy: engine (worker, WASM configuration)
+ *
+ * @example Low-level API usage
+ * ```ts
+ * const parser = new FlexibleStringObjectCSVParser({
+ *   delimiter: ',',
+ *   quotation: '"',
+ *   header: ['name', 'age'],
+ *   outputFormat: 'object',
+ *   signal: abortController.signal,
+ *   // engine is NOT available here
+ * });
+ * ```
+ *
+ * @example High-level API (via ParseOptions)
+ * ```ts
+ * parseString(csv, {
+ *   delimiter: ',',
+ *   header: ['name', 'age'],
+ *   // ↓ Also includes execution strategy
+ *   engine: { worker: true }
+ * });
+ * ```
  */
-export interface ParseOptions<
+export interface CSVProcessingOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     CSVRecordAssemblerCommonOptions<Header>,
-    EngineOptions,
     AbortSignalOptions {}
 
 /**
- * Parse options for CSV binary.
+ * Parse options for CSV string (high-level API).
+ *
  * @category Types
+ *
+ * @remarks
+ * Combines CSV processing specification ({@link CSVProcessingOptions}) with
+ * execution strategy ({@link EngineOptions}). This is the complete options type
+ * for high-level parsing APIs like {@link parseString}, {@link parseStringToStream}, etc.
+ *
+ * For low-level Parser classes, use {@link CSVProcessingOptions} instead.
+ */
+export interface ParseOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
+
+/**
+ * CSV processing specification options for binary data.
+ *
+ * @category Types
+ *
+ * @remarks
+ * Extends {@link CSVProcessingOptions} with binary-specific options like charset,
+ * decompression, and buffer size limits. This excludes execution strategy.
+ *
+ * Used by low-level Binary Parser classes. High-level APIs use {@link ParseBinaryOptions}
+ * which adds {@link EngineOptions}.
+ *
+ * @example Low-level API usage
+ * ```ts
+ * const parser = new FlexibleBinaryObjectCSVParser({
+ *   delimiter: ',',
+ *   header: ['name', 'age'],
+ *   charset: 'utf-8',
+ *   decompression: 'gzip',
+ *   // engine is NOT available here
+ * });
+ * ```
+ */
+export interface BinaryCSVProcessingOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    BinaryOptions {}
+
+/**
+ * Parse options for CSV binary (high-level API).
+ *
+ * @category Types
+ *
+ * @remarks
+ * Combines binary CSV processing specification ({@link BinaryCSVProcessingOptions})
+ * with execution strategy ({@link EngineOptions}).
  */
 export interface ParseBinaryOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends ParseOptions<Header, Delimiter, Quotation>,
-    BinaryOptions {}
+> extends BinaryCSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
 
 /**
  * Strategy for handling column count mismatches between header and data rows.

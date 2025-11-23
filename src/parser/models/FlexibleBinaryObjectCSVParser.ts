@@ -1,6 +1,6 @@
 import type {
+  BinaryCSVProcessingOptions,
   BinaryObjectCSVParser,
-  ParseBinaryOptions,
 } from "@/core/types.ts";
 import { BaseBinaryCSVParser } from "@/parser/models/base/BaseBinaryCSVParser.ts";
 
@@ -11,17 +11,23 @@ import { BaseBinaryCSVParser } from "@/parser/models/base/BaseBinaryCSVParser.ts
  * @template Header - The type of the header row
  *
  * @remarks
- * This class implements BinaryObjectCSVParser interface.
+ * This class implements BinaryObjectCSVParser interface and enforces object output format.
  * For type-safe usage, use the createBinaryCSVParser() factory function.
  *
  * Accepts any BufferSource type (Uint8Array, ArrayBuffer, or other TypedArray views).
+ *
+ * This is a low-level API that accepts {@link BinaryCSVProcessingOptions} (excluding execution strategy).
+ * For high-level APIs with execution strategy support, use parseBinary() and related functions.
  *
  * @example
  * ```ts
  * const encoder = new TextEncoder();
  * const parser = new FlexibleBinaryObjectCSVParser({
  *   header: ['name', 'age'] as const,
- *   charset: 'utf-8'
+ *   charset: 'utf-8',
+ *   decompression: 'gzip',
+ *   signal: abortController.signal,
+ *   // engine is NOT available (low-level API)
  * });
  * const binary = encoder.encode('Alice,30\nBob,25');
  * for (const record of parser.parse(binary)) {
@@ -36,7 +42,7 @@ export class FlexibleBinaryObjectCSVParser<
   implements BinaryObjectCSVParser<Header>
 {
   constructor(
-    options: ParseBinaryOptions<Header> = {} as ParseBinaryOptions<Header>,
+    options: BinaryCSVProcessingOptions<Header> = {} as BinaryCSVProcessingOptions<Header>,
   ) {
     // Enforce object output format regardless of what caller passes
     super({ ...options, outputFormat: "object" as const });

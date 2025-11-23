@@ -1,5 +1,5 @@
 import type {
-  ParseOptions,
+  CSVProcessingOptions,
   StringArrayCSVParser,
   StringObjectCSVParser,
 } from "@/core/types.ts";
@@ -10,11 +10,15 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * Factory function to create the appropriate String CSV parser based on options.
  *
  * @template Header - The type of the header row
- * @template Options - ParseOptions type (inferred from arguments)
- * @param options - Parser options including outputFormat
+ * @template Options - CSVProcessingOptions type (inferred from arguments)
+ * @param options - CSV processing specification (excludes execution strategy)
  * @returns A parser instance configured for the specified output format
  *
  * @remarks
+ * This is a low-level factory function that accepts {@link CSVProcessingOptions}.
+ * It does NOT accept execution strategy options (engine).
+ * For high-level APIs with execution strategy support, use parseString() and related functions.
+ *
  * This function provides both compile-time and runtime type safety.
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → StringObjectCSVParser (FlexibleStringObjectCSVParser)
@@ -22,7 +26,12 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  *
  * @example Object format (default)
  * ```ts
- * const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   delimiter: ',',
+ *   signal: abortController.signal,
+ *   // engine is NOT available (low-level API)
+ * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // { name: 'Alice', age: '30' }
  * }
@@ -32,7 +41,8 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * ```ts
  * const parser = createStringCSVParser({
  *   header: ['name', 'age'] as const,
- *   outputFormat: 'array'
+ *   outputFormat: 'array',
+ *   // engine is NOT available (low-level API)
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // ['Alice', '30']
@@ -41,7 +51,7 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  */
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends ParseOptions<Header> = ParseOptions<Header>,
+  Options extends CSVProcessingOptions<Header> = CSVProcessingOptions<Header>,
 >(
   options?: Options,
 ): Options extends { outputFormat: "array" }

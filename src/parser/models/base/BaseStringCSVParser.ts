@@ -1,7 +1,7 @@
 import type {
   CSVParserParseOptions,
+  CSVProcessingOptions,
   CSVRecord,
-  ParseOptions,
 } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
@@ -17,6 +17,9 @@ import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.t
  * This is an internal base class. Use FlexibleStringObjectCSVParser or
  * FlexibleStringArrayCSVParser for concrete implementations, or use the
  * createStringCSVParser() factory function for type-safe instantiation.
+ *
+ * Uses {@link CSVProcessingOptions} which excludes execution strategy (engine).
+ * Low-level parsers focus on CSV processing logic only.
  */
 export abstract class BaseStringCSVParser<
   Header extends ReadonlyArray<string>,
@@ -25,7 +28,9 @@ export abstract class BaseStringCSVParser<
   protected readonly lexer: FlexibleStringCSVLexer;
   protected readonly assembler: ReturnType<typeof createCSVRecordAssembler>;
 
-  constructor(options: ParseOptions<Header> = {} as ParseOptions<Header>) {
+  constructor(
+    options: CSVProcessingOptions<Header> = {} as CSVProcessingOptions<Header>,
+  ) {
     this.lexer = new FlexibleStringCSVLexer(options);
     this.assembler = createCSVRecordAssembler(options);
   }
