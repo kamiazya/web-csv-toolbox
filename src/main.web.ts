@@ -25,6 +25,12 @@ export * from "@/parser/api/string/parseStringToArraySyncWASM.main.web.ts";
 export * from "@/wasm/WasmInstance.main.web.ts";
 
 // ============================================================================
+// Web-specific: WASM Parser Models and Stream Transformers
+// ============================================================================
+export * from "@/parser/models/WASMBinaryCSVParser.ts";
+export * from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
+
+// ============================================================================
 // Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";
