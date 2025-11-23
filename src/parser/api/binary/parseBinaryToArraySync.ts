@@ -30,10 +30,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
 export function parseBinaryToArraySync<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
->(
-  binary: BufferSource,
-  options?: Options,
-): InferCSVRecord<Header, Options>[] {
+>(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
     const csv = convertBinaryToString(binary, options ?? {});
     return parseStringToArraySync(csv, options);

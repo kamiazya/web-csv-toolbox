@@ -139,10 +139,7 @@ export declare namespace parseBinary {
   export function toArraySync<
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
-  >(
-    bytes: BufferSource,
-    options?: Options,
-  ): InferCSVRecord<Header, Options>[];
+  >(bytes: BufferSource, options?: Options): InferCSVRecord<Header, Options>[];
 
   /**
    * Parse a binary from a BufferSource to an iterable iterator of records.

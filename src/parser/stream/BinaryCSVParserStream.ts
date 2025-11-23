@@ -1,7 +1,4 @@
-import type {
-  BinaryCSVParserStreamOptions,
-  CSVRecord,
-} from "@/core/types.ts";
+import type { BinaryCSVParserStreamOptions, CSVRecord } from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (BufferSource input).

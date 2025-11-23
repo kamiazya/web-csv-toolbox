@@ -1,7 +1,4 @@
-import type {
-  CSVRecord,
-  StringCSVParserStreamOptions,
-} from "@/core/types.ts";
+import type { CSVRecord, StringCSVParserStreamOptions } from "@/core/types.ts";
 
 /**
  * Default queuing strategy for the writable side (string input).
