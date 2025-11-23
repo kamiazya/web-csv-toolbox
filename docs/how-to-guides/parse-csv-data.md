@@ -24,7 +24,7 @@ Choose your parsing approach based on your input type and requirements:
 | **String** | `parseString()` | In-memory CSV text |
 | **ReadableStream\<string\>** | `parseStringStream()` | Large text streams |
 | **Uint8Array/ArrayBuffer** | `parseBinary()` | Binary data in memory |
-| **ReadableStream\<Uint8Array\>** | `parseUint8ArrayStream()` | Binary streams |
+| **ReadableStream\<Uint8Array\>** | `parseBinaryStream()` | Binary streams |
 | **Response** | `parseResponse()` | Fetch API results |
 | **Request** | `parseRequest()` | Server-side HTTP requests |
 | **Blob/File** | `parseBlob()` / `parseFile()` | File uploads, drag-and-drop |
@@ -366,7 +366,7 @@ app.post('/upload', async (c) => {
 | `parseString()` | Small-Medium | O(n) - loads string | < 100MB strings |
 | `parseStringStream()` | Any | O(1) per record | Large files, streams |
 | `parseBinary()` | Small-Medium | O(n) - loads buffer | < 100MB binary |
-| `parseUint8ArrayStream()` | Any | O(1) per record | Large binary streams |
+| `parseBinaryStream()` | Any | O(1) per record | Large binary streams |
 | `parseString.toArray()` | Small only | O(n) - loads all | < 10MB, need array |
 
 **Rule of thumb:**

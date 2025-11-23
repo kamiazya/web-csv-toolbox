@@ -118,7 +118,7 @@ Comprehensive documentation following Diátaxis framework:
   - Drag-and-drop file uploads
   - Compressed file handling (.csv.gz)
   - Validation and error handling patterns
-  - **NEW:** Node.js Buffer usage (already supported via Uint8Array)
+  - **NEW:** Node.js Buffer usage (supported via BufferSource compatibility)
   - **NEW:** FormData integration patterns
   - **NEW:** Node.js stream conversion (fs.ReadStream → Web Streams)
 

@@ -10,11 +10,12 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * @param options - The parse options.
  * @returns An iterable iterator of CSV records.
  * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
+ * @throws {TypeError} If the encoded data is not valid.
  * @throws {ParseError} When an error occurs while parsing the CSV data.
  *
  * @remarks
  * **WARNING**: This function loads the entire binary data into memory before iteration.
- * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseUint8ArrayStream()`
+ * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseBinaryStream()`
  * to avoid memory exhaustion.
  *
  * The default maxBinarySize is 100MB. While this function returns an iterator, the entire

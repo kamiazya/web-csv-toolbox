@@ -2,7 +2,7 @@ import * as internal from "@/converters/iterators/convertThisAsyncIterableIterat
 import { DEFAULT_ARRAY_BUFFER_THRESHOLD } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseBlobToStream } from "@/parser/api/file/parseBlobToStream.ts";
 import { getOptionsFromBlob } from "@/utils/blob/getOptionsFromBlob.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
@@ -88,7 +88,7 @@ export function parseBlob<
         ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       } else {
         // Large file: use streaming for memory efficiency
-        yield* parseUint8ArrayStream(
+        yield* parseBinaryStream(
           blob.stream(),
           options_,
         ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;

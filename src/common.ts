@@ -30,7 +30,7 @@ export * from "@/engine/config/EnginePresets.ts";
 // Parser APIs - All async APIs
 // ============================================================================
 export * from "@/parser/api/binary/parseBinary.ts";
-export * from "@/parser/api/binary/parseUint8ArrayStream.ts";
+export * from "@/parser/api/binary/parseBinaryStream.ts";
 export * from "@/parser/api/file/parseBlob.ts";
 export * from "@/parser/api/file/parseFile.ts";
 export * from "@/parser/api/file/parseFileToArray.ts";
@@ -40,15 +40,21 @@ export * from "@/parser/api/network/parseResponse.ts";
 export * from "@/parser/api/parse.ts";
 export * from "@/parser/api/string/parseString.ts";
 export * from "@/parser/api/string/parseStringStream.ts";
+export * from "@/parser/models/createBinaryCSVParser.ts";
 export * from "@/parser/models/createCSVRecordAssembler.ts";
 export * from "@/parser/models/createStringCSVLexer.ts";
+export * from "@/parser/models/createStringCSVParser.ts";
+export * from "@/parser/models/FlexibleBinaryCSVParser.ts";
 // ============================================================================
 // Parser models and transformers
 // ============================================================================
 export * from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 export * from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
+export * from "@/parser/models/FlexibleStringCSVParser.ts";
+export * from "@/parser/stream/BinaryCSVParserStream.ts";
 export * from "@/parser/stream/CSVLexerTransformer.ts";
 export * from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+export * from "@/parser/stream/StringCSVParserStream.ts";
 
 // ============================================================================
 // Utility functions

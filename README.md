@@ -470,7 +470,7 @@ catering to users who need more detailed and fine-tuned functionality.
   - Stream-based parsing for larger or continuous data.
 - **`function parseStringStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringStream-1.html)
   - Combines string-based parsing with stream processing.
-- **`function parseUint8ArrayStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseUint8ArrayStream-1.html)
+- **`function parseBinaryStream(stream[, options])`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseBinaryStream-1.html)
   - Parses binary streams with precise control over data types.
 
 ### Low-level APIs ⚙️
@@ -478,18 +478,88 @@ catering to users who need more detailed and fine-tuned functionality.
 These APIs are built for **Advanced Customization and Pipeline Design**,
 ideal for developers looking for in-depth control and flexibility.
 
+The low-level APIs follow a 3-tier architecture:
+
+#### Parser Models (Tier 1: Simplified Composition)
+
+Combines Lexer and Assembler for streamlined usage without sacrificing flexibility.
+
+- **`function createStringCSVParser(options?)` / `class FlexibleStringCSVParser`**
+  - Parses CSV strings by composing `FlexibleStringCSVLexer` and CSV Record Assembler.
+  - Supports both object and array output formats via `outputFormat` option.
+  - Stateful parser maintains internal lexer and assembler instances for streaming.
+  - Use with `StringCSVParserStream` for streaming workflows.
+  - **Streaming mode**: When using `parse(chunk, { stream: true })`, you must call `parse()` without arguments at the end to flush any remaining data.
+
+  ```typescript
+  const parser = createStringCSVParser({ header: ['name', 'age'] });
+
+  // Process chunks
+  const records1 = parser.parse('Alice,30\nBob,', { stream: true });
+  const records2 = parser.parse('25\nCharlie,', { stream: true });
+
+  // Flush remaining data (required!)
+  const records3 = parser.parse();
+  ```
+
+- **`function createBinaryCSVParser(options?)` / `class FlexibleBinaryCSVParser`**
+  - Parses binary CSV data (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) by composing `TextDecoder` with `FlexibleStringCSVParser`.
+  - Uses `TextDecoder` with `stream: true` option for proper multi-byte character handling across chunk boundaries.
+  - Supports various character encodings (utf-8, shift_jis, etc.) via `charset` option.
+  - BOM handling via `ignoreBOM` option, fatal error mode via `fatal` option.
+  - Use with `BinaryCSVParserStream` for streaming workflows.
+  - **Streaming mode**: When using `parse(chunk, { stream: true })`, you must call `parse()` without arguments at the end to flush TextDecoder and parser buffers.
+
+  ```typescript
+  const parser = createBinaryCSVParser({ header: ['name', 'age'] });
+  const encoder = new TextEncoder();
+
+  // Process chunks
+  const records1 = parser.parse(encoder.encode('Alice,30\nBob,'), { stream: true });
+  const records2 = parser.parse(encoder.encode('25\n'), { stream: true });
+
+  // Flush remaining data (required!)
+  const records3 = parser.parse();
+  ```
+
+#### Lexer (Tier 2: Stage 1 - Tokenization)
+
+Low-level tokenization with full control over CSV syntax.
+
 - **`function createStringCSVLexer(options?)` / `class FlexibleStringCSVLexer`**
   - Factory helper plus underlying class for the standalone lexer used across the toolkit.
   - Configure delimiters, quotation, buffer limits, and cancellation per stream.
+  - Returns tokens (field values, row delimiters, etc.) for manual processing.
+
+#### Assembler (Tier 2: Stage 2 - Record Assembly)
+
+Converts tokens into structured records with flexible formatting.
+
 - **`function createCSVRecordAssembler(options)`**
   - Factory that returns either an object- or array-format assembler based on `outputFormat`.
   - Applies new options like `includeHeader` and `columnCountStrategy` consistently across environments.
 - **`class FlexibleCSVObjectRecordAssembler` / `class FlexibleCSVArrayRecordAssembler`**
   - Specialized assemblers when you need full control over object vs tuple output or want to extend behavior.
   - `FlexibleCSVRecordAssembler` remains for backward compatibility but now delegates to these focused implementations.
-- **Streaming transformers**
-  - **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html) — A TransformStream wrapper around the lexer with customizable queuing strategies.
-  - **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html) — Converts token streams into records with cooperative backpressure support.
+
+#### Streaming Transformers (Tier 3: TransformStream Integration)
+
+Web Streams API integration for all processing tiers.
+
+- **`class StringCSVParserStream`**
+  - `TransformStream<string, CSVRecord>` for streaming string parsing.
+  - Wraps Parser instances (accepts parser in constructor, doesn't construct internally).
+  - Configurable backpressure handling via `backpressureCheckInterval` option.
+  - Custom queuing strategies support for fine-tuned performance.
+- **`class BinaryCSVParserStream`**
+  - `TransformStream<Uint8Array, CSVRecord>` for streaming binary parsing.
+  - Handles UTF-8 multi-byte characters across chunk boundaries.
+  - Integration-ready for fetch API and file streaming.
+  - Backpressure management with configurable check intervals.
+- **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
+  - A TransformStream wrapper around the lexer with customizable queuing strategies.
+- **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
+  - Converts token streams into records with cooperative backpressure support.
 
 #### Customizing Queuing Strategies
 

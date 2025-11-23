@@ -10,14 +10,14 @@ group: Platform Usage
 Process CSV from stdin and output to stdout.
 
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { Readable, Writable } from 'node:stream';
 
 // Convert stdin to Web ReadableStream
 const stdinStream = Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>;
 
 // Parse CSV from stdin
-for await (const record of parseUint8ArrayStream(stdinStream)) {
+for await (const record of parseBinaryStream(stdinStream)) {
   // Output as JSON to stdout
   console.log(JSON.stringify(record));
 }
@@ -35,7 +35,7 @@ curl https://example.com/data.csv | node script.js
 **Transform and output:**
 
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { Readable } from 'node:stream';
 
 const stdinStream = Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>;
@@ -43,7 +43,7 @@ const stdinStream = Readable.toWeb(process.stdin) as ReadableStream<Uint8Array>;
 console.error('Processing CSV from stdin...');
 
 let count = 0;
-for await (const record of parseUint8ArrayStream(stdinStream)) {
+for await (const record of parseBinaryStream(stdinStream)) {
   // Transform: convert to uppercase
   const transformed = Object.fromEntries(
     Object.entries(record).map(([k, v]) => [k, String(v).toUpperCase()])

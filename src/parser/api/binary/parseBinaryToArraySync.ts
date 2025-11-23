@@ -14,7 +14,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  *
  * @remarks
  * **WARNING**: This function loads the entire binary data into memory synchronously.
- * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseUint8ArrayStream()`
+ * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseBinaryStream()`
  * to avoid memory exhaustion and blocking the event loop.
  *
  * The default maxBinarySize is 100MB. You can increase it via options, but this may lead to

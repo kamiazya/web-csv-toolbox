@@ -11,7 +11,7 @@ import type {
   PickCSVHeader,
 } from "@/core/types.ts";
 import { parseBinary } from "@/parser/api/binary/parseBinary.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseBlob } from "@/parser/api/file/parseBlob.ts";
 import { parseRequest } from "@/parser/api/network/parseRequest.ts";
 import { parseResponse } from "@/parser/api/network/parseResponse.ts";
@@ -34,7 +34,7 @@ import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
  * @category High-level API
  *
  * @remarks
- * {@link parseString}, {@link parseBinary}, {@link parseUint8ArrayStream},
+ * {@link parseString}, {@link parseBinary}, {@link parseBinaryStream},
  * {@link parseStringStream}, {@link parseResponse}, {@link parseRequest}, and {@link parseBlob} are used internally.
  *
  * If you known the type of the CSV, it performs better to use them directly.
@@ -44,7 +44,7 @@ import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
  * | {@link !String}                              | {@link parseString}           | {@link ParseOptions}       |
  * | {@link !ReadableStream}<{@link !String}>     | {@link parseStringStream}     | {@link ParseOptions}       |
  * | {@link !Uint8Array} \| {@link !ArrayBuffer}  | {@link parseBinary}           | {@link ParseBinaryOptions} |
- * | {@link !ReadableStream}<{@link !Uint8Array}> | {@link parseUint8ArrayStream} | {@link ParseBinaryOptions} |
+ * | {@link !ReadableStream}<{@link !Uint8Array}> | {@link parseBinaryStream} | {@link ParseBinaryOptions} |
  * | {@link !Response}                            | {@link parseResponse}         | {@link ParseBinaryOptions} |
  * | {@link !Request}                             | {@link parseRequest}          | {@link ParseBinaryOptions} |
  * | {@link !Blob} \| {@link !File}               | {@link parseBlob}             | {@link ParseBinaryOptions} |
@@ -226,7 +226,7 @@ export async function* parse<
     if (typeof firstChunk === "string") {
       yield* parseStringStream(branch2 as ReadableStream<string>, options);
     } else if (firstChunk instanceof Uint8Array) {
-      yield* parseUint8ArrayStream(
+      yield* parseBinaryStream(
         branch2 as ReadableStream<Uint8Array>,
         options,
       );

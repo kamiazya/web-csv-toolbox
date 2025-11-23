@@ -28,16 +28,34 @@ For standard CSV parsing, use the high-level APIs: [parse()](../tutorials/gettin
 
 ---
 
-## Understanding the Two-Stage Pipeline
+## Understanding the 3-Tier Architecture
 
-web-csv-toolbox uses a two-stage parsing architecture:
+web-csv-toolbox uses a 3-tier architecture for CSV parsing:
+
+### Tier 1: Parser Models (Simplified Composition)
+
+```
+CSV Data → Parser (Lexer + Assembler) → Records
+```
+
+**Recommended for most custom parsing needs:**
+- `FlexibleStringCSVParser` - String CSV parsing
+- `FlexibleBinaryCSVParser` - Binary CSV parsing with encoding support
+- Stateful streaming support via `{ stream: true }` option
+
+### Tier 2: Low-Level Pipeline (Advanced Control)
 
 ```
 CSV String → CSVLexer → Tokens → CSVRecordAssembler → Records
 ```
 
-- **Stage 1 (CSVLexer)**: Converts raw CSV text into tokens
-- **Stage 2 (CSVRecordAssembler)**: Converts tokens into structured records
+**For advanced customization:**
+- `FlexibleStringCSVLexer` - Tokenization
+- `FlexibleCSVRecordAssembler` - Record assembly
+
+### Tier 3: Custom Implementation
+
+Build your own parser using token types and interfaces.
 
 See: [Parsing Architecture](../explanation/parsing-architecture.md)
 
@@ -45,7 +63,37 @@ See: [Parsing Architecture](../explanation/parsing-architecture.md)
 
 ## Basic Custom Parser
 
-### Step 1: Create a Simple Parser
+### Using Parser Models (Recommended)
+
+The simplest way to build a custom parser is using Parser Models (Tier 1):
+
+```typescript
+import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+
+function parseCSV(csv: string) {
+  const parser = new FlexibleStringCSVParser({
+    header: ['name', 'age'] as const,
+  });
+
+  return parser.parse(csv);
+}
+
+// Usage
+for (const record of parseCSV('Alice,30\nBob,25\n')) {
+  console.log(record);
+}
+// { name: 'Alice', age: '30' }
+// { name: 'Bob', age: '25' }
+```
+
+**Benefits:**
+- Single class instead of Lexer + Assembler composition
+- Stateful streaming support built-in
+- Simpler API for most use cases
+
+### Using Low-Level APIs (Advanced)
+
+For advanced control, use the Lexer + Assembler pipeline (Tier 2):
 
 ```typescript
 import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
@@ -69,11 +117,35 @@ for (const record of parseCSV('name,age\r\nAlice,30\r\n')) {
 // { name: 'Alice', age: '30' }
 ```
 
+**Use when:**
+- Need access to raw tokens
+- Building syntax highlighters or validators
+- Custom token transformation
+
 ---
 
 ## Custom Delimiters
 
 ### Tab-Separated Values (TSV)
+
+**Using Parser Model:**
+
+```typescript
+import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+
+function parseTSV(tsv: string) {
+  const parser = new FlexibleStringCSVParser({ delimiter: '\t' });
+  return parser.parse(tsv);
+}
+
+// Usage
+for (const record of parseTSV('name\tage\r\nAlice\t30\r\n')) {
+  console.log(record);
+}
+// { name: 'Alice', age: '30' }
+```
+
+**Using Low-Level APIs:**
 
 ```typescript
 import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
@@ -99,17 +171,14 @@ for (const record of parseTSV('name\tage\r\nAlice\t30\r\n')) {
 
 ### Pipe-Separated Values
 
+**Using Parser Model:**
+
 ```typescript
-import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
+import { FlexibleStringCSVParser } from 'web-csv-toolbox';
 
 function parsePSV(psv: string) {
-  const lexer = new FlexibleStringCSVLexer({ delimiter: '|' });
-  const tokens = lexer.lex(psv);
-
-  const assembler = new FlexibleCSVRecordAssembler();
-  const records = assembler.assemble(tokens);
-
-  return records;
+  const parser = new FlexibleStringCSVParser({ delimiter: '|' });
+  return parser.parse(psv);
 }
 
 // Usage
@@ -417,9 +486,84 @@ for (const record of parseWithFilter(
 
 ## Streaming Lexing and Assembly
 
-### Chunked Lexing with stream Option
+### Stateful Parsing with Parser Models (Recommended)
 
-Process CSV data in chunks with stateful lexing:
+Process CSV data in chunks using Parser Models:
+
+```typescript
+import { FlexibleStringCSVParser } from 'web-csv-toolbox';
+
+const parser = new FlexibleStringCSVParser({
+  header: ['name', 'age'] as const,
+});
+
+// First chunk - incomplete record
+const records1 = parser.parse('Alice,', { stream: true });
+console.log(records1); // [] - waiting for complete record
+
+// Second chunk - completes the record
+const records2 = parser.parse('30\nBob,25\n', { stream: true });
+console.log(records2);
+// [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+// Final chunk - flush remaining data
+const records3 = parser.parse(); // Call without arguments to flush
+console.log(records3); // []
+```
+
+**Benefits:**
+- Simpler API - single parser instance maintains state
+- Handles both lexing and assembly automatically
+- Ideal for streaming file uploads or fetch responses
+
+### Streaming with TransformStream
+
+Use `StringCSVParserStream` for Web Streams API integration:
+
+```typescript
+import { FlexibleStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+
+const parser = new FlexibleStringCSVParser({
+  header: ['name', 'age'] as const,
+});
+const stream = new StringCSVParserStream(parser);
+
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(stream)
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record); // { name: '...', age: '...' }
+    }
+  }));
+```
+
+For binary data with character encoding:
+
+```typescript
+import { FlexibleBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+
+const parser = new FlexibleBinaryCSVParser({
+  header: ['name', 'age'] as const,
+  charset: 'utf-8',
+  ignoreBOM: true,
+});
+const stream = new BinaryCSVParserStream(parser);
+
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(stream) // Directly pipe binary data
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record);
+    }
+  }));
+```
+
+### Low-Level: Chunked Lexing with stream Option
+
+For advanced control, use Lexer + Assembler directly:
 
 ```typescript
 import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
@@ -446,39 +590,7 @@ console.log(tokens2);
 const tokens3 = [...lexer.lex()]; // Call without arguments to flush
 ```
 
-### Chunked Assembly with stream Option
-
-Process tokens incrementally:
-
-```typescript
-import { FlexibleCSVRecordAssembler } from 'web-csv-toolbox';
-
-const assembler = new FlexibleCSVRecordAssembler();
-
-// Partial record (only header)
-const tokens1 = [
-  { type: 'Field', value: 'name' },
-  { type: 'FieldDelimiter', value: ',' },
-  { type: 'Field', value: 'age' },
-  { type: 'RecordDelimiter', value: '\r\n' }
-];
-
-const records1 = [...assembler.assemble(tokens1, { stream: true })];
-console.log(records1); // [] - waiting for data rows
-
-// Complete record
-const tokens2 = [
-  { type: 'Field', value: 'Alice' },
-  { type: 'FieldDelimiter', value: ',' },
-  { type: 'Field', value: '30' },
-  { type: 'RecordDelimiter', value: '\r\n' }
-];
-
-const records2 = [...assembler.assemble(tokens2)]; // Flush
-console.log(records2); // [{ name: 'Alice', age: '30' }]
-```
-
-### Combined Chunked Processing
+### Low-Level: Combined Chunked Processing
 
 ```typescript
 import { FlexibleStringCSVLexer, FlexibleCSVRecordAssembler } from 'web-csv-toolbox';

@@ -25,7 +25,7 @@ Bob,25,LA`;
           name: "Alice",
           age: "30",
           city: undefined,
-        }); // Padded
+        }); // Missing field filled with undefined (pad behavior)
         expect(records[1]).toEqual({ name: "Bob", age: "25", city: "LA" }); // Exact match
       });
 
@@ -46,7 +46,7 @@ Bob,25`;
 
         expect(records).toHaveLength(2);
         expect(records[0]).toEqual({ name: "Alice", age: "30", city: "NY" }); // Exact match
-        expect(records[1]).toEqual({ name: "Bob", age: "25", city: undefined }); // Padded
+        expect(records[1]).toEqual({ name: "Bob", age: "25", city: undefined }); // Missing field filled with undefined
       });
 
       test("should ignore extra fields in long rows", () => {
@@ -181,7 +181,7 @@ Bob,25,LA`;
           name: "Alice",
           age: "30",
           city: undefined,
-        }); // No padding
+        }); // Missing field remains undefined with truncate strategy
       });
     });
 
@@ -212,14 +212,14 @@ Bob,25,LA`;
           name: "Alice",
           age: "30",
           city: undefined,
-        }); // Behaves like pad
+        }); // Behaves like pad (fills with undefined)
 
         warnSpy.mockRestore();
       });
     });
 
     describe("empty fields vs missing fields", () => {
-      test("should distinguish empty fields from missing fields", () => {
+      test("should use empty string for empty fields", () => {
         const csv = `,x,`;
 
         const lexer = new FlexibleStringCSVLexer();
@@ -234,10 +234,10 @@ Bob,25,LA`;
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({ a: "", b: "x", c: "" }); // Empty strings, not undefined
+        expect(records[0]).toEqual({ a: "", b: "x", c: "" }); // Empty fields → ""
       });
 
-      test("should use undefined for missing fields in short rows", () => {
+      test("should use undefined for missing fields in short rows (object format)", () => {
         const csv = `x`;
 
         const lexer = new FlexibleStringCSVLexer();
@@ -252,7 +252,7 @@ Bob,25,LA`;
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({ a: "x", b: undefined, c: undefined }); // undefined for missing
+        expect(records[0]).toEqual({ a: "x", b: undefined, c: undefined }); // Missing fields → undefined
       });
     });
   });

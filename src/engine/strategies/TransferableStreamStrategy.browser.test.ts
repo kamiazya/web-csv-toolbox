@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EnginePresets } from "@/engine/config/EnginePresets.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
 
 describe("TransferableStreamStrategy in browser", () => {
@@ -92,7 +92,7 @@ describe("TransferableStreamStrategy in browser", () => {
     });
   });
 
-  describe("parseUint8ArrayStream with stream-transfer", () => {
+  describe("parseBinaryStream with stream-transfer", () => {
     it("should parse binary CSV using stream-transfer strategy", async () => {
       const csv = "name,age\nAlice,30\nBob,25";
       const encoder = new TextEncoder();
@@ -106,7 +106,7 @@ describe("TransferableStreamStrategy in browser", () => {
       });
 
       const records = [];
-      for await (const record of parseUint8ArrayStream(stream, {
+      for await (const record of parseBinaryStream(stream, {
         engine: EnginePresets.memoryEfficient(),
       })) {
         records.push(record);
@@ -131,7 +131,7 @@ describe("TransferableStreamStrategy in browser", () => {
       });
 
       const records = [];
-      for await (const record of parseUint8ArrayStream(stream, {
+      for await (const record of parseBinaryStream(stream, {
         engine: EnginePresets.memoryEfficient(),
         charset: "utf-8",
       })) {

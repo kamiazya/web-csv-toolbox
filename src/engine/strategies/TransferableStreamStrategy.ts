@@ -117,7 +117,7 @@ export class TransferableStreamStrategy implements WorkerStrategy {
           type = "parseStringStream";
           streamToTransfer = reconstructedStream;
         } else if (firstChunk.value instanceof Uint8Array) {
-          type = "parseUint8ArrayStream";
+          type = "parseBinaryStream";
           streamToTransfer = reconstructedStream;
         } else {
           throw new Error(

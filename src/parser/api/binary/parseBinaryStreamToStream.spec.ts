@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 
 const csv = new ReadableStream({
   start(controller) {
@@ -19,9 +19,9 @@ const expected = [
   { name: "Bob", age: "69" },
 ];
 
-test("parseUint8ArrayStreamToStream", async () => {
+test("parseBinaryStreamToStream", async () => {
   let i = 0;
-  await parseUint8ArrayStreamToStream(csv).pipeTo(
+  await parseBinaryStreamToStream(csv).pipeTo(
     new WritableStream({
       write(record) {
         expect(record).toEqual(expected[i++]);
@@ -32,7 +32,7 @@ test("parseUint8ArrayStreamToStream", async () => {
 
 test("throws an error if the CSV is invalid", async () => {
   await expect(async () => {
-    await parseUint8ArrayStreamToStream(
+    await parseBinaryStreamToStream(
       new ReadableStream({
         start(controller) {
           controller.enqueue(new TextEncoder().encode('a\n"'));

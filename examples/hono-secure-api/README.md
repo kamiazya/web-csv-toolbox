@@ -235,7 +235,7 @@ The example includes comprehensive security tests that guarantee all protection 
          │
     ┌────▼──────────────────────────────────────┐
     │ Stream Processing with Limits             │
-    │  • parseUint8ArrayStream                  │
+    │  • parseBinaryStream                      │
     │  • Record count limit (100k)              │
     │  • Error count limit (1000)               │
     │  • Record-by-record validation            │

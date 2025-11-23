@@ -1,6 +1,6 @@
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import type { InferCSVRecord, ParseOptions } from "@/core/types.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseResponseToStream } from "@/parser/api/network/parseResponseToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.ts";
@@ -53,7 +53,7 @@ export function parseResponse<
   // Return wrapper async generator for error handling
   return (async function* () {
     try {
-      yield* parseUint8ArrayStream(
+      yield* parseBinaryStream(
         response.body!,
         options_,
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;

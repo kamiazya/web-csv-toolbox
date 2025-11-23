@@ -854,7 +854,7 @@ interface BaseEngineConfig {
    * - Files smaller than threshold: Use `blob.arrayBuffer()` + `parseBinary()`
    *   - ✅ Faster for small files
    *   - ❌ Loads entire file into memory
-   * - Files equal to or larger than threshold: Use `blob.stream()` + `parseUint8ArrayStream()`
+   * - Files equal to or larger than threshold: Use `blob.stream()` + `parseBinaryStream()`
    *   - ✅ Memory-efficient for large files
    *   - ❌ Slight streaming overhead
    *

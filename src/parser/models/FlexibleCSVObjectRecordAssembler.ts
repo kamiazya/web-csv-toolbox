@@ -256,7 +256,7 @@ export class FlexibleCSVObjectRecordAssembler<
 
     switch (this.#columnCountStrategy) {
       case "pad":
-        // Default behavior: map all header keys, use undefined for missing values
+        // Default behavior: map all header keys, keep missing values as undefined
         return Object.fromEntries(
           this.#header
             .map((header, index) => [header, index] as const)
@@ -284,7 +284,7 @@ export class FlexibleCSVObjectRecordAssembler<
         ) as unknown as CSVObjectRecord<Header>;
 
       case "truncate":
-        // Only include fields up to header length, ignore extras
+        // Only include fields up to header length, ignore extras, keep missing values as undefined
         return Object.fromEntries(
           this.#header
             .map((header, index) => [header, index] as const)

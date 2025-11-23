@@ -26,13 +26,13 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * @example Parsing CSV binary
  *
  * ```ts
- * import { parseUint8Array } from 'web-csv-toolbox';
+ * import { parseBinary } from 'web-csv-toolbox';
  *
  * const csv = Uint8Array.from([
  *   // ...
  * ]);
  *
- * for await (const record of parseUint8Array(csv)) {
+ * for await (const record of parseBinary(csv)) {
  *   console.log(record);
  * }
  * ```
@@ -102,13 +102,13 @@ export declare namespace parseBinary {
    *
    * @example
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const records = await parseUint8Array.toArray(csv);
+   * const records = await parseBinary.toArray(csv);
    * ```
    */
   export function toArray<
@@ -127,13 +127,13 @@ export declare namespace parseBinary {
    * @example
    *
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const records = parseUint8Array.toArraySync(csv);
+   * const records = parseBinary.toArraySync(csv);
    * ```
    */
   export function toArraySync<
@@ -152,13 +152,13 @@ export declare namespace parseBinary {
    * @returns Async iterable iterator of records.
    * @example
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * for (const record of parseUint8Array.toIterableIterator(csv)) {
+   * for (const record of parseBinary.toIterableIterator(csv)) {
    *   console.log(record);
    * }
    * ```
@@ -181,13 +181,13 @@ export declare namespace parseBinary {
    * @example
    *
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const stream = parseUint8Array.toStream(csv);
+   * const stream = parseBinary.toStream(csv);
    *
    * await stream.pipeTo(
    *   new WritableStream({

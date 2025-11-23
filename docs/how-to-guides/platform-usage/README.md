@@ -48,12 +48,12 @@ CSV parsing in Deno runtime:
 | | `FormData` | `parseFile()` | [FormData](./browser/formdata.md) |
 | | `Response` | `parseResponse()` | [Fetch](./browser/fetch.md) |
 | **Node.js** | `Buffer` | `parseBinary()` | [Buffer](./nodejs/buffer.md) |
-| | `fs.ReadStream` | `parseUint8ArrayStream()` | [FS Stream](./nodejs/fs-stream.md) |
+| | `fs.ReadStream` | `parseBinaryStream()` | [FS Stream](./nodejs/fs-stream.md) |
 | | `Response` | `parseResponse()` | [HTTP](./nodejs/http.md) |
-| | stdin | `parseUint8ArrayStream()` | [stdin/stdout](./nodejs/stdin-stdout.md) |
-| | `stream.Readable` | `parseUint8ArrayStream()` | [Stream Conversion](./nodejs/stream-conversion.md) |
+| | stdin | `parseBinaryStream()` | [stdin/stdout](./nodejs/stdin-stdout.md) |
+| | `stream.Readable` | `parseBinaryStream()` | [Stream Conversion](./nodejs/stream-conversion.md) |
 | **Deno** | `Uint8Array` | `parseBinary()` | [readFile](./deno/readfile.md) |
-| | `ReadableStream` | `parseUint8ArrayStream()` | [open](./deno/open.md) |
+| | `ReadableStream` | `parseBinaryStream()` | [open](./deno/open.md) |
 | | `Response` | `parseResponse()` | [fetch](./deno/fetch.md) |
 
 > **Note:** `parseFile()` automatically includes the filename in error messages. For environments where the File constructor is unavailable (e.g., Cloudflare Workers), use `parseBlob()` with a manual `source` option: `parseBlob(blob, { source: 'filename.csv' })`.
@@ -64,7 +64,7 @@ CSV parsing in Deno runtime:
 
 ### Memory Efficiency
 
-- ✅ **Use streaming for large files** - Prefer `parseUint8ArrayStream()` over loading entire files
+- ✅ **Use streaming for large files** - Prefer `parseBinaryStream()` over loading entire files
 - ✅ **Process incrementally** - Use `for await...of` to handle records one at a time
 - ❌ **Avoid `.toArray()` for large datasets** - Loads entire result into memory
 

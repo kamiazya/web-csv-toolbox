@@ -5,7 +5,7 @@ import type {
   PickCSVHeader,
 } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -57,7 +57,7 @@ export function parseStringToArraySync<
   const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(csv: string, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
-    const lexer = new FlexibleStringCSVLexer(options);
+    const lexer = createStringCSVLexer(options);
     const assembler = createCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);
     return [...assembler.assemble(tokens)] as InferCSVRecord<Header, Options>[];

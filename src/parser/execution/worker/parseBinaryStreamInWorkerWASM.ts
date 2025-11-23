@@ -23,7 +23,7 @@ import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export async function* parseUint8ArrayStreamInWorkerWASM<
+export async function* parseBinaryStreamInWorkerWASM<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -44,7 +44,7 @@ export async function* parseUint8ArrayStreamInWorkerWASM<
     session.getWorker(),
     {
       id: session.getNextRequestId(),
-      type: "parseUint8ArrayStream",
+      type: "parseBinaryStream",
       data: stream,
       options: serializeOptions(options),
       useWASM: true, // Enable WASM binary processing

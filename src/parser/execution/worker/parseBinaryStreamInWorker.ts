@@ -15,7 +15,7 @@ import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
  *
  * @internal
  */
-export async function* parseUint8ArrayStreamInWorker<
+export async function* parseBinaryStreamInWorker<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -36,7 +36,7 @@ export async function* parseUint8ArrayStreamInWorker<
     session.getWorker(),
     {
       id: session.getNextRequestId(),
-      type: "parseUint8ArrayStream",
+      type: "parseBinaryStream",
       data: stream,
       options: serializeOptions(options),
     },

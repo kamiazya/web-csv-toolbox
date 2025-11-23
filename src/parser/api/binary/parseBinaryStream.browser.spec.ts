@@ -2,11 +2,11 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
 import type { EngineConfig } from "@/core/types.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 // Test each execution strategy (WASM doesn't support streaming)
-describe("parseUint8ArrayStream with execution strategies", () => {
+describe("parseBinaryStream with execution strategies", () => {
   const strategies: Array<{ name: string; engine?: EngineConfig }> = [
     { name: "main thread (default)", engine: undefined },
     { name: "worker", engine: { worker: true } },
@@ -56,7 +56,7 @@ describe("parseUint8ArrayStream with execution strategies", () => {
                 controller.close();
               },
             }).pipeThrough(new TextEncoderStream());
-            for await (const row of parseUint8ArrayStream(stream, { engine })) {
+            for await (const row of parseBinaryStream(stream, { engine })) {
               expect(data[i++]).toStrictEqual(row);
             }
           },
@@ -105,7 +105,7 @@ describe("parseUint8ArrayStream with execution strategies", () => {
                   controller.close();
                 },
               }).pipeThrough(new TextEncoderStream());
-              for await (const record of parseUint8ArrayStream(stream, {
+              for await (const record of parseBinaryStream(stream, {
                 engine,
               })) {
                 records.push(record);
@@ -133,7 +133,7 @@ describe("parseUint8ArrayStream with execution strategies", () => {
       },
     }).pipeThrough(new TextEncoderStream());
     const records = [];
-    for await (const record of parseUint8ArrayStream(stream, {
+    for await (const record of parseBinaryStream(stream, {
       engine: { wasm: true },
     })) {
       records.push(record);

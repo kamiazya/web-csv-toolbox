@@ -9,7 +9,7 @@ import type {
 } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
-import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -23,12 +23,12 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * @param options Parsing options.
  * @returns Async iterable iterator of records.
  *
- * If you want array of records, use {@link parseUint8ArrayStream.toArray} function.
+ * If you want array of records, use {@link parseBinaryStream.toArray} function.
  *
  * @example Parsing CSV binary
  *
  * ```ts
- * import { parseUint8ArrayStream } from 'web-csv-toolbox';
+ * import { parseBinaryStream } from 'web-csv-toolbox';
  *
  * const csv = Uint8Array.from([
  *  // ...
@@ -41,12 +41,12 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  *   },
  * });
  *
- * for await (const record of parseUint8ArrayStream(stream)) {
+ * for await (const record of parseBinaryStream(stream)) {
  *   console.log(record);
  * }
  * ```
  */
-export async function* parseUint8ArrayStream<
+export async function* parseBinaryStream<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = '"',
@@ -89,7 +89,7 @@ export async function* parseUint8ArrayStream<
     }
   } else {
     // Main thread execution (default for streams)
-    const recordStream = parseUint8ArrayStreamToStream<
+    const recordStream = parseBinaryStreamToStream<
       Header,
       Delimiter,
       Quotation,
@@ -115,7 +115,7 @@ export async function* parseUint8ArrayStream<
   }
 }
 
-export declare namespace parseUint8ArrayStream {
+export declare namespace parseBinaryStream {
   /**
    * Parse CSV binary to array of records,
    * ideal for smaller data sets.
@@ -124,7 +124,7 @@ export declare namespace parseUint8ArrayStream {
    *
    * @example Parsing CSV binary
    * ```ts
-   * import { parseUint8ArrayStream } from 'web-csv-toolbox';
+   * import { parseBinaryStream } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *   // ...
@@ -137,7 +137,7 @@ export declare namespace parseUint8ArrayStream {
    *   },
    * });
    *
-   * const records = await parseUint8ArrayStream.toArray(stream);
+   * const records = await parseBinaryStream.toArray(stream);
    * console.log(records);
    * ```
    */
@@ -155,7 +155,7 @@ export declare namespace parseUint8ArrayStream {
    *
    * @example Parsing CSV binary
    * ```ts
-   * import { parseUint8ArrayStream } from 'web-csv-toolbox';
+   * import { parseBinaryStream } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
@@ -168,7 +168,7 @@ export declare namespace parseUint8ArrayStream {
    * },
    * });
    *
-   * await parseUint8ArrayStream.toStream(stream)
+   * await parseBinaryStream.toStream(stream)
    *   .pipeTo(new WritableStream({
    *     write(record) {
    *       console.log(record);
@@ -185,7 +185,7 @@ export declare namespace parseUint8ArrayStream {
     options?: Options,
   ): ReadableStream<InferCSVRecord<Header, Options>>;
 }
-Object.defineProperties(parseUint8ArrayStream, {
+Object.defineProperties(parseBinaryStream, {
   toArray: {
     enumerable: true,
     writable: false,
@@ -194,6 +194,6 @@ Object.defineProperties(parseUint8ArrayStream, {
   toStream: {
     enumerable: true,
     writable: false,
-    value: parseUint8ArrayStreamToStream,
+    value: parseBinaryStreamToStream,
   },
 });

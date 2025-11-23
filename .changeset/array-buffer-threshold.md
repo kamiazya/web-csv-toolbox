@@ -9,7 +9,7 @@ Add `arrayBufferThreshold` option to Engine configuration for automatic Blob rea
 Added `engine.arrayBufferThreshold` option that automatically selects the optimal Blob reading strategy based on file size:
 
 - **Files smaller than threshold**: Use `blob.arrayBuffer()` + `parseBinary()` (6-8x faster, confirmed by benchmarks)
-- **Files equal to or larger than threshold**: Use `blob.stream()` + `parseUint8ArrayStream()` (memory-efficient)
+- **Files equal to or larger than threshold**: Use `blob.stream()` + `parseBinaryStream()` (memory-efficient)
 
 **Default:** 1MB (1,048,576 bytes), determined by comprehensive benchmarks
 
