@@ -50,7 +50,7 @@ export interface ParseBinaryRequest<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends BaseParseRequest {
   type: "parseBinary";
-  data: Uint8Array | ArrayBuffer;
+  data: BufferSource;
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>;
 }
 
@@ -78,7 +78,7 @@ export interface ParseUint8ArrayStreamRequest<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends BaseParseRequest {
-  type: "parseUint8ArrayStream";
+  type: "parseBinaryStream";
   data?: ReadableStream<Uint8Array>;
   stream?: ReadableStream<Uint8Array>;
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>;
@@ -215,11 +215,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             );
           }
           // Process string stream with TransferableStream strategy
-          const { FlexibleStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+          const { createStringCSVLexer } = await import(
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -231,7 +231,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new FlexibleStringCSVLexer(req.options);
+          const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = stream
@@ -245,24 +245,24 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           return;
         }
 
-        if (type === "parseUint8ArrayStream") {
+        if (type === "parseBinaryStream") {
           // Type guard: ParseUint8ArrayStreamRequest
           const req = request as ParseUint8ArrayStreamRequest;
           // Support both 'stream' and 'data' properties for compatibility
           const stream = req.stream || req.data;
           if (!stream) {
             throw new Error(
-              "parseUint8ArrayStream with resultPort requires 'stream' or 'data' property, but both were undefined. " +
+              "parseBinaryStream with resultPort requires 'stream' or 'data' property, but both were undefined. " +
                 "Available properties: " +
                 Object.keys(req).join(", "),
             );
           }
           // Process binary stream with TransferableStream strategy
-          const { FlexibleStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+          const { createStringCSVLexer } = await import(
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -303,7 +303,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new FlexibleStringCSVLexer(req.options);
+          const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = textStream
@@ -365,11 +365,11 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseStringStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Stream processing (WASM not supported for streams)
-          const { FlexibleStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+          const { createStringCSVLexer } = await import(
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -381,7 +381,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new FlexibleStringCSVLexer(req.options);
+          const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = req.data
@@ -396,16 +396,16 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           );
           return;
         }
-      } else if (type === "parseUint8ArrayStream") {
+      } else if (type === "parseBinaryStream") {
         // Type guard: ParseUint8ArrayStreamRequest
         const req = request as ParseUint8ArrayStreamRequest;
         if (req.data instanceof ReadableStream) {
           // Binary stream processing
-          const { FlexibleStringCSVLexer } = await import(
-            "../../parser/models/createStringCSVLexer.ts"
+          const { createStringCSVLexer } = await import(
+            "../../parser/api/model/createStringCSVLexer.ts"
           );
           const { createCSVRecordAssembler } = await import(
-            "../../parser/models/createCSVRecordAssembler.ts"
+            "../../parser/api/model/createCSVRecordAssembler.ts"
           );
           const { CSVLexerTransformer } = await import(
             "../../parser/stream/CSVLexerTransformer.ts"
@@ -446,7 +446,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
-          const lexer = new FlexibleStringCSVLexer(req.options);
+          const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = textStream
@@ -482,7 +482,13 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             const asBytes =
               req.data instanceof Uint8Array
                 ? req.data
-                : new Uint8Array(req.data);
+                : req.data instanceof ArrayBuffer
+                  ? new Uint8Array(req.data)
+                  : new Uint8Array(
+                      req.data.buffer,
+                      req.data.byteOffset,
+                      req.data.byteLength,
+                    );
             let decoded: string;
             if (decompression) {
               // Check for DecompressionStream support (may not be available in all Worker contexts)

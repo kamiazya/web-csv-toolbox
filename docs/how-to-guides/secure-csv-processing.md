@@ -242,7 +242,7 @@ app.post('/validate-csv', async (c) => {
       let recordCount = 0;
 
       try {
-        for await (const record of parseUint8ArrayStream(csvStream, {
+        for await (const record of parseBinaryStream(csvStream, {
           signal,
           engine: EnginePresets.balanced({ workerPool: pool }),
           maxBufferSize: SECURITY_CONFIG.maxBufferSize,
@@ -407,7 +407,7 @@ const csvStream = rawBody.pipeThrough(byteLimitStream.stream);
 ```typescript
 let recordCount = 0;
 
-for await (const record of parseUint8ArrayStream(csvStream, { ... })) {
+for await (const record of parseBinaryStream(csvStream, { ... })) {
   recordCount++;
 
   if (recordCount > SECURITY_CONFIG.maxRecordCount) {
@@ -441,7 +441,7 @@ for await (const record of parseUint8ArrayStream(csvStream, { ... })) {
 ```typescript
 let errorCount = 0;
 
-for await (const record of parseUint8ArrayStream(csvStream, { ... })) {
+for await (const record of parseBinaryStream(csvStream, { ... })) {
   if (errorCount >= SECURITY_CONFIG.maxErrorCount) {
     await stream.write(`event: fatal\n`);
     await stream.write(`data: ${JSON.stringify({

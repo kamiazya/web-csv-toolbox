@@ -12,7 +12,7 @@ import {
   parseString,
   parseStringStream,
   parseStringToArraySyncWASM,
-  parseUint8ArrayStream
+  parseBinaryStream
 } from 'web-csv-toolbox';
 
 // Helper to generate CSV with specified columns and rows
@@ -723,15 +723,15 @@ function createBlobStream(csv: string): ReadableStream<Uint8Array> {
 }
 
 bench = bench
-  // parseBinary vs parseUint8ArrayStream comparison
+  // parseBinary vs parseBinaryStream comparison
   // These benchmarks determine the optimal threshold for automatic method selection
   .add('Binary approach: parseBinary (1KB)', () => {
     for (const _ of parseBinary.toIterableIterator(binary1KB)) {
       // noop
     }
   })
-  .add('Stream approach: parseUint8ArrayStream (1KB)', async () => {
-    for await (const _ of parseUint8ArrayStream(createBlobStream(csv1KB))) {
+  .add('Stream approach: parseBinaryStream (1KB)', async () => {
+    for await (const _ of parseBinaryStream(createBlobStream(csv1KB))) {
       // noop
     }
   })
@@ -740,8 +740,8 @@ bench = bench
       // noop
     }
   })
-  .add('Stream approach: parseUint8ArrayStream (10KB)', async () => {
-    for await (const _ of parseUint8ArrayStream(createBlobStream(csv10KB))) {
+  .add('Stream approach: parseBinaryStream (10KB)', async () => {
+    for await (const _ of parseBinaryStream(createBlobStream(csv10KB))) {
       // noop
     }
   })
@@ -750,8 +750,8 @@ bench = bench
       // noop
     }
   })
-  .add('Stream approach: parseUint8ArrayStream (100KB)', async () => {
-    for await (const _ of parseUint8ArrayStream(createBlobStream(csv100KB))) {
+  .add('Stream approach: parseBinaryStream (100KB)', async () => {
+    for await (const _ of parseBinaryStream(createBlobStream(csv100KB))) {
       // noop
     }
   })
@@ -760,8 +760,8 @@ bench = bench
       // noop
     }
   })
-  .add('Stream approach: parseUint8ArrayStream (1MB)', async () => {
-    for await (const _ of parseUint8ArrayStream(createBlobStream(csv1MB))) {
+  .add('Stream approach: parseBinaryStream (1MB)', async () => {
+    for await (const _ of parseBinaryStream(createBlobStream(csv1MB))) {
       // noop
     }
   });

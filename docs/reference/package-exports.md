@@ -26,7 +26,9 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - `EnginePresets.fast()` - Parse speed optimized
   - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
   - `EnginePresets.balanced()` - Balanced (general-purpose)
-- Low-level APIs (`createStringCSVLexer`, `FlexibleStringCSVLexer`, `createCSVRecordAssembler`, etc.)
+- Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
+  - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
+  - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `CSVLexerTransformer`, `CSVRecordAssemblerTransformer`
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 
@@ -153,6 +155,150 @@ When combined with future distribution improvements, this export could enable:
 4. **Custom loading strategies**: Implement lazy-loading or conditional loading
 
 **See**: [Package Exports Explanation](../explanation/package-exports.md#3-wasm-module-web-csv-toolboxcsvwasm) for detailed discussion of current limitations and future improvements.
+
+## Low-level API Reference
+
+The library exports a 3-tier architecture for low-level CSV parsing:
+
+### Tier 1: Parser Models (Simplified Composition)
+
+**Recommended for most custom parsing needs.** Combines Lexer + Assembler internally.
+
+#### String Parsing
+
+- **`createStringCSVParser(options?)`** - Factory function for creating format-specific parsers
+  - **Returns**: `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
+  - **Options**: `CSVProcessingOptions` (no `engine` option)
+  - **Use case**: Stateful parsing with streaming support
+  - **Example**:
+    ```typescript
+    import { createStringCSVParser } from 'web-csv-toolbox';
+
+    // Object format (default)
+    const objectParser = createStringCSVParser({
+      header: ['name', 'age'] as const
+    });
+    const records = objectParser.parse('Alice,30\nBob,25\n');
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+    // Array format
+    const arrayParser = createStringCSVParser({
+      header: ['name', 'age'] as const,
+      outputFormat: 'array'
+    });
+    const arrayRecords = arrayParser.parse('Alice,30\nBob,25\n');
+    // arrayRecords: [['Alice', '30'], ['Bob', '25']]
+    ```
+
+- **Direct class usage** (format-specific):
+  - **`FlexibleStringObjectCSVParser`** - Always outputs object records
+  - **`FlexibleStringArrayCSVParser`** - Always outputs array records
+
+- **`StringCSVParserStream`** - TransformStream for string CSV parsing
+  - **Use case**: Stream-based parsing with backpressure handling
+  - **Example**:
+    ```typescript
+    import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+
+    const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+    const stream = new StringCSVParserStream(parser);
+
+    await stringStream.pipeThrough(stream).pipeTo(yourSink);
+    ```
+
+#### Binary Parsing
+
+- **`createBinaryCSVParser(options?)`** - Factory function for creating format-specific binary parsers
+  - **Returns**: `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
+  - **Options**: `BinaryCSVProcessingOptions` (no `engine` option)
+  - **Use case**: Parse Uint8Array, ArrayBuffer, or other TypedArray with charset handling
+  - **Example**:
+    ```typescript
+    import { createBinaryCSVParser } from 'web-csv-toolbox';
+
+    // Object format (default)
+    const objectParser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
+      charset: 'utf-8'
+    });
+    const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
+    const records = objectParser.parse(buffer);
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+
+    // Array format
+    const arrayParser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
+      outputFormat: 'array',
+      charset: 'utf-8'
+    });
+    const arrayRecords = arrayParser.parse(buffer);
+    // arrayRecords: [['Alice', '30'], ['Bob', '25']]
+    ```
+
+- **Direct class usage** (format-specific):
+  - **`FlexibleBinaryObjectCSVParser`** - Always outputs object records
+  - **`FlexibleBinaryArrayCSVParser`** - Always outputs array records
+
+- **`BinaryCSVParserStream`** - TransformStream for binary CSV parsing
+  - **Use case**: Stream-based binary parsing with automatic charset decoding
+  - **Example**:
+    ```typescript
+    import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+
+    const parser = createBinaryCSVParser({
+      header: ['name', 'age'] as const,
+      charset: 'utf-8'
+    });
+    const stream = new BinaryCSVParserStream(parser);
+
+    await fetch('data.csv')
+      .then(res => res.body)
+      .pipeThrough(stream)
+      .pipeTo(yourSink);
+    ```
+
+### Tier 2: Lexer + Assembler (Advanced Control)
+
+**For advanced use cases** requiring fine-grained control over tokenization and record assembly.
+
+#### Lexer
+
+- **`FlexibleStringCSVLexer`** - CSV tokenizer
+  - **Factory**: `createStringCSVLexer(options?)` - Create lexer instance
+  - **Use case**: Custom tokenization logic
+  - **Example**:
+    ```typescript
+    import { createStringCSVLexer } from 'web-csv-toolbox';
+
+    const lexer = createStringCSVLexer({ delimiter: '\t' });
+    const tokens = lexer.lex('name\tage\nAlice\t30');
+    ```
+
+- **`CSVLexerTransformer`** - TransformStream for CSV tokenization
+  - **Use case**: Stream-based tokenization
+
+#### Assembler
+
+- **`FlexibleCSVRecordAssembler`** - Token-to-record assembler
+  - **Factory**: `createCSVRecordAssembler(options?)` - Create assembler instance
+  - **Use case**: Custom record assembly logic
+  - **Example**:
+    ```typescript
+    import { createStringCSVLexer, createCSVRecordAssembler } from 'web-csv-toolbox';
+
+    const lexer = createStringCSVLexer();
+    const assembler = createCSVRecordAssembler({ header: ['name', 'age'] });
+
+    const tokens = lexer.lex('Alice,30\nBob,25');
+    const records = [...assembler.assemble(tokens)];
+    ```
+
+- **`CSVRecordAssemblerTransformer`** - TransformStream for record assembly
+  - **Use case**: Stream-based record assembly
+
+### Tier 3: Custom Implementation
+
+Build completely custom parsers using the primitives above. See [Custom CSV Parser Guide](../how-to-guides/custom-csv-parser.md) for details.
 
 ## Package Metadata
 

@@ -1,10 +1,10 @@
 import fc from "fast-check";
 import { describe, expect, it, test } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
-describe("parseUint8ArrayStream function", () => {
+describe("parseBinaryStream function", () => {
   it("should parse CSV", () =>
     fc.assert(
       fc.asyncProperty(
@@ -52,7 +52,7 @@ describe("parseUint8ArrayStream function", () => {
         }),
         async ({ data, csv }) => {
           let i = 0;
-          for await (const row of parseUint8ArrayStream(csv)) {
+          for await (const row of parseBinaryStream(csv)) {
             expect(data[i++]).toStrictEqual(row);
           }
         },
@@ -68,7 +68,7 @@ describe("parseUint8ArrayStream function", () => {
     }).pipeThrough(new TextEncoderStream());
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
-    for await (const row of parseUint8ArrayStream(csv)) {
+    for await (const row of parseBinaryStream(csv)) {
       expect(row).toStrictEqual(expected[i++]);
     }
   });
@@ -82,7 +82,7 @@ describe("parseUint8ArrayStream function", () => {
     }).pipeThrough(new TextEncoderStream());
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
-    for await (const row of parseUint8ArrayStream(csv)) {
+    for await (const row of parseBinaryStream(csv)) {
       expect(row).toStrictEqual(expected[i++]);
     }
   });
@@ -145,7 +145,7 @@ describe("parseUint8ArrayStream function", () => {
         }),
         async ({ data, csv, decompression }) => {
           let i = 0;
-          for await (const row of parseUint8ArrayStream(csv, {
+          for await (const row of parseBinaryStream(csv, {
             decompression: decompression,
           })) {
             expect(data[i++]).toStrictEqual(row);
@@ -157,7 +157,7 @@ describe("parseUint8ArrayStream function", () => {
 
 test("throws an error if the CSV is invalid", async () => {
   await expect(async () => {
-    for await (const _ of parseUint8ArrayStream(
+    for await (const _ of parseBinaryStream(
       new ReadableStream({
         start(controller) {
           controller.enqueue('a\n"');

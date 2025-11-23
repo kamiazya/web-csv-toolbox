@@ -4,7 +4,7 @@ import { z } from 'zod';
 import {
   type ReusableWorkerPool,
   EnginePresets,
-  parseUint8ArrayStream,
+  parseBinaryStream,
   ParseError,
 } from 'web-csv-toolbox';
 
@@ -119,7 +119,7 @@ export function createApp(pool: ReusableWorkerPool) {
         let recordCount = 0;
 
         try {
-          for await (const record of parseUint8ArrayStream(csvStream, {
+          for await (const record of parseBinaryStream(csvStream, {
             signal,
             engine: EnginePresets.balanced({ workerPool: pool }),
             maxBufferSize: SECURITY_CONFIG.maxBufferSize,

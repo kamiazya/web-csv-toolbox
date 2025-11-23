@@ -4,8 +4,8 @@ import type {
   ParseOptions,
   PickCSVHeader,
 } from "@/core/types.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -49,7 +49,7 @@ export function parseStringStreamToStream<
   stream: ReadableStream<string>,
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
-  const lexer = new FlexibleStringCSVLexer(options);
+  const lexer = createStringCSVLexer(options);
   const assembler = createCSVRecordAssembler<Header>(options);
 
   return stream

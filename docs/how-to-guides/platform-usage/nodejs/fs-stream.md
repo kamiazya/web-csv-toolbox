@@ -10,7 +10,7 @@ group: Platform Usage
 Convert Node.js `fs.ReadStream` to Web Streams API.
 
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
@@ -22,7 +22,7 @@ const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
 // Parse from web stream
 let count = 0;
-for await (const record of parseUint8ArrayStream(webStream)) {
+for await (const record of parseBinaryStream(webStream)) {
   // Process record (e.g., save to database, validate, etc.)
   console.log(record);
   count++;
@@ -34,7 +34,7 @@ console.log(`Parsed ${count} records`);
 **With charset and options:**
 
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
@@ -45,7 +45,7 @@ const nodeStream = createReadStream('large-file.csv', {
 const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
 // Parse with options
-for await (const record of parseUint8ArrayStream(webStream, {
+for await (const record of parseBinaryStream(webStream, {
   charset: 'utf-8',
   delimiter: ',',
   // Process one record at a time (memory efficient)
@@ -63,7 +63,7 @@ async function processRecord(record: any) {
 **Compressed file streams:**
 
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
@@ -71,7 +71,7 @@ const nodeStream = createReadStream('data.csv.gz');
 const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
 // Parse compressed stream
-for await (const record of parseUint8ArrayStream(webStream, {
+for await (const record of parseBinaryStream(webStream, {
   decompression: 'gzip'
 })) {
   console.log(record);

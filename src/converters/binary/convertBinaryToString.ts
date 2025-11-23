@@ -2,16 +2,16 @@ import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
 import type { BinaryOptions } from "@/core/types.ts";
 
 /**
- * Converts a binary string to a string.
+ * Converts binary data to a string.
  *
- * @param binary - The binary string to convert.
- * @param options - The options for parsing the binary string.
+ * @param binary - The binary data to convert (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
+ * @param options - The options for parsing the binary data.
  * @returns The converted string.
  * @throws {RangeError} The given charset is not supported or binary size exceeds the limit.
  * @throws {TypeError} The encoded data was not valid.
  */
 export function convertBinaryToString(
-  binary: Uint8Array | ArrayBuffer,
+  binary: BufferSource,
   options: BinaryOptions,
 ): string {
   const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
@@ -55,7 +55,5 @@ export function convertBinaryToString(
     throw error;
   }
 
-  return decoder.decode(
-    binary instanceof ArrayBuffer ? new Uint8Array(binary) : binary,
-  );
+  return decoder.decode(binary);
 }

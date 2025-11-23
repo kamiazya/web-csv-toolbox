@@ -285,8 +285,8 @@ describe("worker.shared", () => {
       });
     });
 
-    describe("parseUint8ArrayStream", () => {
-      it("should handle parseUint8ArrayStream request", async () => {
+    describe("parseBinaryStream", () => {
+      it("should handle parseBinaryStream request", async () => {
         const handler = createMessageHandler(mockContext);
 
         const csvData = "name,age\nAlice,30\nBob,25";
@@ -302,7 +302,7 @@ describe("worker.shared", () => {
 
         const request: ParseUint8ArrayStreamRequest = {
           id: 1,
-          type: "parseUint8ArrayStream",
+          type: "parseBinaryStream",
           data: stream,
           options: {
             header: ["name", "age"],
@@ -335,7 +335,7 @@ describe("worker.shared", () => {
 
         const request: ParseUint8ArrayStreamRequest = {
           id: 1,
-          type: "parseUint8ArrayStream",
+          type: "parseBinaryStream",
           data: stream,
           options: {
             header: ["name", "age"],
@@ -386,7 +386,7 @@ describe("worker.shared", () => {
         expect(doneMessage).toBeDefined();
       });
 
-      it("should handle parseUint8ArrayStream with resultPort", async () => {
+      it("should handle parseBinaryStream with resultPort", async () => {
         const handler = createMessageHandler(mockContext);
 
         const portMessages: any[] = [];
@@ -407,7 +407,7 @@ describe("worker.shared", () => {
 
         const request: ParseUint8ArrayStreamRequest = {
           id: 1,
-          type: "parseUint8ArrayStream",
+          type: "parseBinaryStream",
           stream: stream,
           options: {
             header: ["name", "age"],

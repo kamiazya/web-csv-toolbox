@@ -1,7 +1,7 @@
 import { convertStreamToAsyncIterableIterator } from "@/converters/iterators/convertStreamToAsyncIterableIterator.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 
 /**
  * Parse CSV Uint8Array stream in main thread.
@@ -12,7 +12,7 @@ import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8Arr
  * @param options Parsing options
  * @returns Async iterable iterator of records
  */
-export function parseUint8ArrayStreamInMain<
+export function parseBinaryStreamInMain<
   Header extends ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -21,7 +21,7 @@ export function parseUint8ArrayStreamInMain<
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
   // Use existing stream implementation
-  const recordStream = parseUint8ArrayStreamToStream<Header>(
+  const recordStream = parseBinaryStreamToStream<Header>(
     stream,
     options as ParseBinaryOptions<Header> | undefined,
   );

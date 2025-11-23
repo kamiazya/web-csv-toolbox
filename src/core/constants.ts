@@ -72,6 +72,34 @@ export const DEFAULT_ASSEMBLER_MAX_FIELD_COUNT = 100_000;
 export const DEFAULT_BINARY_MAX_SIZE = 100 * 1024 * 1024;
 
 /**
+ * Default backpressure check interval for stream transformers.
+ *
+ * @remarks
+ * This constant defines how often stream transformers check for backpressure
+ * (measured in number of items processed). The transformer yields to the event loop
+ * when backpressure is detected to prevent blocking the main thread.
+ *
+ * Used by CSVLexerTransformer, StringCSVParserStream, and BinaryCSVParserStream.
+ *
+ * @category Constants
+ */
+export const DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL = 100;
+
+/**
+ * Default backpressure check interval for record assembler transformer.
+ *
+ * @remarks
+ * This constant defines how often the record assembler transformer checks for backpressure
+ * (measured in number of records processed). A lower value than general stream transformers
+ * is used because record assembly is a more granular operation.
+ *
+ * Used by CSVRecordAssemblerTransformer.
+ *
+ * @category Constants
+ */
+export const DEFAULT_ASSEMBLER_BACKPRESSURE_CHECK_INTERVAL = 10;
+
+/**
  * FiledDelimiter is a symbol for field delimiter of CSV.
  * @category Constants
  */

@@ -1,3 +1,4 @@
+import { DEFAULT_ASSEMBLER_BACKPRESSURE_CHECK_INTERVAL } from "@/core/constants.ts";
 import type {
   CSVRecord,
   CSVRecordAssembler,
@@ -130,7 +131,9 @@ export class CSVRecordAssemblerTransformer<
       CSVRecord<Header, Format>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
-    const checkInterval = options.backpressureCheckInterval ?? 10;
+    const checkInterval =
+      options.backpressureCheckInterval ??
+      DEFAULT_ASSEMBLER_BACKPRESSURE_CHECK_INTERVAL;
 
     super(
       {

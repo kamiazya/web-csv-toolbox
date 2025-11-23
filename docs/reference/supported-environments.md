@@ -312,7 +312,7 @@ See [Automatic Fallback Behavior](../explanation/execution-strategies.md#automat
 
 ```typescript
 // ✅ Supported - decompress in worker thread
-parseUint8ArrayStream(compressedStream, {
+parseBinaryStream(compressedStream, {
   decompression: 'gzip',
   engine: { worker: true }
 });

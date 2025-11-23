@@ -22,7 +22,7 @@ Node.js provides `Readable.toWeb()` to convert Node.js streams to Web ReadableSt
 ```typescript
 import express from 'express';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const app = express();
 
@@ -32,7 +32,7 @@ app.post('/upload-csv', async (req, res) => {
     const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream)) {
+    for await (const record of parseBinaryStream(webStream)) {
       records.push(record);
     }
 
@@ -50,7 +50,7 @@ app.listen(3000);
 ```typescript
 import express from 'express';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const app = express();
 
@@ -64,7 +64,7 @@ app.post('/upload-csv', async (req, res) => {
     const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream)) {
+    for await (const record of parseBinaryStream(webStream)) {
       records.push(record);
     }
 
@@ -82,7 +82,7 @@ app.listen(3000);
 ```typescript
 import express from 'express';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const app = express();
 
@@ -91,7 +91,7 @@ app.post('/upload-csv', async (req, res) => {
     const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream, {
+    for await (const record of parseBinaryStream(webStream, {
       maxBufferSize: 10 * 1024 * 1024,  // 10MB
       maxFieldCount: 10000,
       signal: AbortSignal.timeout(30000) // 30 seconds
@@ -121,7 +121,7 @@ app.listen(3000);
 ```typescript
 import Fastify from 'fastify';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const fastify = Fastify();
 
@@ -131,7 +131,7 @@ fastify.post('/upload-csv', async (request, reply) => {
     const webStream = Readable.toWeb(request.raw) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream)) {
+    for await (const record of parseBinaryStream(webStream)) {
       records.push(record);
     }
 
@@ -150,7 +150,7 @@ fastify.listen({ port: 3000 });
 ```typescript
 import Fastify from 'fastify';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const fastify = Fastify();
 
@@ -165,7 +165,7 @@ fastify.post('/upload-csv', async (request, reply) => {
     const webStream = Readable.toWeb(request.raw) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream, {
+    for await (const record of parseBinaryStream(webStream, {
       maxBufferSize: 10 * 1024 * 1024,
       maxFieldCount: 10000
     })) {
@@ -189,7 +189,7 @@ fastify.listen({ port: 3000 });
 ```typescript
 import Koa from 'koa';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 const app = new Koa();
 
@@ -200,7 +200,7 @@ app.use(async (ctx) => {
       const webStream = Readable.toWeb(ctx.req) as ReadableStream<Uint8Array>;
 
       const records = [];
-      for await (const record of parseUint8ArrayStream(webStream)) {
+      for await (const record of parseBinaryStream(webStream)) {
         records.push(record);
       }
 
@@ -223,7 +223,7 @@ app.listen(3000);
 import { Controller, Post, Req, Res, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 @Controller('csv')
 export class CsvController {
@@ -234,7 +234,7 @@ export class CsvController {
       const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
 
       const records = [];
-      for await (const record of parseUint8ArrayStream(webStream)) {
+      for await (const record of parseBinaryStream(webStream)) {
         records.push(record);
       }
 
@@ -257,7 +257,7 @@ export class CsvController {
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 @Injectable()
 export class CsvService {
@@ -265,7 +265,7 @@ export class CsvService {
     const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
 
     const records = [];
-    for await (const record of parseUint8ArrayStream(webStream, {
+    for await (const record of parseBinaryStream(webStream, {
       maxBufferSize: 10 * 1024 * 1024,
       maxFieldCount: 10000
     })) {
@@ -277,18 +277,18 @@ export class CsvService {
 }
 ```
 
-## Why Use parseUint8ArrayStream?
+## Why Use parseBinaryStream?
 
-When converting Node.js streams to Web Streams, you should use `parseUint8ArrayStream()` because:
+When converting Node.js streams to Web Streams, you should use `parseBinaryStream()` because:
 
 1. **Node.js streams are binary** - They emit `Buffer` objects (Uint8Array)
-2. **Type safety** - `parseUint8ArrayStream()` expects `ReadableStream<Uint8Array>`
+2. **Type safety** - `parseBinaryStream()` expects `ReadableStream<Uint8Array>`
 3. **Character encoding** - Specify charset via options
 
 ```typescript
 // ✅ Correct - handles binary data
 const webStream = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
-for await (const record of parseUint8ArrayStream(webStream, {
+for await (const record of parseBinaryStream(webStream, {
   charset: 'utf-8' // Specify encoding
 })) {
   console.log(record);
@@ -306,7 +306,7 @@ for await (const record of parseStringStream(webStream)) {
 ```typescript
 import express from 'express';
 import { Readable } from 'stream';
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const app = express();
@@ -338,7 +338,7 @@ app.post('/upload-csv', async (req, res) => {
     const errors = [];
 
     // 4. Parse with security limits
-    for await (const record of parseUint8ArrayStream(webStream, {
+    for await (const record of parseBinaryStream(webStream, {
       maxBufferSize: 10 * 1024 * 1024,
       maxFieldCount: 10000,
       signal: AbortSignal.timeout(30000)
@@ -393,12 +393,12 @@ for await (const record of parseStringStream(webStream)) {
 }
 ```
 
-### ✅ Use parseUint8ArrayStream
+### ✅ Use parseBinaryStream
 
 ```typescript
 // ✅ Correct - handles binary data
 const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
-for await (const record of parseUint8ArrayStream(webStream)) {
+for await (const record of parseBinaryStream(webStream)) {
   console.log(record);
 }
 ```
@@ -409,7 +409,7 @@ for await (const record of parseUint8ArrayStream(webStream)) {
 // ❌ Missing error handling
 app.post('/upload', async (req, res) => {
   const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
-  for await (const record of parseUint8ArrayStream(webStream)) {
+  for await (const record of parseBinaryStream(webStream)) {
     // Can throw errors
   }
 });
@@ -422,7 +422,7 @@ app.post('/upload', async (req, res) => {
 app.post('/upload', async (req, res) => {
   try {
     const webStream = Readable.toWeb(req) as ReadableStream<Uint8Array>;
-    for await (const record of parseUint8ArrayStream(webStream)) {
+    for await (const record of parseBinaryStream(webStream)) {
       console.log(record);
     }
   } catch (error) {
@@ -444,7 +444,7 @@ app.post('/upload', async (req, res) => {
 **Key Points:**
 
 1. Use `Readable.toWeb()` to convert Node.js streams to Web Streams
-2. Use `parseUint8ArrayStream()` for converted streams (not `parseStringStream()`)
+2. Use `parseBinaryStream()` for converted streams (not `parseStringStream()`)
 3. Always specify charset via options if not UTF-8
 4. Always use try-catch for error handling
 5. Set security limits (`maxBufferSize`, `maxFieldCount`, timeout)

@@ -27,7 +27,7 @@ What type of input do you have?
 │  └─ Use parseBinary() ✅
 │
 ├─ ReadableStream<Uint8Array> (binary stream)
-│  └─ Use parseUint8ArrayStream() ✅
+│  └─ Use parseBinaryStream() ✅
 │
 ├─ Response (fetch result)
 │  └─ Use parseResponse() ✅
@@ -75,7 +75,7 @@ What type of input do you have?
 - `parseString()` - Parse CSV string
 - `parseStringStream()` - Parse text stream
 - `parseBinary()` - Parse binary data (Uint8Array/ArrayBuffer)
-- `parseUint8ArrayStream()` - Parse binary stream
+- `parseBinaryStream()` - Parse binary stream
 - `parseResponse()` - Parse HTTP Response
 - `parseRequest()` - Parse HTTP Request (server-side)
 - `parseBlob()` - Parse Blob or File
@@ -88,10 +88,58 @@ What type of input do you have?
 
 ### Low-Level APIs
 
+The low-level APIs follow a **3-tier architecture** providing progressive complexity:
+
+#### Tier 1: Parser Models (Simplified Composition)
+
 **When to use:**
-- Custom parsing pipelines
-- Special transformations
-- Building higher-level abstractions
+- Need stateful parsing with streaming support
+- Working with binary data (charset encoding, BOM handling)
+- Want composition benefits without manual wiring
+- Building custom CSV processing pipelines
+- Streaming file uploads or fetch responses
+
+**APIs:**
+
+**String Parsing:**
+- **`createStringCSVParser(options?)`** - Factory function for creating format-specific parsers
+  - Returns `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
+  - Accepts `CSVProcessingOptions` only (no `engine` option - low-level API)
+- **Direct class usage** (format-specific):
+  - `FlexibleStringObjectCSVParser` - Always outputs object records
+  - `FlexibleStringArrayCSVParser` - Always outputs array records
+- **`StringCSVParserStream`** - TransformStream for string parsing
+
+**Binary Parsing:**
+- **`createBinaryCSVParser(options?)`** - Factory function for creating format-specific binary parsers
+  - Returns `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
+  - Accepts `BinaryCSVProcessingOptions` only (no `engine` option - low-level API)
+- **Direct class usage** (format-specific):
+  - `FlexibleBinaryObjectCSVParser` - Always outputs object records
+  - `FlexibleBinaryArrayCSVParser` - Always outputs array records
+- **`BinaryCSVParserStream`** - TransformStream for binary parsing with multi-byte character support
+
+**Benefits:**
+- Simplified API - single factory/class instead of manual Lexer + Assembler composition
+- Format-specific types ensure compile-time safety for object vs array output
+- Stateful streaming support with `{ stream: true }` option
+- Binary data handling with character encoding support (charset, BOM, decompression)
+- Ready for TransformStream integration
+- Low-level API focuses on CSV processing logic only (no execution strategy)
+
+**Trade-off:**
+- Easier than Tier 2 vs. less granular control over tokenization
+
+---
+
+#### Tier 2: Lexer + Assembler (Advanced Control)
+
+**When to use:**
+- Need access to raw tokens for custom processing
+- Implementing non-standard CSV dialects
+- Building syntax highlighters or editors
+- Debugging parsing issues at token level
+- Performance profiling individual stages
 
 **APIs:**
 - `FlexibleStringCSVLexer` / `CSVLexerTransformer` - Tokenization (direct class or streaming Transform)
@@ -331,19 +379,19 @@ for await (const record of parseBinary(data, {
 
 ---
 
-### parseUint8ArrayStream() - Binary Stream Parser
+### parseBinaryStream() - Binary Stream Parser
 
 **Input:** `ReadableStream<Uint8Array>`
 
 **Use Cases:**
 ```typescript
-import { parseUint8ArrayStream } from 'web-csv-toolbox';
+import { parseBinaryStream } from 'web-csv-toolbox';
 
 // ✅ Perfect for: Large binary streams
 const response = await fetch('large-data.csv.gz');
 const binaryStream = response.body;
 
-for await (const record of parseUint8ArrayStream(binaryStream, {
+for await (const record of parseBinaryStream(binaryStream, {
   charset: 'utf-8',
   decompression: 'gzip'
 })) {
@@ -352,7 +400,7 @@ for await (const record of parseUint8ArrayStream(binaryStream, {
 
 // ✅ Good for: Compressed streaming data
 const stream = getCompressedCSVStream();
-for await (const record of parseUint8ArrayStream(stream, {
+for await (const record of parseBinaryStream(stream, {
   decompression: 'gzip'
 })) {
   console.log(record);
@@ -744,7 +792,7 @@ export default {
 | `parseString()` | O(n) - proportional to string size | Small to medium strings |
 | `parseStringStream()` | O(1) - constant per record | Large streams |
 | `parseBinary()` | O(n) - proportional to buffer size | Small to medium binary data |
-| `parseUint8ArrayStream()` | O(1) - constant per record | Large binary streams |
+| `parseBinaryStream()` | O(1) - constant per record | Large binary streams |
 | `parseResponse()` | O(1) - streaming by default | HTTP responses |
 
 ---
@@ -841,7 +889,7 @@ Actual performance depends on many factors including CSV structure, file size, r
 | `Uint8Array` | Main thread | Main thread | Worker | UTF-8 | `parseBinary()` |
 | `Uint8Array` | Main thread + WASM | Main thread | Worker | UTF-8 | `parseBinary()` |
 | `Uint8Array` | Main thread | Main thread | Worker | Any | `parseBinary()` |
-| `ReadableStream<Uint8Array>` | Main thread | Main thread | Main thread | Any | `parseUint8ArrayStream()` |
+| `ReadableStream<Uint8Array>` | Main thread | Main thread | Main thread | Any | `parseBinaryStream()` |
 | `Response` | Auto | Auto | Auto | Auto | `parseResponse()` |
 | `Request` | Auto | Auto | Auto | Auto | `parseRequest()` |
 | `Blob` / `File` | Main thread | Main thread | Main thread | Auto | `parseBlob()` / `parseFile()` |
@@ -1059,9 +1107,9 @@ for await (const record of parseResponse(response)) {
 4. **HTTP requests (server):** Use `parseRequest()` for server-side request handling
 5. **File uploads:** Use `parseFile()` for automatic error tracking, or `parseBlob()` for generic Blob support
 6. **Edge environments:** Use `parseBlob()` with manual `source` option (Cloudflare Workers compatibility)
-7. **Large files:** Use streaming APIs (`parseStringStream()`, `parseUint8ArrayStream()`)
+7. **Large files:** Use streaming APIs (`parseStringStream()`, `parseBinaryStream()`)
 8. **Non-blocking parsing:** Use Worker-based execution (e.g., `{ engine: { worker: true } }` or `EnginePresets.responsive()`) for UI responsiveness in browser applications
-9. **Non-UTF-8:** Use `parseBinary()` or `parseUint8ArrayStream()` with `charset` option
+9. **Non-UTF-8:** Use `parseBinary()` or `parseBinaryStream()` with `charset` option
 10. **Error tracking:** Always specify `source` option or use `parseFile()` for automatic tracking
 
 **Remember:** The best API depends on your specific use case. Consider input type, encoding, execution environment (server vs browser), and blocking vs non-blocking requirements when choosing. Benchmark your actual data to make informed decisions.

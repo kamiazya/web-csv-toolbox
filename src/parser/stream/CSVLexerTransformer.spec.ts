@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 

@@ -1,6 +1,6 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 import { getOptionsFromFile } from "@/utils/file/getOptionsFromFile.ts";
 
 /**
@@ -48,7 +48,7 @@ export function parseFileToStream<
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
   const options_ = getOptionsFromFile(file, options);
-  return parseUint8ArrayStreamToStream<Header, Delimiter, Quotation, Options>(
+  return parseBinaryStreamToStream<Header, Delimiter, Quotation, Options>(
     file.stream(),
     options_ as Options,
   ) as ReadableStream<InferCSVRecord<Header, Options>>;

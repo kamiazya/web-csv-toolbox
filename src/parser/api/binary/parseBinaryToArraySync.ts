@@ -6,7 +6,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
 /**
  * Synchronously parses binary CSV data into an array of records.
  *
- * @param binary - The binary CSV data to parse (Uint8Array or ArrayBuffer).
+ * @param binary - The binary CSV data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
  * @param options - Parsing options including charset, maxBinarySize, etc.
  * @returns An array of CSV records.
  * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
@@ -14,7 +14,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  *
  * @remarks
  * **WARNING**: This function loads the entire binary data into memory synchronously.
- * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseUint8ArrayStream()`
+ * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseBinaryStream()`
  * to avoid memory exhaustion and blocking the event loop.
  *
  * The default maxBinarySize is 100MB. You can increase it via options, but this may lead to
@@ -30,10 +30,7 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
 export function parseBinaryToArraySync<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
->(
-  binary: Uint8Array | ArrayBuffer,
-  options?: Options,
-): InferCSVRecord<Header, Options>[] {
+>(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
     const csv = convertBinaryToString(binary, options ?? {});
     return parseStringToArraySync(csv, options);

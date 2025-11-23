@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseUint8ArrayStream } from "@/parser/api/binary/parseUint8ArrayStream.ts";
+import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
 
 /**
@@ -13,7 +13,7 @@ import { parseStringStream } from "@/parser/api/string/parseStringStream.ts";
  * They are skipped in environments where Worker is not defined.
  */
 describe("Stream Collection AbortSignal Support", () => {
-  describe("parseUint8ArrayStream with AbortSignal", () => {
+  describe("parseBinaryStream with AbortSignal", () => {
     it("should abort during stream collection when signal is aborted", async () => {
       // Create a slow stream that yields chunks over time
       const encoder = new TextEncoder();
@@ -46,7 +46,7 @@ describe("Stream Collection AbortSignal Support", () => {
       // Should throw AbortError
       await expect(async () => {
         const records = [];
-        for await (const record of parseUint8ArrayStream(slowStream, {
+        for await (const record of parseBinaryStream(slowStream, {
           engine: { worker: true },
           signal: controller.signal,
         })) {
@@ -69,7 +69,7 @@ describe("Stream Collection AbortSignal Support", () => {
 
       await expect(async () => {
         const records = [];
-        for await (const record of parseUint8ArrayStream(stream, {
+        for await (const record of parseBinaryStream(stream, {
           engine: { worker: true },
           signal: controller.signal,
         })) {
@@ -91,7 +91,7 @@ describe("Stream Collection AbortSignal Support", () => {
       const controller = new AbortController();
 
       const records = [];
-      for await (const record of parseUint8ArrayStream(stream, {
+      for await (const record of parseBinaryStream(stream, {
         engine: { worker: true },
         signal: controller.signal,
       })) {
@@ -204,7 +204,7 @@ describe("Stream Collection AbortSignal Support", () => {
 
       try {
         const records = [];
-        for await (const record of parseUint8ArrayStream(stream, {
+        for await (const record of parseBinaryStream(stream, {
           engine: { worker: true },
           signal: controller.signal,
         })) {

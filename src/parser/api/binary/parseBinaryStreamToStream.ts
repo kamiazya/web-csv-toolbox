@@ -1,11 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { createCSVRecordAssembler } from "@/parser/models/createCSVRecordAssembler.ts";
-import { FlexibleStringCSVLexer } from "@/parser/models/createStringCSVLexer.ts";
+import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
+import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
-export function parseUint8ArrayStreamToStream<
+export function parseBinaryStreamToStream<
   Header extends readonly string[],
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
@@ -24,7 +24,7 @@ export function parseUint8ArrayStreamToStream<
   if (fatal !== undefined) decoderOptions.fatal = fatal;
   if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
 
-  const lexer = new FlexibleStringCSVLexer(options);
+  const lexer = createStringCSVLexer(options);
   const assembler = createCSVRecordAssembler<Header>(options);
 
   return (

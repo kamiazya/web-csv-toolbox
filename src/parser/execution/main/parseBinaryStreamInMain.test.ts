@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { CSVRecord } from "@/core/types.ts";
-import { parseUint8ArrayStreamInMain } from "@/parser/execution/main/parseUint8ArrayStreamInMain.ts";
+import { parseBinaryStreamInMain } from "@/parser/execution/main/parseBinaryStreamInMain.ts";
 
 // Helper to create ReadableStream from Uint8Array
 function createUint8ArrayStream(data: Uint8Array): ReadableStream<Uint8Array> {
@@ -12,7 +12,7 @@ function createUint8ArrayStream(data: Uint8Array): ReadableStream<Uint8Array> {
   });
 }
 
-describe("parseUint8ArrayStreamInMain", () => {
+describe("parseBinaryStreamInMain", () => {
   const encoder = new TextEncoder();
 
   it("should parse Uint8Array stream", async () => {
@@ -21,7 +21,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const stream = createUint8ArrayStream(binary);
     const records: CSVRecord<["name", "age"]>[] = [];
 
-    for await (const record of parseUint8ArrayStreamInMain(stream)) {
+    for await (const record of parseBinaryStreamInMain(stream)) {
       records.push(record as CSVRecord<["name", "age"]>);
     }
 
@@ -37,7 +37,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const stream = createUint8ArrayStream(binary);
     const records = [];
 
-    for await (const record of parseUint8ArrayStreamInMain(stream)) {
+    for await (const record of parseBinaryStreamInMain(stream)) {
       records.push(record);
     }
 
@@ -61,7 +61,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     });
 
     const records: CSVRecord<["name", "age"]>[] = [];
-    for await (const record of parseUint8ArrayStreamInMain(stream)) {
+    for await (const record of parseBinaryStreamInMain(stream)) {
       records.push(record as CSVRecord<["name", "age"]>);
     }
 
@@ -77,7 +77,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const stream = createUint8ArrayStream(binary);
     const records = [];
 
-    for await (const record of parseUint8ArrayStreamInMain(stream, {
+    for await (const record of parseBinaryStreamInMain(stream, {
       delimiter: ";",
     })) {
       records.push(record);
@@ -92,7 +92,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const stream = createUint8ArrayStream(binary);
     const records = [];
 
-    for await (const record of parseUint8ArrayStreamInMain(stream, {
+    for await (const record of parseBinaryStreamInMain(stream, {
       charset: "utf-8",
     })) {
       records.push(record);
@@ -107,7 +107,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const stream = createUint8ArrayStream(binary);
     const records: CSVRecord<["name", "age"]>[] = [];
 
-    for await (const record of parseUint8ArrayStreamInMain(stream, {
+    for await (const record of parseBinaryStreamInMain(stream, {
       header: ["name", "age"],
     })) {
       records.push(record as CSVRecord<["name", "age"]>);
@@ -123,7 +123,7 @@ describe("parseUint8ArrayStreamInMain", () => {
     const csv = "name,age\nAlice,30";
     const binary = encoder.encode(csv);
     const stream = createUint8ArrayStream(binary);
-    const result = parseUint8ArrayStreamInMain(stream);
+    const result = parseBinaryStreamInMain(stream);
 
     expect(typeof result[Symbol.asyncIterator]).toBe("function");
   });

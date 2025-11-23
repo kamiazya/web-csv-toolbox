@@ -271,7 +271,7 @@ Controls the automatic selection between two Blob reading strategies based on fi
    - ❌ Loads entire file into memory
    - ❌ Limited by `maxBufferSize` (default 10MB)
 
-2. **Files equal to or larger than threshold:** Use `blob.stream()` + `parseUint8ArrayStream()`
+2. **Files equal to or larger than threshold:** Use `blob.stream()` + `parseBinaryStream()`
    - ✅ Memory-efficient streaming
    - ✅ No size limit (processes incrementally)
    - ⚠️ Slight streaming overhead

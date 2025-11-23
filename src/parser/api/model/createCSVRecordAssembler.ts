@@ -1,6 +1,6 @@
 import type { CSVRecordAssemblerCommonOptions } from "@/core/types.ts";
-import { FlexibleCSVArrayRecordAssembler } from "./FlexibleCSVArrayRecordAssembler.ts";
-import { FlexibleCSVObjectRecordAssembler } from "./FlexibleCSVObjectRecordAssembler.ts";
+import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
+import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 
 /**
  * Factory function to create the appropriate CSV record assembler based on options.

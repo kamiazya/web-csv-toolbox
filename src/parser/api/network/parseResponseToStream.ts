@@ -1,6 +1,6 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { parseUint8ArrayStreamToStream } from "@/parser/api/binary/parseUint8ArrayStreamToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { getOptionsFromResponse } from "@/utils/response/getOptionsFromResponse.ts";
 
@@ -22,7 +22,7 @@ export function parseResponseToStream<
     if (response.body === null) {
       throw new TypeError("Response body is null");
     }
-    return parseUint8ArrayStreamToStream<Header, Delimiter, Quotation, Options>(
+    return parseBinaryStreamToStream<Header, Delimiter, Quotation, Options>(
       response.body,
       options_ as Options,
     ) as ReadableStream<InferCSVRecord<Header, Options>>;

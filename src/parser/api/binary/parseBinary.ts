@@ -15,24 +15,24 @@ import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts"
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
- * Parse a binary from an {@link !Uint8Array}.
+ * Parse a binary from a BufferSource.
  *
  * @category Middle-level API
  *
- * @param bytes CSV bytes to parse.
+ * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
  * @param options Parsing options
  * @returns Async iterable iterator of records.
  *
  * @example Parsing CSV binary
  *
  * ```ts
- * import { parseUint8Array } from 'web-csv-toolbox';
+ * import { parseBinary } from 'web-csv-toolbox';
  *
  * const csv = Uint8Array.from([
  *   // ...
  * ]);
  *
- * for await (const record of parseUint8Array(csv)) {
+ * for await (const record of parseBinary(csv)) {
  *   console.log(record);
  * }
  * ```
@@ -41,7 +41,7 @@ export async function* parseBinary<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
-  bytes: Uint8Array | ArrayBuffer,
+  bytes: BufferSource,
   options?: Options,
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
@@ -94,71 +94,68 @@ export async function* parseBinary<
 
 export declare namespace parseBinary {
   /**
-   * Parse a binary from an {@link !Uint8Array} to an array of records.
+   * Parse a binary from a BufferSource to an array of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Array of records
    *
    * @example
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const records = await parseUint8Array.toArray(csv);
+   * const records = await parseBinary.toArray(csv);
    * ```
    */
   export function toArray<
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array | ArrayBuffer,
+    bytes: BufferSource,
     options?: Options,
   ): Promise<InferCSVRecord<Header, Options>[]>;
   /**
-   * Parse a binary from an {@link !Uint8Array} to an array of records.
+   * Parse a binary from a BufferSource to an array of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Array of records
    * @example
    *
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const records = parseUint8Array.toArraySync(csv);
+   * const records = parseBinary.toArraySync(csv);
    * ```
    */
   export function toArraySync<
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
-  >(
-    bytes: Uint8Array | ArrayBuffer,
-    options?: Options,
-  ): InferCSVRecord<Header, Options>[];
+  >(bytes: BufferSource, options?: Options): InferCSVRecord<Header, Options>[];
 
   /**
-   * Parse a binary from an {@link !Uint8Array} to an iterable iterator of records.
+   * Parse a binary from a BufferSource to an iterable iterator of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Async iterable iterator of records.
    * @example
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * for (const record of parseUint8Array.toIterableIterator(csv)) {
+   * for (const record of parseBinary.toIterableIterator(csv)) {
    *   console.log(record);
    * }
    * ```
@@ -167,27 +164,27 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array,
+    bytes: BufferSource,
     options?: Options,
   ): IterableIterator<InferCSVRecord<Header, Options>>;
 
   /**
-   * Parse a binary from an {@link !Uint8Array} to a stream of records.
+   * Parse a binary from a BufferSource to a stream of records.
    *
-   * @param bytes CSV bytes to parse.
+   * @param bytes CSV bytes to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
    * @param options Parsing options
    * @returns Stream of records.
    *
    * @example
    *
    * ```ts
-   * import { parseUint8Array } from 'web-csv-toolbox';
+   * import { parseBinary } from 'web-csv-toolbox';
    *
    * const csv = Uint8Array.from([
    *  // ...
    * ]);
    *
-   * const stream = parseUint8Array.toStream(csv);
+   * const stream = parseBinary.toStream(csv);
    *
    * await stream.pipeTo(
    *   new WritableStream({
@@ -202,7 +199,7 @@ export declare namespace parseBinary {
     Header extends ReadonlyArray<string>,
     Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
   >(
-    bytes: Uint8Array,
+    bytes: BufferSource,
     options?: Options,
   ): ReadableStream<InferCSVRecord<Header, Options>>;
 }

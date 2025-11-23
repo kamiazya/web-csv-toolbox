@@ -206,6 +206,27 @@ export interface SourceOption {
 }
 
 /**
+ * Backpressure control options for streaming operations.
+ * @category Types
+ */
+export interface BackpressureOptions {
+  /**
+   * Interval (in items) to check for backpressure.
+   *
+   * @remarks
+   * Lower values = more responsive to backpressure but slight performance overhead.
+   * Higher values = less overhead but slower backpressure response.
+   *
+   * The default value varies by implementation:
+   * - Lexer/Parser streams: 100 (per 100 tokens/records)
+   * - Assembler streams: 10 (per 10 records)
+   *
+   * @default varies by implementation
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
  * CSV Common Options.
  * @category Types
  */
@@ -432,13 +453,8 @@ export interface CSVLexerTransformerOptions<
  * Options for CSVLexerTransformer stream behavior.
  * @category Types
  */
-export interface CSVLexerTransformerStreamOptions {
+export interface CSVLexerTransformerStreamOptions extends BackpressureOptions {
   /**
-   * How often to check for backpressure (in number of tokens processed).
-   *
-   * Lower values = more responsive to backpressure but slight performance overhead.
-   * Higher values = less overhead but slower backpressure response.
-   *
    * @default 100
    */
   backpressureCheckInterval?: number;
@@ -675,14 +691,32 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
  * Options for CSVRecordAssemblerTransformer stream behavior.
  * @category Types
  */
-export interface CSVRecordAssemblerTransformerStreamOptions {
+export interface CSVRecordAssemblerTransformerStreamOptions
+  extends BackpressureOptions {
   /**
-   * How often to check for backpressure (in number of records processed).
-   *
-   * Lower values = more responsive to backpressure but slight performance overhead.
-   * Higher values = less overhead but slower backpressure response.
-   *
    * @default 10
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
+ * Options for BinaryCSVParserStream.
+ * @category Types
+ */
+export interface BinaryCSVParserStreamOptions extends BackpressureOptions {
+  /**
+   * @default 100
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
+ * Options for StringCSVParserStream.
+ * @category Types
+ */
+export interface StringCSVParserStreamOptions extends BackpressureOptions {
+  /**
+   * @default 100
    */
   backpressureCheckInterval?: number;
 }
@@ -854,7 +888,7 @@ interface BaseEngineConfig {
    * - Files smaller than threshold: Use `blob.arrayBuffer()` + `parseBinary()`
    *   - ✅ Faster for small files
    *   - ❌ Loads entire file into memory
-   * - Files equal to or larger than threshold: Use `blob.stream()` + `parseUint8ArrayStream()`
+   * - Files equal to or larger than threshold: Use `blob.stream()` + `parseBinaryStream()`
    *   - ✅ Memory-efficient for large files
    *   - ❌ Slight streaming overhead
    *
@@ -1216,28 +1250,121 @@ export type InferCSVRecord<
 > = CSVRecord<Header, InferFormat<Options>, InferStrategy<Options>>;
 
 /**
- * Parse options for CSV string.
+ * CSV processing specification options.
+ *
  * @category Types
+ *
+ * @remarks
+ * Defines how CSV data should be processed, including parsing behavior, output format,
+ * and data handling strategies. This excludes execution strategy (worker, WASM, etc.)
+ * which is defined separately in {@link EngineOptions}.
+ *
+ * This type is used by low-level Parser classes that focus on CSV processing logic
+ * without concerning themselves with execution strategy. High-level APIs combine this
+ * with {@link EngineOptions} via {@link ParseOptions}.
+ *
+ * **Included settings:**
+ * - CSV syntax: delimiter, quotation, maxBufferSize
+ * - Record assembly: header, outputFormat, includeHeader, columnCountStrategy
+ * - Processing control: signal, source, maxFieldCount, skipEmptyLines
+ *
+ * **Excluded settings:**
+ * - Execution strategy: engine (worker, WASM configuration)
+ *
+ * @example Low-level API usage
+ * ```ts
+ * const parser = new FlexibleStringObjectCSVParser({
+ *   delimiter: ',',
+ *   quotation: '"',
+ *   header: ['name', 'age'],
+ *   outputFormat: 'object',
+ *   signal: abortController.signal,
+ *   // engine is NOT available here
+ * });
+ * ```
+ *
+ * @example High-level API (via ParseOptions)
+ * ```ts
+ * parseString(csv, {
+ *   delimiter: ',',
+ *   header: ['name', 'age'],
+ *   // ↓ Also includes execution strategy
+ *   engine: { worker: true }
+ * });
+ * ```
  */
-export interface ParseOptions<
+export interface CSVProcessingOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CommonOptions<Delimiter, Quotation>,
     CSVRecordAssemblerCommonOptions<Header>,
-    EngineOptions,
     AbortSignalOptions {}
 
 /**
- * Parse options for CSV binary.
+ * Parse options for CSV string (high-level API).
+ *
  * @category Types
+ *
+ * @remarks
+ * Combines CSV processing specification ({@link CSVProcessingOptions}) with
+ * execution strategy ({@link EngineOptions}). This is the complete options type
+ * for high-level parsing APIs like {@link parseString}, {@link parseStringToStream}, etc.
+ *
+ * For low-level Parser classes, use {@link CSVProcessingOptions} instead.
+ */
+export interface ParseOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
+
+/**
+ * CSV processing specification options for binary data.
+ *
+ * @category Types
+ *
+ * @remarks
+ * Extends {@link CSVProcessingOptions} with binary-specific options like charset,
+ * decompression, and buffer size limits. This excludes execution strategy.
+ *
+ * Used by low-level Binary Parser classes. High-level APIs use {@link ParseBinaryOptions}
+ * which adds {@link EngineOptions}.
+ *
+ * @example Low-level API usage
+ * ```ts
+ * const parser = new FlexibleBinaryObjectCSVParser({
+ *   delimiter: ',',
+ *   header: ['name', 'age'],
+ *   charset: 'utf-8',
+ *   decompression: 'gzip',
+ *   // engine is NOT available here
+ * });
+ * ```
+ */
+export interface BinaryCSVProcessingOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    BinaryOptions {}
+
+/**
+ * Parse options for CSV binary (high-level API).
+ *
+ * @category Types
+ *
+ * @remarks
+ * Combines binary CSV processing specification ({@link BinaryCSVProcessingOptions})
+ * with execution strategy ({@link EngineOptions}).
  */
 export interface ParseBinaryOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends ParseOptions<Header, Delimiter, Quotation>,
-    BinaryOptions {}
+> extends BinaryCSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
 
 /**
  * Strategy for handling column count mismatches between header and data rows.
@@ -1555,8 +1682,7 @@ export type CSVString = string | ReadableStream<string>;
  * @category Types
  */
 export type CSVBinary =
-  | Uint8Array
-  | ArrayBuffer
+  | BufferSource
   | ReadableStream<Uint8Array>
   | Response
   | Request
@@ -1873,36 +1999,167 @@ export interface CSVParserOptions<
 }
 
 /**
- * String CSV Parser interface
- * @template Header - The type of the header row
+ * String CSV Parser interface for object output format.
+ *
+ * StringObjectCSVParser parses string CSV data and returns records as objects.
+ * Each record is a key-value object where keys are header field names.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: StringObjectCSVParser<['name', 'age']> = ...;
+ * for (const record of parser.parse('Alice,30\nBob,25')) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
  */
-export interface StringCSVParser<
+export interface StringObjectCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
   /**
-   * Parse a chunk of CSV string data
+   * Parse a chunk of CSV string data into object records.
    * @param chunk - CSV string chunk to parse (optional for flush)
    * @param options - Parse options
-   * @returns Array of parsed CSV records
+   * @returns Iterable iterator of parsed CSV records as objects
    */
-  parse(chunk?: string, options?: CSVParserParseOptions): CSVRecord<Header>[];
+  parse(
+    chunk?: string,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVObjectRecord<Header>>;
 }
 
 /**
- * Binary CSV Parser interface
- * @template Header - The type of the header row
+ * String CSV Parser interface for array output format.
+ *
+ * StringArrayCSVParser parses string CSV data and returns records as arrays.
+ * Each record is returned as a tuple/array with values in header order.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: StringArrayCSVParser<['name', 'age']> = ...;
+ * for (const record of parser.parse('Alice,30\nBob,25')) {
+ *   console.log(record); // ['Alice', '30'] - typed as named tuple
+ * }
+ * ```
  */
-export interface BinaryCSVParser<
+export interface StringArrayCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
   /**
-   * Parse a chunk of CSV binary data
-   * @param chunk - CSV binary chunk (Uint8Array) to parse (optional for flush)
+   * Parse a chunk of CSV string data into array records.
+   * @param chunk - CSV string chunk to parse (optional for flush)
    * @param options - Parse options
-   * @returns Array of parsed CSV records
+   * @returns Iterable iterator of parsed CSV records as arrays/tuples
    */
   parse(
-    chunk?: Uint8Array,
+    chunk?: string,
     options?: CSVParserParseOptions,
-  ): CSVRecord<Header>[];
+  ): IterableIterator<CSVArrayRecord<Header>>;
 }
+
+/**
+ * Unified String CSV Parser type.
+ *
+ * This is a discriminated union type that can represent either object or array parsers.
+ * Use this when you need to work with parsers in a format-agnostic way.
+ *
+ * @template Header - Array of header field names
+ * @template Format - Output format: 'object' or 'array' (default: 'object')
+ */
+export type StringCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+  Format extends "object" | "array" = "object",
+> = Format extends "array"
+  ? StringArrayCSVParser<Header>
+  : StringObjectCSVParser<Header>;
+
+/**
+ * Binary CSV Parser interface for object output format.
+ *
+ * BinaryObjectCSVParser parses binary CSV data and returns records as objects.
+ * Each record is a key-value object where keys are header field names.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: BinaryObjectCSVParser<['name', 'age']> = ...;
+ * const data = new TextEncoder().encode('Alice,30\nBob,25');
+ * for (const record of parser.parse(data)) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
+ */
+export interface BinaryObjectCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV binary data into object records.
+   * @param chunk - CSV binary chunk (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Iterable iterator of parsed CSV records as objects
+   */
+  parse(
+    chunk?: BufferSource,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVObjectRecord<Header>>;
+}
+
+/**
+ * Binary CSV Parser interface for array output format.
+ *
+ * BinaryArrayCSVParser parses binary CSV data and returns records as arrays.
+ * Each record is returned as a tuple/array with values in header order.
+ *
+ * This interface is designed to be easily implemented in Rust/WASM with clear type semantics.
+ *
+ * @template Header - Array of header field names
+ *
+ * @example
+ * ```typescript
+ * const parser: BinaryArrayCSVParser<['name', 'age']> = ...;
+ * const data = new TextEncoder().encode('Alice,30\nBob,25');
+ * for (const record of parser.parse(data)) {
+ *   console.log(record); // ['Alice', '30'] - typed as named tuple
+ * }
+ * ```
+ */
+export interface BinaryArrayCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+> {
+  /**
+   * Parse a chunk of CSV binary data into array records.
+   * @param chunk - CSV binary chunk (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray) to parse (optional for flush)
+   * @param options - Parse options
+   * @returns Iterable iterator of parsed CSV records as arrays/tuples
+   */
+  parse(
+    chunk?: BufferSource,
+    options?: CSVParserParseOptions,
+  ): IterableIterator<CSVArrayRecord<Header>>;
+}
+
+/**
+ * Unified Binary CSV Parser type.
+ *
+ * This is a discriminated union type that can represent either object or array parsers.
+ * Use this when you need to work with parsers in a format-agnostic way.
+ *
+ * @template Header - Array of header field names
+ * @template Format - Output format: 'object' or 'array' (default: 'object')
+ */
+export type BinaryCSVParser<
+  Header extends ReadonlyArray<string> = readonly string[],
+  Format extends "object" | "array" = "object",
+> = Format extends "array"
+  ? BinaryArrayCSVParser<Header>
+  : BinaryObjectCSVParser<Header>;
