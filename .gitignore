@@ -141,3 +141,6 @@ graph*.svg
 # Deno lock files and cache
 deno.lock
 **/.deno_cache
+
+# Built example directories (should be in examples/*/dist/, not repo root)
+example-*/
