@@ -133,8 +133,9 @@ export class StreamParser {
 
     if (processedBytesCount === 0) {
       // No complete record found - carry over entire buffer
+      // Keep prevInQuote unchanged since we haven't processed any data yet
       this.state.leftover = inputBytes;
-      this.state.prevInQuote = result.endInQuote;
+      // Note: Don't update prevInQuote here - it stays the same for the next chunk/finalize
       return;
     }
 
@@ -197,8 +198,8 @@ export class StreamParser {
 
     // Handle any remaining fields (happens at end of stream without trailing LF)
     if (emitTrailingFields) {
-      // Extract final field after last separator
-      if (lastOffset < inputBytes.length) {
+      // Extract final field after last separator (or add empty field for trailing comma)
+      if (lastOffset <= inputBytes.length) {
         let finalField = decodeUTF8(inputBytes, lastOffset, inputBytes.length);
 
         // Handle quoted field

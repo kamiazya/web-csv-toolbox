@@ -226,6 +226,13 @@ export class GPUBackend {
       new Uint32Array([0]),
     );
 
+    // Reset result metadata buffer
+    this.device.queue.writeBuffer(
+      this.buffers.resultMetaBuffer,
+      0,
+      new Uint32Array([0, 0, 0, 0]),
+    );
+
     // Upload input data
     this.device.queue.writeBuffer(this.buffers.inputBuffer, 0, paddedInput);
 

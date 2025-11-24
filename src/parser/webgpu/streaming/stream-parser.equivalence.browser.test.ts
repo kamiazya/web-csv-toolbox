@@ -146,7 +146,7 @@ describe("WebGPU Parser Equivalence Tests", () => {
             const cpuRecords: string[][] = [];
             for await (const record of parseStringStream(
               stringToStream(csvData),
-              { header: [], outputFormat: "array" },
+              { header: [], outputFormat: "array", skipEmptyLines: false },
             )) {
               cpuRecords.push(normalizeStandardRecord(record));
             }
@@ -209,7 +209,7 @@ describe("WebGPU Parser Equivalence Tests", () => {
               const cpuRecords: string[][] = [];
               for await (const record of parseStringStream(
                 stringToStream(csvData),
-                { header: [], outputFormat: "array" },
+                { header: [], outputFormat: "array", skipEmptyLines: false },
               )) {
                 cpuRecords.push(normalizeStandardRecord(record));
               }
@@ -269,7 +269,7 @@ describe("WebGPU Parser Equivalence Tests", () => {
               const cpuRecords: string[][] = [];
               for await (const record of parseStringStream(
                 stringToStream(csvData),
-                { header: [], outputFormat: "array" },
+                { header: [], outputFormat: "array", skipEmptyLines: false },
               )) {
                 cpuRecords.push(normalizeStandardRecord(record));
               }
@@ -344,6 +344,7 @@ describe("WebGPU Parser Equivalence Tests", () => {
         for await (const record of parseStringStream(stringToStream(csvData), {
           header: [],
           outputFormat: "array",
+          skipEmptyLines: false,
         })) {
           cpuRecords.push(normalizeStandardRecord(record));
         }
