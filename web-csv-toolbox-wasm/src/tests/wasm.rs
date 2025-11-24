@@ -198,7 +198,11 @@ fn test_optimized_utf8_ascii_mixed() {
     let name0 = js_sys::Reflect::get(&obj0, &"name".into()).unwrap();
     let city0 = js_sys::Reflect::get(&obj0, &"city".into()).unwrap();
     assert_eq!(name0.as_string(), Some("Alice".to_string()));
-    assert_eq!(city0.as_string(), Some("東京".to_string()), "UTF-8 should not be corrupted");
+    assert_eq!(
+        city0.as_string(),
+        Some("東京".to_string()),
+        "UTF-8 should not be corrupted"
+    );
 
     // Verify second record
     let record1 = array.get(1);
@@ -206,7 +210,11 @@ fn test_optimized_utf8_ascii_mixed() {
     let name1 = js_sys::Reflect::get(&obj1, &"name".into()).unwrap();
     let city1 = js_sys::Reflect::get(&obj1, &"city".into()).unwrap();
     assert_eq!(name1.as_string(), Some("Bob".to_string()));
-    assert_eq!(city1.as_string(), Some("大阪".to_string()), "UTF-8 should not be corrupted");
+    assert_eq!(
+        city1.as_string(),
+        Some("大阪".to_string()),
+        "UTF-8 should not be corrupted"
+    );
 }
 
 #[wasm_bindgen_test]
@@ -239,7 +247,11 @@ fn test_optimized_utf8_chunked() {
     let record0 = array.get(0);
     let obj0: js_sys::Object = record0.dyn_into().unwrap();
     let city0 = js_sys::Reflect::get(&obj0, &"city".into()).unwrap();
-    assert_eq!(city0.as_string(), Some("東京".to_string()), "UTF-8 should be preserved across chunks");
+    assert_eq!(
+        city0.as_string(),
+        Some("東京".to_string()),
+        "UTF-8 should be preserved across chunks"
+    );
 }
 
 #[wasm_bindgen_test]
@@ -277,8 +289,16 @@ fn test_optimized_missing_fields() {
     let age1 = js_sys::Reflect::get(&obj1, &"age".into()).unwrap();
     let city1 = js_sys::Reflect::get(&obj1, &"city".into()).unwrap();
     assert_eq!(name1.as_string(), Some("Bob".to_string()));
-    assert_eq!(age1.as_string(), Some("".to_string()), "Missing field should be empty string");
-    assert_eq!(city1.as_string(), Some("".to_string()), "Missing field should be empty string");
+    assert_eq!(
+        age1.as_string(),
+        Some("".to_string()),
+        "Missing field should be empty string"
+    );
+    assert_eq!(
+        city1.as_string(),
+        Some("".to_string()),
+        "Missing field should be empty string"
+    );
 
     // Verify third record (missing city)
     let record2 = array.get(2);
@@ -288,7 +308,11 @@ fn test_optimized_missing_fields() {
     let city2 = js_sys::Reflect::get(&obj2, &"city".into()).unwrap();
     assert_eq!(name2.as_string(), Some("Charlie".to_string()));
     assert_eq!(age2.as_string(), Some("25".to_string()));
-    assert_eq!(city2.as_string(), Some("".to_string()), "Missing field should be empty string");
+    assert_eq!(
+        city2.as_string(),
+        Some("".to_string()),
+        "Missing field should be empty string"
+    );
 }
 
 #[wasm_bindgen_test]

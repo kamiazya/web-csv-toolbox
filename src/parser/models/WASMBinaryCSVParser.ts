@@ -1,7 +1,4 @@
-import {
-  CSVParserLegacy as WASMCSVParserLegacyInternal,
-  CSVParserOptimized as WASMCSVParserOptimizedInternal,
-} from "web-csv-toolbox-wasm";
+import { CSVParserOptimized as WASMCSVParserOptimizedInternal } from "web-csv-toolbox-wasm";
 import type {
   BinaryObjectCSVParser,
   CSVObjectRecord,

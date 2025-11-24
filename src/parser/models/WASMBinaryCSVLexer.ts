@@ -1,9 +1,9 @@
+import { BinaryCSVLexerLegacy as WASMBinaryCSVLexerInternal } from "web-csv-toolbox-wasm";
 import type {
   BinaryCSVLexer,
   CSVLexerLexOptions,
   Token,
 } from "@/core/types.ts";
-import { BinaryCSVLexerLegacy as WASMBinaryCSVLexerInternal } from "web-csv-toolbox-wasm";
 
 /**
  * Options for WASMBinaryCSVLexer.

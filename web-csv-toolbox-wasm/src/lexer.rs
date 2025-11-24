@@ -31,11 +31,19 @@ impl Position {
         }
     }
 
-    pub fn to_js_object(&self) -> Object {
+    pub fn to_js_object(self) -> Object {
         let obj = Object::new();
         let _ = Reflect::set(&obj, &"line".into(), &JsValue::from_f64(self.line as f64));
-        let _ = Reflect::set(&obj, &"column".into(), &JsValue::from_f64(self.column as f64));
-        let _ = Reflect::set(&obj, &"offset".into(), &JsValue::from_f64(self.offset as f64));
+        let _ = Reflect::set(
+            &obj,
+            &"column".into(),
+            &JsValue::from_f64(self.column as f64),
+        );
+        let _ = Reflect::set(
+            &obj,
+            &"offset".into(),
+            &JsValue::from_f64(self.offset as f64),
+        );
         obj
     }
 }
@@ -175,13 +183,25 @@ impl BinaryCSVLexerLegacy {
                     valid_up_to = i + 1;
                     break;
                 } else if (byte & 0b1110_0000) == 0b1100_0000 {
-                    valid_up_to = if i + 2 <= self.utf8_buffer.len() { i + 2 } else { i };
+                    valid_up_to = if i + 2 <= self.utf8_buffer.len() {
+                        i + 2
+                    } else {
+                        i
+                    };
                     break;
                 } else if (byte & 0b1111_0000) == 0b1110_0000 {
-                    valid_up_to = if i + 3 <= self.utf8_buffer.len() { i + 3 } else { i };
+                    valid_up_to = if i + 3 <= self.utf8_buffer.len() {
+                        i + 3
+                    } else {
+                        i
+                    };
                     break;
                 } else if (byte & 0b1111_1000) == 0b1111_0000 {
-                    valid_up_to = if i + 4 <= self.utf8_buffer.len() { i + 4 } else { i };
+                    valid_up_to = if i + 4 <= self.utf8_buffer.len() {
+                        i + 4
+                    } else {
+                        i
+                    };
                     break;
                 }
             }
@@ -277,7 +297,11 @@ impl BinaryCSVLexerLegacy {
     fn emit_field_delimiter_token(&mut self, tokens: &Array) {
         let token = Object::new();
         let _ = Reflect::set(&token, &"type".into(), &"field-delimiter".into());
-        let _ = Reflect::set(&token, &"value".into(), &(self.delimiter as char).to_string().into());
+        let _ = Reflect::set(
+            &token,
+            &"value".into(),
+            &(self.delimiter as char).to_string().into(),
+        );
         let _ = Reflect::set(&token, &"location".into(), &self.create_location());
         tokens.push(&token.into());
     }
@@ -296,9 +320,21 @@ impl BinaryCSVLexerLegacy {
     /// Create location object
     fn create_location(&self) -> JsValue {
         let location = Object::new();
-        let _ = Reflect::set(&location, &"start".into(), &self.token_start.to_js_object().into());
-        let _ = Reflect::set(&location, &"end".into(), &self.position.to_js_object().into());
-        let _ = Reflect::set(&location, &"rowNumber".into(), &JsValue::from_f64(self.row_number as f64));
+        let _ = Reflect::set(
+            &location,
+            &"start".into(),
+            &self.token_start.to_js_object().into(),
+        );
+        let _ = Reflect::set(
+            &location,
+            &"end".into(),
+            &self.position.to_js_object().into(),
+        );
+        let _ = Reflect::set(
+            &location,
+            &"rowNumber".into(),
+            &JsValue::from_f64(self.row_number as f64),
+        );
         location.into()
     }
 }

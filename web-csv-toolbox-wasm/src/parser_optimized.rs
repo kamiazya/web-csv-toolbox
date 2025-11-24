@@ -100,7 +100,9 @@ impl RecordBuffer {
     /// Get a field by index
     #[inline]
     pub fn get(&self, index: usize) -> Option<&str> {
-        self.bounds.get(index).map(|range| &self.buffer[range.clone()])
+        self.bounds
+            .get(index)
+            .map(|range| &self.buffer[range.clone()])
     }
 
     /// Number of fields in the record
@@ -137,8 +139,16 @@ impl RecordBuffer {
                 let descriptor = Object::new();
                 let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
                 let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
+                let _ = Reflect::set(
+                    &descriptor,
+                    &JsValue::from_str("enumerable"),
+                    &JsValue::TRUE,
+                );
+                let _ = Reflect::set(
+                    &descriptor,
+                    &JsValue::from_str("configurable"),
+                    &JsValue::TRUE,
+                );
                 let _ = Object::define_property(&obj, &key, &descriptor);
             } else {
                 // Use simpler Reflect.set for normal properties
@@ -226,8 +236,8 @@ struct DfaTable {
 
 impl DfaTable {
     fn new() -> Self {
-        use OptimizedParserState::*;
         use ByteClass::*;
+        use OptimizedParserState::*;
 
         let mut transitions = [[FieldStart; NUM_CLASSES]; NUM_STATES];
         let mut has_output = [[false; NUM_CLASSES]; NUM_STATES];
@@ -284,7 +294,10 @@ impl DfaTable {
         has_output[AfterQuote as usize][LF as usize] = false;
         has_output[AfterQuote as usize][CR as usize] = false;
 
-        DfaTable { transitions, has_output }
+        DfaTable {
+            transitions,
+            has_output,
+        }
     }
 
     #[inline(always)]
@@ -485,12 +498,7 @@ impl CSVParserOptimized {
                 }
             }
             OptimizedParserState::FieldStart => {
-                if !self.current_record.is_empty() {
-                    self.finish_field()?;
-                    if let Some(record) = self.finish_record() {
-                        completed_records.push(&record);
-                    }
-                } else if !self.current_field.is_empty() {
+                if !self.current_record.is_empty() || !self.current_field.is_empty() {
                     self.finish_field()?;
                     if let Some(record) = self.finish_record() {
                         completed_records.push(&record);
@@ -666,7 +674,11 @@ impl CSVParserOptimized {
     }
 
     /// Process non-ASCII character
-    fn process_char_non_ascii(&mut self, ch: char, _completed_records: &Array) -> Result<(), JsError> {
+    fn process_char_non_ascii(
+        &mut self,
+        ch: char,
+        _completed_records: &Array,
+    ) -> Result<(), JsError> {
         // Non-ASCII characters are just added to fields, no special meaning
         match self.state {
             OptimizedParserState::FieldStart => {
