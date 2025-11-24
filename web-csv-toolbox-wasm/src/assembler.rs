@@ -3,7 +3,7 @@ use wasm_bindgen::prelude::*;
 
 /// CSV Record Assembler for assembling tokens into records
 #[wasm_bindgen]
-pub struct CSVRecordAssembler {
+pub struct CSVRecordAssemblerLegacy {
     /// Current record being assembled (array of field values)
     current_record: Vec<String>,
     /// CSV headers
@@ -17,7 +17,7 @@ pub struct CSVRecordAssembler {
 }
 
 #[wasm_bindgen]
-impl CSVRecordAssembler {
+impl CSVRecordAssemblerLegacy {
     /// Create a new CSV record assembler
     ///
     /// # Arguments
@@ -27,7 +27,7 @@ impl CSVRecordAssembler {
     ///   - `maxFieldCount`: number (default: 100000)
     ///   - `outputFormat`: "object" | "array" (default: "object")
     #[wasm_bindgen(constructor)]
-    pub fn new(options: JsValue) -> Result<CSVRecordAssembler, JsError> {
+    pub fn new(options: JsValue) -> Result<CSVRecordAssemblerLegacy, JsError> {
         let mut headers: Option<Vec<String>> = None;
         let mut headers_parsed = false;
         let mut max_field_count = 100000;
@@ -121,7 +121,7 @@ impl CSVRecordAssembler {
     }
 }
 
-impl CSVRecordAssembler {
+impl CSVRecordAssemblerLegacy {
     /// Process a single token
     fn process_token(&mut self, token: &JsValue, records: &Array) -> Result<(), JsError> {
         let obj = Object::from(token.clone());

@@ -1,4 +1,7 @@
-import { CSVParser as WASMCSVParserInternal } from "web-csv-toolbox-wasm";
+import {
+  CSVParserLegacy as WASMCSVParserLegacyInternal,
+  CSVParserOptimized as WASMCSVParserOptimizedInternal,
+} from "web-csv-toolbox-wasm";
 import type {
   BinaryObjectCSVParser,
   CSVObjectRecord,
@@ -81,7 +84,7 @@ export class WASMBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 > implements BinaryObjectCSVParser<Header>
 {
-  #parser: WASMCSVParserInternal;
+  #parser: WASMCSVParserOptimizedInternal;
 
   /**
    * Create a new WASM Binary CSV Parser.
@@ -117,9 +120,9 @@ export class WASMBinaryCSVParser<
       wasmOptions.header = header;
     }
 
-    // Pass options object to WASM constructor
+    // Pass options object to WASM constructor (using rust-csv optimized version)
     // Note: Type cast needed until WASM is rebuilt with new constructor signature
-    this.#parser = new WASMCSVParserInternal(wasmOptions as any);
+    this.#parser = new WASMCSVParserOptimizedInternal(wasmOptions as any);
   }
 
   /**

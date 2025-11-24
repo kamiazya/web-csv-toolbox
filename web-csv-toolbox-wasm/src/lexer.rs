@@ -42,7 +42,7 @@ impl Position {
 
 /// CSV Lexer for tokenizing binary input
 #[wasm_bindgen]
-pub struct BinaryCSVLexer {
+pub struct BinaryCSVLexerLegacy {
     /// Current lexer state
     state: LexerState,
     /// Field delimiter
@@ -62,7 +62,7 @@ pub struct BinaryCSVLexer {
 }
 
 #[wasm_bindgen]
-impl BinaryCSVLexer {
+impl BinaryCSVLexerLegacy {
     /// Create a new binary CSV lexer
     ///
     /// # Arguments
@@ -71,7 +71,7 @@ impl BinaryCSVLexer {
     ///   - `delimiter`: string (default: ",")
     ///   - `quotation`: string (default: "\"")
     #[wasm_bindgen(constructor)]
-    pub fn new(options: JsValue) -> Result<BinaryCSVLexer, JsError> {
+    pub fn new(options: JsValue) -> Result<BinaryCSVLexerLegacy, JsError> {
         let mut delimiter = b',';
         let mut quote = b'"';
 
@@ -160,7 +160,7 @@ impl BinaryCSVLexer {
     }
 }
 
-impl BinaryCSVLexer {
+impl BinaryCSVLexerLegacy {
     /// Find UTF-8 character boundary
     fn find_utf8_boundary(&self) -> usize {
         let mut valid_up_to = self.utf8_buffer.len();

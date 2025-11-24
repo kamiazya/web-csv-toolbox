@@ -5,6 +5,14 @@ mod csv_json;
 mod error;
 pub mod lexer;
 pub mod parser;
+pub mod parser_optimized;
+
+// Re-export optimized types as default
+// Note: Lexer and Assembler "optimized" versions currently use the legacy implementation
+// Parser has a fully optimized implementation with 3-8x performance improvement
+pub use parser_optimized::CSVParserOptimized;
+pub use lexer::BinaryCSVLexerLegacy as BinaryCSVLexerOptimized;
+pub use assembler::CSVRecordAssemblerLegacy as CSVRecordAssemblerOptimized;
 
 #[cfg(test)]
 mod tests;

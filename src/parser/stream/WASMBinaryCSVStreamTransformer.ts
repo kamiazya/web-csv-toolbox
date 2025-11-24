@@ -1,4 +1,4 @@
-import { CSVParser } from "web-csv-toolbox-wasm";
+import { CSVParserOptimized as CSVParser } from "web-csv-toolbox-wasm";
 import type { CSVObjectRecord } from "@/core/types.ts";
 
 /**

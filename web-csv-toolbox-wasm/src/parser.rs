@@ -14,9 +14,12 @@ pub(crate) enum ParserState {
     AfterQuote,
 }
 
-/// Streaming CSV parser that processes chunks incrementally
+/// Legacy streaming CSV parser that processes chunks incrementally
+///
+/// This is the original implementation kept for backward compatibility and comparison.
+/// For better performance, use `CSVParserOptimized` instead.
 #[wasm_bindgen]
-pub struct CSVParser {
+pub struct CSVParserLegacy {
     /// Current parser state
     pub(crate) state: ParserState,
     /// Field delimiter (e.g., ',' or '\t')
@@ -38,7 +41,7 @@ pub struct CSVParser {
 }
 
 #[wasm_bindgen]
-impl CSVParser {
+impl CSVParserLegacy {
     /// Create a new streaming CSV parser with options from JavaScript object
     ///
     /// # Arguments
@@ -59,7 +62,7 @@ impl CSVParser {
     /// });
     /// ```
     #[wasm_bindgen(constructor)]
-    pub fn new(options: JsValue) -> Result<CSVParser, JsError> {
+    pub fn new(options: JsValue) -> Result<CSVParserLegacy, JsError> {
         // Default values
         let mut delimiter = b',';
         let mut quote = b'"';
@@ -171,7 +174,7 @@ impl CSVParser {
         quote: u8,
         max_field_count: usize,
         headers: JsValue,
-    ) -> Result<CSVParser, JsError> {
+    ) -> Result<CSVParserLegacy, JsError> {
         // Convert JsValue to Vec<String>
         let headers_array = js_sys::Array::from(&headers);
         let mut headers_vec = Vec::new();
@@ -405,7 +408,7 @@ impl CSVParser {
     }
 }
 
-impl CSVParser {
+impl CSVParserLegacy {
     /// Finish the current field and add it to the current record
     pub(crate) fn finish_field(&mut self) -> Result<(), String> {
         if self.current_record.len() >= self.max_field_count {

@@ -6,7 +6,7 @@ import type {
   CSVRecordAssemblerAssembleOptions,
   Token,
 } from "@/core/types.ts";
-import { CSVRecordAssembler as WASMCSVRecordAssemblerInternal } from "web-csv-toolbox-wasm";
+import { CSVRecordAssemblerLegacy as WASMCSVRecordAssemblerInternal } from "web-csv-toolbox-wasm";
 
 /**
  * Options for WASMCSVRecordAssembler.

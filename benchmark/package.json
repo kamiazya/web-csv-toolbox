@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "tsx main.ts",
-    "queuing-strategy": "tsx queuing-strategy.bench.ts"
+    "queuing-strategy": "tsx queuing-strategy.bench.ts",
+    "wasm-optimization": "tsx wasm-optimization-comparison.ts"
   },
   "license": "MIT",
   "dependencies": {
