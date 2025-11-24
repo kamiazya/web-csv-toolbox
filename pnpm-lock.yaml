@@ -102,6 +102,9 @@ importers:
       '@wasm-tool/rollup-plugin-rust':
         specifier: ^3.0.5
         version: 3.0.5(binaryen@121.0.0)(rollup@4.53.1)
+      '@webgpu/types':
+        specifier: ^0.1.66
+        version: 0.1.66
       changesets-github-release:
         specifier: ^0.1.0
         version: 0.1.0
@@ -131,7 +134,7 @@ importers:
         version: 4.5.4(@types/node@24.10.1)(rollup@4.53.1)(typescript@5.9.3)(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       vitest:
         specifier: 4.0.3
-        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       wasm-pack:
         specifier: ^0.13.1
         version: 0.13.1
@@ -177,7 +180,7 @@ importers:
         version: 4.20.6
       vitest:
         specifier: 'catalog:'
-        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/node-main:
     dependencies:
@@ -1419,6 +1422,9 @@ packages:
 
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
+
+  '@webgpu/types@0.1.66':
+    resolution: {integrity: sha512-YA2hLrwLpDsRueNDXIMqN9NTzD6bCDkuXbOSe0heS+f8YE8usA6Gbv1prj81pzVHrbaAma7zObnIC+I6/sXJgA==}
 
   '@webpack-cli/configtest@3.0.1':
     resolution: {integrity: sha512-u8d0pJ5YFgneF/GuvEiDA61Tf1VDomHHYMjv/wc9XzYj7nopltpG96nXN5dJRstxZhcNpV1g+nT6CydO7pHbjA==}
@@ -5512,7 +5518,7 @@ snapshots:
   '@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0)':
     dependencies:
       '@vitest/browser': 4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       webdriverio: 9.20.0
     transitivePeerDependencies:
       - bufferutil
@@ -5529,7 +5535,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -5548,7 +5554,7 @@ snapshots:
       istanbul-reports: 3.2.0
       magicast: 0.3.5
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -5815,6 +5821,8 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
+
+  '@webgpu/types@0.1.66': {}
 
   '@webpack-cli/configtest@3.0.1(webpack-cli@6.0.1)(webpack@5.102.1)':
     dependencies:
@@ -8685,7 +8693,7 @@ snapshots:
       tsx: 4.20.6
       yaml: 2.8.1
 
-  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.3
       '@vitest/mocker': 4.0.3(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))

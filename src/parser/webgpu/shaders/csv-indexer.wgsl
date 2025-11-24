@@ -118,26 +118,28 @@ fn main(
     let tid = localId.x;
     let globalIndex = globalId.x;
 
-    // Check bounds
-    if (globalIndex >= uniforms.chunkSize) {
-        return;
-    }
+    // Bounds check (but don't early return before barriers)
+    let isValid = globalIndex < uniforms.chunkSize;
 
     // ========================================================================
     // Phase 1: Load & Classify
     // ========================================================================
 
-    let byte = getByte(globalIndex);
+    var byte = 0u;
     var isQuote = 0u;
     var isComma = 0u;
     var isLF = 0u;
 
-    if (byte == QUOTE) {
-        isQuote = 1u;
-    } else if (byte == COMMA) {
-        isComma = 1u;
-    } else if (byte == LF) {
-        isLF = 1u;
+    if (isValid) {
+        byte = getByte(globalIndex);
+
+        if (byte == QUOTE) {
+            isQuote = 1u;
+        } else if (byte == COMMA) {
+            isComma = 1u;
+        } else if (byte == LF) {
+            isLF = 1u;
+        }
     }
 
     // ========================================================================
@@ -191,7 +193,7 @@ fn main(
     // Phase 4: Global Indexing (Scatter)
     // ========================================================================
 
-    if (isSeparator == 1u) {
+    if (isValid && isSeparator == 1u) {
         let writePos = atomicAdd(&atomicIndex, 1u);
         sepIndices[writePos] = packSeparator(globalIndex, sepType);
     }
@@ -202,7 +204,7 @@ fn main(
 
     // Note: This is a simplified version. In production, we'd need proper
     // cross-workgroup communication for the final quote state.
-    if (globalIndex == uniforms.chunkSize - 1u) {
+    if (isValid && globalIndex == uniforms.chunkSize - 1u) {
         resultMeta.endInQuote = inQuote;
         resultMeta.sepCount = atomicLoad(&atomicIndex);
     }

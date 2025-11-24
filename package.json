@@ -219,6 +219,7 @@
     "@vitest/browser-webdriverio": "^4.0.3",
     "@vitest/coverage-istanbul": "4.0.3",
     "@wasm-tool/rollup-plugin-rust": "^3.0.5",
+    "@webgpu/types": "^0.1.66",
     "changesets-github-release": "^0.1.0",
     "fast-check": "^4.1.1",
     "madge": "^8.0.0",

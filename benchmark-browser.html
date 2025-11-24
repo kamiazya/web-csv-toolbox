@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGPU CSV Parser Benchmark</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.info {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .status.success {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+    .status.warning {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    .results {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+    .faster {
+      color: #388e3c;
+      font-weight: bold;
+    }
+    .slower {
+      color: #c62828;
+    }
+    #progress {
+      margin: 20px 0;
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      border-left: 4px solid #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 WebGPU CSV Parser Benchmark</h1>
+
+  <div id="webgpu-status" class="status info">
+    Checking WebGPU availability...
+  </div>
+
+  <div id="progress" style="display: none;">
+    <div id="progress-bar">0%</div>
+  </div>
+
+  <div id="current-test" class="status info" style="display: none;">
+    Preparing benchmark...
+  </div>
+
+  <div id="results" class="results" style="display: none;">
+    <h2>📊 Benchmark Results</h2>
+    <div id="summary"></div>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Test Name</th>
+          <th>Operations/sec</th>
+          <th>Avg Time (ms)</th>
+          <th>Comparison</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import {
+      parseString,
+      isWebGPUAvailable,
+      loadGPU,
+      parseCSVStream,
+      StreamParser
+    } from './src/main.web.ts';
+
+    // Generate CSV test data
+    function generateCSV(rows, cols = 10) {
+      const header = Array.from({length: cols}, (_, i) => `col${i}`).join(',');
+      const dataRows = Array.from({length: rows}, (_, rowIdx) =>
+        Array.from({length: cols}, (_, colIdx) => `val${rowIdx}_${colIdx}`).join(',')
+      );
+      return [header, ...dataRows].join('\n');
+    }
+
+    // Simple benchmark function
+    async function benchmark(name, fn, iterations = 10) {
+      const times = [];
+
+      // Warmup
+      await fn();
+
+      // Actual measurements
+      for (let i = 0; i < iterations; i++) {
+        const start = performance.now();
+        await fn();
+        const end = performance.now();
+        times.push(end - start);
+      }
+
+      const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+      const opsPerSec = 1000 / avgTime;
+
+      return {
+        name,
+        avgTime: avgTime.toFixed(3),
+        opsPerSec: opsPerSec.toFixed(2),
+        times
+      };
+    }
+
+    function updateStatus(message, type = 'info') {
+      const statusEl = document.getElementById('webgpu-status');
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+
+    function updateProgress(percent, message) {
+      const progressEl = document.getElementById('progress');
+      const progressBar = document.getElementById('progress-bar');
+      const currentTest = document.getElementById('current-test');
+
+      progressEl.style.display = 'block';
+      currentTest.style.display = 'block';
+      currentTest.textContent = message;
+
+      progressBar.style.width = percent + '%';
+      progressBar.textContent = Math.round(percent) + '%';
+    }
+
+    function displayResults(results) {
+      const resultsDiv = document.getElementById('results');
+      const resultsBody = document.getElementById('results-body');
+      const summary = document.getElementById('summary');
+
+      resultsDiv.style.display = 'block';
+      resultsBody.innerHTML = '';
+
+      // Find baseline (CPU parsing)
+      const baseline = results.find(r => r.name.includes('CPU')) || results[0];
+
+      let summaryHTML = '<h3>Summary</h3><ul>';
+
+      results.forEach((result, idx) => {
+        const row = document.createElement('tr');
+
+        let comparison = '-';
+        let comparisonClass = '';
+
+        if (result !== baseline) {
+          const speedup = (result.opsPerSec / baseline.opsPerSec).toFixed(2);
+          if (speedup > 1) {
+            comparison = `${speedup}x faster`;
+            comparisonClass = 'faster';
+          } else {
+            comparison = `${(1/speedup).toFixed(2)}x slower`;
+            comparisonClass = 'slower';
+          }
+        } else {
+          comparison = 'baseline';
+        }
+
+        row.innerHTML = `
+          <td>${result.name}</td>
+          <td>${result.opsPerSec}</td>
+          <td>${result.avgTime}</td>
+          <td class="${comparisonClass}">${comparison}</td>
+        `;
+
+        resultsBody.appendChild(row);
+
+        summaryHTML += `<li><strong>${result.name}</strong>: ${result.opsPerSec} ops/sec (${result.avgTime}ms avg)</li>`;
+      });
+
+      summaryHTML += '</ul>';
+      summary.innerHTML = summaryHTML;
+    }
+
+    // Main benchmark execution
+    async function runBenchmarks() {
+      try {
+        // Check WebGPU availability
+        const webgpuAvailable = isWebGPUAvailable();
+
+        if (!webgpuAvailable) {
+          updateStatus('⚠️ WebGPU is not available in this browser. Only CPU benchmarks will run.', 'warning');
+        } else {
+          updateStatus('✅ WebGPU is available! Initializing...', 'success');
+        }
+
+        // Skip WASM loading in dev mode - it will be loaded on-demand
+        updateProgress(10, 'Preparing test environment...');
+
+        // Initialize WebGPU if available
+        let gpuInitialized = false;
+        if (webgpuAvailable) {
+          try {
+            updateProgress(20, 'Initializing WebGPU...');
+            await loadGPU();
+            gpuInitialized = true;
+            updateStatus('✅ WebGPU initialized successfully!', 'success');
+          } catch (error) {
+            console.error('WebGPU initialization failed:', error);
+            updateStatus(`⚠️ WebGPU initialization failed: ${error.message}. Running CPU-only benchmarks.`, 'warning');
+          }
+        }
+
+        const results = [];
+        const testSizes = [
+          { rows: 100, name: 'Small' },
+          { rows: 1000, name: 'Medium' },
+          { rows: 5000, name: 'Large' }
+        ];
+
+        let progress = 20;
+        const progressStep = 80 / (testSizes.length * (gpuInitialized ? 2 : 1));
+
+        for (const testSize of testSizes) {
+          const csv = generateCSV(testSize.rows);
+          const csvBytes = new TextEncoder().encode(csv);
+
+          // CPU baseline
+          updateProgress(progress, `Running CPU benchmark (${testSize.name} - ${testSize.rows} rows)...`);
+          const cpuResult = await benchmark(
+            `CPU (${testSize.name} - ${testSize.rows} rows)`,
+            async () => {
+              const records = [];
+              for await (const record of parseString(csv)) {
+                records.push(record);
+              }
+            },
+            5
+          );
+          results.push(cpuResult);
+          progress += progressStep;
+
+          // WebGPU test (if available)
+          if (gpuInitialized) {
+            updateProgress(progress, `Running WebGPU benchmark (${testSize.name} - ${testSize.rows} rows)...`);
+            try {
+              const gpuResult = await benchmark(
+                `WebGPU (${testSize.name} - ${testSize.rows} rows)`,
+                async () => {
+                  const records = [];
+                  const blobStream = new Blob([csvBytes], { type: 'text/csv' }).stream();
+
+                  // Use StreamParser directly for WebGPU
+                  const parser = new StreamParser({
+                    onRecord: (record) => {
+                      records.push(record);
+                    }
+                  });
+
+                  await parser.initialize();
+                  await parser.parseStream(blobStream);
+                  await parser.destroy();
+                },
+                5
+              );
+              results.push(gpuResult);
+            } catch (error) {
+              console.error(`WebGPU benchmark failed for ${testSize.name}:`, error);
+              console.error('Error stack:', error.stack);
+              results.push({
+                name: `WebGPU (${testSize.name} - ${testSize.rows} rows)`,
+                avgTime: 'Error',
+                opsPerSec: '0',
+                error: error.message
+              });
+            }
+            progress += progressStep;
+          }
+        }
+
+        updateProgress(100, 'Benchmarks complete!');
+        displayResults(results);
+
+        // Store results globally for Playwright to access
+        window.benchmarkResults = results;
+        window.benchmarkComplete = true;
+
+        updateStatus('✅ All benchmarks completed successfully!', 'success');
+
+      } catch (error) {
+        console.error('Benchmark error:', error);
+        updateStatus(`❌ Error: ${error.message}`, 'error');
+        window.benchmarkError = error.message;
+        window.benchmarkComplete = true;
+      }
+    }
+
+    // Auto-run on load
+    runBenchmarks();
+  </script>
+</body>
+</html>

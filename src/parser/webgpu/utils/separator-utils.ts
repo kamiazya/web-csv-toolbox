@@ -26,9 +26,9 @@ const OFFSET_MASK = 0x7fffffff; // Bits 0-30
  * ```
  */
 export function unpackSeparator(packed: number): Separator {
-	const offset = packed & OFFSET_MASK;
-	const type = (packed & TYPE_MASK) >>> 31;
-	return { offset, type: type as typeof SEP_TYPE_COMMA | typeof SEP_TYPE_LF };
+  const offset = packed & OFFSET_MASK;
+  const type = (packed & TYPE_MASK) >>> 31;
+  return { offset, type: type as typeof SEP_TYPE_COMMA | typeof SEP_TYPE_LF };
 }
 
 /**
@@ -45,10 +45,10 @@ export function unpackSeparator(packed: number): Separator {
  * ```
  */
 export function packSeparator(
-	offset: number,
-	type: typeof SEP_TYPE_COMMA | typeof SEP_TYPE_LF,
+  offset: number,
+  type: typeof SEP_TYPE_COMMA | typeof SEP_TYPE_LF,
 ): number {
-	return offset | (type << 31);
+  return offset | (type << 31);
 }
 
 /**
@@ -58,7 +58,7 @@ export function packSeparator(
  * @returns true if the separator is a comma
  */
 export function isComma(sep: Separator): boolean {
-	return sep.type === SEP_TYPE_COMMA;
+  return sep.type === SEP_TYPE_COMMA;
 }
 
 /**
@@ -68,7 +68,7 @@ export function isComma(sep: Separator): boolean {
  * @returns true if the separator is a line feed
  */
 export function isLineFeed(sep: Separator): boolean {
-	return sep.type === SEP_TYPE_LF;
+  return sep.type === SEP_TYPE_LF;
 }
 
 /**
@@ -90,16 +90,16 @@ export function isLineFeed(sep: Separator): boolean {
  * ```
  */
 export function findLastLineFeed(
-	sepIndices: Uint32Array,
-	count: number,
+  sepIndices: Uint32Array,
+  count: number,
 ): number {
-	for (let i = count - 1; i >= 0; i--) {
-		const packed = sepIndices[i];
-		if ((packed & TYPE_MASK) !== 0) {
-			return i;
-		}
-	}
-	return -1;
+  for (let i = count - 1; i >= 0; i--) {
+    const packed = sepIndices[i];
+    if ((packed & TYPE_MASK) !== 0) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 /**
@@ -110,15 +110,15 @@ export function findLastLineFeed(
  * @returns Byte offset after the last LF, or 0 if no LF found
  */
 export function getProcessedBytesCount(
-	sepIndices: Uint32Array,
-	count: number,
+  sepIndices: Uint32Array,
+  count: number,
 ): number {
-	const lastLFIndex = findLastLineFeed(sepIndices, count);
-	if (lastLFIndex === -1) {
-		return 0;
-	}
-	const lastLF = unpackSeparator(sepIndices[lastLFIndex]);
-	return lastLF.offset + 1; // +1 to include the LF itself
+  const lastLFIndex = findLastLineFeed(sepIndices, count);
+  if (lastLFIndex === -1) {
+    return 0;
+  }
+  const lastLF = unpackSeparator(sepIndices[lastLFIndex]);
+  return lastLF.offset + 1; // +1 to include the LF itself
 }
 
 /**
@@ -129,17 +129,17 @@ export function getProcessedBytesCount(
  * @returns Array of unpacked separators up to last LF
  */
 export function getValidSeparators(
-	sepIndices: Uint32Array,
-	count: number,
+  sepIndices: Uint32Array,
+  count: number,
 ): Separator[] {
-	const lastLFIndex = findLastLineFeed(sepIndices, count);
-	if (lastLFIndex === -1) {
-		return [];
-	}
+  const lastLFIndex = findLastLineFeed(sepIndices, count);
+  if (lastLFIndex === -1) {
+    return [];
+  }
 
-	const result: Separator[] = [];
-	for (let i = 0; i <= lastLFIndex; i++) {
-		result.push(unpackSeparator(sepIndices[i]));
-	}
-	return result;
+  const result: Separator[] = [];
+  for (let i = 0; i <= lastLFIndex; i++) {
+    result.push(unpackSeparator(sepIndices[i]));
+  }
+  return result;
 }

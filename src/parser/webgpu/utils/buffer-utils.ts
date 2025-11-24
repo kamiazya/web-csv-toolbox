@@ -15,16 +15,16 @@ const BOM_UTF8 = new Uint8Array([0xef, 0xbb, 0xbf]);
  * @returns New array containing both arrays concatenated
  */
 export function concatUint8Arrays(
-	left: Uint8Array,
-	right: Uint8Array,
+  left: Uint8Array,
+  right: Uint8Array,
 ): Uint8Array {
-	if (left.length === 0) return right;
-	if (right.length === 0) return left;
+  if (left.length === 0) return right;
+  if (right.length === 0) return left;
 
-	const result = new Uint8Array(left.length + right.length);
-	result.set(left, 0);
-	result.set(right, left.length);
-	return result;
+  const result = new Uint8Array(left.length + right.length);
+  result.set(left, 0);
+  result.set(right, left.length);
+  return result;
 }
 
 /**
@@ -34,12 +34,12 @@ export function concatUint8Arrays(
  * @returns true if the array starts with BOM
  */
 export function hasBOM(bytes: Uint8Array): boolean {
-	if (bytes.length < 3) return false;
-	return (
-		bytes[0] === BOM_UTF8[0] &&
-		bytes[1] === BOM_UTF8[1] &&
-		bytes[2] === BOM_UTF8[2]
-	);
+  if (bytes.length < 3) return false;
+  return (
+    bytes[0] === BOM_UTF8[0] &&
+    bytes[1] === BOM_UTF8[1] &&
+    bytes[2] === BOM_UTF8[2]
+  );
 }
 
 /**
@@ -49,7 +49,7 @@ export function hasBOM(bytes: Uint8Array): boolean {
  * @returns Subarray without BOM (zero-copy if BOM present, original if not)
  */
 export function stripBOM(bytes: Uint8Array): Uint8Array {
-	return hasBOM(bytes) ? bytes.subarray(3) : bytes;
+  return hasBOM(bytes) ? bytes.subarray(3) : bytes;
 }
 
 /**
@@ -59,7 +59,7 @@ export function stripBOM(bytes: Uint8Array): Uint8Array {
  * @returns true if byte is CR
  */
 export function isCR(byte: number): boolean {
-	return byte === 0x0d;
+  return byte === 0x0d;
 }
 
 /**
@@ -69,7 +69,7 @@ export function isCR(byte: number): boolean {
  * @returns true if byte is LF
  */
 export function isLF(byte: number): boolean {
-	return byte === 0x0a;
+  return byte === 0x0a;
 }
 
 /**
@@ -83,10 +83,10 @@ export function isLF(byte: number): boolean {
  * @returns Adjusted end position for the field
  */
 export function adjustForCRLF(bytes: Uint8Array, lfOffset: number): number {
-	if (lfOffset > 0 && isCR(bytes[lfOffset - 1])) {
-		return lfOffset - 1;
-	}
-	return lfOffset;
+  if (lfOffset > 0 && isCR(bytes[lfOffset - 1])) {
+    return lfOffset - 1;
+  }
+  return lfOffset;
 }
 
 /**
@@ -98,12 +98,12 @@ export function adjustForCRLF(bytes: Uint8Array, lfOffset: number): number {
  * @returns Decoded string
  */
 export function decodeUTF8(
-	bytes: Uint8Array,
-	start: number,
-	end: number,
+  bytes: Uint8Array,
+  start: number,
+  end: number,
 ): string {
-	const decoder = new TextDecoder("utf-8", { fatal: false });
-	return decoder.decode(bytes.subarray(start, end));
+  const decoder = new TextDecoder("utf-8", { fatal: false });
+  return decoder.decode(bytes.subarray(start, end));
 }
 
 /**
@@ -115,7 +115,7 @@ export function decodeUTF8(
  * @returns Aligned size (rounded up to nearest multiple of 4)
  */
 export function alignToU32(size: number): number {
-	return Math.ceil(size / 4) * 4;
+  return Math.ceil(size / 4) * 4;
 }
 
 /**
@@ -125,15 +125,15 @@ export function alignToU32(size: number): number {
  * @returns New array with padding (if needed) or original array
  */
 export function padToU32Aligned(bytes: Uint8Array): Uint8Array {
-	const aligned = alignToU32(bytes.length);
-	if (aligned === bytes.length) {
-		return bytes;
-	}
+  const aligned = alignToU32(bytes.length);
+  if (aligned === bytes.length) {
+    return bytes;
+  }
 
-	const padded = new Uint8Array(aligned);
-	padded.set(bytes, 0);
-	// Remaining bytes are zero-filled by default
-	return padded;
+  const padded = new Uint8Array(aligned);
+  padded.set(bytes, 0);
+  // Remaining bytes are zero-filled by default
+  return padded;
 }
 
 /**
@@ -144,12 +144,12 @@ export function padToU32Aligned(bytes: Uint8Array): Uint8Array {
  * @throws Error if bytes are not u32-aligned
  */
 export function toUint32View(bytes: Uint8Array): Uint32Array {
-	if (bytes.length % 4 !== 0) {
-		throw new Error(
-			`Buffer size ${bytes.length} is not u32-aligned. Use padToU32Aligned first.`,
-		);
-	}
-	return new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
+  if (bytes.length % 4 !== 0) {
+    throw new Error(
+      `Buffer size ${bytes.length} is not u32-aligned. Use padToU32Aligned first.`,
+    );
+  }
+  return new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.length / 4);
 }
 
 /**
@@ -158,35 +158,38 @@ export function toUint32View(bytes: Uint8Array): Uint32Array {
  * Reduces GC pressure during streaming operations.
  */
 export class BufferPool {
-	private pool: Uint8Array[] = [];
-	private readonly maxPoolSize: number;
-	private readonly bufferSize: number;
+  private pool: Uint8Array[] = [];
+  private readonly maxPoolSize: number;
+  private readonly bufferSize: number;
 
-	constructor(bufferSize: number, maxPoolSize = 4) {
-		this.bufferSize = alignToU32(bufferSize);
-		this.maxPoolSize = maxPoolSize;
-	}
+  constructor(bufferSize: number, maxPoolSize = 4) {
+    this.bufferSize = alignToU32(bufferSize);
+    this.maxPoolSize = maxPoolSize;
+  }
 
-	/**
-	 * Acquires a buffer from the pool or creates a new one
-	 */
-	acquire(): Uint8Array {
-		return this.pool.pop() || new Uint8Array(this.bufferSize);
-	}
+  /**
+   * Acquires a buffer from the pool or creates a new one
+   */
+  acquire(): Uint8Array {
+    return this.pool.pop() || new Uint8Array(this.bufferSize);
+  }
 
-	/**
-	 * Returns a buffer to the pool for reuse
-	 */
-	release(buffer: Uint8Array): void {
-		if (this.pool.length < this.maxPoolSize && buffer.length === this.bufferSize) {
-			this.pool.push(buffer);
-		}
-	}
+  /**
+   * Returns a buffer to the pool for reuse
+   */
+  release(buffer: Uint8Array): void {
+    if (
+      this.pool.length < this.maxPoolSize &&
+      buffer.length === this.bufferSize
+    ) {
+      this.pool.push(buffer);
+    }
+  }
 
-	/**
-	 * Clears all buffers from the pool
-	 */
-	clear(): void {
-		this.pool = [];
-	}
+  /**
+   * Clears all buffers from the pool
+   */
+  clear(): void {
+    this.pool = [];
+  }
 }

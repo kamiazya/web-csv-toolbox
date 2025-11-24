@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebGPU CSV Parser - GB-Scale OPFS Benchmark</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.info {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .status.success {
+      background: #e8f5e9;
+      color: #388e3c;
+    }
+    .status.warning {
+      background: #fff3e0;
+      color: #f57c00;
+    }
+    .status.error {
+      background: #ffebee;
+      color: #c62828;
+    }
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin: 20px 0;
+    }
+    .control-group {
+      margin: 15px 0;
+    }
+    label {
+      display: inline-block;
+      width: 150px;
+      font-weight: bold;
+    }
+    select, input[type="number"] {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 200px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    button.danger {
+      background: #f44336;
+    }
+    button.danger:hover {
+      background: #da190b;
+    }
+    .results {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-top: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
+    .faster {
+      color: #388e3c;
+      font-weight: bold;
+    }
+    .slower {
+      color: #c62828;
+    }
+    #progress {
+      margin: 20px 0;
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      width: 0%;
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    .file-info {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-family: monospace;
+    }
+    .chart {
+      margin: 20px 0;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h1>🚀 WebGPU CSV Parser - GB-Scale OPFS Benchmark</h1>
+
+  <div id="opfs-status" class="status info">
+    Checking OPFS availability...
+  </div>
+
+  <div id="webgpu-status" class="status info">
+    Checking WebGPU availability...
+  </div>
+
+  <div class="controls">
+    <h2>📁 Test File Configuration</h2>
+
+    <div class="control-group">
+      <label for="file-size">File Size:</label>
+      <select id="file-size">
+        <option value="1">1 MB (test)</option>
+        <option value="10">10 MB (small)</option>
+        <option value="100">100 MB (medium)</option>
+        <option value="500">500 MB (large)</option>
+        <option value="1000" selected>1 GB (very large)</option>
+        <option value="2000">2 GB (huge)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="columns">Columns per row:</label>
+      <input type="number" id="columns" value="10" min="5" max="100">
+    </div>
+
+    <div id="file-info" class="file-info" style="display: none;"></div>
+
+    <button id="generate-file" onclick="generateTestFile()">
+      📝 Generate Test File in OPFS
+    </button>
+    <button id="delete-file" onclick="deleteTestFile()" class="danger" style="display: none;">
+      🗑️ Delete Test File
+    </button>
+  </div>
+
+  <div class="controls">
+    <h2>⚡ Benchmark Configuration</h2>
+
+    <div class="control-group">
+      <label for="chunk-size">Chunk Size (MB):</label>
+      <select id="chunk-size">
+        <option value="1">1 MB</option>
+        <option value="2" selected>2 MB</option>
+        <option value="4">4 MB</option>
+        <option value="8">8 MB</option>
+        <option value="16">16 MB</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="iterations">Iterations:</label>
+      <input type="number" id="iterations" value="3" min="1" max="10">
+    </div>
+
+    <button id="run-cpu" onclick="runBenchmark('cpu')" disabled>
+      🖥️ Run CPU Benchmark
+    </button>
+    <button id="run-gpu" onclick="runBenchmark('gpu')" disabled>
+      🎮 Run WebGPU Benchmark
+    </button>
+    <button id="run-both" onclick="runBenchmark('both')" disabled>
+      ⚔️ Compare Both
+    </button>
+  </div>
+
+  <div id="progress" style="display: none;">
+    <div id="progress-bar">0%</div>
+  </div>
+
+  <div id="current-status" class="status info" style="display: none;">
+    Preparing...
+  </div>
+
+  <div id="results" class="results" style="display: none;">
+    <h2>📊 Benchmark Results</h2>
+    <div id="summary"></div>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>File Size</th>
+          <th>Time (sec)</th>
+          <th>Throughput (MB/s)</th>
+          <th>Records/sec</th>
+          <th>Comparison</th>
+        </tr>
+      </thead>
+      <tbody id="results-body">
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import {
+      parseString,
+      parseBinaryStream,
+      isWebGPUAvailable,
+      loadGPU,
+      StreamParser
+    } from './src/main.web.ts';
+
+    let opfsRoot = null;
+    let testFileHandle = null;
+    let testFileSize = 0;
+    let testFileRows = 0;
+    let webgpuAvailable = false;
+    let gpuInitialized = false;
+
+    const TEST_FILE_NAME = 'benchmark-test.csv';
+
+    // Initialize
+    async function init() {
+      // Check OPFS
+      try {
+        opfsRoot = await navigator.storage.getDirectory();
+        updateStatus('opfs-status', '✅ OPFS is available!', 'success');
+
+        // Check if test file exists
+        try {
+          testFileHandle = await opfsRoot.getFileHandle(TEST_FILE_NAME);
+          const file = await testFileHandle.getFile();
+          testFileSize = file.size;
+
+          // Count rows (estimate)
+          const sample = await file.slice(0, 10000).text();
+          const sampleRows = sample.split('\n').length;
+          testFileRows = Math.floor((testFileSize / 10000) * sampleRows);
+
+          showFileInfo();
+          enableBenchmarkButtons();
+        } catch {
+          // File doesn't exist yet
+        }
+      } catch (error) {
+        updateStatus('opfs-status', '❌ OPFS is not available: ' + error.message, 'error');
+      }
+
+      // Check WebGPU
+      webgpuAvailable = isWebGPUAvailable();
+      if (!webgpuAvailable) {
+        updateStatus('webgpu-status', '⚠️ WebGPU is not available in this browser.', 'warning');
+      } else {
+        try {
+          await loadGPU();
+          gpuInitialized = true;
+          updateStatus('webgpu-status', '✅ WebGPU initialized successfully!', 'success');
+        } catch (error) {
+          updateStatus('webgpu-status', '⚠️ WebGPU initialization failed: ' + error.message, 'warning');
+        }
+      }
+    }
+
+    function updateStatus(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.className = `status ${type}`;
+    }
+
+    function showFileInfo() {
+      const infoEl = document.getElementById('file-info');
+      infoEl.style.display = 'block';
+      infoEl.innerHTML = `
+        <strong>Current Test File:</strong><br>
+        Size: ${(testFileSize / (1024 * 1024)).toFixed(2)} MB<br>
+        Estimated rows: ${testFileRows.toLocaleString()}<br>
+        File: ${TEST_FILE_NAME}
+      `;
+      document.getElementById('delete-file').style.display = 'inline-block';
+    }
+
+    function enableBenchmarkButtons() {
+      document.getElementById('run-cpu').disabled = false;
+      if (gpuInitialized) {
+        document.getElementById('run-gpu').disabled = false;
+        document.getElementById('run-both').disabled = false;
+      }
+    }
+
+    // Generate CSV data
+    function generateCSVChunk(startRow, rows, cols) {
+      const lines = [];
+      if (startRow === 0) {
+        // Header
+        lines.push(Array.from({length: cols}, (_, i) => `col${i}`).join(','));
+      }
+
+      for (let r = 0; r < rows; r++) {
+        const rowIndex = startRow + r;
+        const fields = Array.from({length: cols}, (_, c) => `val${rowIndex}_${c}`);
+        lines.push(fields.join(','));
+      }
+
+      return lines.join('\n') + '\n';
+    }
+
+    async function generateTestFile() {
+      const fileSizeMB = parseInt(document.getElementById('file-size').value);
+      const columns = parseInt(document.getElementById('columns').value);
+
+      updateStatus('current-status', 'Generating test file...', 'info');
+      document.getElementById('current-status').style.display = 'block';
+      document.getElementById('progress').style.display = 'block';
+      document.getElementById('generate-file').disabled = true;
+
+      try {
+        // Create file
+        testFileHandle = await opfsRoot.getFileHandle(TEST_FILE_NAME, { create: true });
+        const writable = await testFileHandle.createWritable();
+
+        const targetBytes = fileSizeMB * 1024 * 1024;
+        const chunkRows = 10000;
+        let currentRow = 0;
+        let writtenBytes = 0;
+
+        while (writtenBytes < targetBytes) {
+          const csvChunk = generateCSVChunk(currentRow, chunkRows, columns);
+          const bytes = new TextEncoder().encode(csvChunk);
+
+          await writable.write(bytes);
+          writtenBytes += bytes.length;
+          currentRow += chunkRows;
+
+          const progress = Math.min((writtenBytes / targetBytes) * 100, 100);
+          document.getElementById('progress-bar').style.width = progress + '%';
+          document.getElementById('progress-bar').textContent = Math.round(progress) + '%';
+        }
+
+        await writable.close();
+
+        // Update file info
+        const file = await testFileHandle.getFile();
+        testFileSize = file.size;
+        testFileRows = currentRow;
+
+        showFileInfo();
+        enableBenchmarkButtons();
+
+        updateStatus('current-status', '✅ Test file generated successfully!', 'success');
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('progress-bar').textContent = '100%';
+
+        setTimeout(() => {
+          document.getElementById('current-status').style.display = 'none';
+          document.getElementById('progress').style.display = 'none';
+        }, 3000);
+      } catch (error) {
+        updateStatus('current-status', '❌ Error generating file: ' + error.message, 'error');
+      } finally {
+        document.getElementById('generate-file').disabled = false;
+      }
+    }
+
+    async function deleteTestFile() {
+      if (confirm('Are you sure you want to delete the test file?')) {
+        try {
+          await opfsRoot.removeEntry(TEST_FILE_NAME);
+          testFileHandle = null;
+          testFileSize = 0;
+          testFileRows = 0;
+          document.getElementById('file-info').style.display = 'none';
+          document.getElementById('delete-file').style.display = 'none';
+          document.getElementById('run-cpu').disabled = true;
+          document.getElementById('run-gpu').disabled = true;
+          document.getElementById('run-both').disabled = true;
+          updateStatus('current-status', '✅ Test file deleted.', 'success');
+          document.getElementById('current-status').style.display = 'block';
+          setTimeout(() => {
+            document.getElementById('current-status').style.display = 'none';
+          }, 3000);
+        } catch (error) {
+          alert('Error deleting file: ' + error.message);
+        }
+      }
+    }
+
+    async function runBenchmark(mode) {
+      if (!testFileHandle) {
+        alert('Please generate a test file first!');
+        return;
+      }
+
+      const chunkSizeMB = parseInt(document.getElementById('chunk-size').value);
+      const iterations = parseInt(document.getElementById('iterations').value);
+
+      document.getElementById('current-status').style.display = 'block';
+      document.getElementById('progress').style.display = 'block';
+      document.getElementById('results').style.display = 'none';
+
+      // Disable buttons
+      document.getElementById('run-cpu').disabled = true;
+      document.getElementById('run-gpu').disabled = true;
+      document.getElementById('run-both').disabled = true;
+
+      const results = [];
+
+      try {
+        if (mode === 'cpu' || mode === 'both') {
+          updateStatus('current-status', '🖥️ Running CPU benchmark...', 'info');
+          const cpuResult = await benchmarkCPU(chunkSizeMB, iterations);
+          results.push(cpuResult);
+        }
+
+        if ((mode === 'gpu' || mode === 'both') && gpuInitialized) {
+          updateStatus('current-status', '🎮 Running WebGPU benchmark...', 'info');
+          const gpuResult = await benchmarkGPU(chunkSizeMB, iterations);
+          results.push(gpuResult);
+        }
+
+        displayResults(results);
+        updateStatus('current-status', '✅ Benchmark completed!', 'success');
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('progress-bar').textContent = '100%';
+
+        // Store results for access from Playwright
+        window.benchmarkResults = results;
+        window.benchmarkComplete = true;
+
+        setTimeout(() => {
+          document.getElementById('current-status').style.display = 'none';
+          document.getElementById('progress').style.display = 'none';
+        }, 3000);
+      } catch (error) {
+        console.error('Benchmark error:', error);
+        updateStatus('current-status', '❌ Error: ' + error.message, 'error');
+        window.benchmarkError = error.message;
+        window.benchmarkComplete = true;
+      } finally {
+        enableBenchmarkButtons();
+      }
+    }
+
+    async function benchmarkCPU(chunkSizeMB, iterations) {
+      const times = [];
+      let totalRecords = 0;
+
+      for (let iter = 0; iter < iterations; iter++) {
+        updateProgress((iter / iterations) * 100, `CPU iteration ${iter + 1}/${iterations}`);
+
+        const startTime = performance.now();
+
+        const file = await testFileHandle.getFile();
+        const stream = file.stream();
+        let recordCount = 0;
+
+        for await (const record of parseBinaryStream(stream)) {
+          recordCount++;
+        }
+
+        const endTime = performance.now();
+        times.push((endTime - startTime) / 1000);
+        if (iter === 0) totalRecords = recordCount;
+      }
+
+      const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+      const throughput = (testFileSize / (1024 * 1024)) / avgTime;
+      const recordsPerSec = totalRecords / avgTime;
+
+      return {
+        method: 'CPU',
+        fileSize: testFileSize,
+        avgTime: avgTime.toFixed(3),
+        throughput: throughput.toFixed(2),
+        recordsPerSec: recordsPerSec.toFixed(0),
+        totalRecords
+      };
+    }
+
+    async function benchmarkGPU(chunkSizeMB, iterations) {
+      const times = [];
+      let totalRecords = 0;
+
+      for (let iter = 0; iter < iterations; iter++) {
+        updateProgress((iter / iterations) * 100, `WebGPU iteration ${iter + 1}/${iterations}`);
+
+        const startTime = performance.now();
+
+        const file = await testFileHandle.getFile();
+        const stream = file.stream();
+        let recordCount = 0;
+
+        const parser = new StreamParser({
+          onRecord: () => {
+            recordCount++;
+          }
+        });
+
+        await parser.initialize();
+        await parser.parseStream(stream);
+        await parser.destroy();
+
+        const endTime = performance.now();
+        times.push((endTime - startTime) / 1000);
+        if (iter === 0) totalRecords = recordCount;
+      }
+
+      const avgTime = times.reduce((a, b) => a + b, 0) / times.length;
+      const throughput = (testFileSize / (1024 * 1024)) / avgTime;
+      const recordsPerSec = totalRecords / avgTime;
+
+      return {
+        method: 'WebGPU',
+        fileSize: testFileSize,
+        avgTime: avgTime.toFixed(3),
+        throughput: throughput.toFixed(2),
+        recordsPerSec: recordsPerSec.toFixed(0),
+        totalRecords
+      };
+    }
+
+    function updateProgress(percent, message) {
+      const progressBar = document.getElementById('progress-bar');
+      const currentStatus = document.getElementById('current-status');
+
+      document.getElementById('progress').style.display = 'block';
+      currentStatus.style.display = 'block';
+      currentStatus.textContent = message;
+
+      progressBar.style.width = percent + '%';
+      progressBar.textContent = Math.round(percent) + '%';
+    }
+
+    function displayResults(results) {
+      const resultsDiv = document.getElementById('results');
+      const resultsBody = document.getElementById('results-body');
+      const summary = document.getElementById('summary');
+
+      resultsDiv.style.display = 'block';
+      resultsBody.innerHTML = '';
+
+      const baseline = results[0];
+
+      let summaryHTML = '<h3>Summary</h3><ul>';
+
+      results.forEach((result) => {
+        const row = document.createElement('tr');
+
+        let comparison = '-';
+        let comparisonClass = '';
+
+        if (result !== baseline && results.length > 1) {
+          const speedup = (parseFloat(result.throughput) / parseFloat(baseline.throughput)).toFixed(2);
+          if (speedup > 1) {
+            comparison = `${speedup}x faster`;
+            comparisonClass = 'faster';
+          } else {
+            comparison = `${(1/speedup).toFixed(2)}x slower`;
+            comparisonClass = 'slower';
+          }
+        } else if (results.length === 1) {
+          comparison = 'baseline';
+        }
+
+        row.innerHTML = `
+          <td><strong>${result.method}</strong></td>
+          <td>${(result.fileSize / (1024 * 1024)).toFixed(2)} MB</td>
+          <td>${result.avgTime}</td>
+          <td>${result.throughput}</td>
+          <td>${parseInt(result.recordsPerSec).toLocaleString()}</td>
+          <td class="${comparisonClass}">${comparison}</td>
+        `;
+
+        resultsBody.appendChild(row);
+
+        summaryHTML += `<li><strong>${result.method}</strong>: ${result.throughput} MB/s, ${parseInt(result.recordsPerSec).toLocaleString()} records/sec (${result.avgTime}s total)</li>`;
+      });
+
+      summaryHTML += '</ul>';
+      summary.innerHTML = summaryHTML;
+    }
+
+    // Make functions global
+    window.generateTestFile = generateTestFile;
+    window.deleteTestFile = deleteTestFile;
+    window.runBenchmark = runBenchmark;
+
+    // Initialize on load
+    init();
+  </script>
+</body>
+</html>

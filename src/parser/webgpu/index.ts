@@ -81,77 +81,68 @@
  * @module parser/webgpu
  */
 
-// Core types
-export type {
-	CSVField,
-	CSVRecord,
-	GPUParseResult,
-	ParseUniforms,
-	ResultMeta,
-	Separator,
-	StreamingParserOptions,
-	StreamingState,
-	WebGPUParserConfig,
-} from "./core/types.ts";
-
-export { SEP_TYPE_COMMA, SEP_TYPE_LF } from "./core/types.ts";
-
 // GPU backend
 export { GPUBackend } from "./core/gpu-backend.ts";
-
-// Streaming parser
-export { StreamParser, parseCSVStream } from "./streaming/stream-parser.ts";
-
-// Utilities
+// Core types
+// Note: CSVField and CSVRecord are already exported from @/common.ts
+// to avoid duplication in main.web.ts
+export type {
+  GPUParseResult,
+  ParseUniforms,
+  ResultMeta,
+  Separator,
+  StreamingParserOptions,
+  StreamingState,
+  WebGPUParserConfig,
+} from "./core/types.ts";
+export { SEP_TYPE_COMMA, SEP_TYPE_LF } from "./core/types.ts";
+// GPU Device Manager (for lifecycle management)
+// Note: GPUDevicePreference and GPUDeviceManager are already exported from @/core/types.ts
+// to avoid duplication in main.web.ts
+export type {
+  BufferPoolingConfig,
+  GPUDeviceManagerConfig,
+  GPUDeviceSelectionContext,
+  GPUDeviceSelector,
+} from "./loaders/GPUDeviceManager.ts";
 export {
-	adjustForCRLF,
-	alignToU32,
-	concatUint8Arrays,
-	decodeUTF8,
-	hasBOM,
-	isCR,
-	isLF,
-	padToU32Aligned,
-	stripBOM,
-	toUint32View,
-	BufferPool,
-} from "./utils/buffer-utils.ts";
-
-export {
-	findLastLineFeed,
-	getProcessedBytesCount,
-	getValidSeparators,
-	isComma,
-	isLineFeed,
-	packSeparator,
-	unpackSeparator,
-} from "./utils/separator-utils.ts";
-
+  ReusableGPUDeviceManager,
+  TransientGPUDeviceManager,
+} from "./loaders/GPUDeviceManager.ts";
 // GPU Device Lifecycle (similar to loadWASM pattern)
 export type { GPUInitOptions } from "./loaders/loadGPU.ts";
-
 export {
-	disposeGPU,
-	ensureGPUInitialized,
-	getSharedGPUDevice,
-	isGPUReady,
-	loadGPU,
+  disposeGPU,
+  ensureGPUInitialized,
+  getSharedGPUDevice,
+  isGPUReady,
+  loadGPU,
 } from "./loaders/loadGPU.ts";
-
-// GPU Device Manager (for lifecycle management)
-export type {
-	BufferPoolingConfig,
-	GPUDeviceManagerConfig,
-	GPUDevicePreference,
-	GPUDeviceSelectionContext,
-	GPUDeviceSelector,
-} from "./loaders/GPUDeviceManager.ts";
-
+// Streaming parser
+export { parseCSVStream, StreamParser } from "./streaming/stream-parser.ts";
+// Utilities
 export {
-	GPUDeviceManager,
-	ReusableGPUDeviceManager,
-	TransientGPUDeviceManager,
-} from "./loaders/GPUDeviceManager.ts";
+  adjustForCRLF,
+  alignToU32,
+  BufferPool,
+  concatUint8Arrays,
+  decodeUTF8,
+  hasBOM,
+  isCR,
+  isLF,
+  padToU32Aligned,
+  stripBOM,
+  toUint32View,
+} from "./utils/buffer-utils.ts";
+export {
+  findLastLineFeed,
+  getProcessedBytesCount,
+  getValidSeparators,
+  isComma,
+  isLineFeed,
+  packSeparator,
+  unpackSeparator,
+} from "./utils/separator-utils.ts";
 
 /**
  * Checks if WebGPU is available in the current environment
@@ -170,5 +161,5 @@ export {
  * ```
  */
 export function isWebGPUAvailable(): boolean {
-	return typeof navigator !== "undefined" && "gpu" in navigator;
+  return typeof navigator !== "undefined" && "gpu" in navigator;
 }
