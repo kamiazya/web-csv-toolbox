@@ -266,7 +266,7 @@ export default bytes.buffer || bytes;
                 { browser: "firefox" },
               ];
             })(),
-            headless: true,
+            headless: false,
           },
         },
         resolve: {

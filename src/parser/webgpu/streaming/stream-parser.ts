@@ -157,6 +157,7 @@ export class StreamParser {
     inputBytes: Uint8Array,
     separators: Array<{ offset: number; type: number }>,
     _processedBytesCount: number,
+    emitTrailingFields = false,
   ): Promise<void> {
     const fields: string[] = [];
     let lastOffset = 0;
@@ -168,7 +169,20 @@ export class StreamParser {
         : sep.offset;
 
       // Extract field value
-      const fieldValue = decodeUTF8(inputBytes, lastOffset, endOffset);
+      let fieldValue = decodeUTF8(inputBytes, lastOffset, endOffset);
+
+      // Handle quoted fields: strip quotes and unescape internal quotes
+      if (
+        fieldValue.length >= 2 &&
+        fieldValue[0] === '"' &&
+        fieldValue[fieldValue.length - 1] === '"'
+      ) {
+        // Remove surrounding quotes
+        fieldValue = fieldValue.slice(1, -1);
+        // Unescape doubled quotes ("" -> ")
+        fieldValue = fieldValue.replace(/""/g, '"');
+      }
+
       fields.push(fieldValue);
 
       // If this is a line feed, emit the record
@@ -181,9 +195,28 @@ export class StreamParser {
       lastOffset = sep.offset + 1;
     }
 
-    // Handle any remaining fields (shouldn't happen if we end on LF)
-    if (fields.length > 0) {
-      console.warn("Unexpected trailing fields without LF:", fields);
+    // Handle any remaining fields (happens at end of stream without trailing LF)
+    if (emitTrailingFields) {
+      // Extract final field after last separator
+      if (lastOffset < inputBytes.length) {
+        let finalField = decodeUTF8(inputBytes, lastOffset, inputBytes.length);
+
+        // Handle quoted field
+        if (
+          finalField.length >= 2 &&
+          finalField[0] === '"' &&
+          finalField[finalField.length - 1] === '"'
+        ) {
+          finalField = finalField.slice(1, -1).replace(/""/g, '"');
+        }
+
+        fields.push(finalField);
+      }
+
+      // Emit the record if there are any fields
+      if (fields.length > 0) {
+        await this.emitRecord(fields);
+      }
     }
   }
 
@@ -246,14 +279,25 @@ export class StreamParser {
         this.state.leftover,
         separators,
         this.state.leftover.length,
+        true, // Emit trailing fields at end of stream
       );
     } else {
-      // No separators - treat entire leftover as single field
-      const value = decodeUTF8(
+      // No separators - treat entire leftover as single field/record
+      let value = decodeUTF8(
         this.state.leftover,
         0,
         this.state.leftover.length,
       );
+
+      // Handle quoted field
+      if (
+        value.length >= 2 &&
+        value[0] === '"' &&
+        value[value.length - 1] === '"'
+      ) {
+        value = value.slice(1, -1).replace(/""/g, '"');
+      }
+
       await this.emitRecord([value]);
     }
   }
