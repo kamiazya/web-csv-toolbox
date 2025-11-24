@@ -1,6 +1,6 @@
 use proptest::prelude::*;
 
-use crate::parser::CSVParser;
+use crate::parser::CSVParserLegacy;
 
 use super::common::{create_csv, escape_csv_field};
 
@@ -53,7 +53,7 @@ proptest! {
     ) {
         let csv = create_csv(&headers, &rows);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         // Just check it doesn't panic
     }
@@ -70,12 +70,12 @@ proptest! {
         let csv = create_csv(&headers2, &rows);
 
         // Parse all at once
-        let mut parser1 = CSVParser::new(b',');
+        let mut parser1 = CSVParserLegacy::new(b',');
         let result1 = parser1.process_chunk(&csv).unwrap();
         let flush1 = parser1.flush().unwrap();
 
         // Parse in chunks
-        let mut parser2 = CSVParser::new(b',');
+        let mut parser2 = CSVParserLegacy::new(b',');
         let mut results2 = Vec::new();
 
         for chunk in csv.as_bytes().chunks(chunk_size) {
@@ -105,7 +105,7 @@ proptest! {
         // Limit size for performance
         prop_assume!(csv.len() <= 100);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
 
         // Process one character at a time
         for ch in csv.chars() {
@@ -131,7 +131,7 @@ proptest! {
 
         let csv = create_csv(&headers, &rows);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         let _flush = parser.flush();
 
@@ -165,7 +165,7 @@ proptest! {
             csv.push_str(line_ending);
         }
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         let _flush = parser.flush();
 
@@ -189,7 +189,7 @@ proptest! {
 
         let csv = create_csv(&headers, &rows);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         let _flush = parser.flush();
 
@@ -210,7 +210,7 @@ proptest! {
 
         let csv = create_csv(&headers, &rows);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         let _flush = parser.flush();
 
@@ -234,7 +234,7 @@ proptest! {
 
         let csv = create_csv(&headers, &rows);
 
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let _result = parser.process_chunk(&csv);
         let _flush = parser.flush();
 
@@ -253,7 +253,7 @@ proptest! {
         let csv = create_csv(&headers2, &rows);
 
         // Process as bytes
-        let mut parser = CSVParser::new(b',');
+        let mut parser = CSVParserLegacy::new(b',');
         let bytes = csv.as_bytes();
 
         // Process byte chunks

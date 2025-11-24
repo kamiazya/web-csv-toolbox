@@ -131,13 +131,19 @@ impl RecordBuffer {
             let key = JsValue::from_str(header);
             let value = JsValue::from_str(field);
 
-            // Use Object.defineProperty to handle special property names
-            let descriptor = Object::new();
-            let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
-            let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
-            let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
-            let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
-            let _ = Object::define_property(&obj, &key, &descriptor);
+            // For special property names like __proto__, use Object.defineProperty
+            // For normal properties, Reflect.set is sufficient and more reliable
+            if header == "__proto__" || header == "constructor" || header == "prototype" {
+                let descriptor = Object::new();
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
+                let _ = Object::define_property(&obj, &key, &descriptor);
+            } else {
+                // Use simpler Reflect.set for normal properties
+                let _ = Reflect::set(&obj, &key, &value);
+            }
         }
         obj.into()
     }
@@ -582,14 +588,23 @@ impl CSVParserOptimized {
         Ok(completed_records.into())
     }
 
-    /// Scan ahead and copy contiguous normal bytes (DFA-optimized bulk copy)
+    /// Scan ahead and copy contiguous ASCII normal bytes (DFA-optimized bulk copy)
     /// This is called only when state is InField and byte class is Normal
+    ///
+    /// CRITICAL: Only processes ASCII bytes (< 0x80) to avoid corrupting UTF-8 sequences.
+    /// Multi-byte UTF-8 characters must be handled by process_multibyte_utf8.
     #[inline(always)]
     fn scan_and_copy_dfa(&mut self, start: usize, valid_up_to: usize) -> usize {
         let mut copied = 0;
 
         for i in start..valid_up_to {
             let byte = self.utf8_buffer[i];
+
+            // CRITICAL: Stop at non-ASCII bytes (>= 0x80) to avoid corrupting UTF-8
+            // Multi-byte UTF-8 sequences must be handled by the main loop's process_multibyte_utf8
+            if byte >= 0x80 {
+                break;
+            }
 
             // Check if byte is still Normal class (fast table lookup)
             if self.byte_classes.get(byte) != ByteClass::Normal {
