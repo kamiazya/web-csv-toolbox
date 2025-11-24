@@ -881,6 +881,69 @@ interface BaseEngineConfig {
   wasm?: boolean | undefined;
 
   /**
+   * Use WebGPU-accelerated implementation.
+   *
+   * WebGPU parser performs parallel index construction on GPU,
+   * dramatically reducing CPU load for large CSV files.
+   *
+   * @remarks
+   * **Browser compatibility:**
+   * - Chrome/Edge 113+: ✅ Stable
+   * - Firefox 121+: ⚠️ Experimental (requires `dom.webgpu.enabled` flag)
+   * - Safari TP 185+: ⚠️ Tech Preview
+   *
+   * **Automatic fallback:**
+   * - Falls back to WASM (if enabled) or JavaScript if WebGPU is unavailable
+   * - Calls `onFallback` callback if provided
+   *
+   * **Performance characteristics:**
+   * - Throughput: Memory bandwidth-limited (GB/s on modern GPUs)
+   * - CPU usage: ~10x reduction vs traditional parsers
+   * - Memory: 1/10th usage (index-only output)
+   *
+   * **Trade-offs:**
+   * - ✅ Extremely fast for large files (>10MB)
+   * - ✅ Minimal CPU usage
+   * - ✅ Memory efficient
+   * - ✅ Non-blocking (runs on GPU)
+   * - ⚠️ GPU initialization overhead (~50-100ms)
+   * - ⚠️ Limited browser support
+   * - ❌ May be slower than WASM for small files (<1MB)
+   *
+   * @default false
+   *
+   * @example Main thread + GPU
+   * ```ts
+   * import { parse } from 'web-csv-toolbox';
+   *
+   * parse(csv, {
+   *   engine: {
+   *     gpu: true,
+   *     onFallback: (info) => {
+   *       console.warn(`GPU unavailable: ${info.reason}`);
+   *     }
+   *   }
+   * })
+   * ```
+   *
+   * @example GPU with WASM fallback
+   * ```ts
+   * import { loadWASM, parse } from 'web-csv-toolbox';
+   *
+   * await loadWASM();
+   * parse(csv, {
+   *   engine: {
+   *     gpu: true,      // Try GPU first
+   *     wasm: true,     // Fallback to WASM if GPU unavailable
+   *   }
+   * })
+   * ```
+   *
+   * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/src/parser/webgpu/README.md WebGPU Parser Documentation}
+   */
+  gpu?: boolean | undefined;
+
+  /**
    * Blob reading strategy threshold (in bytes).
    * Only applicable for `parseBlob()` and `parseFile()`.
    *

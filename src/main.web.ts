@@ -28,3 +28,8 @@ export * from "@/wasm/WasmInstance.main.web.ts";
 // Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";
+
+// ============================================================================
+// Web-specific: WebGPU CSV Parser
+// ============================================================================
+export * from "@/parser/webgpu/index.ts";
