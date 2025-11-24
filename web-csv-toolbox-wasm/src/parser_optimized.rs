@@ -122,21 +122,22 @@ impl RecordBuffer {
     }
 
     /// Convert to JavaScript object using provided headers
+    /// Always includes all header keys, using empty string for missing fields
     pub fn to_js_object(&self, headers: &[String]) -> JsValue {
         let obj = Object::new();
         for (i, header) in headers.iter().enumerate() {
-            if let Some(field) = self.get(i) {
-                let key = JsValue::from_str(header);
-                let value = JsValue::from_str(field);
+            // Use empty string as fallback for missing fields (matches legacy behavior)
+            let field = self.get(i).unwrap_or("");
+            let key = JsValue::from_str(header);
+            let value = JsValue::from_str(field);
 
-                // Use Object.defineProperty to handle special property names
-                let descriptor = Object::new();
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
-                let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
-                let _ = Object::define_property(&obj, &key, &descriptor);
-            }
+            // Use Object.defineProperty to handle special property names
+            let descriptor = Object::new();
+            let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
+            let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
+            let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
+            let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
+            let _ = Object::define_property(&obj, &key, &descriptor);
         }
         obj.into()
     }
@@ -375,11 +376,11 @@ impl CSVParserOptimized {
         while i < valid_up_to {
             let byte = self.utf8_buffer[i];
 
-            // ASCII FAST PATH - handle single-byte characters directly
+            // ASCII FAST PATH - handle single-byte characters directly (with bulk copy)
             if byte < 0x80 {
-                self.process_byte_ascii(byte, &completed_records)?;
-                i += 1;
-                self.position.advance_byte();
+                let consumed = self.process_byte_ascii(byte, i, valid_up_to, &completed_records)?;
+                i += consumed;
+                self.position.byte += consumed;
             } else {
                 // Multi-byte UTF-8 character
                 let char_len = self.process_multibyte_utf8(i, &completed_records)?;
@@ -398,14 +399,31 @@ impl CSVParserOptimized {
     ///
     /// This is the critical optimization that handles the common case of ASCII data
     /// without the overhead of character decoding.
+    ///
+    /// # Arguments
+    /// * `byte` - ASCII byte to process
+    /// * `buffer_index` - Current index in utf8_buffer (for bulk copy)
+    /// * `valid_up_to` - End boundary for valid UTF-8 data (for bulk copy)
+    /// * `completed_records` - Array to push completed records to
+    ///
+    /// # Returns
+    /// Number of bytes consumed (1 for single byte, more for bulk copy)
     #[inline(always)]
-    fn process_byte_ascii(&mut self, byte: u8, completed_records: &Array) -> Result<(), JsError> {
+    fn process_byte_ascii(
+        &mut self,
+        byte: u8,
+        buffer_index: usize,
+        valid_up_to: usize,
+        completed_records: &Array,
+    ) -> Result<usize, JsError> {
         match self.state {
             OptimizedParserState::FieldStart => {
                 if byte == self.quote {
                     self.state = OptimizedParserState::InQuotedField;
+                    Ok(1)
                 } else if byte == self.delimiter {
                     self.finish_field()?;
+                    Ok(1)
                 } else if byte == b'\n' || byte == b'\r' {
                     if !self.current_field.is_empty() || !self.current_record.is_empty() {
                         self.finish_field()?;
@@ -416,20 +434,22 @@ impl CSVParserOptimized {
                     if byte == b'\n' {
                         self.position.advance_line();
                     }
+                    Ok(1)
                 } else {
-                    // BULK COPY OPPORTUNITY - scan ahead for more ASCII field data
-                    let copied = self.scan_and_copy_ascii(byte);
-                    if copied == 0 {
-                        // Single character
-                        self.current_field.push(byte as char);
-                    }
+                    // BULK COPY OPPORTUNITY - enter InField state and scan ahead
+                    self.current_field.push(byte as char);
                     self.state = OptimizedParserState::InField;
+
+                    // Try to bulk copy remaining ASCII field data
+                    let copied = self.scan_and_copy_ascii(buffer_index + 1, valid_up_to);
+                    Ok(1 + copied) // 1 for current byte + copied bytes
                 }
             }
             OptimizedParserState::InField => {
                 if byte == self.delimiter {
                     self.finish_field()?;
                     self.state = OptimizedParserState::FieldStart;
+                    Ok(1)
                 } else if byte == b'\n' || byte == b'\r' {
                     self.finish_field()?;
                     if let Some(record) = self.finish_record() {
@@ -439,8 +459,12 @@ impl CSVParserOptimized {
                     if byte == b'\n' {
                         self.position.advance_line();
                     }
+                    Ok(1)
                 } else {
+                    // Continue in field - try bulk copy
                     self.current_field.push(byte as char);
+                    let copied = self.scan_and_copy_ascii(buffer_index + 1, valid_up_to);
+                    Ok(1 + copied)
                 }
             }
             OptimizedParserState::InQuotedField => {
@@ -449,6 +473,7 @@ impl CSVParserOptimized {
                 } else {
                     self.current_field.push(byte as char);
                 }
+                Ok(1)
             }
             OptimizedParserState::AfterQuote => {
                 if byte == self.quote {
@@ -471,9 +496,9 @@ impl CSVParserOptimized {
                     // Ignore characters after closing quote
                     self.state = OptimizedParserState::InField;
                 }
+                Ok(1)
             }
         }
-        Ok(())
     }
 
     /// CRITICAL OPTIMIZATION: Bulk copy ASCII field data
@@ -483,22 +508,24 @@ impl CSVParserOptimized {
     /// This avoids state machine overhead for the common case.
     ///
     /// Based on rust-csv's scan_and_copy technique.
+    ///
+    /// # Arguments
+    /// * `buffer_index` - Current index in utf8_buffer (buffer-local, not global position)
+    /// * `valid_up_to` - End boundary for valid UTF-8 data in the buffer
+    ///
+    /// # Returns
+    /// Number of bytes consumed (to advance the loop index)
     #[inline(always)]
-    fn scan_and_copy_ascii(&mut self, first_byte: u8) -> usize {
+    fn scan_and_copy_ascii(&mut self, buffer_index: usize, valid_up_to: usize) -> usize {
         // Can only bulk copy in InField state
         if self.state != OptimizedParserState::InField {
             return 0;
         }
 
-        // Start with the first byte
-        self.current_field.push(first_byte as char);
-        let mut copied = 1;
+        let mut copied = 0;
 
-        // Scan ahead in the buffer for more ASCII field data
-        let start_pos = self.position.byte + 1; // +1 because we already have first_byte
-        let end_pos = self.find_utf8_boundary();
-
-        for i in start_pos..end_pos {
+        // Scan ahead in the buffer for ASCII field data
+        for i in buffer_index..valid_up_to {
             let byte = self.utf8_buffer[i];
 
             // Stop at special characters or non-ASCII
