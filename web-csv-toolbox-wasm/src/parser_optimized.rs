@@ -554,19 +554,26 @@ impl CSVParserOptimized {
                 }
 
                 // Handle special transitions (field/record completion)
-                if class == ByteClass::Delimiter {
-                    self.finish_field()?;
-                } else if class == ByteClass::LF || class == ByteClass::CR {
-                    // Line ending - finish field and potentially record
-                    if !self.current_field.is_empty() || !self.current_record.is_empty() {
+                // CRITICAL: Only process delimiters/line endings if NOT in quoted field
+                // In InQuotedField state, delimiters and newlines are part of the field content
+                if self.state != OptimizedParserState::InQuotedField {
+                    if class == ByteClass::Delimiter {
                         self.finish_field()?;
-                        if let Some(record) = self.finish_record() {
-                            completed_records.push(&record);
+                    } else if class == ByteClass::LF || class == ByteClass::CR {
+                        // Line ending - finish field and potentially record
+                        if !self.current_field.is_empty() || !self.current_record.is_empty() {
+                            self.finish_field()?;
+                            if let Some(record) = self.finish_record() {
+                                completed_records.push(&record);
+                            }
                         }
                     }
-                    if class == ByteClass::LF {
-                        self.position.advance_line();
-                    }
+                }
+
+                // Always advance line counter on LF, even inside quoted fields
+                // This ensures accurate line numbers for error reporting
+                if class == ByteClass::LF {
+                    self.position.advance_line();
                 }
 
                 // Update state
