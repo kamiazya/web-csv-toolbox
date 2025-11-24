@@ -461,10 +461,10 @@ impl CSVParserOptimized {
                     }
                     Ok(1)
                 } else {
-                    // Continue in field - try bulk copy
+                    // Continue in field - just add the byte without bulk copy
+                    // (bulk copy only happens at FieldStart for efficiency)
                     self.current_field.push(byte as char);
-                    let copied = self.scan_and_copy_ascii(buffer_index + 1, valid_up_to);
-                    Ok(1 + copied)
+                    Ok(1)
                 }
             }
             OptimizedParserState::InQuotedField => {
