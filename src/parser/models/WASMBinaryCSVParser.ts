@@ -1,10 +1,10 @@
+import { CSVParser as WASMCSVParserInternal } from "web-csv-toolbox-wasm";
 import type {
   BinaryObjectCSVParser,
   CSVObjectRecord,
   CSVParserOptions,
   CSVParserParseOptions,
 } from "@/core/types.ts";
-import { CSVParser as WASMCSVParserInternal } from "web-csv-toolbox-wasm";
 
 /**
  * WASM-based CSV Parser for binary (BufferSource) input that returns object records.
@@ -96,36 +96,30 @@ export class WASMBinaryCSVParser<
       header,
     } = options;
 
-    if (delimiter.length !== 1) {
-      throw new Error("Delimiter must be a single character");
+    // Create parser with options object (will be passed to WASM)
+    const wasmOptions: {
+      delimiter?: string;
+      quote?: string;
+      maxFieldCount?: number;
+      header?: readonly string[];
+    } = {};
+
+    if (delimiter !== ",") {
+      wasmOptions.delimiter = delimiter;
     }
-
-    if (quotation.length !== 1) {
-      throw new Error("Quotation must be a single character");
+    if (quotation !== '"') {
+      wasmOptions.quote = quotation;
     }
-
-    if (maxFieldCount <= 0) {
-      throw new Error("maxFieldCount must be positive");
+    if (maxFieldCount !== 100000) {
+      wasmOptions.maxFieldCount = maxFieldCount;
     }
-
-    const delimiterCode = delimiter.charCodeAt(0);
-    const quotationCode = quotation.charCodeAt(0);
-
-    // Use appropriate constructor based on options
     if (header) {
-      this.#parser = WASMCSVParserInternal.withCustomHeader(
-        delimiterCode,
-        quotationCode,
-        maxFieldCount,
-        header as unknown as string[],
-      );
-    } else {
-      this.#parser = WASMCSVParserInternal.withOptions(
-        delimiterCode,
-        quotationCode,
-        maxFieldCount,
-      );
+      wasmOptions.header = header;
     }
+
+    // Pass options object to WASM constructor
+    // Note: Type cast needed until WASM is rebuilt with new constructor signature
+    this.#parser = new WASMCSVParserInternal(wasmOptions as any);
   }
 
   /**
@@ -191,7 +185,9 @@ export class WASMBinaryCSVParser<
           chunk.byteLength,
         );
       } else {
-        throw new Error("chunk must be a BufferSource (Uint8Array, ArrayBuffer, or TypedArray)");
+        throw new Error(
+          "chunk must be a BufferSource (Uint8Array, ArrayBuffer, or TypedArray)",
+        );
       }
     }
 

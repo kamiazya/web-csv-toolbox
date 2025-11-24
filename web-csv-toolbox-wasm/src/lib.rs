@@ -1,7 +1,9 @@
 use wasm_bindgen::prelude::*;
 
+pub mod assembler;
 mod csv_json;
 mod error;
+pub mod lexer;
 pub mod parser;
 
 #[cfg(test)]

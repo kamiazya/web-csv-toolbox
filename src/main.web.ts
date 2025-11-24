@@ -31,6 +31,12 @@ export * from "@/parser/models/WASMBinaryCSVParser.ts";
 export * from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
 
 // ============================================================================
+// Web-specific: WASM Lexer and Assembler (Hybrid approach)
+// ============================================================================
+export * from "@/parser/models/WASMBinaryCSVLexer.ts";
+export * from "@/parser/models/WASMCSVRecordAssembler.ts";
+
+// ============================================================================
 // Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";

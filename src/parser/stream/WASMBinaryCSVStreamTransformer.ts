@@ -1,7 +1,5 @@
-import type {
-  CSVObjectRecord,
-} from "@/core/types.ts";
 import { CSVParser } from "web-csv-toolbox-wasm";
+import type { CSVObjectRecord } from "@/core/types.ts";
 
 /**
  * Options for WASMBinaryCSVStreamTransformer.
@@ -137,30 +135,30 @@ export class WASMBinaryCSVStreamTransformer<
       header,
     } = options;
 
-    if (delimiter.length !== 1) {
-      throw new Error("Delimiter must be a single character");
+    // Create parser with options object (will be passed to WASM)
+    const wasmOptions: {
+      delimiter?: string;
+      quote?: string;
+      maxFieldCount?: number;
+      header?: readonly string[];
+    } = {};
+
+    if (delimiter !== ",") {
+      wasmOptions.delimiter = delimiter;
+    }
+    if (quotation !== '"') {
+      wasmOptions.quote = quotation;
+    }
+    if (maxFieldCount !== 100000) {
+      wasmOptions.maxFieldCount = maxFieldCount;
+    }
+    if (header) {
+      wasmOptions.header = header;
     }
 
-    if (quotation.length !== 1) {
-      throw new Error("Quotation must be a single character");
-    }
-
-    if (maxFieldCount <= 0) {
-      throw new Error("maxFieldCount must be positive");
-    }
-
-    const delimiterCode = delimiter.charCodeAt(0);
-    const quotationCode = quotation.charCodeAt(0);
-
-    // Create parser instance
-    const parser = header
-      ? CSVParser.withCustomHeader(
-          delimiterCode,
-          quotationCode,
-          maxFieldCount,
-          header as unknown as string[],
-        )
-      : CSVParser.withOptions(delimiterCode, quotationCode, maxFieldCount);
+    // Create parser instance with options object
+    // Note: Type cast needed until WASM is rebuilt with new constructor signature
+    const parser = new CSVParser(wasmOptions as any);
 
     super(
       {

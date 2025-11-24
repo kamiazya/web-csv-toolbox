@@ -39,24 +39,100 @@ pub struct CSVParser {
 
 #[wasm_bindgen]
 impl CSVParser {
-    /// Create a new streaming CSV parser
+    /// Create a new streaming CSV parser with options from JavaScript object
     ///
     /// # Arguments
     ///
-    /// * `delimiter` - Field delimiter byte (e.g., 44 for comma)
+    /// * `options` - JavaScript object with optional fields:
+    ///   - `delimiter`: string (default: ",")
+    ///   - `quote`: string (default: "\"")
+    ///   - `maxFieldCount`: number (default: 100000)
+    ///   - `header`: array of strings (optional)
+    ///
+    /// # Example (JavaScript)
+    /// ```javascript
+    /// const parser = new CSVParser({
+    ///   delimiter: ',',
+    ///   quote: '"',
+    ///   maxFieldCount: 100000,
+    ///   header: ['id', 'name', 'email']
+    /// });
+    /// ```
     #[wasm_bindgen(constructor)]
-    pub fn new(delimiter: u8) -> Self {
-        Self {
+    pub fn new(options: JsValue) -> Result<CSVParser, JsError> {
+        // Default values
+        let mut delimiter = b',';
+        let mut quote = b'"';
+        let mut max_field_count = 100000;
+        let mut headers: Option<Vec<String>> = None;
+        let mut headers_parsed = false;
+
+        // Parse options if provided
+        if !options.is_undefined() && !options.is_null() {
+            let obj = js_sys::Object::from(options);
+
+            // Get delimiter
+            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("delimiter")) {
+                if let Some(s) = val.as_string() {
+                    if s.len() != 1 {
+                        return Err(JsError::new("delimiter must be a single character"));
+                    }
+                    delimiter = s.as_bytes()[0];
+                }
+            }
+
+            // Get quote
+            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("quote")) {
+                if let Some(s) = val.as_string() {
+                    if s.len() != 1 {
+                        return Err(JsError::new("quote must be a single character"));
+                    }
+                    quote = s.as_bytes()[0];
+                }
+            }
+
+            // Get maxFieldCount
+            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("maxFieldCount")) {
+                if let Some(n) = val.as_f64() {
+                    if n <= 0.0 {
+                        return Err(JsError::new("maxFieldCount must be positive"));
+                    }
+                    max_field_count = n as usize;
+                }
+            }
+
+            // Get header
+            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("header")) {
+                if !val.is_undefined() && !val.is_null() {
+                    let headers_array = js_sys::Array::from(&val);
+                    let mut headers_vec = Vec::new();
+
+                    for i in 0..headers_array.length() {
+                        let item = headers_array.get(i);
+                        if let Some(s) = item.as_string() {
+                            headers_vec.push(s);
+                        } else {
+                            return Err(JsError::new("All header items must be strings"));
+                        }
+                    }
+
+                    headers = Some(headers_vec);
+                    headers_parsed = true;
+                }
+            }
+        }
+
+        Ok(Self {
             state: ParserState::FieldStart,
             delimiter,
             current_field: String::new(),
             current_record: Vec::new(),
-            headers: None,
-            headers_parsed: false,
-            quote: b'"',
+            headers,
+            headers_parsed,
+            quote,
             utf8_buffer: Vec::new(),
-            max_field_count: 100000, // Default max field count
-        }
+            max_field_count,
+        })
     }
 
     /// Create a new streaming CSV parser with custom options
