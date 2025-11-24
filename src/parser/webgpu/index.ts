@@ -138,20 +138,20 @@ export {
 	loadGPU,
 } from "./loaders/loadGPU.ts";
 
-// GPU Device Pool (similar to WorkerPool pattern)
+// GPU Device Manager (for lifecycle management)
 export type {
 	BufferPoolingConfig,
-	GPUDevicePoolConfig,
+	GPUDeviceManagerConfig,
 	GPUDevicePreference,
 	GPUDeviceSelectionContext,
 	GPUDeviceSelector,
-} from "./loaders/GPUDevicePool.ts";
+} from "./loaders/GPUDeviceManager.ts";
 
 export {
-	GPUDevicePool,
-	ReusableGPUDevicePool,
-	TransientGPUDevicePool,
-} from "./loaders/GPUDevicePool.ts";
+	GPUDeviceManager,
+	ReusableGPUDeviceManager,
+	TransientGPUDeviceManager,
+} from "./loaders/GPUDeviceManager.ts";
 
 /**
  * Checks if WebGPU is available in the current environment

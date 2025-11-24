@@ -944,23 +944,23 @@ interface BaseEngineConfig {
   gpu?: boolean | undefined;
 
   /**
-   * GPU device pool for managing GPU device lifecycle.
+   * GPU device manager for managing GPU device lifecycle.
    *
-   * When provided, the parsing function will use this pool's GPU device instance
+   * When provided, the parsing function will use this manager's GPU device instance
    * instead of using the default shared device from loadGPU().
    *
-   * Use {@link GPUDevicePool} with the `using` syntax for automatic cleanup.
+   * Use {@link GPUDeviceManager} with the `using` syntax for automatic cleanup.
    *
-   * @example Using ReusableGPUDevicePool with automatic cleanup
+   * @example Using ReusableGPUDeviceManager with automatic cleanup
    * ```ts
-   * import { ReusableGPUDevicePool, parseString } from 'web-csv-toolbox';
+   * import { ReusableGPUDeviceManager, parseString } from 'web-csv-toolbox';
    *
    * async function processCSV(csv: string) {
-   *   using pool = new ReusableGPUDevicePool();
+   *   using manager = new ReusableGPUDeviceManager();
    *
    *   const records = [];
    *   for await (const record of parseString(csv, {
-   *     engine: { gpu: true, gpuDevicePool: pool }
+   *     engine: { gpu: true, gpuDeviceManager: manager }
    *   })) {
    *     records.push(record);
    *   }
@@ -970,18 +970,18 @@ interface BaseEngineConfig {
    * }
    * ```
    *
-   * @example Multiple operations with same pool
+   * @example Multiple operations with same manager
    * ```ts
-   * import { ReusableGPUDevicePool, parseString } from 'web-csv-toolbox';
+   * import { ReusableGPUDeviceManager, parseString } from 'web-csv-toolbox';
    *
-   * using pool = new ReusableGPUDevicePool();
+   * using manager = new ReusableGPUDeviceManager();
    *
-   * await parseString(csv1, { engine: { gpu: true, gpuDevicePool: pool } });
-   * await parseString(csv2, { engine: { gpu: true, gpuDevicePool: pool } });
+   * await parseString(csv1, { engine: { gpu: true, gpuDeviceManager: manager } });
+   * await parseString(csv2, { engine: { gpu: true, gpuDeviceManager: manager } });
    * // GPU device is reused for both operations
    * ```
    */
-  gpuDevicePool?: GPUDevicePool | undefined;
+  gpuDeviceManager?: GPUDeviceManager | undefined;
 
   /**
    * Blob reading strategy threshold (in bytes).
@@ -1227,35 +1227,35 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
 }
 
 /**
- * Common interface for GPU device pools.
- * Both ReusableGPUDevicePool and TransientGPUDevicePool implement this interface.
+ * Common interface for GPU device managers.
+ * Both ReusableGPUDeviceManager and TransientGPUDeviceManager implement this interface.
  *
  * @remarks
- * This interface defines the contract for GPU device pool implementations.
- * Users typically use {@link ReusableGPUDevicePool} for persistent device pools,
- * while the internal default pool uses {@link TransientGPUDevicePool} for automatic cleanup.
+ * This interface defines the contract for GPU device manager implementations.
+ * Users typically use {@link ReusableGPUDeviceManager} for persistent device management,
+ * while the internal default manager uses {@link TransientGPUDeviceManager} for automatic cleanup.
  *
  * @category Types
  */
-export interface GPUDevicePool {
+export interface GPUDeviceManager {
   /**
-   * Get a GPU device instance from the pool.
+   * Get a GPU device instance from the manager.
    *
    * @returns A GPU device instance
    */
   getDevice(): Promise<GPUDevice>;
 
   /**
-   * Release a GPU device back to the pool.
+   * Release a GPU device back to the manager.
    *
    * @remarks
-   * For reusable pools, this keeps the device for future use.
-   * For transient pools, this may destroy the device.
+   * For reusable managers, this keeps the device for future use.
+   * For transient managers, this may destroy the device.
    */
   releaseDevice(): void;
 
   /**
-   * Dispose all resources in the pool.
+   * Dispose all resources in the manager.
    *
    * @param force - Force disposal even if devices are in use
    */
