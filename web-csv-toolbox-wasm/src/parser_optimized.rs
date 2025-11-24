@@ -150,16 +150,143 @@ impl Default for RecordBuffer {
 }
 
 /// Parser state for the optimized state machine
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
 pub(crate) enum OptimizedParserState {
     /// At the start of a field
-    FieldStart,
+    FieldStart = 0,
     /// Inside an unquoted field (fast path)
-    InField,
+    InField = 1,
     /// Inside a quoted field
-    InQuotedField,
+    InQuotedField = 2,
     /// After a quote inside a quoted field (could be end or escaped quote)
-    AfterQuote,
+    AfterQuote = 3,
+}
+
+/// Byte equivalence classes for DFA optimization
+/// Reduces the effective alphabet from 256 bytes to 5 classes
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+enum ByteClass {
+    /// Normal bytes (non-special characters)
+    Normal = 0,
+    /// Delimiter byte
+    Delimiter = 1,
+    /// Quote byte
+    Quote = 2,
+    /// Line feed (\n)
+    LF = 3,
+    /// Carriage return (\r)
+    CR = 4,
+}
+
+/// DFA transition table for fast CSV parsing
+/// Based on rust-csv's approach: pre-computed state transitions
+const NUM_STATES: usize = 4;
+const NUM_CLASSES: usize = 5;
+
+/// Byte class lookup table: maps 256 bytes to 5 equivalence classes
+struct ByteClassMap {
+    classes: [ByteClass; 256],
+}
+
+impl ByteClassMap {
+    fn new(delimiter: u8, quote: u8) -> Self {
+        let mut classes = [ByteClass::Normal; 256];
+
+        // Map special bytes to their classes
+        classes[delimiter as usize] = ByteClass::Delimiter;
+        classes[quote as usize] = ByteClass::Quote;
+        classes[b'\n' as usize] = ByteClass::LF;
+        classes[b'\r' as usize] = ByteClass::CR;
+
+        ByteClassMap { classes }
+    }
+
+    #[inline(always)]
+    fn get(&self, byte: u8) -> ByteClass {
+        self.classes[byte as usize]
+    }
+}
+
+/// DFA transition table
+/// Size: 4 states × 5 classes = 20 entries (very small!)
+struct DfaTable {
+    /// Next state: [state][class] -> next_state
+    transitions: [[OptimizedParserState; NUM_CLASSES]; NUM_STATES],
+    /// Whether to output the byte: [state][class] -> bool
+    has_output: [[bool; NUM_CLASSES]; NUM_STATES],
+}
+
+impl DfaTable {
+    fn new() -> Self {
+        use OptimizedParserState::*;
+        use ByteClass::*;
+
+        let mut transitions = [[FieldStart; NUM_CLASSES]; NUM_STATES];
+        let mut has_output = [[false; NUM_CLASSES]; NUM_STATES];
+
+        // FieldStart state transitions
+        transitions[FieldStart as usize][Normal as usize] = InField;
+        transitions[FieldStart as usize][Delimiter as usize] = FieldStart;
+        transitions[FieldStart as usize][Quote as usize] = InQuotedField;
+        transitions[FieldStart as usize][LF as usize] = FieldStart;
+        transitions[FieldStart as usize][CR as usize] = FieldStart;
+
+        has_output[FieldStart as usize][Normal as usize] = true;
+        has_output[FieldStart as usize][Delimiter as usize] = false;
+        has_output[FieldStart as usize][Quote as usize] = false;
+        has_output[FieldStart as usize][LF as usize] = false;
+        has_output[FieldStart as usize][CR as usize] = false;
+
+        // InField state transitions
+        transitions[InField as usize][Normal as usize] = InField;
+        transitions[InField as usize][Delimiter as usize] = FieldStart;
+        transitions[InField as usize][Quote as usize] = InField; // Quote in unquoted field
+        transitions[InField as usize][LF as usize] = FieldStart;
+        transitions[InField as usize][CR as usize] = FieldStart;
+
+        has_output[InField as usize][Normal as usize] = true;
+        has_output[InField as usize][Delimiter as usize] = false;
+        has_output[InField as usize][Quote as usize] = true;
+        has_output[InField as usize][LF as usize] = false;
+        has_output[InField as usize][CR as usize] = false;
+
+        // InQuotedField state transitions
+        transitions[InQuotedField as usize][Normal as usize] = InQuotedField;
+        transitions[InQuotedField as usize][Delimiter as usize] = InQuotedField;
+        transitions[InQuotedField as usize][Quote as usize] = AfterQuote;
+        transitions[InQuotedField as usize][LF as usize] = InQuotedField;
+        transitions[InQuotedField as usize][CR as usize] = InQuotedField;
+
+        has_output[InQuotedField as usize][Normal as usize] = true;
+        has_output[InQuotedField as usize][Delimiter as usize] = true;
+        has_output[InQuotedField as usize][Quote as usize] = false;
+        has_output[InQuotedField as usize][LF as usize] = true;
+        has_output[InQuotedField as usize][CR as usize] = true;
+
+        // AfterQuote state transitions
+        transitions[AfterQuote as usize][Normal as usize] = InField;
+        transitions[AfterQuote as usize][Delimiter as usize] = FieldStart;
+        transitions[AfterQuote as usize][Quote as usize] = InQuotedField; // Escaped quote
+        transitions[AfterQuote as usize][LF as usize] = FieldStart;
+        transitions[AfterQuote as usize][CR as usize] = FieldStart;
+
+        has_output[AfterQuote as usize][Normal as usize] = false;
+        has_output[AfterQuote as usize][Delimiter as usize] = false;
+        has_output[AfterQuote as usize][Quote as usize] = true; // Output the escaped quote
+        has_output[AfterQuote as usize][LF as usize] = false;
+        has_output[AfterQuote as usize][CR as usize] = false;
+
+        DfaTable { transitions, has_output }
+    }
+
+    #[inline(always)]
+    fn next(&self, state: OptimizedParserState, class: ByteClass) -> (OptimizedParserState, bool) {
+        let s = state as usize;
+        let c = class as usize;
+        (self.transitions[s][c], self.has_output[s][c])
+    }
 }
 
 /// Optimized streaming CSV parser
@@ -173,9 +300,11 @@ pub(crate) enum OptimizedParserState {
 pub struct CSVParserOptimized {
     /// Current parser state
     state: OptimizedParserState,
-    /// Field delimiter
+    /// Field delimiter (stored for potential debugging, actual logic uses byte_classes)
+    #[allow(dead_code)]
     delimiter: u8,
-    /// Quote character
+    /// Quote character (stored for potential debugging, actual logic uses byte_classes)
+    #[allow(dead_code)]
     quote: u8,
     /// Maximum field count per record
     max_field_count: usize,
@@ -195,6 +324,11 @@ pub struct CSVParserOptimized {
 
     /// Buffer for incomplete UTF-8 sequences
     utf8_buffer: Vec<u8>,
+
+    /// DFA transition table for fast parsing
+    dfa: DfaTable,
+    /// Byte class mapping (256 bytes -> 5 classes)
+    byte_classes: ByteClassMap,
 }
 
 #[wasm_bindgen]
@@ -271,6 +405,10 @@ impl CSVParserOptimized {
             }
         }
 
+        // Initialize DFA and byte class mapping
+        let dfa = DfaTable::new();
+        let byte_classes = ByteClassMap::new(delimiter, quote);
+
         Ok(Self {
             state: OptimizedParserState::FieldStart,
             delimiter,
@@ -282,6 +420,8 @@ impl CSVParserOptimized {
             headers,
             headers_parsed,
             utf8_buffer: Vec::new(),
+            dfa,
+            byte_classes,
         })
     }
 
@@ -364,25 +504,72 @@ impl CSVParserOptimized {
 }
 
 impl CSVParserOptimized {
-    /// Process bytes with optimizations (ASCII fast path + bulk copy)
+    /// Process bytes with DFA table-driven state machine + bulk copy
+    /// This is the core optimization: pre-computed transitions eliminate branch mispredictions
     fn process_bytes_optimized(&mut self) -> Result<JsValue, JsError> {
         let completed_records = Array::new();
 
         // Find last complete UTF-8 boundary
         let valid_up_to = self.find_utf8_boundary();
 
-        // Process bytes up to the boundary
+        // Process bytes up to the boundary using DFA
         let mut i = 0;
         while i < valid_up_to {
             let byte = self.utf8_buffer[i];
 
-            // ASCII FAST PATH - handle single-byte characters directly (with bulk copy)
+            // ASCII FAST PATH - DFA-driven state machine
             if byte < 0x80 {
-                let consumed = self.process_byte_ascii(byte, i, valid_up_to, &completed_records)?;
-                i += consumed;
-                self.position.byte += consumed;
+                // Get byte class for DFA lookup
+                let class = self.byte_classes.get(byte);
+
+                // CRITICAL OPTIMIZATION: Bulk copy for normal bytes
+                // Do this for both FieldStart (entering field) and InField (already in field)
+                if class == ByteClass::Normal
+                    && (self.state == OptimizedParserState::FieldStart
+                        || self.state == OptimizedParserState::InField)
+                {
+                    // Transition to InField if we're starting a new field
+                    if self.state == OptimizedParserState::FieldStart {
+                        self.state = OptimizedParserState::InField;
+                    }
+                    // Scan ahead and copy all contiguous normal bytes
+                    let copied = self.scan_and_copy_dfa(i, valid_up_to);
+                    i += copied;
+                    self.position.byte += copied;
+                    continue;
+                }
+
+                // DFA transition: get next state and output flag
+                let (next_state, has_output) = self.dfa.next(self.state, class);
+
+                // Output byte if has_output flag is set
+                if has_output {
+                    self.current_field.push(byte as char);
+                }
+
+                // Handle special transitions (field/record completion)
+                if class == ByteClass::Delimiter {
+                    self.finish_field()?;
+                } else if class == ByteClass::LF || class == ByteClass::CR {
+                    // Line ending - finish field and potentially record
+                    if !self.current_field.is_empty() || !self.current_record.is_empty() {
+                        self.finish_field()?;
+                        if let Some(record) = self.finish_record() {
+                            completed_records.push(&record);
+                        }
+                    }
+                    if class == ByteClass::LF {
+                        self.position.advance_line();
+                    }
+                }
+
+                // Update state
+                self.state = next_state;
+
+                i += 1;
+                self.position.byte += 1;
             } else {
-                // Multi-byte UTF-8 character
+                // Multi-byte UTF-8 character - fallback to slower path
                 let char_len = self.process_multibyte_utf8(i, &completed_records)?;
                 i += char_len;
                 self.position.byte += char_len;
@@ -395,145 +582,17 @@ impl CSVParserOptimized {
         Ok(completed_records.into())
     }
 
-    /// ASCII fast path - process single byte directly without UTF-8 conversion
-    ///
-    /// This is the critical optimization that handles the common case of ASCII data
-    /// without the overhead of character decoding.
-    ///
-    /// # Arguments
-    /// * `byte` - ASCII byte to process
-    /// * `buffer_index` - Current index in utf8_buffer (for bulk copy)
-    /// * `valid_up_to` - End boundary for valid UTF-8 data (for bulk copy)
-    /// * `completed_records` - Array to push completed records to
-    ///
-    /// # Returns
-    /// Number of bytes consumed (1 for single byte, more for bulk copy)
+    /// Scan ahead and copy contiguous normal bytes (DFA-optimized bulk copy)
+    /// This is called only when state is InField and byte class is Normal
     #[inline(always)]
-    fn process_byte_ascii(
-        &mut self,
-        byte: u8,
-        buffer_index: usize,
-        valid_up_to: usize,
-        completed_records: &Array,
-    ) -> Result<usize, JsError> {
-        match self.state {
-            OptimizedParserState::FieldStart => {
-                if byte == self.quote {
-                    self.state = OptimizedParserState::InQuotedField;
-                    Ok(1)
-                } else if byte == self.delimiter {
-                    self.finish_field()?;
-                    Ok(1)
-                } else if byte == b'\n' || byte == b'\r' {
-                    if !self.current_field.is_empty() || !self.current_record.is_empty() {
-                        self.finish_field()?;
-                        if let Some(record) = self.finish_record() {
-                            completed_records.push(&record);
-                        }
-                    }
-                    if byte == b'\n' {
-                        self.position.advance_line();
-                    }
-                    Ok(1)
-                } else {
-                    // BULK COPY OPPORTUNITY - enter InField state and scan ahead
-                    self.current_field.push(byte as char);
-                    self.state = OptimizedParserState::InField;
-
-                    // Try to bulk copy remaining ASCII field data
-                    let copied = self.scan_and_copy_ascii(buffer_index + 1, valid_up_to);
-                    Ok(1 + copied) // 1 for current byte + copied bytes
-                }
-            }
-            OptimizedParserState::InField => {
-                if byte == self.delimiter {
-                    self.finish_field()?;
-                    self.state = OptimizedParserState::FieldStart;
-                    Ok(1)
-                } else if byte == b'\n' || byte == b'\r' {
-                    self.finish_field()?;
-                    if let Some(record) = self.finish_record() {
-                        completed_records.push(&record);
-                    }
-                    self.state = OptimizedParserState::FieldStart;
-                    if byte == b'\n' {
-                        self.position.advance_line();
-                    }
-                    Ok(1)
-                } else {
-                    // Continue in field - just add the byte without bulk copy
-                    // (bulk copy only happens at FieldStart for efficiency)
-                    self.current_field.push(byte as char);
-                    Ok(1)
-                }
-            }
-            OptimizedParserState::InQuotedField => {
-                if byte == self.quote {
-                    self.state = OptimizedParserState::AfterQuote;
-                } else {
-                    self.current_field.push(byte as char);
-                }
-                Ok(1)
-            }
-            OptimizedParserState::AfterQuote => {
-                if byte == self.quote {
-                    // Escaped quote
-                    self.current_field.push(byte as char);
-                    self.state = OptimizedParserState::InQuotedField;
-                } else if byte == self.delimiter {
-                    self.finish_field()?;
-                    self.state = OptimizedParserState::FieldStart;
-                } else if byte == b'\n' || byte == b'\r' {
-                    self.finish_field()?;
-                    if let Some(record) = self.finish_record() {
-                        completed_records.push(&record);
-                    }
-                    self.state = OptimizedParserState::FieldStart;
-                    if byte == b'\n' {
-                        self.position.advance_line();
-                    }
-                } else {
-                    // Ignore characters after closing quote
-                    self.state = OptimizedParserState::InField;
-                }
-                Ok(1)
-            }
-        }
-    }
-
-    /// CRITICAL OPTIMIZATION: Bulk copy ASCII field data
-    ///
-    /// When in an unquoted field, scan ahead and copy all contiguous ASCII
-    /// characters until we hit a delimiter or special character.
-    /// This avoids state machine overhead for the common case.
-    ///
-    /// Based on rust-csv's scan_and_copy technique.
-    ///
-    /// # Arguments
-    /// * `buffer_index` - Current index in utf8_buffer (buffer-local, not global position)
-    /// * `valid_up_to` - End boundary for valid UTF-8 data in the buffer
-    ///
-    /// # Returns
-    /// Number of bytes consumed (to advance the loop index)
-    #[inline(always)]
-    fn scan_and_copy_ascii(&mut self, buffer_index: usize, valid_up_to: usize) -> usize {
-        // Can only bulk copy in InField state
-        if self.state != OptimizedParserState::InField {
-            return 0;
-        }
-
+    fn scan_and_copy_dfa(&mut self, start: usize, valid_up_to: usize) -> usize {
         let mut copied = 0;
 
-        // Scan ahead in the buffer for ASCII field data
-        for i in buffer_index..valid_up_to {
+        for i in start..valid_up_to {
             let byte = self.utf8_buffer[i];
 
-            // Stop at special characters or non-ASCII
-            if byte == self.delimiter
-                || byte == b'\n'
-                || byte == b'\r'
-                || byte >= 0x80
-            {
+            // Check if byte is still Normal class (fast table lookup)
+            if self.byte_classes.get(byte) != ByteClass::Normal {
                 break;
             }
 
