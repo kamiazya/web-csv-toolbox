@@ -946,10 +946,15 @@ interface BaseEngineConfig {
   /**
    * GPU device manager for managing GPU device lifecycle.
    *
+   * **Main thread only** - Cannot be transferred to Workers.
+   *
    * When provided, the parsing function will use this manager's GPU device instance
    * instead of using the default shared device from loadGPU().
    *
    * Use {@link GPUDeviceManager} with the `using` syntax for automatic cleanup.
+   *
+   * @remarks
+   * For Worker execution, use {@link gpuOptions} instead to pass serializable GPU configuration.
    *
    * @example Using ReusableGPUDeviceManager with automatic cleanup
    * ```ts
@@ -982,6 +987,61 @@ interface BaseEngineConfig {
    * ```
    */
   gpuDeviceManager?: GPUDeviceManager | undefined;
+
+  /**
+   * Serializable GPU options for Worker execution.
+   *
+   * **Worker-compatible** - Can be transferred to Workers via `postMessage`.
+   *
+   * Provides policy-based device selection for GPU initialization in Workers.
+   * For advanced customization in main thread, use {@link gpuDeviceManager} instead.
+   *
+   * @remarks
+   * **Limitations:**
+   * - Only `devicePreference` (policy-based selection) is supported
+   * - Custom `deviceSelector` functions cannot be transferred to Workers
+   * - For custom device selection in Workers, use low-level API directly in Worker code
+   *
+   * **Priority:**
+   * 1. `gpuDeviceManager` (if provided, main thread only)
+   * 2. `gpuOptions` (Worker-compatible)
+   * 3. Default shared device from `loadGPU()`
+   *
+   * @example High-level: Policy-based selection for Worker
+   * ```ts
+   * import { parseString } from 'web-csv-toolbox';
+   *
+   * await parseString(csv, {
+   *   engine: {
+   *     worker: true,
+   *     gpu: true,
+   *     gpuOptions: {
+   *       devicePreference: 'high-performance',
+   *       deviceDescriptor: {
+   *         requiredFeatures: ['shader-f16']
+   *       }
+   *     }
+   *   }
+   * });
+   * ```
+   *
+   * @example Low-level: Custom device selection in Worker code
+   * ```ts
+   * // worker.ts
+   * import { ReusableGPUDeviceManager } from 'web-csv-toolbox';
+   *
+   * const manager = new ReusableGPUDeviceManager({
+   *   deviceSelector: async ({ adapters, fileSize }) => {
+   *     // Custom logic (inside Worker, so function works)
+   *     return adapters[0];
+   *   }
+   * });
+   * ```
+   *
+   * @see {@link GPUDevicePreference}
+   * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/gpu-worker-api.md GPU Worker API Documentation}
+   */
+  gpuOptions?: SerializableGPUOptions | undefined;
 
   /**
    * Blob reading strategy threshold (in bytes).
@@ -1224,6 +1284,70 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * ```
    */
   onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+}
+
+/**
+ * GPU device selection preference (policy-based).
+ *
+ * @remarks
+ * These policies map to WebGPU adapter properties:
+ * - `auto`: Default browser selection
+ * - `high-performance`: Prefer discrete GPU (powerPreference: "high-performance")
+ * - `low-power`: Prefer integrated GPU (powerPreference: "low-power")
+ * - `balanced`: Balance between performance and power
+ *
+ * @category Types
+ */
+export type GPUDevicePreference =
+  | "auto"
+  | "high-performance"
+  | "low-power"
+  | "balanced";
+
+/**
+ * Serializable GPU options for Worker execution.
+ *
+ * **Worker-compatible** - All properties can be transferred via `postMessage`.
+ *
+ * @remarks
+ * Unlike {@link GPUDeviceManager} (which contains non-transferable objects),
+ * this interface only contains plain data that can be serialized and sent to Workers.
+ *
+ * **Limitations:**
+ * - Cannot include functions (e.g., custom `deviceSelector`)
+ * - Cannot include object instances (e.g., `GPUAdapter`)
+ *
+ * For advanced customization in Workers, use the low-level API directly in Worker code.
+ *
+ * @category Types
+ */
+export interface SerializableGPUOptions {
+  /**
+   * Policy-based device selection preference.
+   *
+   * @default "auto"
+   */
+  devicePreference?: GPUDevicePreference;
+
+  /**
+   * Adapter request options.
+   *
+   * @remarks
+   * Standard WebGPU adapter options. Cannot be used with custom `adapter`.
+   *
+   * @see {@link https://www.w3.org/TR/webgpu/#gpurequestadapteroptions GPURequestAdapterOptions}
+   */
+  adapterOptions?: GPURequestAdapterOptions;
+
+  /**
+   * Device descriptor for GPU device initialization.
+   *
+   * @remarks
+   * Standard WebGPU device descriptor.
+   *
+   * @see {@link https://www.w3.org/TR/webgpu/#gpudevicedescriptor GPUDeviceDescriptor}
+   */
+  deviceDescriptor?: GPUDeviceDescriptor;
 }
 
 /**
