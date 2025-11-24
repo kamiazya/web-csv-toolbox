@@ -944,6 +944,46 @@ interface BaseEngineConfig {
   gpu?: boolean | undefined;
 
   /**
+   * GPU device pool for managing GPU device lifecycle.
+   *
+   * When provided, the parsing function will use this pool's GPU device instance
+   * instead of using the default shared device from loadGPU().
+   *
+   * Use {@link GPUDevicePool} with the `using` syntax for automatic cleanup.
+   *
+   * @example Using ReusableGPUDevicePool with automatic cleanup
+   * ```ts
+   * import { ReusableGPUDevicePool, parseString } from 'web-csv-toolbox';
+   *
+   * async function processCSV(csv: string) {
+   *   using pool = new ReusableGPUDevicePool();
+   *
+   *   const records = [];
+   *   for await (const record of parseString(csv, {
+   *     engine: { gpu: true, gpuDevicePool: pool }
+   *   })) {
+   *     records.push(record);
+   *   }
+   *
+   *   return records;
+   *   // GPU device is automatically destroyed when leaving this scope
+   * }
+   * ```
+   *
+   * @example Multiple operations with same pool
+   * ```ts
+   * import { ReusableGPUDevicePool, parseString } from 'web-csv-toolbox';
+   *
+   * using pool = new ReusableGPUDevicePool();
+   *
+   * await parseString(csv1, { engine: { gpu: true, gpuDevicePool: pool } });
+   * await parseString(csv2, { engine: { gpu: true, gpuDevicePool: pool } });
+   * // GPU device is reused for both operations
+   * ```
+   */
+  gpuDevicePool?: GPUDevicePool | undefined;
+
+  /**
    * Blob reading strategy threshold (in bytes).
    * Only applicable for `parseBlob()` and `parseFile()`.
    *
@@ -987,6 +1027,31 @@ export interface MainThreadEngineConfig extends BaseEngineConfig {
    * @default false
    */
   worker?: false;
+
+  /**
+   * Callback when engine configuration fallback occurs.
+   *
+   * Called when the requested configuration fails and falls back to a safer configuration.
+   *
+   * Common fallback scenarios on main thread:
+   * - `gpu: true` → JavaScript (WebGPU unavailable)
+   * - `gpu: true, wasm: true` → WASM (WebGPU unavailable)
+   * - `gpu: true, wasm: true` → JavaScript (both WebGPU and WASM unavailable)
+   *
+   * @example Track GPU fallback
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     gpu: true,
+   *     wasm: true,
+   *     onFallback: (info) => {
+   *       console.warn(`Fallback from GPU to ${info.actualConfig.wasm ? 'WASM' : 'JavaScript'}: ${info.reason}`);
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
 }
 
 /**
@@ -1159,6 +1224,48 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    * ```
    */
   onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+}
+
+/**
+ * Common interface for GPU device pools.
+ * Both ReusableGPUDevicePool and TransientGPUDevicePool implement this interface.
+ *
+ * @remarks
+ * This interface defines the contract for GPU device pool implementations.
+ * Users typically use {@link ReusableGPUDevicePool} for persistent device pools,
+ * while the internal default pool uses {@link TransientGPUDevicePool} for automatic cleanup.
+ *
+ * @category Types
+ */
+export interface GPUDevicePool {
+  /**
+   * Get a GPU device instance from the pool.
+   *
+   * @returns A GPU device instance
+   */
+  getDevice(): Promise<GPUDevice>;
+
+  /**
+   * Release a GPU device back to the pool.
+   *
+   * @remarks
+   * For reusable pools, this keeps the device for future use.
+   * For transient pools, this may destroy the device.
+   */
+  releaseDevice(): void;
+
+  /**
+   * Dispose all resources in the pool.
+   *
+   * @param force - Force disposal even if devices are in use
+   */
+  dispose(force?: boolean): Promise<void>;
+
+  /**
+   * Explicit resource management support.
+   * Allows use of `using` syntax for automatic cleanup.
+   */
+  [Symbol.dispose](): void;
 }
 
 /**

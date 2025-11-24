@@ -127,6 +127,26 @@ export {
 	unpackSeparator,
 } from "./utils/separator-utils.ts";
 
+// GPU Device Lifecycle (similar to loadWASM pattern)
+export type { GPUInitOptions } from "./loaders/loadGPU.ts";
+
+export {
+	disposeGPU,
+	ensureGPUInitialized,
+	getSharedGPUDevice,
+	isGPUReady,
+	loadGPU,
+} from "./loaders/loadGPU.ts";
+
+// GPU Device Pool (similar to WorkerPool pattern)
+export type { GPUDevicePoolConfig } from "./loaders/GPUDevicePool.ts";
+
+export {
+	GPUDevicePool,
+	ReusableGPUDevicePool,
+	TransientGPUDevicePool,
+} from "./loaders/GPUDevicePool.ts";
+
 /**
  * Checks if WebGPU is available in the current environment
  *
