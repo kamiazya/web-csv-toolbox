@@ -14,6 +14,8 @@ pub struct CSVRecordAssemblerLegacy {
     max_field_count: usize,
     /// Output format: "object" or "array"
     output_format: String,
+    /// Current field index within the record (to match JS assembler behavior)
+    field_index: usize,
 }
 
 #[wasm_bindgen]
@@ -84,6 +86,7 @@ impl CSVRecordAssemblerLegacy {
             headers_parsed,
             max_field_count,
             output_format,
+            field_index: 0,
         })
     }
 
@@ -109,11 +112,20 @@ impl CSVRecordAssemblerLegacy {
             }
         } else {
             // Flush mode - emit final record if any
-            if !self.current_record.is_empty() {
+            if self.field_index > 0 || !self.current_record.is_empty() {
+                // Ensure the current field is set (empty string if undefined)
+                if self.field_index < self.current_record.len() && self.current_record[self.field_index].is_empty() {
+                    // Field already exists but is empty
+                } else if self.field_index >= self.current_record.len() {
+                    // Extend vector to include current field index
+                    self.current_record.resize(self.field_index + 1, String::new());
+                }
+
                 if let Some(record) = self.create_record()? {
                     records.push(&record);
                 }
                 self.current_record.clear();
+                self.field_index = 0;
             }
         }
 
@@ -141,25 +153,47 @@ impl CSVRecordAssemblerLegacy {
                     .ok_or_else(|| JsError::new("Field 'value' must be a string"))?;
 
                 // Check field count limit
-                if self.current_record.len() >= self.max_field_count {
+                if self.field_index >= self.max_field_count {
                     return Err(JsError::new(&format!(
                         "Field count limit exceeded: maximum {} fields allowed per record",
                         self.max_field_count
                     )));
                 }
 
-                self.current_record.push(value);
+                // Ensure vector is large enough to hold this field
+                if self.field_index >= self.current_record.len() {
+                    self.current_record.resize(self.field_index + 1, String::new());
+                }
+
+                // Set field at current index (matching JS assembler behavior)
+                self.current_record[self.field_index] = value;
             }
             "field-delimiter" => {
-                // Field delimiter doesn't add to record, just marks field boundary
-                // The field itself was already added as a "field" token
+                // Set empty string for empty fields (matching JS assembler behavior)
+                // Ensure vector is large enough
+                if self.field_index >= self.current_record.len() {
+                    self.current_record.resize(self.field_index + 1, String::new());
+                } else if self.current_record[self.field_index].is_empty() {
+                    // Field is already empty, which is correct
+                }
+
+                // Move to next field index
+                self.field_index += 1;
             }
             "record-delimiter" => {
+                // Set empty string for the last field if empty (matching JS assembler behavior)
+                if self.field_index >= self.current_record.len() {
+                    self.current_record.resize(self.field_index + 1, String::new());
+                } else if self.current_record[self.field_index].is_empty() {
+                    // Field is already empty, which is correct
+                }
+
                 // Emit record
                 if let Some(record) = self.create_record()? {
                     records.push(&record);
                 }
                 self.current_record.clear();
+                self.field_index = 0;
             }
             _ => {
                 return Err(JsError::new(&format!("Unknown token type: {}", token_type)));
@@ -197,17 +231,27 @@ impl CSVRecordAssemblerLegacy {
                 if let Some(ref headers) = self.headers {
                     let obj = Object::new();
                     for (i, header) in headers.iter().enumerate() {
-                        let field = record.get(i).map(|s| s.as_str()).unwrap_or("");
                         let key = JsValue::from_str(header);
-                        let value = JsValue::from_str(field);
 
-                        // Use Object.defineProperty to handle special property names like __proto__
-                        let descriptor = Object::new();
-                        let _ = Reflect::set(&descriptor, &"value".into(), &value);
-                        let _ = Reflect::set(&descriptor, &"writable".into(), &JsValue::TRUE);
-                        let _ = Reflect::set(&descriptor, &"enumerable".into(), &JsValue::TRUE);
-                        let _ = Reflect::set(&descriptor, &"configurable".into(), &JsValue::TRUE);
-                        let _ = Object::define_property(&obj, &key, &descriptor);
+                        // Use undefined for missing fields (matches JS array.at() behavior)
+                        let value = if let Some(field) = record.get(i) {
+                            JsValue::from_str(field)
+                        } else {
+                            JsValue::UNDEFINED
+                        };
+
+                        // Use Reflect.set for normal properties, Object.defineProperty for special names
+                        // This fixes the field order bug - Object.defineProperty was failing silently
+                        if header == "__proto__" || header == "constructor" || header == "prototype" {
+                            let descriptor = Object::new();
+                            let _ = Reflect::set(&descriptor, &"value".into(), &value);
+                            let _ = Reflect::set(&descriptor, &"writable".into(), &JsValue::TRUE);
+                            let _ = Reflect::set(&descriptor, &"enumerable".into(), &JsValue::TRUE);
+                            let _ = Reflect::set(&descriptor, &"configurable".into(), &JsValue::TRUE);
+                            let _ = Object::define_property(&obj, &key, &descriptor);
+                        } else {
+                            let _ = Reflect::set(&obj, &key, &value);
+                        }
                     }
                     Ok(Some(obj.into()))
                 } else {

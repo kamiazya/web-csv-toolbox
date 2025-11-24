@@ -124,14 +124,17 @@ impl RecordBuffer {
     }
 
     /// Convert to JavaScript object using provided headers
-    /// Always includes all header keys, using empty string for missing fields
+    /// Always includes all header keys, using undefined for missing fields
     pub fn to_js_object(&self, headers: &[String]) -> JsValue {
         let obj = Object::new();
         for (i, header) in headers.iter().enumerate() {
-            // Use empty string as fallback for missing fields (matches legacy behavior)
-            let field = self.get(i).unwrap_or("");
+            // Use undefined for missing fields (matches JS assembler behavior)
             let key = JsValue::from_str(header);
-            let value = JsValue::from_str(field);
+            let value = if let Some(field) = self.get(i) {
+                JsValue::from_str(field)
+            } else {
+                JsValue::UNDEFINED
+            };
 
             // For special property names like __proto__, use Object.defineProperty
             // For normal properties, Reflect.set is sufficient and more reliable

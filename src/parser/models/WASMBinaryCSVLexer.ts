@@ -1,4 +1,5 @@
 import { BinaryCSVLexerLegacy as WASMBinaryCSVLexerInternal } from "web-csv-toolbox-wasm";
+import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type {
   BinaryCSVLexer,
   CSVLexerLexOptions,
@@ -146,39 +147,117 @@ export class WASMBinaryCSVLexer implements BinaryCSVLexer {
   ): IterableIterator<Token> {
     const { stream = false } = options ?? {};
 
-    // Convert BufferSource to Uint8Array if needed
-    let bytes: Uint8Array | undefined;
-    if (chunk !== undefined) {
-      if (chunk instanceof Uint8Array) {
-        bytes = chunk;
-      } else if (chunk instanceof ArrayBuffer) {
-        bytes = new Uint8Array(chunk);
-      } else if (ArrayBuffer.isView(chunk)) {
-        // TypedArray
-        bytes = new Uint8Array(
-          chunk.buffer,
-          chunk.byteOffset,
-          chunk.byteLength,
-        );
-      } else {
-        throw new Error(
-          "chunk must be a BufferSource (Uint8Array, ArrayBuffer, or TypedArray)",
-        );
-      }
-    }
+    const bytes = chunk;
 
     if (bytes === undefined || !stream) {
       // Flush mode or final chunk
-      const result = this.#lexer.lex(bytes);
-      if (Array.isArray(result)) {
-        yield* result as Token[];
+      // Collect all tokens from both chunk processing and flush
+      const allTokens: any[] = [];
+
+      if (bytes !== undefined) {
+        // Process the final chunk
+        const result = this.#lexer.lex(bytes);
+        if (Array.isArray(result)) {
+          allTokens.push(...result);
+        }
       }
+
+      // Always flush remaining data when not in streaming mode
+      const flushResult = this.#lexer.lex();
+      if (Array.isArray(flushResult)) {
+        allTokens.push(...flushResult);
+      }
+
+      // Apply JS-compatible filtering to ALL tokens together, with isFlush=true
+      const filtered = this.#filterTokensForJSCompatibility(allTokens, true);
+      yield* this.#normalizeTokens(filtered);
     } else {
       // Streaming mode
       const result = this.#lexer.lex(bytes);
       if (Array.isArray(result)) {
-        yield* result as Token[];
+        // Apply JS-compatible filtering
+        const filtered = this.#filterTokensForJSCompatibility(result, false);
+        yield* this.#normalizeTokens(filtered);
       }
+    }
+  }
+
+  /**
+   * Filter WASM tokens to match JS lexer behavior.
+   *
+   * Fixes:
+   * 1. Empty field handling - JS doesn't emit empty field tokens before delimiters
+   * 2. Trailing newline handling - JS strips trailing record delimiter
+   *
+   * @param tokens - WASM tokens
+   * @param isFlush - Whether this is flush mode (final chunk)
+   * @returns Filtered tokens
+   */
+  #filterTokensForJSCompatibility(tokens: any[], isFlush: boolean): any[] {
+    const filtered: any[] = [];
+
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const nextToken = tokens[i + 1];
+
+      // Skip empty field tokens that appear before delimiters (to match JS behavior)
+      // JS lexer doesn't emit field tokens for empty fields
+      if (
+        token.type === "field" &&
+        token.value === "" &&
+        nextToken &&
+        (nextToken.type === "field-delimiter" || nextToken.type === "record-delimiter")
+      ) {
+        continue;
+      }
+
+      // In flush mode, strip trailing record delimiter (to match JS behavior)
+      // JS lexer strips the last CRLF or LF
+      if (
+        isFlush &&
+        i === tokens.length - 1 &&
+        token.type === "record-delimiter"
+      ) {
+        continue;
+      }
+
+      filtered.push(token);
+    }
+
+    return filtered;
+  }
+
+  /**
+   * Normalize WASM tokens to match JS token format.
+   * Converts string token types to Symbol types for compatibility.
+   *
+   * @param tokens - WASM tokens with string types
+   * @returns Normalized tokens with Symbol types
+   */
+  *#normalizeTokens(tokens: any[]): IterableIterator<Token> {
+    for (const token of tokens) {
+      // Convert string type to Symbol type
+      let type: symbol;
+      switch (token.type) {
+        case "field":
+          type = Field;
+          break;
+        case "field-delimiter":
+          type = FieldDelimiter;
+          break;
+        case "record-delimiter":
+          type = RecordDelimiter;
+          break;
+        default:
+          // Fallback: try to use the string as-is (should not happen)
+          type = Symbol.for(`web-csv-toolbox.${token.type}`);
+      }
+
+      yield {
+        type,
+        value: token.value,
+        location: token.location,
+      } as Token;
     }
   }
 }

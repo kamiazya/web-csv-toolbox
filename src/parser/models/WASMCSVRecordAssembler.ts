@@ -1,4 +1,5 @@
 import { CSVRecordAssemblerLegacy as WASMCSVRecordAssemblerInternal } from "web-csv-toolbox-wasm";
+import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type {
   CSVArrayRecord,
   CSVArrayRecordAssembler,
@@ -120,19 +121,70 @@ export class WASMCSVObjectRecordAssembler<
       }
     }
 
-    if (tokens === undefined || !stream) {
+    // Normalize tokens: convert Symbol types to strings for WASM
+    const normalizedTokens = tokens ? this.#normalizeTokensForWasm(tokens) : undefined;
+
+    if (normalizedTokens === undefined || !stream) {
       // Flush mode or final tokens
-      const result = this.#assembler.assemble(tokens);
-      if (Array.isArray(result)) {
-        yield* result as CSVObjectRecord<Header>[];
+      if (normalizedTokens !== undefined) {
+        // Process the tokens
+        const result = this.#assembler.assemble(normalizedTokens);
+        if (Array.isArray(result)) {
+          yield* result as CSVObjectRecord<Header>[];
+        }
+      }
+
+      // Always flush in non-streaming mode
+      const flushResult = this.#assembler.assemble();
+      if (Array.isArray(flushResult)) {
+        yield* flushResult as CSVObjectRecord<Header>[];
       }
     } else {
       // Streaming mode
-      const result = this.#assembler.assemble(tokens);
+      const result = this.#assembler.assemble(normalizedTokens);
       if (Array.isArray(result)) {
         yield* result as CSVObjectRecord<Header>[];
       }
     }
+  }
+
+  /**
+   * Normalize JS tokens (with Symbol types) to WASM format (string types).
+   *
+   * @param tokens - JS tokens with Symbol types
+   * @returns Normalized tokens with string types for WASM
+   */
+  #normalizeTokensForWasm(tokens: Token[]): any[] {
+    return tokens.map(token => {
+      // Convert Symbol type to string type
+      let typeStr: string;
+      if (token.type === Field) {
+        typeStr = "field";
+      } else if (token.type === FieldDelimiter) {
+        typeStr = "field-delimiter";
+      } else if (token.type === RecordDelimiter) {
+        typeStr = "record-delimiter";
+      } else {
+        // Fallback: convert any Symbol to string
+        const symbolStr = String(token.type);
+        const match = symbolStr.match(/Symbol\(web-csv-toolbox\.(\w+)\)/);
+        if (match) {
+          const name = match[1];
+          typeStr = name
+            .replace(/([A-Z])/g, '-$1')
+            .toLowerCase()
+            .replace(/^-/, '');
+        } else {
+          typeStr = symbolStr;
+        }
+      }
+
+      return {
+        type: typeStr,
+        value: token.value,
+        location: token.location,
+      };
+    });
   }
 }
 
@@ -222,18 +274,69 @@ export class WASMCSVArrayRecordAssembler<
       }
     }
 
-    if (tokens === undefined || !stream) {
+    // Normalize tokens: convert Symbol types to strings for WASM
+    const normalizedTokens = tokens ? this.#normalizeTokensForWasm(tokens) : undefined;
+
+    if (normalizedTokens === undefined || !stream) {
       // Flush mode or final tokens
-      const result = this.#assembler.assemble(tokens);
-      if (Array.isArray(result)) {
-        yield* result as CSVArrayRecord<Header>[];
+      if (normalizedTokens !== undefined) {
+        // Process the tokens
+        const result = this.#assembler.assemble(normalizedTokens);
+        if (Array.isArray(result)) {
+          yield* result as CSVArrayRecord<Header>[];
+        }
+      }
+
+      // Always flush in non-streaming mode
+      const flushResult = this.#assembler.assemble();
+      if (Array.isArray(flushResult)) {
+        yield* flushResult as CSVArrayRecord<Header>[];
       }
     } else {
       // Streaming mode
-      const result = this.#assembler.assemble(tokens);
+      const result = this.#assembler.assemble(normalizedTokens);
       if (Array.isArray(result)) {
         yield* result as CSVArrayRecord<Header>[];
       }
     }
+  }
+
+  /**
+   * Normalize JS tokens (with Symbol types) to WASM format (string types).
+   *
+   * @param tokens - JS tokens with Symbol types
+   * @returns Normalized tokens with string types for WASM
+   */
+  #normalizeTokensForWasm(tokens: Token[]): any[] {
+    return tokens.map(token => {
+      // Convert Symbol type to string type
+      let typeStr: string;
+      if (token.type === Field) {
+        typeStr = "field";
+      } else if (token.type === FieldDelimiter) {
+        typeStr = "field-delimiter";
+      } else if (token.type === RecordDelimiter) {
+        typeStr = "record-delimiter";
+      } else {
+        // Fallback: convert any Symbol to string
+        const symbolStr = String(token.type);
+        const match = symbolStr.match(/Symbol\(web-csv-toolbox\.(\w+)\)/);
+        if (match) {
+          const name = match[1];
+          typeStr = name
+            .replace(/([A-Z])/g, '-$1')
+            .toLowerCase()
+            .replace(/^-/, '');
+        } else {
+          typeStr = symbolStr;
+        }
+      }
+
+      return {
+        type: typeStr,
+        value: token.value,
+        location: token.location,
+      };
+    });
   }
 }
