@@ -139,7 +139,13 @@ export {
 } from "./loaders/loadGPU.ts";
 
 // GPU Device Pool (similar to WorkerPool pattern)
-export type { GPUDevicePoolConfig } from "./loaders/GPUDevicePool.ts";
+export type {
+	BufferPoolingConfig,
+	GPUDevicePoolConfig,
+	GPUDevicePreference,
+	GPUDeviceSelectionContext,
+	GPUDeviceSelector,
+} from "./loaders/GPUDevicePool.ts";
 
 export {
 	GPUDevicePool,

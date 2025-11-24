@@ -16,27 +16,58 @@ import {
 } from "./gpuState.ts";
 
 /**
- * GPU initialization options
+ * Base GPU initialization options (common properties)
  */
-export interface GPUInitOptions {
-  /**
-   * Custom GPU adapter
-   * If provided, uses this adapter instead of requesting one
-   */
-  adapter?: GPUAdapter;
-
-  /**
-   * GPU device descriptor
-   * Allows customizing required features and limits
-   */
-  deviceDescriptor?: GPUDeviceDescriptor;
-
-  /**
-   * Adapter request options
-   * Used when adapter is not provided
-   */
-  adapterOptions?: GPURequestAdapterOptions;
+interface BaseGPUInitOptions {
+	/**
+	 * GPU device descriptor
+	 * Allows customizing required features and limits
+	 */
+	deviceDescriptor?: GPUDeviceDescriptor;
 }
+
+/**
+ * GPU initialization options with custom adapter
+ */
+interface GPUInitOptionsWithAdapter extends BaseGPUInitOptions {
+	/**
+	 * Custom GPU adapter
+	 * If provided, uses this adapter instead of requesting one
+	 */
+	adapter: GPUAdapter;
+
+	/**
+	 * Adapter request options are not allowed with custom adapter
+	 */
+	adapterOptions?: never;
+}
+
+/**
+ * GPU initialization options with adapter request options
+ */
+interface GPUInitOptionsWithAdapterOptions extends BaseGPUInitOptions {
+	/**
+	 * Custom adapter is not allowed with adapterOptions
+	 */
+	adapter?: never;
+
+	/**
+	 * Adapter request options
+	 * Used when requesting adapter from navigator.gpu
+	 */
+	adapterOptions?: GPURequestAdapterOptions;
+}
+
+/**
+ * GPU initialization options
+ *
+ * Either provide a custom `adapter` or `adapterOptions` to request one,
+ * but not both simultaneously.
+ */
+export type GPUInitOptions =
+	| GPUInitOptionsWithAdapter
+	| GPUInitOptionsWithAdapterOptions
+	| BaseGPUInitOptions; // Allow neither for default behavior
 
 /**
  * Load and initialize WebGPU device (async)
@@ -85,38 +116,46 @@ export interface GPUInitOptions {
  * ```
  */
 export async function loadGPU(options?: GPUInitOptions): Promise<void> {
-  // Already initialized
-  if (isInitialized()) {
-    return;
-  }
+	// Runtime validation: adapter and adapterOptions are mutually exclusive
+	if (options?.adapter && options?.adapterOptions) {
+		throw new Error(
+			"GPUInitOptions: Cannot specify both 'adapter' and 'adapterOptions'. " +
+				"Use either a custom adapter or adapter request options, not both.",
+		);
+	}
 
-  // Concurrent initialization protection
-  const existingPromise = getInitPromise();
-  if (existingPromise) {
-    return existingPromise;
-  }
+	// Already initialized
+	if (isInitialized()) {
+		return;
+	}
 
-  // Check WebGPU availability
-  if (!navigator.gpu) {
-    throw new Error("WebGPU is not available in this browser");
-  }
+	// Concurrent initialization protection
+	const existingPromise = getInitPromise();
+	if (existingPromise) {
+		return existingPromise;
+	}
 
-  // Create initialization promise
-  const initPromise = (async () => {
-    try {
-      // Get or create adapter
-      let adapter: GPUAdapter;
-      if (options?.adapter) {
-        adapter = options.adapter;
-      } else {
-        const requestedAdapter = await navigator.gpu.requestAdapter(
-          options?.adapterOptions,
-        );
-        if (!requestedAdapter) {
-          throw new Error("Failed to get GPU adapter");
-        }
-        adapter = requestedAdapter;
-      }
+	// Check WebGPU availability
+	if (!navigator.gpu) {
+		throw new Error("WebGPU is not available in this browser");
+	}
+
+	// Create initialization promise
+	const initPromise = (async () => {
+		try {
+			// Get or create adapter
+			let adapter: GPUAdapter;
+			if (options?.adapter) {
+				adapter = options.adapter;
+			} else {
+				const requestedAdapter = await navigator.gpu.requestAdapter(
+					options?.adapterOptions,
+				);
+				if (!requestedAdapter) {
+					throw new Error("Failed to get GPU adapter");
+				}
+				adapter = requestedAdapter;
+			}
 
       // Request device
       const device = await adapter.requestDevice(options?.deviceDescriptor);

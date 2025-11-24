@@ -10,23 +10,137 @@ import type { GPUInitOptions } from "./loadGPU.ts";
 import { loadGPU, getSharedGPUDevice } from "./loadGPU.ts";
 
 /**
- * GPU Device Pool configuration
+ * GPU device selection preference (policy-based)
  */
-export interface GPUDevicePoolConfig {
-  /**
-   * GPU initialization options
-   * Used when creating the shared device
-   */
-  initOptions?: GPUInitOptions;
+export type GPUDevicePreference =
+	| "auto" // 自動選択（デフォルト）
+	| "high-performance" // 高性能優先（discrete GPU）
+	| "low-power" // 省電力優先（integrated GPU）
+	| "balanced"; // バランス重視
 
-  /**
-   * Enable automatic disposal
-   * If true, disposes device when pool is no longer needed
-   *
-   * @default true
-   */
-  autoDispose?: boolean;
+/**
+ * Context provided to custom device selector
+ */
+export interface GPUDeviceSelectionContext {
+	/**
+	 * Available GPU adapters
+	 */
+	adapters: GPUAdapter[];
+
+	/**
+	 * Expected file size (if known)
+	 */
+	fileSize?: number;
+
+	/**
+	 * Expected workload intensity
+	 */
+	expectedWorkload?: "light" | "medium" | "heavy";
 }
+
+/**
+ * Custom device selection strategy
+ *
+ * @param context - Selection context
+ * @returns Selected adapter or array of adapters for multi-GPU
+ */
+export type GPUDeviceSelector = (
+	context: GPUDeviceSelectionContext,
+) => Promise<GPUAdapter> | GPUAdapter;
+
+/**
+ * Buffer pooling configuration
+ */
+export interface BufferPoolingConfig {
+	/**
+	 * Enable buffer pooling
+	 *
+	 * @default false
+	 */
+	enabled?: boolean;
+
+	/**
+	 * Maximum buffer size to pool (bytes)
+	 *
+	 * @default 256 * 1024 * 1024 (256MB)
+	 */
+	maxBufferSize?: number;
+
+	/**
+	 * Size to preallocate (bytes)
+	 *
+	 * @default undefined (no preallocation)
+	 */
+	preallocateSize?: number;
+}
+
+/**
+ * Base GPU Device Pool configuration (common properties)
+ */
+interface BaseGPUDevicePoolConfig {
+	/**
+	 * GPU initialization options
+	 * Used when creating the shared device
+	 */
+	initOptions?: GPUInitOptions;
+
+	/**
+	 * Enable automatic disposal
+	 * If true, disposes device when pool is no longer needed
+	 *
+	 * @default true
+	 */
+	autoDispose?: boolean;
+
+	/**
+	 * Buffer pooling configuration
+	 */
+	bufferPooling?: BufferPoolingConfig;
+}
+
+/**
+ * GPU Device Pool configuration with preference-based selection
+ */
+interface GPUDevicePoolConfigWithPreference extends BaseGPUDevicePoolConfig {
+	/**
+	 * GPU device selection preference (policy-based)
+	 *
+	 * @default 'auto'
+	 */
+	devicePreference?: GPUDevicePreference;
+
+	/**
+	 * Custom device selector is not allowed with devicePreference
+	 */
+	deviceSelector?: never;
+}
+
+/**
+ * GPU Device Pool configuration with custom selector
+ */
+interface GPUDevicePoolConfigWithSelector extends BaseGPUDevicePoolConfig {
+	/**
+	 * Device preference is not allowed with deviceSelector
+	 */
+	devicePreference?: never;
+
+	/**
+	 * Custom device selection strategy
+	 *
+	 * Overrides default preference-based selection
+	 */
+	deviceSelector?: GPUDeviceSelector;
+}
+
+/**
+ * GPU Device Pool configuration
+ *
+ * Either use `devicePreference` (policy-based) or `deviceSelector` (custom),
+ * but not both simultaneously.
+ */
+export type GPUDevicePoolConfig =
+	| GPUDevicePoolConfigWithPreference
+	| GPUDevicePoolConfigWithSelector;
 
 /**
  * GPU Device Pool for sharing GPU resources
@@ -62,16 +176,38 @@ export interface GPUDevicePoolConfig {
  * ```
  */
 export class GPUDevicePool implements IGPUDevicePool {
-  private readonly config: Required<GPUDevicePoolConfig>;
-  private activeOperations = 0;
-  private disposed = false;
+	private readonly config: {
+		initOptions: GPUInitOptions;
+		autoDispose: boolean;
+		devicePreference: GPUDevicePreference;
+		deviceSelector?: GPUDeviceSelector;
+		bufferPooling: Required<BufferPoolingConfig>;
+	};
+	private activeOperations = 0;
+	private disposed = false;
 
-  constructor(config?: GPUDevicePoolConfig) {
-    this.config = {
-      initOptions: config?.initOptions || {},
-      autoDispose: config?.autoDispose !== false,
-    };
-  }
+	constructor(config?: GPUDevicePoolConfig) {
+		// Runtime validation: devicePreference and deviceSelector are mutually exclusive
+		if (config?.devicePreference && config?.deviceSelector) {
+			throw new Error(
+				"GPUDevicePoolConfig: Cannot specify both 'devicePreference' and 'deviceSelector'. " +
+					"Use either policy-based selection (devicePreference) or custom selection (deviceSelector), not both.",
+			);
+		}
+
+		this.config = {
+			initOptions: config?.initOptions || {},
+			autoDispose: config?.autoDispose !== false,
+			devicePreference: config?.devicePreference || "auto",
+			deviceSelector: config?.deviceSelector,
+			bufferPooling: {
+				enabled: config?.bufferPooling?.enabled ?? false,
+				maxBufferSize:
+					config?.bufferPooling?.maxBufferSize ?? 256 * 1024 * 1024,
+				preallocateSize: config?.bufferPooling?.preallocateSize,
+			},
+		};
+	}
 
   /**
    * Get or initialize the shared GPU device
