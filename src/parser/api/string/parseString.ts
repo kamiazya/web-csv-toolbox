@@ -12,6 +12,8 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
+import { parseStringInGPU } from "@/parser/execution/gpu/parseStringInGPU.ts";
 import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
@@ -147,7 +149,43 @@ export async function* parseString<
       }
     } else {
       // Main thread execution
-      if (engineConfig.hasWasm()) {
+      if (engineConfig.hasGpu() && isGPUAvailable()) {
+        // GPU execution
+        yield* parseStringInGPU(csv, options) as AsyncIterableIterator<
+          InferCSVRecord<Header, Options>
+        >;
+      } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
+        // GPU requested but not available - fallback
+        const fallbackConfig = engineConfig.createGpuFallbackConfig();
+        if (fallbackConfig.hasWasm()) {
+          // Fallback to WASM
+          if (options?.outputFormat === "array") {
+            throw new Error(
+              "Array output format is not supported with WASM execution. " +
+                "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+            );
+          }
+          engineConfig.onFallback?.({
+            requestedConfig: engineConfig.toConfig(),
+            actualConfig: fallbackConfig.toConfig(),
+            reason: "WebGPU not available in this environment",
+          });
+          yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
+            InferCSVRecord<Header, Options>
+          >;
+        } else {
+          // Fallback to JavaScript
+          engineConfig.onFallback?.({
+            requestedConfig: engineConfig.toConfig(),
+            actualConfig: fallbackConfig.toConfig(),
+            reason: "WebGPU not available in this environment",
+          });
+          const iterator = parseStringToIterableIterator(csv, options);
+          yield* convertIterableIteratorToAsync(
+            iterator,
+          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+        }
+      } else if (engineConfig.hasWasm()) {
         // Validate that array output format is not used with WASM
         if (options?.outputFormat === "array") {
           throw new Error(

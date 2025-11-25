@@ -266,7 +266,21 @@ export default bytes.buffer || bytes;
                 { browser: "firefox" },
               ];
             })(),
-            headless: false,
+            // Allow headless override via VITEST_HEADLESS env var (default: true)
+            headless: process.env.VITEST_HEADLESS !== "false",
+            providerOptions: {
+              capabilities: {
+                "goog:chromeOptions": {
+                  args: [
+                    // Enable WebGPU in headless Chrome
+                    // See: https://developer.chrome.com/docs/web-platform/webgpu/colab-headless
+                    "--enable-unsafe-webgpu",
+                  ],
+                },
+                // Firefox doesn't support these Chrome-specific options, but that's ok
+                // WebGPU tests will be skipped in Firefox anyway via it.skipIf(!navigator.gpu)
+              },
+            },
           },
         },
         resolve: {

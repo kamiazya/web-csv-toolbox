@@ -15,15 +15,15 @@ function stringToStream(data: string): ReadableStream<string> {
 }
 
 describe("CPU Parser Behavior", () => {
-  it("should handle single field without trailing newline (with headers: false)", async () => {
+  it("should handle single field without trailing newline (with explicit header)", async () => {
     const csv = "0";
     const records = [];
     for await (const record of parseStringStream(stringToStream(csv), {
-      headers: false,
+      header: ["col"] as const,
     })) {
       records.push(record);
     }
-    console.log("Single field without LF (headers: false):", records);
+    console.log("Single field without LF (explicit header):", records);
     expect(records.length).toBeGreaterThanOrEqual(0);
   });
 
@@ -57,27 +57,27 @@ describe("CPU Parser Behavior", () => {
     expect(records.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("should handle single field with trailing newline (headers: false)", async () => {
+  it("should handle single field with trailing newline (explicit header)", async () => {
     const csv = "0\n";
     const records = [];
     for await (const record of parseStringStream(stringToStream(csv), {
-      headers: false,
+      header: ["col"] as const,
     })) {
       records.push(record);
     }
-    console.log("Single field with LF (headers: false):", records);
+    console.log("Single field with LF (explicit header):", records);
     expect(records.length).toBeGreaterThanOrEqual(0);
   });
 
-  it("should handle two rows (headers: false)", async () => {
+  it("should handle two rows (explicit header)", async () => {
     const csv = "0\n1\n";
     const records = [];
     for await (const record of parseStringStream(stringToStream(csv), {
-      headers: false,
+      header: ["col"] as const,
     })) {
       records.push(record);
     }
-    console.log("Two rows (headers: false):", records);
+    console.log("Two rows (explicit header):", records);
     expect(records.length).toBeGreaterThanOrEqual(0);
   });
 

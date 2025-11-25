@@ -7,23 +7,22 @@
  * 3. Assembles records from GPU-generated separator indices
  */
 
-import { GPUBackend } from "../core/gpu-backend.ts";
+import { CSVIndexingBackend } from "@/parser/webgpu/indexing/CSVIndexingBackend.ts";
 import type {
   CSVRecord,
+  Separator,
   StreamingParserOptions,
   StreamingState,
-} from "../core/types.ts";
-import {
-  adjustForCRLF,
-  concatUint8Arrays,
-  decodeUTF8,
-  stripBOM,
-} from "../utils/buffer-utils.ts";
+} from "@/parser/webgpu/indexing/types.ts";
+import { adjustForCRLF } from "@/parser/webgpu/utils/adjustForCRLF.ts";
+import { decodeUTF8 } from "@/parser/webgpu/utils/decodeUTF8.ts";
 import {
   getProcessedBytesCount,
   getValidSeparators,
   isLineFeed,
-} from "../utils/separator-utils.ts";
+} from "@/parser/webgpu/utils/separator-utils.ts";
+import { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
+import { concatUint8Arrays } from "@/webgpu/utils/concatUint8Arrays.ts";
 
 /**
  * WebGPU-accelerated streaming CSV parser
@@ -43,12 +42,12 @@ import {
  * ```
  */
 export class StreamParser {
-  private readonly backend: GPUBackend;
+  private readonly backend: CSVIndexingBackend;
   private readonly options: StreamingParserOptions;
   private state: StreamingState;
 
   constructor(options: StreamingParserOptions = {}) {
-    this.backend = new GPUBackend(options.config);
+    this.backend = new CSVIndexingBackend(options.config);
     this.options = options;
     this.state = this.createInitialState();
   }
@@ -103,6 +102,9 @@ export class StreamParser {
 
   /**
    * Processes a single chunk of CSV data
+   *
+   * If the chunk exceeds GPU dispatch limits, it is automatically split
+   * into smaller sub-chunks and processed sequentially.
    */
   private async processChunk(chunk: Uint8Array): Promise<void> {
     // 1. BOM detection (first chunk only)
@@ -119,13 +121,63 @@ export class StreamParser {
       return;
     }
 
-    // 3. Execute GPU parsing
-    const result = await this.backend.dispatch(inputBytes, {
-      chunkSize: inputBytes.length,
+    // 3. Get max chunk size from GPU device limits
+    const maxChunkSize = this.backend.getMaxChunkSize();
+
+    // 4. If input exceeds max size, split and process in sub-chunks
+    if (inputBytes.length > maxChunkSize) {
+      // Clear leftover since we're processing from scratch
+      this.state.leftover = new Uint8Array(0);
+
+      // Process in sub-chunks
+      for (let offset = 0; offset < inputBytes.length; offset += maxChunkSize) {
+        const subChunk = inputBytes.subarray(
+          offset,
+          Math.min(offset + maxChunkSize, inputBytes.length),
+        );
+        await this.processSubChunk(subChunk);
+      }
+      return;
+    }
+
+    // 5. Normal processing for chunks within GPU limits
+    await this.processSubChunk(inputBytes);
+  }
+
+  /**
+   * Processes a sub-chunk that is guaranteed to be within GPU dispatch limits
+   */
+  private async processSubChunk(inputBytes: Uint8Array): Promise<void> {
+    if (inputBytes.length === 0) {
+      return;
+    }
+
+    // Concatenate with any leftover from previous sub-chunk
+    const fullInput = concatUint8Arrays(this.state.leftover, inputBytes);
+    this.state.leftover = new Uint8Array(0);
+
+    // Check if we still exceed limits after concatenation (edge case)
+    const maxChunkSize = this.backend.getMaxChunkSize();
+    if (fullInput.length > maxChunkSize) {
+      // Recursively split - this handles edge case where leftover + subchunk > max
+      for (let offset = 0; offset < fullInput.length; offset += maxChunkSize) {
+        const subChunk = fullInput.subarray(
+          offset,
+          Math.min(offset + maxChunkSize, fullInput.length),
+        );
+        await this.processSubChunk(subChunk);
+      }
+      return;
+    }
+
+    // Execute GPU parsing
+    const dispatchResult = await this.backend.dispatch(fullInput, {
+      chunkSize: fullInput.length,
       prevInQuote: this.state.prevInQuote,
     });
+    const result = dispatchResult.data;
 
-    // 4. Determine valid processing range (up to last LF)
+    // Determine valid processing range (up to last LF)
     const processedBytesCount = getProcessedBytesCount(
       result.sepIndices,
       result.sepCount,
@@ -133,21 +185,35 @@ export class StreamParser {
 
     if (processedBytesCount === 0) {
       // No complete record found - carry over entire buffer
-      // Keep prevInQuote unchanged since we haven't processed any data yet
-      this.state.leftover = inputBytes;
-      // Note: Don't update prevInQuote here - it stays the same for the next chunk/finalize
+      // IMPORTANT: Do NOT update prevInQuote here!
+      // The leftover contains the entire buffer, which will be re-processed
+      // with new data. If we update prevInQuote to endInQuote, the same bytes
+      // would be re-parsed with wrong initial quote state.
+      this.state.leftover = fullInput;
+      // Keep prevInQuote unchanged - it was correct for this buffer's start
       return;
     }
 
-    // 5. Extract valid separators
+    // Extract valid separators
     const separators = getValidSeparators(result.sepIndices, result.sepCount);
 
-    // 6. Parse records from separator positions
-    await this.parseRecords(inputBytes, separators, processedBytesCount);
+    // Parse records from separator positions
+    await this.parseRecords(fullInput, separators, processedBytesCount);
 
-    // 7. Save leftover for next chunk
-    this.state.leftover = inputBytes.slice(processedBytesCount);
-    this.state.prevInQuote = 0; // Reset because we ended on a newline
+    // Save leftover for next chunk and calculate quote state at processedBytesCount
+    this.state.leftover = fullInput.slice(processedBytesCount);
+
+    // Calculate quote state at processedBytesCount position:
+    // endInQuote = state at processedBytesCount XOR parity of leftover
+    // Therefore: state at processedBytesCount = endInQuote XOR leftover parity
+    let leftoverParity = 0;
+    for (let i = processedBytesCount; i < fullInput.length; i++) {
+      if (fullInput[i] === 34) {
+        // 34 = '"'
+        leftoverParity ^= 1;
+      }
+    }
+    this.state.prevInQuote = result.endInQuote ^ leftoverParity;
     this.state.globalOffset += processedBytesCount;
   }
 
@@ -156,7 +222,7 @@ export class StreamParser {
    */
   private async parseRecords(
     inputBytes: Uint8Array,
-    separators: Array<{ offset: number; type: number }>,
+    separators: Separator[],
     _processedBytesCount: number,
     emitTrailingFields = false,
   ): Promise<void> {
@@ -184,7 +250,15 @@ export class StreamParser {
         fieldValue = fieldValue.replace(/""/g, '"');
       }
 
-      fields.push(fieldValue);
+      // Only add field if:
+      // 1. This is not a LF, OR
+      // 2. This is a LF but we have content (fields exist or field has content)
+      const shouldAddField =
+        !isLineFeed(sep) || fields.length > 0 || lastOffset < endOffset;
+
+      if (shouldAddField) {
+        fields.push(fieldValue);
+      }
 
       // If this is a line feed, emit the record
       if (isLineFeed(sep)) {
@@ -260,19 +334,20 @@ export class StreamParser {
     }
 
     // Process leftover as final chunk
-    const result = await this.backend.dispatch(this.state.leftover, {
+    const dispatchResult = await this.backend.dispatch(this.state.leftover, {
       chunkSize: this.state.leftover.length,
       prevInQuote: this.state.prevInQuote,
     });
+    const result = dispatchResult.data;
 
     // If there are separators, process them
     if (result.sepCount > 0) {
-      const separators = [];
+      const separators: Separator[] = [];
       for (let i = 0; i < result.sepCount; i++) {
-        const packed = result.sepIndices[i];
+        const packed = result.sepIndices[i]!;
         separators.push({
           offset: packed & 0x7fffffff,
-          type: (packed >>> 31) & 1,
+          type: ((packed >>> 31) & 1) as 0 | 1,
         });
       }
 
@@ -316,6 +391,44 @@ export class StreamParser {
   async destroy(): Promise<void> {
     await this.backend.destroy();
   }
+
+  /**
+   * Implements AsyncDisposable for automatic cleanup with `await using`
+   *
+   * @example
+   * ```ts
+   * await using parser = await StreamParser.create({
+   *   onRecord: (record) => console.log(record),
+   * });
+   * await parser.parseStream(stream);
+   * // destroy() is called automatically
+   * ```
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.destroy();
+  }
+
+  /**
+   * Factory method that creates and initializes a StreamParser
+   *
+   * @param options - Parser options
+   * @returns Initialized StreamParser ready for use with `await using`
+   *
+   * @example
+   * ```ts
+   * await using parser = await StreamParser.create({
+   *   onRecord: (record) => console.log(record),
+   * });
+   * await parser.parseStream(stream);
+   * ```
+   */
+  static async create(
+    options: StreamingParserOptions = {},
+  ): Promise<StreamParser> {
+    const parser = new StreamParser(options);
+    await parser.initialize();
+    return parser;
+  }
 }
 
 /**
@@ -340,16 +453,14 @@ export async function parseCSVStream(
 ): Promise<CSVRecord[]> {
   const records: CSVRecord[] = [];
 
-  const parser = new StreamParser({
+  await using parser = await StreamParser.create({
     ...options,
     onRecord: (record) => {
       records.push(record);
     },
   });
 
-  await parser.initialize();
   await parser.parseStream(stream);
-  await parser.destroy();
 
   return records;
 }

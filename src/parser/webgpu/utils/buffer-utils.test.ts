@@ -3,19 +3,19 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  adjustForCRLF,
-  alignToU32,
-  BufferPool,
-  concatUint8Arrays,
-  decodeUTF8,
-  hasBOM,
-  isCR,
-  isLF,
-  padToU32Aligned,
-  stripBOM,
-  toUint32View,
-} from "./buffer-utils.ts";
+// CSV-specific buffer utilities
+import { adjustForCRLF } from "@/parser/webgpu/utils/adjustForCRLF.ts";
+import { decodeUTF8 } from "@/parser/webgpu/utils/decodeUTF8.ts";
+import { hasBOM } from "@/parser/webgpu/utils/hasBOM.ts";
+import { isCR } from "@/parser/webgpu/utils/isCR.ts";
+import { isLF } from "@/parser/webgpu/utils/isLF.ts";
+import { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
+// Generic WebGPU buffer utilities
+import { alignToU32 } from "@/webgpu/utils/alignToU32.ts";
+import { BufferPool } from "@/webgpu/utils/BufferPool.ts";
+import { concatUint8Arrays } from "@/webgpu/utils/concatUint8Arrays.ts";
+import { padToU32Aligned } from "@/webgpu/utils/padToU32Aligned.ts";
+import { toUint32View } from "@/webgpu/utils/toUint32View.ts";
 
 describe("buffer-utils", () => {
   describe("concatUint8Arrays", () => {

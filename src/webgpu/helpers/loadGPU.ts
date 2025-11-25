@@ -6,14 +6,12 @@
  */
 
 import {
-  getGPUDevice,
   getInitPromise,
-  disposeGPU as internalDisposeGPU,
   isInitialized,
   markInitialized,
   resetInit,
   setInitPromise,
-} from "./gpuState.ts";
+} from "@/webgpu/helpers/internal/gpuState.ts";
 
 /**
  * Base GPU initialization options (common properties)
@@ -116,8 +114,11 @@ export type GPUInitOptions =
  * ```
  */
 export async function loadGPU(options?: GPUInitOptions): Promise<void> {
+  // Cast to any for flexible property access during runtime validation
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const opts = options as any;
   // Runtime validation: adapter and adapterOptions are mutually exclusive
-  if (options?.adapter && options?.adapterOptions) {
+  if (opts?.adapter && opts?.adapterOptions) {
     throw new Error(
       "GPUInitOptions: Cannot specify both 'adapter' and 'adapterOptions'. " +
         "Use either a custom adapter or adapter request options, not both.",
@@ -145,11 +146,11 @@ export async function loadGPU(options?: GPUInitOptions): Promise<void> {
     try {
       // Get or create adapter
       let adapter: GPUAdapter;
-      if (options?.adapter) {
-        adapter = options.adapter;
+      if (opts?.adapter) {
+        adapter = opts.adapter;
       } else {
         const requestedAdapter = await navigator.gpu.requestAdapter(
-          options?.adapterOptions,
+          opts?.adapterOptions,
         );
         if (!requestedAdapter) {
           throw new Error("Failed to get GPU adapter");
@@ -158,7 +159,7 @@ export async function loadGPU(options?: GPUInitOptions): Promise<void> {
       }
 
       // Request device
-      const device = await adapter.requestDevice(options?.deviceDescriptor);
+      const device = await adapter.requestDevice(opts?.deviceDescriptor);
 
       // Handle device lost
       device.lost.then((info) => {
@@ -180,103 +181,4 @@ export async function loadGPU(options?: GPUInitOptions): Promise<void> {
 
   // Wait for initialization
   await initPromise;
-}
-
-/**
- * Ensure GPU is initialized
- *
- * Auto-initializes if not already initialized.
- * Used internally by parser functions.
- *
- * @internal
- */
-export async function ensureGPUInitialized(): Promise<void> {
-  if (!isInitialized()) {
-    await loadGPU();
-  }
-}
-
-/**
- * Check if GPU is ready
- *
- * @returns True if GPU device is initialized and ready
- *
- * @example
- * ```ts
- * import { isGPUReady } from 'web-csv-toolbox';
- *
- * if (isGPUReady()) {
- *   console.log('GPU is ready');
- * }
- * ```
- */
-export function isGPUReady(): boolean {
-  return isInitialized();
-}
-
-/**
- * Get the shared GPU device
- *
- * Returns null if GPU is not initialized.
- * Use loadGPU() to initialize first.
- *
- * @returns GPU device or null
- *
- * @example
- * ```ts
- * import { getSharedGPUDevice, loadGPU } from 'web-csv-toolbox';
- *
- * await loadGPU();
- * const device = getSharedGPUDevice();
- *
- * if (device) {
- *   // Use device for custom GPU operations
- * }
- * ```
- */
-export function getSharedGPUDevice(): GPUDevice | null {
-  return getGPUDevice();
-}
-
-/**
- * Dispose GPU resources
- *
- * Destroys the GPU device and releases resources.
- * After calling this, you must call loadGPU() again to use GPU.
- *
- * @remarks
- * Useful for:
- * - Manual cleanup when GPU is no longer needed
- * - Testing scenarios
- * - Memory management in long-running applications
- *
- * @example
- * ```ts
- * import { disposeGPU, loadGPU } from 'web-csv-toolbox';
- *
- * // Use GPU
- * await loadGPU();
- * // ... parse CSV files ...
- *
- * // Cleanup when done
- * disposeGPU();
- *
- * // Later, reinitialize if needed
- * await loadGPU();
- * ```
- */
-export function disposeGPU(): void {
-  internalDisposeGPU();
-}
-
-/**
- * Reset GPU initialization state
- *
- * Similar to disposeGPU but doesn't destroy the device.
- * Useful for testing.
- *
- * @internal
- */
-export function resetGPUInit(): void {
-  resetInit();
 }

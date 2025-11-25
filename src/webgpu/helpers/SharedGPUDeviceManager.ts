@@ -9,8 +9,9 @@ import type {
   GPUDevicePreference,
   GPUDeviceManager as IGPUDeviceManager,
 } from "@/core/types.ts";
-import type { GPUInitOptions } from "./loadGPU.ts";
-import { getSharedGPUDevice, loadGPU } from "./loadGPU.ts";
+import { getSharedGPUDevice } from "@/webgpu/helpers/getSharedGPUDevice.ts";
+import type { GPUInitOptions } from "@/webgpu/helpers/loadGPU.ts";
+import { loadGPU } from "@/webgpu/helpers/loadGPU.ts";
 
 /**
  * Context provided to custom device selector
@@ -139,16 +140,16 @@ export type GPUDeviceManagerConfig =
   | GPUDeviceManagerConfigWithSelector;
 
 /**
- * GPU Device Manager for device lifecycle management
+ * Shared GPU Device Manager for device lifecycle management
  *
  * Manages a shared GPU device for multiple parse operations.
  * Automatically initializes on first use.
  *
  * @example Basic usage
  * ```ts
- * import { GPUDeviceManager, parseString } from 'web-csv-toolbox';
+ * import { SharedGPUDeviceManager, parseString } from 'web-csv-toolbox';
  *
- * const manager = new GPUDeviceManager();
+ * const manager = new SharedGPUDeviceManager();
  *
  * // Use in multiple operations
  * await parseString(csv1, { engine: { gpu: true, gpuDeviceManager: manager } });
@@ -161,7 +162,7 @@ export type GPUDeviceManagerConfig =
  * @example With using syntax
  * ```ts
  * {
- *   using manager = new GPUDeviceManager();
+ *   using manager = new SharedGPUDeviceManager();
  *
  *   await parseString(csv, {
  *     engine: { gpu: true, gpuDeviceManager: manager }
@@ -171,7 +172,7 @@ export type GPUDeviceManagerConfig =
  * }
  * ```
  */
-export class GPUDeviceManager implements IGPUDeviceManager {
+export class SharedGPUDeviceManager implements IGPUDeviceManager {
   private readonly config: {
     initOptions: GPUInitOptions;
     autoDispose: boolean;
@@ -217,7 +218,7 @@ export class GPUDeviceManager implements IGPUDeviceManager {
    */
   async getDevice(): Promise<GPUDevice> {
     if (this.disposed) {
-      throw new Error("GPUDeviceManager has been disposed");
+      throw new Error("SharedGPUDeviceManager has been disposed");
     }
 
     // Initialize if needed
@@ -273,7 +274,7 @@ export class GPUDeviceManager implements IGPUDeviceManager {
 
     if (!force && this.activeOperations > 0) {
       console.warn(
-        `GPUDeviceManager disposed with ${this.activeOperations} active operations`,
+        `SharedGPUDeviceManager disposed with ${this.activeOperations} active operations`,
       );
     }
 
@@ -302,74 +303,6 @@ export class GPUDeviceManager implements IGPUDeviceManager {
           device.destroy();
         }
       }
-    }
-  }
-}
-
-/**
- * Reusable GPU Device Manager
- *
- * Keeps device alive across operations.
- * Use this when you need persistent GPU access.
- *
- * @example
- * ```ts
- * import { ReusableGPUDeviceManager } from 'web-csv-toolbox';
- *
- * using manager = new ReusableGPUDeviceManager();
- *
- * // Device stays alive for all operations
- * for (const file of files) {
- *   await parseFile(file, {
- *     engine: { gpu: true, gpuDeviceManager: manager }
- *   });
- * }
- *
- * // Auto-cleanup on scope exit
- * ```
- */
-export class ReusableGPUDeviceManager extends GPUDeviceManager {
-  constructor(
-    config?:
-      | Omit<GPUDeviceManagerConfigWithPreference, "autoDispose">
-      | Omit<GPUDeviceManagerConfigWithSelector, "autoDispose">,
-  ) {
-    super({
-      ...config,
-      autoDispose: true,
-    });
-  }
-}
-
-/**
- * Transient GPU Device Manager
- *
- * For single-use scenarios.
- * Automatically disposes after use.
- *
- * @internal
- */
-export class TransientGPUDeviceManager extends GPUDeviceManager {
-  constructor(
-    config?:
-      | Omit<GPUDeviceManagerConfigWithPreference, "autoDispose">
-      | Omit<GPUDeviceManagerConfigWithSelector, "autoDispose">,
-  ) {
-    super({
-      ...config,
-      autoDispose: false,
-    });
-  }
-
-  /**
-   * Release and auto-dispose if no active operations
-   */
-  override releaseDevice(): void {
-    super.releaseDevice();
-
-    // Auto-dispose when no operations are active
-    if (this.activeCount === 0 && !this.isDisposed) {
-      void this.dispose();
     }
   }
 }

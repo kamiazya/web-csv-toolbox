@@ -9,8 +9,8 @@
 struct ParseUniforms {
     chunkSize: u32,
     prevInQuote: u32,  // 0: false, 1: true
-    _padding1: u32,
-    _padding2: u32,
+    maxWorkgroups: u32, // Number of workgroups (for bounds checking)
+    _padding: u32,
 }
 
 struct ResultMeta {
@@ -29,6 +29,7 @@ struct ResultMeta {
 @group(0) @binding(2) var<storage, read_write> atomicIndex: atomic<u32>; // Write position counter
 @group(0) @binding(3) var<uniform> uniforms: ParseUniforms;
 @group(0) @binding(4) var<storage, read_write> resultMeta: ResultMeta;
+@group(0) @binding(5) var<storage, read> workgroupPrefixXORs: array<u32>; // Prefix XOR per workgroup (CPU-computed)
 
 // ============================================================================
 // Constants
@@ -49,6 +50,8 @@ const SEP_TYPE_LF: u32 = 1u;
 
 var<workgroup> sharedQuoteXOR: array<u32, WORKGROUP_SIZE>;
 var<workgroup> sharedScanTemp: array<u32, WORKGROUP_SIZE>;
+var<workgroup> sharedSeparatorFlags: array<u32, WORKGROUP_SIZE>;
+var<workgroup> workgroupSeparatorBase: atomic<u32>;
 
 // ============================================================================
 // Helper Functions
@@ -69,40 +72,67 @@ fn packSeparator(offset: u32, sepType: u32) -> u32 {
     return offset | (sepType << 31u);
 }
 
-// Workgroup-level prefix XOR scan (Blelloch algorithm)
+// Workgroup-level prefix XOR scan (Simple iterative algorithm)
+// This is more reliable than Blelloch for XOR operations
 fn workgroupPrefixXOR(localId: u32) {
-    var offset = 1u;
-
-    // Up-sweep (reduce) phase
-    for (var d = WORKGROUP_SIZE >> 1u; d > 0u; d = d >> 1u) {
+    // Use iterative doubling for prefix XOR
+    // After log2(WORKGROUP_SIZE) iterations, all values are computed
+    var step = 1u;
+    for (var i = 0u; i < 8u; i++) { // log2(256) = 8 iterations
         workgroupBarrier();
-        if (localId < d) {
-            let ai = offset * (2u * localId + 1u) - 1u;
-            let bi = offset * (2u * localId + 2u) - 1u;
-            sharedScanTemp[bi] ^= sharedScanTemp[ai];
+
+        if (localId >= step) {
+            let prev = sharedScanTemp[localId - step];
+            sharedScanTemp[localId] ^= prev;
         }
-        offset = offset << 1u;
+
+        workgroupBarrier();
+        step = step << 1u;
     }
 
-    // Clear last element
-    if (localId == 0u) {
-        sharedScanTemp[WORKGROUP_SIZE - 1u] = 0u;
-    }
+    // Convert from inclusive to exclusive scan by shifting
+    workgroupBarrier();
+    let temp = sharedScanTemp[localId];
+    workgroupBarrier();
 
-    // Down-sweep phase
-    for (var d = 1u; d < WORKGROUP_SIZE; d = d << 1u) {
-        offset = offset >> 1u;
-        workgroupBarrier();
-        if (localId < d) {
-            let ai = offset * (2u * localId + 1u) - 1u;
-            let bi = offset * (2u * localId + 2u) - 1u;
-            let t = sharedScanTemp[ai];
-            sharedScanTemp[ai] = sharedScanTemp[bi];
-            sharedScanTemp[bi] ^= t;
-        }
+    if (localId > 0u) {
+        sharedScanTemp[localId] = sharedScanTemp[localId - 1u];
+    } else {
+        sharedScanTemp[0] = 0u;
     }
 
     workgroupBarrier();
+}
+
+// Workgroup-level prefix sum scan for separator count
+// Returns the exclusive prefix sum (count of separators before this thread)
+fn workgroupPrefixSum(localId: u32, hasSeparator: u32) -> u32 {
+    // Initialize with separator flag
+    sharedSeparatorFlags[localId] = hasSeparator;
+    workgroupBarrier();
+
+    // Iterative doubling for prefix sum
+    var step = 1u;
+    for (var i = 0u; i < 8u; i++) { // log2(256) = 8 iterations
+        workgroupBarrier();
+
+        var sum = sharedSeparatorFlags[localId];
+        if (localId >= step) {
+            sum += sharedSeparatorFlags[localId - step];
+        }
+
+        workgroupBarrier();
+        sharedSeparatorFlags[localId] = sum;
+        step = step << 1u;
+    }
+
+    workgroupBarrier();
+
+    // Convert inclusive to exclusive scan
+    if (localId > 0u) {
+        return sharedSeparatorFlags[localId - 1u];
+    }
+    return 0u;
 }
 
 // ============================================================================
@@ -147,6 +177,8 @@ fn main(
     // ========================================================================
 
     // Initialize shared memory with quote bits
+    // IMPORTANT: Initialize ALL elements, not just active threads
+    // The Blelloch prefix scan algorithm accesses all WORKGROUP_SIZE elements
     sharedQuoteXOR[tid] = isQuote;
     sharedScanTemp[tid] = isQuote;
     workgroupBarrier();
@@ -157,15 +189,10 @@ fn main(
     // Get quote state: previous XOR state determines if we're inside quotes
     var inQuote = sharedScanTemp[tid];
 
-    // Add workgroup prefix from previous workgroups
-    if (workgroupId.x > 0u) {
-        // In a real implementation, we'd need to propagate state across workgroups
-        // For now, we use prevInQuote for the first workgroup
-        if (workgroupId.x == 0u && tid == 0u) {
-            inQuote ^= uniforms.prevInQuote;
-        }
-    } else if (tid == 0u) {
-        inQuote ^= uniforms.prevInQuote;
+    // Apply workgroup prefix XOR (computed by CPU from Pass 1 results)
+    // This enables correct quote propagation across workgroup boundaries
+    if (workgroupId.x < uniforms.maxWorkgroups) {
+        inQuote ^= workgroupPrefixXORs[workgroupId.x];
     }
 
     // Account for current position's quote
@@ -190,22 +217,41 @@ fn main(
     }
 
     // ========================================================================
-    // Phase 4: Global Indexing (Scatter)
+    // Phase 4: Ordered Write (Workgroup-level block allocation)
     // ========================================================================
 
+    // Step 1: Compute prefix sum of separators within workgroup
+    let localOffset = workgroupPrefixSum(tid, isSeparator);
+
+    // Step 2: Last thread allocates global block for this workgroup
+    workgroupBarrier();
+    if (tid == WORKGROUP_SIZE - 1u) {
+        // Total separators in this workgroup
+        let workgroupSeparatorCount = localOffset + isSeparator;
+        if (workgroupSeparatorCount > 0u) {
+            let baseOffset = atomicAdd(&atomicIndex, workgroupSeparatorCount);
+            atomicStore(&workgroupSeparatorBase, baseOffset);
+        } else {
+            atomicStore(&workgroupSeparatorBase, 0u);
+        }
+    }
+    workgroupBarrier();
+
+    // Step 3: Each thread writes to its allocated position
     if (isValid && isSeparator == 1u) {
-        let writePos = atomicAdd(&atomicIndex, 1u);
-        sepIndices[writePos] = packSeparator(globalIndex, sepType);
+        let baseOffset = atomicLoad(&workgroupSeparatorBase);
+        let globalWritePos = baseOffset + localOffset;
+        sepIndices[globalWritePos] = packSeparator(globalIndex, sepType);
     }
 
     // ========================================================================
-    // Phase 5: Store End State (last thread in last workgroup)
+    // Phase 5: Store End State
     // ========================================================================
 
-    // Note: This is a simplified version. In production, we'd need proper
-    // cross-workgroup communication for the final quote state.
+    // The last thread of the last workgroup stores the final quote state
     if (isValid && globalIndex == uniforms.chunkSize - 1u) {
         resultMeta.endInQuote = inQuote;
-        resultMeta.sepCount = atomicLoad(&atomicIndex);
+        // Note: sepCount is read directly from atomicIndex on CPU side
+        // to avoid race conditions (no grid-wide barrier in WGSL)
     }
 }

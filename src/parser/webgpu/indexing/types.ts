@@ -8,8 +8,8 @@
 /**
  * Separator type constants
  */
-export const SEP_TYPE_COMMA = 0;
-export const SEP_TYPE_LF = 1;
+export const SEP_TYPE_COMMA = 0 as const;
+export const SEP_TYPE_LF = 1 as const;
 
 /**
  * Represents a CSV separator with its position and type
@@ -41,6 +41,8 @@ export interface WebGPUParserConfig {
   readonly chunkSize?: number;
   /** Maximum number of separators per chunk (default: chunkSize / 2) */
   readonly maxSeparators?: number;
+  /** Custom GPU instance (for Node.js testing with webgpu package) */
+  readonly gpu?: GPU;
   /** Reuse GPU device if provided */
   readonly device?: GPUDevice;
 }
@@ -79,8 +81,12 @@ export interface GPUBuffers {
   uniformsBuffer: GPUBuffer;
   /** Result metadata buffer */
   resultMetaBuffer: GPUBuffer;
-  /** Bind group for all buffers */
-  bindGroup: GPUBindGroup;
+  /** Workgroup XOR parities buffer (for multi-workgroup quote propagation) */
+  workgroupXORsBuffer: GPUBuffer;
+  /** Bind group for Pass 1 (collect quote parities) */
+  pass1BindGroup: GPUBindGroup;
+  /** Bind group for Pass 2 (detect separators) */
+  pass2BindGroup: GPUBindGroup;
 }
 
 /**

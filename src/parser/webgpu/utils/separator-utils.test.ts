@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../core/types.ts";
+import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../indexing/types.ts";
 import {
   findLastLineFeed,
   getProcessedBytesCount,
@@ -154,8 +154,8 @@ describe("separator-utils", () => {
 
       const seps = getValidSeparators(indices, 4);
       expect(seps).toHaveLength(2);
-      expect(seps[0].offset).toBe(10);
-      expect(seps[1].offset).toBe(20);
+      expect(seps[0]!.offset).toBe(10);
+      expect(seps[1]!.offset).toBe(20);
     });
 
     it("should return empty array if no LF found", () => {
@@ -176,7 +176,7 @@ describe("separator-utils", () => {
 
       const seps = getValidSeparators(indices, 2);
       expect(seps).toHaveLength(2);
-      expect(seps[1].type).toBe(SEP_TYPE_LF);
+      expect(seps[1]!.type).toBe(SEP_TYPE_LF);
     });
   });
 });

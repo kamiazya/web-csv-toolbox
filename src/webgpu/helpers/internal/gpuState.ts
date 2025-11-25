@@ -3,6 +3,13 @@
  *
  * Manages GPU device lifecycle and initialization state.
  * Similar to WASM state management pattern.
+ *
+ * @internal This module is internal and should not be imported directly.
+ * Use the public API functions instead:
+ * - loadGPU() - Initialize GPU
+ * - isGPUReady() - Check if initialized
+ * - getSharedGPUDevice() - Get the GPU device
+ * - disposeGPU() - Clean up resources
  */
 
 /**
@@ -33,6 +40,7 @@ const state: GPUState = {
  * Check if GPU is initialized
  *
  * @returns True if GPU device is ready
+ * @internal
  */
 export function isInitialized(): boolean {
   return state.initialized && state.device !== null;
@@ -42,6 +50,7 @@ export function isInitialized(): boolean {
  * Get the shared GPU device
  *
  * @returns GPU device or null if not initialized
+ * @internal
  */
 export function getGPUDevice(): GPUDevice | null {
   return state.device;
@@ -51,6 +60,7 @@ export function getGPUDevice(): GPUDevice | null {
  * Get the GPU adapter
  *
  * @returns GPU adapter or null if not initialized
+ * @internal
  */
 export function getGPUAdapter(): GPUAdapter | null {
   return state.adapter;
@@ -99,6 +109,7 @@ export function getInitPromise(): Promise<void> | null {
  *
  * @remarks
  * This does not destroy the GPU device. Call disposeGPU() first if needed.
+ * @internal
  */
 export function resetInit(): void {
   state.initialized = false;
@@ -111,8 +122,9 @@ export function resetInit(): void {
  * Dispose GPU resources
  *
  * Destroys the GPU device and resets state
+ * @internal
  */
-export function disposeGPU(): void {
+export function disposeGPUInternal(): void {
   if (state.device) {
     state.device.destroy();
   }

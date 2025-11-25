@@ -9,8 +9,8 @@
  * - Quote escaping ("")
  */
 
-import type { Separator } from "../core/types.ts";
-import { SEP_TYPE_COMMA } from "../core/types.ts";
+import type { Separator } from "@/parser/webgpu/indexing/types.ts";
+import { SEP_TYPE_COMMA } from "@/parser/webgpu/indexing/types.ts";
 
 /**
  * BOM detection result
@@ -266,15 +266,15 @@ export function analyzeConsecutiveSeparators(
     return { type: "normal", count: 0, emptyFields: [] };
   }
 
-  const firstSep = separators[startIndex];
+  const firstSep = separators[startIndex]!;
   let count = 1;
 
   // Count consecutive separators of the same type
   while (
     startIndex + count < separators.length &&
-    separators[startIndex + count].type === firstSep.type &&
-    separators[startIndex + count].offset ===
-      separators[startIndex + count - 1].offset + 1
+    separators[startIndex + count]!.type === firstSep.type &&
+    separators[startIndex + count]!.offset ===
+      separators[startIndex + count - 1]!.offset + 1
   ) {
     count++;
   }
@@ -312,7 +312,6 @@ export class EdgeCaseProcessor {
     bomInfo: BOMInfo;
   } {
     const bomInfo = detectBOM(chunk);
-    this.bomDetected = bomInfo.hasBOM;
 
     return {
       processedChunk: bomInfo.hasBOM ? chunk.subarray(3) : chunk,

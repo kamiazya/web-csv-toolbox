@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../core/types.ts";
+import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../indexing/types.ts";
 import {
   analyzeConsecutiveSeparators,
   analyzeCRLF,

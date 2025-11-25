@@ -350,6 +350,7 @@ export const EnginePresets = Object.freeze({
    * - ✅ Memory efficient: 1/10th memory usage (index-only)
    * - ✅ Non-blocking: Runs on GPU, doesn't block main thread
    * - ✅ Automatic fallback: Falls back to JavaScript if WebGPU unavailable
+   * - ✅ Automatic chunk splitting: Large chunks are split to fit GPU limits
    * - ⚠️ GPU initialization overhead: ~50-100ms startup cost
    * - ⚠️ Limited browser support: Chrome 113+, Firefox 121+ (flag), Safari TP
    * - ❌ May be slower than WASM for small files (<1MB)

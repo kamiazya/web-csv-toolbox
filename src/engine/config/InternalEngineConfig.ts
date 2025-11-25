@@ -33,11 +33,13 @@ export class InternalEngineConfig {
 
   constructor(config?: EngineConfig) {
     if (config) {
+      // onFallback is always stored (works for both worker and main thread fallbacks)
+      this.onFallback = config.onFallback;
+
       // Extract worker-specific properties only if worker is enabled
       if (config.worker) {
         this.workerURL = config.workerURL;
         this.workerPool = config.workerPool;
-        this.onFallback = config.onFallback;
       }
       this.parse(config);
     }
@@ -300,6 +302,7 @@ export class InternalEngineConfig {
       worker: false,
       wasm: hasWasm,
       gpu: hasGpu,
+      onFallback: this.onFallback,
     };
   }
 

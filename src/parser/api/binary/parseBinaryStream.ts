@@ -10,6 +10,8 @@ import type {
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
+import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
+import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -86,6 +88,39 @@ export async function* parseBinaryStream<
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
+    }
+  } else if (engineConfig.hasGpu() && isGPUAvailable()) {
+    // GPU execution
+    yield* parseBinaryStreamInGPU(stream, options) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
+  } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
+    // GPU requested but not available - fallback
+    const fallbackConfig = engineConfig.createGpuFallbackConfig();
+    engineConfig.onFallback?.({
+      requestedConfig: engineConfig.toConfig(),
+      actualConfig: fallbackConfig.toConfig(),
+      reason: "WebGPU not available in this environment",
+    });
+
+    // Fallback to CPU stream parsing
+    const recordStream = parseBinaryStreamToStream<
+      Header,
+      Delimiter,
+      Quotation,
+      Options
+    >(stream, options);
+    const iterator = convertStreamToAsyncIterableIterator(recordStream);
+
+    try {
+      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    } catch (error) {
+      try {
+        await recordStream.cancel().catch(() => {});
+      } catch {
+        // Ignore cancellation errors
+      }
+      throw error;
     }
   } else {
     // Main thread execution (default for streams)

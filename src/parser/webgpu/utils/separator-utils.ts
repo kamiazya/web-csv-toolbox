@@ -6,8 +6,8 @@
  * - Bit 31 (MSB): Separator type (0: comma, 1: line feed)
  */
 
-import type { Separator } from "../core/types.ts";
-import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../core/types.ts";
+import type { Separator } from "@/parser/webgpu/indexing/types.ts";
+import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "@/parser/webgpu/indexing/types.ts";
 
 const TYPE_MASK = 0x80000000; // Bit 31
 const OFFSET_MASK = 0x7fffffff; // Bits 0-30
@@ -48,7 +48,9 @@ export function packSeparator(
   offset: number,
   type: typeof SEP_TYPE_COMMA | typeof SEP_TYPE_LF,
 ): number {
-  return offset | (type << 31);
+  // Use >>> 0 to convert to unsigned 32-bit integer
+  // (1 << 31) in JavaScript is -2147483648 (signed), but we need 2147483648 (unsigned)
+  return (offset | (type << 31)) >>> 0;
 }
 
 /**
@@ -72,9 +74,36 @@ export function isLineFeed(sep: Separator): boolean {
 }
 
 /**
- * Finds the index of the last line feed in a separator array
+ * Sorts separator indices by byte offset (ascending)
+ *
+ * GPU workgroups execute in non-deterministic order, so separators
+ * may not be written in offset order. This function sorts them.
  *
  * @param sepIndices - Array of packed separator indices
+ * @param count - Number of valid separators in the array
+ * @returns New sorted Uint32Array
+ */
+export function sortSeparatorsByOffset(
+  sepIndices: Uint32Array,
+  count: number,
+): Uint32Array {
+  // Extract valid separators and sort by offset
+  const validSeps = sepIndices.slice(0, count);
+  const sorted = new Uint32Array(validSeps);
+
+  // Sort by offset (lower 31 bits)
+  sorted.sort((a, b) => (a & OFFSET_MASK) - (b & OFFSET_MASK));
+
+  return sorted;
+}
+
+/**
+ * Finds the index of the last line feed in a separator array
+ *
+ * Note: This function assumes the array is already sorted by offset.
+ * Use sortSeparatorsByOffset first if needed.
+ *
+ * @param sepIndices - Array of packed separator indices (must be sorted)
  * @param count - Number of valid separators in the array
  * @returns Index of the last LF, or -1 if not found
  *
@@ -94,7 +123,7 @@ export function findLastLineFeed(
   count: number,
 ): number {
   for (let i = count - 1; i >= 0; i--) {
-    const packed = sepIndices[i];
+    const packed = sepIndices[i]!;
     if ((packed & TYPE_MASK) !== 0) {
       return i;
     }
@@ -105,6 +134,9 @@ export function findLastLineFeed(
 /**
  * Extracts the byte offset where the last complete record ends
  *
+ * Note: This function sorts separators internally because GPU workgroups
+ * may execute in non-deterministic order.
+ *
  * @param sepIndices - Array of packed separator indices
  * @param count - Number of valid separators
  * @returns Byte offset after the last LF, or 0 if no LF found
@@ -113,33 +145,50 @@ export function getProcessedBytesCount(
   sepIndices: Uint32Array,
   count: number,
 ): number {
-  const lastLFIndex = findLastLineFeed(sepIndices, count);
+  if (count === 0) {
+    return 0;
+  }
+
+  // Sort separators by offset to ensure correct ordering
+  const sorted = sortSeparatorsByOffset(sepIndices, count);
+
+  const lastLFIndex = findLastLineFeed(sorted, count);
   if (lastLFIndex === -1) {
     return 0;
   }
-  const lastLF = unpackSeparator(sepIndices[lastLFIndex]);
+  const lastLF = unpackSeparator(sorted[lastLFIndex]!);
   return lastLF.offset + 1; // +1 to include the LF itself
 }
 
 /**
  * Filters separators up to and including the last line feed
  *
+ * Note: This function sorts separators internally because GPU workgroups
+ * may execute in non-deterministic order.
+ *
  * @param sepIndices - Array of packed separator indices
  * @param count - Number of valid separators
- * @returns Array of unpacked separators up to last LF
+ * @returns Array of unpacked separators up to last LF (sorted by offset)
  */
 export function getValidSeparators(
   sepIndices: Uint32Array,
   count: number,
 ): Separator[] {
-  const lastLFIndex = findLastLineFeed(sepIndices, count);
+  if (count === 0) {
+    return [];
+  }
+
+  // Sort separators by offset to ensure correct ordering
+  const sorted = sortSeparatorsByOffset(sepIndices, count);
+
+  const lastLFIndex = findLastLineFeed(sorted, count);
   if (lastLFIndex === -1) {
     return [];
   }
 
   const result: Separator[] = [];
   for (let i = 0; i <= lastLFIndex; i++) {
-    result.push(unpackSeparator(sepIndices[i]));
+    result.push(unpackSeparator(sorted[i]!));
   }
   return result;
 }

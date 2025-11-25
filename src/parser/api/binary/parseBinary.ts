@@ -11,6 +11,8 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
+import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
+import { parseBinaryInGPU } from "@/parser/execution/gpu/parseBinaryInGPU.ts";
 import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -71,7 +73,53 @@ export async function* parseBinary<
     }
   } else {
     // Main thread execution
-    if (engineConfig.hasWasm()) {
+    // Convert BufferSource to Uint8Array for GPU parsing
+    const uint8Array =
+      bytes instanceof ArrayBuffer
+        ? new Uint8Array(bytes)
+        : ArrayBuffer.isView(bytes)
+          ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+          : bytes;
+
+    if (engineConfig.hasGpu() && isGPUAvailable()) {
+      // GPU execution
+      yield* parseBinaryInGPU(
+        uint8Array,
+        options as ParseBinaryOptions<Header> | undefined,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
+      // GPU requested but not available - fallback
+      const fallbackConfig = engineConfig.createGpuFallbackConfig();
+      if (fallbackConfig.hasWasm()) {
+        // Fallback to WASM
+        if (options?.outputFormat === "array") {
+          throw new Error(
+            "Array output format is not supported with WASM execution. " +
+              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+          );
+        }
+        engineConfig.onFallback?.({
+          requestedConfig: engineConfig.toConfig(),
+          actualConfig: fallbackConfig.toConfig(),
+          reason: "WebGPU not available in this environment",
+        });
+        yield* parseBinaryInWASM(
+          bytes,
+          options as ParseBinaryOptions<Header> | undefined,
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      } else {
+        // Fallback to JavaScript
+        engineConfig.onFallback?.({
+          requestedConfig: engineConfig.toConfig(),
+          actualConfig: fallbackConfig.toConfig(),
+          reason: "WebGPU not available in this environment",
+        });
+        const iterator = parseBinaryToIterableIterator(bytes, options);
+        yield* convertIterableIteratorToAsync(
+          iterator,
+        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      }
+    } else if (engineConfig.hasWasm()) {
       // Validate that array output format is not used with WASM
       if (options?.outputFormat === "array") {
         throw new Error(
