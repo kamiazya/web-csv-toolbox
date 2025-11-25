@@ -1,5 +1,11 @@
 import { CSVParserOptimized as CSVParser } from "web-csv-toolbox-wasm";
+import {
+  DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "@/core/constants.ts";
 import type { CSVObjectRecord } from "@/core/types.ts";
+import type { WASMParserOptions } from "@/parser/models/wasm-internal-types.ts";
 
 /**
  * Options for WASMBinaryCSVStreamTransformer.
@@ -129,27 +135,22 @@ export class WASMBinaryCSVStreamTransformer<
     > = DEFAULT_READABLE_STRATEGY,
   ) {
     const {
-      delimiter = ",",
-      quotation = '"',
-      maxFieldCount = 100000,
+      delimiter = DEFAULT_DELIMITER,
+      quotation = DEFAULT_QUOTATION,
+      maxFieldCount = DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
       header,
     } = options;
 
     // Create parser with options object (will be passed to WASM)
-    const wasmOptions: {
-      delimiter?: string;
-      quote?: string;
-      maxFieldCount?: number;
-      header?: readonly string[];
-    } = {};
+    const wasmOptions: WASMParserOptions = {};
 
-    if (delimiter !== ",") {
+    if (delimiter !== DEFAULT_DELIMITER) {
       wasmOptions.delimiter = delimiter;
     }
-    if (quotation !== '"') {
-      wasmOptions.quote = quotation;
+    if (quotation !== DEFAULT_QUOTATION) {
+      wasmOptions.quotation = quotation;
     }
-    if (maxFieldCount !== 100000) {
+    if (maxFieldCount !== DEFAULT_ASSEMBLER_MAX_FIELD_COUNT) {
       wasmOptions.maxFieldCount = maxFieldCount;
     }
     if (header) {

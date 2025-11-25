@@ -114,11 +114,14 @@ impl CSVRecordAssemblerLegacy {
             // Flush mode - emit final record if any
             if self.field_index > 0 || !self.current_record.is_empty() {
                 // Ensure the current field is set (empty string if undefined)
-                if self.field_index < self.current_record.len() && self.current_record[self.field_index].is_empty() {
+                if self.field_index < self.current_record.len()
+                    && self.current_record[self.field_index].is_empty()
+                {
                     // Field already exists but is empty
                 } else if self.field_index >= self.current_record.len() {
                     // Extend vector to include current field index
-                    self.current_record.resize(self.field_index + 1, String::new());
+                    self.current_record
+                        .resize(self.field_index + 1, String::new());
                 }
 
                 if let Some(record) = self.create_record()? {
@@ -133,19 +136,39 @@ impl CSVRecordAssemblerLegacy {
     }
 }
 
+/// Token type constants - must match TypeScript's TokenType enum
+/// in src/core/constants.ts
+const TOKEN_TYPE_FIELD: u32 = 0;
+const TOKEN_TYPE_FIELD_DELIMITER: u32 = 1;
+const TOKEN_TYPE_RECORD_DELIMITER: u32 = 2;
+
 impl CSVRecordAssemblerLegacy {
     /// Process a single token
     fn process_token(&mut self, token: &JsValue, records: &Array) -> Result<(), JsError> {
         let obj = Object::from(token.clone());
 
-        // Get token type
-        let token_type = Reflect::get(&obj, &"type".into())
-            .map_err(|_| JsError::new("Token must have 'type' property"))?
-            .as_string()
-            .ok_or_else(|| JsError::new("Token 'type' must be a string"))?;
+        // Get token type - supports both numeric (new) and string (legacy) formats
+        let token_type_value = Reflect::get(&obj, &"type".into())
+            .map_err(|_| JsError::new("Token must have 'type' property"))?;
 
-        match token_type.as_str() {
-            "field" => {
+        // Determine token type - numeric takes priority, string for backwards compatibility
+        let token_type: u32 = if let Some(n) = token_type_value.as_f64() {
+            // Numeric token type (new format)
+            n as u32
+        } else if let Some(s) = token_type_value.as_string() {
+            // String token type (legacy format for backwards compatibility)
+            match s.as_str() {
+                "field" => TOKEN_TYPE_FIELD,
+                "field-delimiter" => TOKEN_TYPE_FIELD_DELIMITER,
+                "record-delimiter" => TOKEN_TYPE_RECORD_DELIMITER,
+                _ => return Err(JsError::new(&format!("Unknown token type: {}", s))),
+            }
+        } else {
+            return Err(JsError::new("Token 'type' must be a number or string"));
+        };
+
+        match token_type {
+            TOKEN_TYPE_FIELD => {
                 // Get field value
                 let value = Reflect::get(&obj, &"value".into())
                     .map_err(|_| JsError::new("Field token must have 'value' property"))?
@@ -162,31 +185,35 @@ impl CSVRecordAssemblerLegacy {
 
                 // Ensure vector is large enough to hold this field
                 if self.field_index >= self.current_record.len() {
-                    self.current_record.resize(self.field_index + 1, String::new());
+                    self.current_record
+                        .resize(self.field_index + 1, String::new());
                 }
 
                 // Set field at current index (matching JS assembler behavior)
                 self.current_record[self.field_index] = value;
             }
-            "field-delimiter" => {
-                // Set empty string for empty fields (matching JS assembler behavior)
-                // Ensure vector is large enough
+            TOKEN_TYPE_FIELD_DELIMITER => {
+                // Ensure current position is set (for empty fields before delimiter)
                 if self.field_index >= self.current_record.len() {
-                    self.current_record.resize(self.field_index + 1, String::new());
-                } else if self.current_record[self.field_index].is_empty() {
-                    // Field is already empty, which is correct
+                    self.current_record
+                        .resize(self.field_index + 1, String::new());
                 }
 
                 // Move to next field index
                 self.field_index += 1;
-            }
-            "record-delimiter" => {
-                // Set empty string for the last field if empty (matching JS assembler behavior)
+
+                // Ensure next position also exists (for trailing comma case like "a,\n")
+                // The delimiter indicates both that field_index-1 is complete AND
+                // that field_index is starting (even if empty)
                 if self.field_index >= self.current_record.len() {
-                    self.current_record.resize(self.field_index + 1, String::new());
-                } else if self.current_record[self.field_index].is_empty() {
-                    // Field is already empty, which is correct
+                    self.current_record
+                        .resize(self.field_index + 1, String::new());
                 }
+            }
+            TOKEN_TYPE_RECORD_DELIMITER => {
+                // Don't resize here - missing fields should return undefined
+                // Only fields explicitly set (via field token) or implied by field-delimiter
+                // should be present in the record
 
                 // Emit record
                 if let Some(record) = self.create_record()? {
@@ -220,7 +247,7 @@ impl CSVRecordAssemblerLegacy {
         } else {
             // Subsequent records are data
             if self.output_format == "array" {
-                // Return as array
+                // Return as array - don't pad here, let TypeScript wrapper handle columnCountStrategy
                 let arr = Array::new();
                 for field in &record {
                     arr.push(&JsValue::from_str(field));
@@ -242,12 +269,14 @@ impl CSVRecordAssemblerLegacy {
 
                         // Use Reflect.set for normal properties, Object.defineProperty for special names
                         // This fixes the field order bug - Object.defineProperty was failing silently
-                        if header == "__proto__" || header == "constructor" || header == "prototype" {
+                        if header == "__proto__" || header == "constructor" || header == "prototype"
+                        {
                             let descriptor = Object::new();
                             let _ = Reflect::set(&descriptor, &"value".into(), &value);
                             let _ = Reflect::set(&descriptor, &"writable".into(), &JsValue::TRUE);
                             let _ = Reflect::set(&descriptor, &"enumerable".into(), &JsValue::TRUE);
-                            let _ = Reflect::set(&descriptor, &"configurable".into(), &JsValue::TRUE);
+                            let _ =
+                                Reflect::set(&descriptor, &"configurable".into(), &JsValue::TRUE);
                             let _ = Object::define_property(&obj, &key, &descriptor);
                         } else {
                             let _ = Reflect::set(&obj, &key, &value);

@@ -6,7 +6,8 @@
   "scripts": {
     "start": "tsx main.ts",
     "queuing-strategy": "tsx queuing-strategy.bench.ts",
-    "wasm-optimization": "tsx wasm-optimization-comparison.ts"
+    "wasm-optimization": "tsx wasm-optimization-comparison.ts",
+    "js-vs-wasm": "tsx js-vs-wasm-comparison.ts"
   },
   "license": "MIT",
   "dependencies": {

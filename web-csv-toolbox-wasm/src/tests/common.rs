@@ -1,4 +1,5 @@
 /// Helper function to escape CSV field with quotes
+#[allow(dead_code)]
 pub(crate) fn escape_csv_field(field: &str) -> String {
     if field.is_empty()
         || field.contains(',')
@@ -13,6 +14,7 @@ pub(crate) fn escape_csv_field(field: &str) -> String {
 }
 
 /// Helper function to create CSV string from headers and rows
+#[allow(dead_code)]
 pub(crate) fn create_csv(headers: &[String], rows: &[Vec<String>]) -> String {
     let mut csv = String::new();
 

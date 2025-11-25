@@ -1,27 +1,23 @@
-import { BinaryCSVLexerLegacy as WASMBinaryCSVLexerInternal } from "web-csv-toolbox-wasm";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import {
+  type FlatTokensResult,
+  BinaryCSVLexerLegacy as WASMBinaryCSVLexerInternal,
+} from "web-csv-toolbox-wasm";
+import {
+  DEFAULT_DELIMITER,
+  DEFAULT_LEXER_MAX_BUFFER_SIZE,
+  DEFAULT_QUOTATION,
+  TokenType,
+} from "@/core/constants.ts";
 import type {
+  AbortSignalOptions,
   BinaryCSVLexer,
+  CommonOptions,
   CSVLexerLexOptions,
   Token,
+  TokenLocation,
 } from "@/core/types.ts";
-
-/**
- * Options for WASMBinaryCSVLexer.
- */
-export interface WASMBinaryCSVLexerOptions {
-  /**
-   * Field delimiter character.
-   * @defaultValue ","
-   */
-  delimiter?: string;
-
-  /**
-   * Quote character for escaping fields.
-   * @defaultValue '"'
-   */
-  quotation?: string;
-}
+import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
+import type { FlatTokenData, WASMLexerOptions } from "./wasm-internal-types.ts";
 
 /**
  * WASM-based Binary CSV Lexer for tokenizing binary (BufferSource) input.
@@ -72,25 +68,39 @@ export interface WASMBinaryCSVLexerOptions {
  */
 export class WASMBinaryCSVLexer implements BinaryCSVLexer {
   #lexer: WASMBinaryCSVLexerInternal;
+  #maxBufferSize: number;
+  #currentBufferSize = 0;
+  #signal?: AbortSignal;
+  #source?: string;
 
   /**
    * Create a new WASM Binary CSV Lexer.
    *
    * @param options - Lexer options
    */
-  constructor(options: WASMBinaryCSVLexerOptions = {}) {
-    const { delimiter = ",", quotation = '"' } = options;
+  constructor(options: CommonOptions<string, string> & AbortSignalOptions = {}) {
+    const {
+      delimiter = DEFAULT_DELIMITER,
+      quotation = DEFAULT_QUOTATION,
+      maxBufferSize = DEFAULT_LEXER_MAX_BUFFER_SIZE,
+      signal,
+      source,
+    } = options;
+
+    // Validate common options
+    assertCommonOptions({ delimiter, quotation, maxBufferSize });
+
+    this.#maxBufferSize = maxBufferSize;
+    this.#signal = signal;
+    this.#source = source;
 
     // Create lexer with options object
-    const wasmOptions: {
-      delimiter?: string;
-      quotation?: string;
-    } = {};
+    const wasmOptions: WASMLexerOptions = {};
 
-    if (delimiter !== ",") {
+    if (delimiter !== DEFAULT_DELIMITER) {
       wasmOptions.delimiter = delimiter;
     }
-    if (quotation !== '"') {
+    if (quotation !== DEFAULT_QUOTATION) {
       wasmOptions.quotation = quotation;
     }
 
@@ -145,118 +155,199 @@ export class WASMBinaryCSVLexer implements BinaryCSVLexer {
     chunk?: Uint8Array,
     options?: CSVLexerLexOptions,
   ): IterableIterator<Token> {
+    // Check for abort signal
+    this.#signal?.throwIfAborted();
+
     const { stream = false } = options ?? {};
 
     const bytes = chunk;
 
     if (bytes === undefined || !stream) {
-      // Flush mode or final chunk
-      // Collect all tokens from both chunk processing and flush
-      const allTokens: any[] = [];
+      // Flush mode or final chunk - use Truly Flat optimization
+      const allFlatData: FlatTokenData = {
+        types: [],
+        values: [],
+        lines: [],
+        columns: [],
+        offsets: [],
+        tokenCount: 0,
+      };
 
       if (bytes !== undefined) {
-        // Process the final chunk
-        const result = this.#lexer.lex(bytes);
-        if (Array.isArray(result)) {
-          allTokens.push(...result);
-        }
+        // Check buffer size limit
+        this.#checkBufferSize(bytes.length);
+
+        // Process the final chunk using flat method
+        const flatResult = this.#lexer.lexFlat(bytes);
+        this.#mergeFlatData(allFlatData, flatResult);
       }
 
       // Always flush remaining data when not in streaming mode
-      const flushResult = this.#lexer.lex();
-      if (Array.isArray(flushResult)) {
-        allTokens.push(...flushResult);
+      const flushResult = this.#lexer.lexFlat();
+      this.#mergeFlatData(allFlatData, flushResult);
+
+      // Reset buffer size after flush
+      this.#currentBufferSize = 0;
+
+      // Apply JS-compatible filtering and assemble tokens
+      const filtered = this.#filterFlatTokensForJSCompatibility(
+        allFlatData,
+        true,
+      );
+      yield* this.#assembleTokensFromFlat(filtered);
+    } else {
+      // Check buffer size limit in streaming mode
+      if (bytes !== undefined) {
+        this.#checkBufferSize(bytes.length);
       }
 
-      // Apply JS-compatible filtering to ALL tokens together, with isFlush=true
-      const filtered = this.#filterTokensForJSCompatibility(allTokens, true);
-      yield* this.#normalizeTokens(filtered);
-    } else {
-      // Streaming mode
-      const result = this.#lexer.lex(bytes);
-      if (Array.isArray(result)) {
-        // Apply JS-compatible filtering
-        const filtered = this.#filterTokensForJSCompatibility(result, false);
-        yield* this.#normalizeTokens(filtered);
-      }
+      // Streaming mode - use Truly Flat optimization
+      const flatResult = this.#lexer.lexFlat(bytes);
+      const flatData = this.#extractFlatData(flatResult);
+
+      // Apply JS-compatible filtering and assemble tokens
+      const filtered = this.#filterFlatTokensForJSCompatibility(
+        flatData,
+        false,
+      );
+      yield* this.#assembleTokensFromFlat(filtered);
     }
   }
 
   /**
-   * Filter WASM tokens to match JS lexer behavior.
-   *
-   * Fixes:
-   * 1. Empty field handling - JS doesn't emit empty field tokens before delimiters
-   * 2. Trailing newline handling - JS strips trailing record delimiter
-   *
-   * @param tokens - WASM tokens
-   * @param isFlush - Whether this is flush mode (final chunk)
-   * @returns Filtered tokens
+   * Check if adding the given size would exceed the buffer limit.
    */
-  #filterTokensForJSCompatibility(tokens: any[], isFlush: boolean): any[] {
-    const filtered: any[] = [];
+  #checkBufferSize(additionalSize: number): void {
+    this.#currentBufferSize += additionalSize;
+    if (this.#currentBufferSize > this.#maxBufferSize) {
+      throw new RangeError(
+        `Buffer size exceeded: ${this.#currentBufferSize} bytes exceeds maximum of ${this.#maxBufferSize} bytes${
+          this.#source ? ` in ${JSON.stringify(this.#source)}` : ""
+        }`,
+      );
+    }
+  }
 
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
-      const nextToken = tokens[i + 1];
+  /**
+   * Extract flat data from WASM result.
+   */
+  #extractFlatData(result: FlatTokensResult): FlatTokenData {
+    return {
+      // WASM now returns numeric token types
+      types: result.types as number[],
+      values: result.values as string[],
+      lines: result.lines as number[],
+      columns: result.columns as number[],
+      offsets: result.offsets as number[],
+      tokenCount: result.tokenCount,
+    };
+  }
 
-      // Skip empty field tokens that appear before delimiters (to match JS behavior)
-      // JS lexer doesn't emit field tokens for empty fields
+  /**
+   * Merge flat data from WASM result into accumulator.
+   */
+  #mergeFlatData(acc: FlatTokenData, result: FlatTokensResult): void {
+    // WASM now returns numeric token types (0=Field, 1=FieldDelimiter, 2=RecordDelimiter)
+    const types = result.types as number[];
+    const values = result.values as string[];
+    const lines = result.lines as number[];
+    const columns = result.columns as number[];
+    const offsets = result.offsets as number[];
+
+    for (let i = 0; i < result.tokenCount; i++) {
+      acc.types.push(types[i] ?? TokenType.Field);
+      acc.values.push(values[i] ?? "");
+      acc.lines.push(lines[i] ?? 1);
+      acc.columns.push(columns[i] ?? 1);
+      acc.offsets.push(offsets[i] ?? 0);
+    }
+    acc.tokenCount += result.tokenCount;
+  }
+
+  /**
+   * Filter flat tokens to match JS lexer behavior.
+   */
+  #filterFlatTokensForJSCompatibility(
+    data: FlatTokenData,
+    isFlush: boolean,
+  ): FlatTokenData {
+    const filtered: FlatTokenData = {
+      types: [],
+      values: [],
+      lines: [],
+      columns: [],
+      offsets: [],
+      tokenCount: 0,
+    };
+
+    for (let i = 0; i < data.tokenCount; i++) {
+      const tokenType = data.types[i];
+      const tokenValue = data.values[i];
+      const nextType = data.types[i + 1];
+
+      // Skip empty field tokens that appear before delimiters
+      // TokenType: 0=Field, 1=FieldDelimiter, 2=RecordDelimiter
       if (
-        token.type === "field" &&
-        token.value === "" &&
-        nextToken &&
-        (nextToken.type === "field-delimiter" || nextToken.type === "record-delimiter")
+        tokenType === TokenType.Field &&
+        tokenValue === "" &&
+        nextType !== undefined &&
+        (nextType === TokenType.FieldDelimiter || nextType === TokenType.RecordDelimiter)
       ) {
         continue;
       }
 
-      // In flush mode, strip trailing record delimiter (to match JS behavior)
-      // JS lexer strips the last CRLF or LF
+      // In flush mode, strip trailing record delimiter
       if (
         isFlush &&
-        i === tokens.length - 1 &&
-        token.type === "record-delimiter"
+        i === data.tokenCount - 1 &&
+        tokenType === TokenType.RecordDelimiter
       ) {
         continue;
       }
 
-      filtered.push(token);
+      filtered.types.push(tokenType ?? TokenType.Field);
+      filtered.values.push(tokenValue ?? "");
+      filtered.lines.push(data.lines[i] ?? 1);
+      filtered.columns.push(data.columns[i] ?? 1);
+      filtered.offsets.push(data.offsets[i] ?? 0);
+      filtered.tokenCount++;
     }
 
     return filtered;
   }
 
   /**
-   * Normalize WASM tokens to match JS token format.
-   * Converts string token types to Symbol types for compatibility.
-   *
-   * @param tokens - WASM tokens with string types
-   * @returns Normalized tokens with Symbol types
+   * Assemble Token objects from flat data.
+   * This is where JS-side assembly happens for Truly Flat optimization.
    */
-  *#normalizeTokens(tokens: any[]): IterableIterator<Token> {
-    for (const token of tokens) {
-      // Convert string type to Symbol type
-      let type: symbol;
-      switch (token.type) {
-        case "field":
-          type = Field;
-          break;
-        case "field-delimiter":
-          type = FieldDelimiter;
-          break;
-        case "record-delimiter":
-          type = RecordDelimiter;
-          break;
-        default:
-          // Fallback: try to use the string as-is (should not happen)
-          type = Symbol.for(`web-csv-toolbox.${token.type}`);
-      }
+  *#assembleTokensFromFlat(data: FlatTokenData): IterableIterator<Token> {
+    for (let i = 0; i < data.tokenCount; i++) {
+      // WASM now returns numeric token types directly (0=Field, 1=FieldDelimiter, 2=RecordDelimiter)
+      const type = (data.types[i] ?? TokenType.Field) as TokenType;
+      const value = data.values[i] ?? "";
+      const line = data.lines[i] ?? 1;
+      const column = data.columns[i] ?? 1;
+      const offset = data.offsets[i] ?? 0;
+
+      // Create location object
+      const location: TokenLocation = {
+        start: {
+          line,
+          column,
+          offset,
+        },
+        end: {
+          line,
+          column: column + value.length,
+          offset: offset + value.length,
+        },
+        rowNumber: 1, // TODO: track row number properly
+      };
 
       yield {
         type,
-        value: token.value,
-        location: token.location,
+        value,
+        location,
       } as Token;
     }
   }

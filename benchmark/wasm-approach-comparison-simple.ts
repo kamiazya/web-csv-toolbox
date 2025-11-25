@@ -2,11 +2,11 @@
  * Benchmark: WASM Integrated vs Separated approach comparison
  *
  * Compares performance of:
- * 1. Integrated approach (WASMBinaryCSVParser)
+ * 1. Integrated approach (WASMBinaryObjectCSVParser)
  * 2. Separated approach (WASMBinaryCSVLexer + WASMCSVObjectRecordAssembler)
  */
 
-import { loadWASM, WASMBinaryCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
+import { loadWASM, WASMBinaryObjectCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
 
 // Generate test CSV data
 function generateCSV(rows: number, columns: number): Uint8Array {
@@ -81,9 +81,9 @@ async function runBenchmarks() {
 
     // Test 1: Integrated approach
     const integratedTime = benchmark(
-      "Integrated (WASMBinaryCSVParser)",
+      "Integrated (WASMBinaryObjectCSVParser)",
       () => {
-        const parser = new WASMBinaryCSVParser();
+        const parser = new WASMBinaryObjectCSVParser();
         const records = [...parser.parse(data)];
         // Parser returns data rows only (header is consumed)
         if (records.length !== rows) {
@@ -143,7 +143,7 @@ async function runBenchmarks() {
   const oneShot = benchmark(
     "One-shot processing",
     () => {
-      const parser = new WASMBinaryCSVParser();
+      const parser = new WASMBinaryObjectCSVParser();
       const records = [...parser.parse(streamData)];
       if (records.length !== 1000) {
         throw new Error(`Expected 1000 records, got ${records.length}`);
@@ -157,7 +157,7 @@ async function runBenchmarks() {
   const streaming = benchmark(
     "Streaming processing",
     () => {
-      const parser = new WASMBinaryCSVParser();
+      const parser = new WASMBinaryObjectCSVParser();
       let recordCount = 0;
 
       for (let offset = 0; offset < streamData.length; offset += chunkSize) {

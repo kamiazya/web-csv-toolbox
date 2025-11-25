@@ -106,7 +106,7 @@ export function prepareCSVWithHeader(
  * @param delimiterCode - Character code of delimiter
  * @param maxBufferSize - Maximum buffer size
  * @param source - Source identifier for error messages
- * @param wasmFunction - WASM parsing function
+ * @param wasmFunction - WASM parsing function (now returns JsValue directly)
  * @returns Parsed CSV records
  *
  * @internal
@@ -121,7 +121,8 @@ export function parseWithWASM<T>(
     delimiter: number,
     maxBufferSize: number,
     source: string,
-  ) => string,
+  ) => T,
 ): T {
-  return JSON.parse(wasmFunction(csv, delimiterCode, maxBufferSize, source));
+  // WASM function now returns JsValue directly (no JSON serialization)
+  return wasmFunction(csv, delimiterCode, maxBufferSize, source);
 }

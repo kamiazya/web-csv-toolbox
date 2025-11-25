@@ -1,6 +1,126 @@
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
+/// Token type constants - must match TypeScript's TokenType enum
+/// in src/core/constants.ts
+const TOKEN_TYPE_FIELD: u32 = 0;
+const TOKEN_TYPE_FIELD_DELIMITER: u32 = 1;
+const TOKEN_TYPE_RECORD_DELIMITER: u32 = 2;
+
+/// Flat tokens result for optimized boundary crossing
+/// Returns raw token data that can be assembled on JS side
+/// Arrays are pre-converted to JsValue to avoid repeated conversions
+#[wasm_bindgen]
+pub struct FlatTokensResult {
+    types_array: JsValue,
+    values_array: JsValue,
+    lines_array: JsValue,
+    columns_array: JsValue,
+    offsets_array: JsValue,
+    token_count: usize,
+}
+
+#[wasm_bindgen]
+impl FlatTokensResult {
+    /// Create new FlatTokensResult with pre-converted JS arrays
+    pub(crate) fn new(
+        types: Vec<u32>,
+        values: Vec<String>,
+        lines: Vec<usize>,
+        columns: Vec<usize>,
+        offsets: Vec<usize>,
+    ) -> Self {
+        let token_count = types.len();
+
+        // Convert to JS arrays once
+        // Token types are now numeric (0=Field, 1=FieldDelimiter, 2=RecordDelimiter)
+        let types_array = {
+            let arr = Array::new();
+            for &t in &types {
+                arr.push(&JsValue::from_f64(t as f64));
+            }
+            arr.into()
+        };
+
+        let values_array = {
+            let arr = Array::new();
+            for v in &values {
+                arr.push(&JsValue::from_str(v));
+            }
+            arr.into()
+        };
+
+        let lines_array = {
+            let arr = Array::new();
+            for &line in &lines {
+                arr.push(&JsValue::from_f64(line as f64));
+            }
+            arr.into()
+        };
+
+        let columns_array = {
+            let arr = Array::new();
+            for &col in &columns {
+                arr.push(&JsValue::from_f64(col as f64));
+            }
+            arr.into()
+        };
+
+        let offsets_array = {
+            let arr = Array::new();
+            for &offset in &offsets {
+                arr.push(&JsValue::from_f64(offset as f64));
+            }
+            arr.into()
+        };
+
+        Self {
+            types_array,
+            values_array,
+            lines_array,
+            columns_array,
+            offsets_array,
+            token_count,
+        }
+    }
+
+    /// Get token types as JS array
+    #[wasm_bindgen(getter)]
+    pub fn types(&self) -> JsValue {
+        self.types_array.clone()
+    }
+
+    /// Get token values as JS array
+    #[wasm_bindgen(getter)]
+    pub fn values(&self) -> JsValue {
+        self.values_array.clone()
+    }
+
+    /// Get line numbers as JS array
+    #[wasm_bindgen(getter)]
+    pub fn lines(&self) -> JsValue {
+        self.lines_array.clone()
+    }
+
+    /// Get column numbers as JS array
+    #[wasm_bindgen(getter)]
+    pub fn columns(&self) -> JsValue {
+        self.columns_array.clone()
+    }
+
+    /// Get byte offsets as JS array
+    #[wasm_bindgen(getter)]
+    pub fn offsets(&self) -> JsValue {
+        self.offsets_array.clone()
+    }
+
+    /// Get total token count
+    #[wasm_bindgen(getter = tokenCount)]
+    pub fn token_count(&self) -> usize {
+        self.token_count
+    }
+}
+
 /// Lexer state for CSV parsing
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum LexerState {
@@ -165,6 +285,80 @@ impl BinaryCSVLexerLegacy {
         }
 
         Ok(tokens.into())
+    }
+
+    /// Lex a chunk of binary CSV data using Truly Flat optimization
+    ///
+    /// Returns raw token data as flat arrays for minimal WASM↔JS boundary crossing.
+    /// Token assembly happens on the JS side.
+    ///
+    /// # Arguments
+    ///
+    /// * `chunk` - Optional Uint8Array chunk to lex
+    ///
+    /// # Returns
+    ///
+    /// FlatTokensResult with arrays:
+    /// - types: ["field", "field-delimiter", "record-delimiter", ...]
+    /// - values: [field_value, delimiter_char, newline_char, ...]
+    /// - lines: [start_line, ...]
+    /// - columns: [start_column, ...]
+    /// - offsets: [start_offset, ...]
+    #[wasm_bindgen(js_name = "lexFlat")]
+    pub fn lex_flat(
+        &mut self,
+        chunk: Option<js_sys::Uint8Array>,
+    ) -> Result<FlatTokensResult, JsError> {
+        let mut types: Vec<u32> = Vec::new();
+        let mut values: Vec<String> = Vec::new();
+        let mut lines: Vec<usize> = Vec::new();
+        let mut columns: Vec<usize> = Vec::new();
+        let mut offsets: Vec<usize> = Vec::new();
+
+        if let Some(chunk) = chunk {
+            // Convert Uint8Array to bytes
+            let mut chunk_bytes = vec![0u8; chunk.length() as usize];
+            chunk.copy_to(&mut chunk_bytes);
+
+            // Append to UTF-8 buffer
+            self.utf8_buffer.extend_from_slice(&chunk_bytes);
+
+            // Find the last complete UTF-8 character boundary
+            let valid_up_to = self.find_utf8_boundary();
+
+            // Process complete UTF-8 portion
+            let text = std::str::from_utf8(&self.utf8_buffer[..valid_up_to])
+                .map_err(|e| JsError::new(&format!("Invalid UTF-8: {}", e)))?
+                .to_string();
+
+            // Process the text and collect flat token data
+            self.process_text_flat(
+                &text,
+                &mut types,
+                &mut values,
+                &mut lines,
+                &mut columns,
+                &mut offsets,
+            )?;
+
+            // Keep incomplete UTF-8 bytes for next chunk
+            self.utf8_buffer.drain(..valid_up_to);
+        } else {
+            // Flush mode - emit final field token if any
+            if !self.current_field.is_empty() || self.state != LexerState::FieldStart {
+                self.emit_field_token_flat(
+                    &mut types,
+                    &mut values,
+                    &mut lines,
+                    &mut columns,
+                    &mut offsets,
+                );
+            }
+        }
+
+        Ok(FlatTokensResult::new(
+            types, values, lines, columns, offsets,
+        ))
     }
 }
 
@@ -336,5 +530,150 @@ impl BinaryCSVLexerLegacy {
             &JsValue::from_f64(self.row_number as f64),
         );
         location.into()
+    }
+
+    // ========== Flat token methods for Truly Flat optimization ==========
+
+    /// Process text and collect flat token data
+    fn process_text_flat(
+        &mut self,
+        text: &str,
+        types: &mut Vec<u32>,
+        values: &mut Vec<String>,
+        lines: &mut Vec<usize>,
+        columns: &mut Vec<usize>,
+        offsets: &mut Vec<usize>,
+    ) -> Result<(), JsError> {
+        for ch in text.chars() {
+            match self.state {
+                LexerState::FieldStart => {
+                    self.token_start = self.position;
+
+                    if ch == self.quote as char {
+                        self.state = LexerState::InQuotedField;
+                    } else if ch == self.delimiter as char {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_field_delimiter_token_flat(
+                            types, values, lines, columns, offsets,
+                        );
+                    } else if ch == '\n' || ch == '\r' {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_record_delimiter_token_flat(
+                            ch, types, values, lines, columns, offsets,
+                        );
+                    } else {
+                        self.current_field.push(ch);
+                        self.state = LexerState::InField;
+                    }
+                }
+                LexerState::InField => {
+                    if ch == self.delimiter as char {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_field_delimiter_token_flat(
+                            types, values, lines, columns, offsets,
+                        );
+                        self.state = LexerState::FieldStart;
+                    } else if ch == '\n' || ch == '\r' {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_record_delimiter_token_flat(
+                            ch, types, values, lines, columns, offsets,
+                        );
+                        self.state = LexerState::FieldStart;
+                    } else {
+                        self.current_field.push(ch);
+                    }
+                }
+                LexerState::InQuotedField => {
+                    if ch == self.quote as char {
+                        self.state = LexerState::AfterQuote;
+                    } else {
+                        self.current_field.push(ch);
+                    }
+                }
+                LexerState::AfterQuote => {
+                    if ch == self.quote as char {
+                        // Escaped quote
+                        self.current_field.push(ch);
+                        self.state = LexerState::InQuotedField;
+                    } else if ch == self.delimiter as char {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_field_delimiter_token_flat(
+                            types, values, lines, columns, offsets,
+                        );
+                        self.state = LexerState::FieldStart;
+                    } else if ch == '\n' || ch == '\r' {
+                        self.emit_field_token_flat(types, values, lines, columns, offsets);
+                        self.emit_record_delimiter_token_flat(
+                            ch, types, values, lines, columns, offsets,
+                        );
+                        self.state = LexerState::FieldStart;
+                    } else {
+                        self.state = LexerState::InField;
+                    }
+                }
+            }
+
+            // Update position
+            self.position.offset += ch.len_utf8();
+            if ch == '\n' {
+                self.position.line += 1;
+                self.position.column = 1;
+            } else {
+                self.position.column += 1;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Emit a field token (flat)
+    fn emit_field_token_flat(
+        &mut self,
+        types: &mut Vec<u32>,
+        values: &mut Vec<String>,
+        lines: &mut Vec<usize>,
+        columns: &mut Vec<usize>,
+        offsets: &mut Vec<usize>,
+    ) {
+        types.push(TOKEN_TYPE_FIELD);
+        values.push(std::mem::take(&mut self.current_field));
+        lines.push(self.token_start.line);
+        columns.push(self.token_start.column);
+        offsets.push(self.token_start.offset);
+    }
+
+    /// Emit a field delimiter token (flat)
+    fn emit_field_delimiter_token_flat(
+        &mut self,
+        types: &mut Vec<u32>,
+        values: &mut Vec<String>,
+        lines: &mut Vec<usize>,
+        columns: &mut Vec<usize>,
+        offsets: &mut Vec<usize>,
+    ) {
+        types.push(TOKEN_TYPE_FIELD_DELIMITER);
+        values.push((self.delimiter as char).to_string());
+        lines.push(self.position.line);
+        columns.push(self.position.column);
+        offsets.push(self.position.offset);
+    }
+
+    /// Emit a record delimiter token (flat)
+    fn emit_record_delimiter_token_flat(
+        &mut self,
+        ch: char,
+        types: &mut Vec<u32>,
+        values: &mut Vec<String>,
+        lines: &mut Vec<usize>,
+        columns: &mut Vec<usize>,
+        offsets: &mut Vec<usize>,
+    ) {
+        types.push(TOKEN_TYPE_RECORD_DELIMITER);
+        values.push(ch.to_string());
+        lines.push(self.position.line);
+        columns.push(self.position.column);
+        offsets.push(self.position.offset);
+
+        self.row_number += 1;
     }
 }

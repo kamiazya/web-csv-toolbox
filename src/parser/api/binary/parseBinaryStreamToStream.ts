@@ -1,9 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
 
 export function parseBinaryStreamToStream<
   Header extends readonly string[],
@@ -18,6 +20,55 @@ export function parseBinaryStreamToStream<
   stream: ReadableStream<Uint8Array>,
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
+  // Check engine configuration for WASM
+  const engineConfig = new InternalEngineConfig(options?.engine);
+
+  if (engineConfig.hasWasm()) {
+    // Validate that array output format is not used with WASM
+    if (options?.outputFormat === "array") {
+      throw new Error(
+        "Array output format is not supported with WASM execution. " +
+          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+      );
+    }
+
+    // Validate charset - WASM only supports UTF-8
+    const { charset, decompression } = options ?? {};
+    if (charset && charset.toLowerCase() !== "utf-8") {
+      throw new Error(
+        `Charset '${charset}' is not supported with WASM execution. ` +
+          "WASM only supports UTF-8 encoding. " +
+          "Use charset: 'utf-8' (default) or disable WASM (engine: { wasm: false }).",
+      );
+    }
+
+    // WASM path - use WASMBinaryCSVStreamTransformer
+    // Create WASM transformer with options
+    const transformer = new WASMBinaryCSVStreamTransformer({
+      delimiter: options?.delimiter,
+      quotation: options?.quotation,
+      header: options?.header as readonly string[] | undefined,
+      maxFieldCount: options?.maxFieldCount,
+    });
+
+    if (decompression) {
+      return stream
+        .pipeThrough(
+          new DecompressionStream(
+            decompression,
+          ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+        )
+        .pipeThrough(transformer) as ReadableStream<
+        InferCSVRecord<Header, Options>
+      >;
+    }
+
+    return stream.pipeThrough(transformer) as ReadableStream<
+      InferCSVRecord<Header, Options>
+    >;
+  }
+
+  // JavaScript path
   const { charset, fatal, ignoreBOM, decompression } = options ?? {};
 
   const decoderOptions: TextDecoderOptions = {};

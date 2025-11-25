@@ -15,6 +15,99 @@ use js_sys::{Array, Object, Reflect};
 use std::ops::Range;
 use wasm_bindgen::prelude::*;
 
+/// Flat array parse result for optimized boundary crossing
+/// Returns raw field data that can be assembled on JS side
+/// NOTE: Arrays are created once on construction to avoid repeated conversions
+#[wasm_bindgen]
+pub struct FlatParseResult {
+    headers_array: JsValue,             // Pre-converted to JsValue
+    field_data_array: JsValue,          // Pre-converted to JsValue
+    actual_field_counts_array: JsValue, // Actual field count per record (for undefined detection)
+    record_count: usize,
+    field_count: usize,
+}
+
+#[wasm_bindgen]
+impl FlatParseResult {
+    /// Create a new FlatParseResult with pre-converted JS arrays
+    fn new(
+        headers: Option<Vec<String>>,
+        field_data: Vec<String>,
+        actual_field_counts: Vec<usize>,
+        record_count: usize,
+    ) -> Self {
+        // Convert headers to JS array once
+        let headers_array = if let Some(ref h) = headers {
+            let arr = Array::new();
+            for header in h {
+                arr.push(&JsValue::from_str(header));
+            }
+            arr.into()
+        } else {
+            JsValue::NULL
+        };
+
+        // Get field count
+        let field_count = headers.as_ref().map(|h| h.len()).unwrap_or(0);
+
+        // Convert field data to JS array once
+        let field_data_array = {
+            let arr = Array::new();
+            for field in &field_data {
+                arr.push(&JsValue::from_str(field));
+            }
+            arr.into()
+        };
+
+        // Convert actual field counts to JS array
+        let actual_field_counts_array = {
+            let arr = Array::new();
+            for count in &actual_field_counts {
+                arr.push(&JsValue::from_f64(*count as f64));
+            }
+            arr.into()
+        };
+
+        Self {
+            headers_array,
+            field_data_array,
+            actual_field_counts_array,
+            record_count,
+            field_count,
+        }
+    }
+
+    /// Get headers as JsValue array (null if not yet parsed)
+    #[wasm_bindgen(getter)]
+    pub fn headers(&self) -> JsValue {
+        self.headers_array.clone()
+    }
+
+    /// Get all field data as flat JsValue array
+    #[wasm_bindgen(getter = fieldData)]
+    pub fn field_data(&self) -> JsValue {
+        self.field_data_array.clone()
+    }
+
+    /// Get actual field counts per record (for detecting missing/undefined fields)
+    #[wasm_bindgen(getter = actualFieldCounts)]
+    pub fn actual_field_counts(&self) -> JsValue {
+        self.actual_field_counts_array.clone()
+    }
+
+    /// Get number of records
+    #[wasm_bindgen(getter = recordCount)]
+    pub fn record_count(&self) -> usize {
+        self.record_count
+    }
+
+    /// Get field count per record
+    #[wasm_bindgen(getter = fieldCount)]
+    pub fn field_count(&self) -> usize {
+        self.field_count
+    }
+}
+
 /// Position information for error reporting and debugging
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Position {
@@ -159,6 +252,22 @@ impl RecordBuffer {
             }
         }
         obj.into()
+    }
+
+    /// Convert to JavaScript flat array (batch processing optimization)
+    /// Returns array of field values, with undefined for missing fields
+    /// This reduces WASM↔JS boundary crossings compared to to_js_object()
+    pub fn to_js_flat_array(&self, header_count: usize) -> JsValue {
+        let arr = Array::new_with_length(header_count as u32);
+        for i in 0..header_count {
+            let value = if let Some(field) = self.get(i) {
+                JsValue::from_str(field)
+            } else {
+                JsValue::UNDEFINED
+            };
+            arr.set(i as u32, value);
+        }
+        arr.into()
     }
 }
 
@@ -361,7 +470,7 @@ impl CSVParserOptimized {
     ///
     /// * `options` - JavaScript object with optional fields:
     ///   - `delimiter`: string (default: ",")
-    ///   - `quote`: string (default: "\"")
+    ///   - `quotation`: string (default: "\"")
     ///   - `maxFieldCount`: number (default: 100000)
     ///   - `header`: array of strings (optional)
     #[wasm_bindgen(constructor)]
@@ -386,11 +495,11 @@ impl CSVParserOptimized {
                 }
             }
 
-            // Get quote
-            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("quote")) {
+            // Get quotation
+            if let Ok(val) = Reflect::get(&obj, &JsValue::from_str("quotation")) {
                 if let Some(s) = val.as_string() {
                     if s.len() != 1 {
-                        return Err(JsError::new("quote must be a single character"));
+                        return Err(JsError::new("quotation must be a single character"));
                     }
                     quote = s.as_bytes()[0];
                 }
@@ -461,15 +570,61 @@ impl CSVParserOptimized {
     /// Array of completed records as JsValue objects
     #[wasm_bindgen(js_name = processChunkBytes)]
     pub fn process_chunk_bytes(&mut self, bytes: &js_sys::Uint8Array) -> Result<JsValue, JsError> {
-        // Copy bytes from Uint8Array
-        let mut chunk_bytes = vec![0u8; bytes.length() as usize];
-        bytes.copy_to(&mut chunk_bytes);
+        let chunk_len = bytes.length() as usize;
 
-        // Append to UTF-8 buffer
-        self.utf8_buffer.extend_from_slice(&chunk_bytes);
+        // Reserve space in utf8_buffer to avoid multiple reallocations
+        let old_len = self.utf8_buffer.len();
+        self.utf8_buffer.resize(old_len + chunk_len, 0);
+
+        // Copy directly to utf8_buffer (single copy instead of double)
+        bytes.copy_to(&mut self.utf8_buffer[old_len..]);
 
         // Process using optimized byte-level parser
         self.process_bytes_optimized()
+    }
+
+    /// Process bytes and return flat array format (batch processing optimization)
+    /// Returns: { headers: string[] | null, records: string[][] }
+    /// Reduces WASM↔JS boundary crossings by returning arrays instead of objects
+    #[wasm_bindgen(js_name = processChunkBytesFlat)]
+    pub fn process_chunk_bytes_flat(
+        &mut self,
+        bytes: &js_sys::Uint8Array,
+    ) -> Result<JsValue, JsError> {
+        let chunk_len = bytes.length() as usize;
+
+        // Reserve space in utf8_buffer to avoid multiple reallocations
+        let old_len = self.utf8_buffer.len();
+        self.utf8_buffer.resize(old_len + chunk_len, 0);
+
+        // Copy directly to utf8_buffer (single copy instead of double)
+        bytes.copy_to(&mut self.utf8_buffer[old_len..]);
+
+        // Process using optimized byte-level parser (object format)
+        let records = self.process_bytes_optimized()?;
+
+        // Convert to flat format and return with headers
+        self.to_flat_format(records)
+    }
+
+    /// Process bytes and return true flat array format (optimized boundary crossing)
+    /// Returns FlatParseResult with minimal WASM↔JS crossings
+    #[wasm_bindgen(js_name = processChunkBytesTrulyFlat)]
+    pub fn process_chunk_bytes_truly_flat(
+        &mut self,
+        bytes: &js_sys::Uint8Array,
+    ) -> Result<FlatParseResult, JsError> {
+        let chunk_len = bytes.length() as usize;
+
+        // Reserve space in utf8_buffer to avoid multiple reallocations
+        let old_len = self.utf8_buffer.len();
+        self.utf8_buffer.resize(old_len + chunk_len, 0);
+
+        // Copy directly to utf8_buffer (single copy instead of double)
+        bytes.copy_to(&mut self.utf8_buffer[old_len..]);
+
+        // Process and accumulate fields in flat array
+        self.process_bytes_flat()
     }
 
     /// Process a string chunk (for compatibility)
@@ -521,6 +676,113 @@ impl CSVParserOptimized {
 }
 
 impl CSVParserOptimized {
+    /// Process bytes and return flat array format (true flat implementation)
+    /// This variant accumulates fields directly without creating intermediate objects
+    fn process_bytes_flat(&mut self) -> Result<FlatParseResult, JsError> {
+        let mut field_data = Vec::new();
+        let mut actual_field_counts = Vec::new();
+        let mut record_count = 0;
+
+        // Find last complete UTF-8 boundary
+        let valid_up_to = self.find_utf8_boundary();
+
+        // Process bytes up to the boundary using DFA (same logic as process_bytes_optimized)
+        let mut i = 0;
+        while i < valid_up_to {
+            let byte = self.utf8_buffer[i];
+
+            // ASCII FAST PATH - DFA-driven state machine
+            if byte < 0x80 {
+                let class = self.byte_classes.get(byte);
+
+                // Bulk copy for normal bytes
+                if class == ByteClass::Normal
+                    && (self.state == OptimizedParserState::FieldStart
+                        || self.state == OptimizedParserState::InField)
+                {
+                    if self.state == OptimizedParserState::FieldStart {
+                        self.state = OptimizedParserState::InField;
+                    }
+                    let copied = self.scan_and_copy_dfa(i, valid_up_to);
+                    i += copied;
+                    self.position.byte += copied;
+                    continue;
+                }
+
+                // DFA transition
+                let (next_state, has_output) = self.dfa.next(self.state, class);
+
+                if has_output {
+                    self.current_field.push(byte as char);
+                }
+
+                // Handle field/record completion
+                if self.state != OptimizedParserState::InQuotedField {
+                    if class == ByteClass::Delimiter {
+                        self.finish_field()?;
+                    } else if class == ByteClass::LF || class == ByteClass::CR {
+                        let was_after_quote = self.state == OptimizedParserState::AfterQuote;
+                        let was_field_start = self.state == OptimizedParserState::FieldStart;
+
+                        if !self.current_field.is_empty()
+                            || was_after_quote
+                            || (was_field_start && !self.current_record.is_empty())
+                        {
+                            self.finish_field()?;
+                        }
+
+                        // Finish record and add fields to flat array
+                        if !self.current_record.is_empty() {
+                            self.finish_record_to_flat(
+                                &mut field_data,
+                                &mut actual_field_counts,
+                                &mut record_count,
+                            );
+                        }
+                    }
+                }
+
+                // Line number advancement
+                if class == ByteClass::CR {
+                    self.position.advance_line();
+                } else if class == ByteClass::LF {
+                    let prev_was_cr = if i > 0 {
+                        self.utf8_buffer[i - 1] == b'\r'
+                    } else {
+                        false
+                    };
+                    if !prev_was_cr {
+                        self.position.advance_line();
+                    }
+                }
+
+                self.state = next_state;
+                i += 1;
+                self.position.byte += 1;
+            } else {
+                // Multi-byte UTF-8 character
+                let char_len = self.process_multibyte_utf8_flat(
+                    i,
+                    &mut field_data,
+                    &mut actual_field_counts,
+                    &mut record_count,
+                )?;
+                i += char_len;
+                self.position.byte += char_len;
+            }
+        }
+
+        // Keep incomplete UTF-8 bytes
+        self.utf8_buffer.drain(..valid_up_to);
+
+        Ok(FlatParseResult::new(
+            self.headers.clone(),
+            field_data,
+            actual_field_counts,
+            record_count,
+        ))
+    }
+
     /// Process bytes with DFA table-driven state machine + bulk copy
     /// This is the core optimization: pre-computed transitions eliminate branch mispredictions
     fn process_bytes_optimized(&mut self) -> Result<JsValue, JsError> {
@@ -572,8 +834,22 @@ impl CSVParserOptimized {
                         self.finish_field()?;
                     } else if class == ByteClass::LF || class == ByteClass::CR {
                         // Line ending - finish field and potentially record
-                        if !self.current_field.is_empty() || !self.current_record.is_empty() {
+                        let was_after_quote = self.state == OptimizedParserState::AfterQuote;
+                        let was_field_start = self.state == OptimizedParserState::FieldStart;
+
+                        // Finish field if:
+                        // 1. Field has content, OR
+                        // 2. We just closed a quoted field (AfterQuote state), OR
+                        // 3. We're at FieldStart with existing fields (e.g., after delimiter: "a,\n" should be ["a",""])
+                        if !self.current_field.is_empty()
+                            || was_after_quote
+                            || (was_field_start && !self.current_record.is_empty())
+                        {
                             self.finish_field()?;
+                        }
+
+                        // Finish record if we have any fields
+                        if !self.current_record.is_empty() {
                             if let Some(record) = self.finish_record() {
                                 completed_records.push(&record);
                             }
@@ -581,10 +857,35 @@ impl CSVParserOptimized {
                     }
                 }
 
-                // Always advance line counter on LF, even inside quoted fields
-                // This ensures accurate line numbers for error reporting
-                if class == ByteClass::LF {
+                // Handle line number advancement for different line ending styles
+                // Supports LF, CR, and CRLF line endings
+                if class == ByteClass::CR {
+                    // Check if next byte is LF (CRLF sequence)
+                    let next_is_lf = if i + 1 < self.utf8_buffer.len() {
+                        self.utf8_buffer[i + 1] == b'\n'
+                    } else {
+                        false
+                    };
+
+                    // Advance line for CR (will skip LF in CRLF case)
                     self.position.advance_line();
+
+                    // Mark that we just processed CR for CRLF detection
+                    if next_is_lf {
+                        // Next iteration will be LF, which we'll skip for line counting
+                        // (but still process for state machine)
+                    }
+                } else if class == ByteClass::LF {
+                    // Only advance line if previous byte wasn't CR (not part of CRLF)
+                    let prev_was_cr = if i > 0 {
+                        self.utf8_buffer[i - 1] == b'\r'
+                    } else {
+                        false
+                    };
+
+                    if !prev_was_cr {
+                        self.position.advance_line();
+                    }
                 }
 
                 // Update state
@@ -775,6 +1076,160 @@ impl CSVParserOptimized {
                 None
             }
         }
+    }
+
+    /// Convert object-format records to flat array format
+    /// Input: Array of record objects
+    /// Output: { headers: string[] | null, records: string[][] }
+    fn to_flat_format(&self, records: JsValue) -> Result<JsValue, JsError> {
+        // Create result object
+        let result = Object::new();
+
+        // Add headers (only if available)
+        let headers_value = if let Some(ref headers) = self.headers {
+            let headers_array = Array::new();
+            for header in headers {
+                headers_array.push(&JsValue::from_str(header));
+            }
+            headers_array.into()
+        } else {
+            JsValue::NULL
+        };
+        Reflect::set(&result, &JsValue::from_str("headers"), &headers_value)
+            .map_err(|_| JsError::new("Failed to set headers"))?;
+
+        // Convert records from objects to arrays
+        let records_array = records
+            .dyn_ref::<Array>()
+            .ok_or_else(|| JsError::new("Expected array of records"))?;
+
+        let flat_records = Array::new();
+        if let Some(ref headers) = self.headers {
+            for i in 0..records_array.length() {
+                let record_obj = records_array.get(i);
+                let record_array = self.object_to_array(&record_obj, headers)?;
+                flat_records.push(&record_array);
+            }
+        }
+
+        Reflect::set(&result, &JsValue::from_str("records"), &flat_records.into())
+            .map_err(|_| JsError::new("Failed to set records"))?;
+
+        Ok(result.into())
+    }
+
+    /// Convert a single record object to array using headers
+    fn object_to_array(&self, obj: &JsValue, headers: &[String]) -> Result<JsValue, JsError> {
+        let arr = Array::new_with_length(headers.len() as u32);
+        for (i, header) in headers.iter().enumerate() {
+            let value = Reflect::get(obj, &JsValue::from_str(header))
+                .map_err(|_| JsError::new(&format!("Failed to get field: {}", header)))?;
+            arr.set(i as u32, value);
+        }
+        Ok(arr.into())
+    }
+
+    /// Finish current record and add fields to flat array (for truly flat implementation)
+    fn finish_record_to_flat(
+        &mut self,
+        field_data: &mut Vec<String>,
+        actual_field_counts: &mut Vec<usize>,
+        record_count: &mut usize,
+    ) {
+        if self.current_record.is_empty() && !self.headers_parsed {
+            return;
+        }
+
+        if !self.headers_parsed {
+            // First record is headers
+            let mut headers = Vec::with_capacity(self.current_record.len());
+            for i in 0..self.current_record.len() {
+                if let Some(header) = self.current_record.get(i) {
+                    headers.push(header.to_string());
+                }
+            }
+            self.headers = Some(headers);
+            self.headers_parsed = true;
+            self.current_record.clear();
+        } else {
+            // Data record - add all fields to flat array
+            if let Some(ref headers) = self.headers {
+                // Track actual field count before padding
+                let actual_count = self.current_record.len();
+                actual_field_counts.push(actual_count);
+
+                for i in 0..headers.len() {
+                    if let Some(field) = self.current_record.get(i) {
+                        field_data.push(field.to_string());
+                    } else {
+                        field_data.push(String::new()); // Placeholder for missing values (JS will use undefined)
+                    }
+                }
+                *record_count += 1;
+                self.current_record.clear();
+                self.position.advance_record();
+            } else {
+                self.current_record.clear();
+            }
+        }
+    }
+
+    /// Process multi-byte UTF-8 character (flat variant)
+    /// Uses the same approach as process_multibyte_utf8 to properly handle
+    /// UTF-8 sequences even when the buffer contains incomplete sequences at the end.
+    #[allow(clippy::ptr_arg)]
+    fn process_multibyte_utf8_flat(
+        &mut self,
+        start_pos: usize,
+        _field_data: &mut Vec<String>,
+        _actual_field_counts: &mut Vec<usize>,
+        _record_count: &mut usize,
+    ) -> Result<usize, JsError> {
+        // Determine character length from first byte (same as process_multibyte_utf8)
+        let first_byte = self.utf8_buffer[start_pos];
+        let char_len = if (first_byte & 0b1110_0000) == 0b1100_0000 {
+            2
+        } else if (first_byte & 0b1111_0000) == 0b1110_0000 {
+            3
+        } else if (first_byte & 0b1111_1000) == 0b1111_0000 {
+            4
+        } else {
+            return Err(JsError::new(&format!(
+                "Invalid UTF-8 at position {}:{}",
+                self.position.line, self.position.byte
+            )));
+        };
+
+        // Extract and decode only the specific character bytes
+        let char_bytes = &self.utf8_buffer[start_pos..start_pos + char_len];
+        let ch = std::str::from_utf8(char_bytes)
+            .map_err(|e| {
+                JsError::new(&format!(
+                    "Invalid UTF-8 at position {}:{}: {}",
+                    self.position.line, self.position.byte, e
+                ))
+            })?
+            .chars()
+            .next()
+            .unwrap();
+
+        // Add character to current field (same logic as process_char_non_ascii)
+        match self.state {
+            OptimizedParserState::FieldStart => {
+                self.current_field.push(ch);
+                self.state = OptimizedParserState::InField;
+            }
+            OptimizedParserState::InField | OptimizedParserState::InQuotedField => {
+                self.current_field.push(ch);
+            }
+            OptimizedParserState::AfterQuote => {
+                // After quote, non-ASCII treated as field continuation
+                self.current_field.push(ch);
+                self.state = OptimizedParserState::InField;
+            }
+        }
+
+        Ok(char_len)
     }
 }
 

@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
@@ -186,35 +186,24 @@ Bob,25,LA`;
     });
 
     describe("keep strategy", () => {
-      test("should warn and fallback to pad strategy", () => {
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      test("should throw TypeError since 'keep' is not supported for object format", () => {
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "object",
+            columnCountStrategy: "keep",
+          });
+        }).toThrow(TypeError);
 
-        const csv = `Alice,30`;
-
-        const lexer = new FlexibleStringCSVLexer();
-        const tokens = lexer.lex(csv);
-
-        const assembler = createCSVRecordAssembler({
-          header: ["name", "age", "city"] as const,
-          outputFormat: "object",
-          columnCountStrategy: "keep",
-        });
-
-        const records = [...assembler.assemble(tokens)];
-
-        expect(warnSpy).toHaveBeenCalledWith(
-          expect.stringContaining(
-            "columnCountStrategy 'keep' has no effect in object format",
-          ),
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "object",
+            columnCountStrategy: "keep",
+          });
+        }).toThrow(
+          /columnCountStrategy 'keep' is not supported for object format/,
         );
-        expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({
-          name: "Alice",
-          age: "30",
-          city: undefined,
-        }); // Behaves like pad (fills with undefined)
-
-        warnSpy.mockRestore();
       });
     });
 

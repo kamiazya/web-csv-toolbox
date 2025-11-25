@@ -32,14 +32,14 @@ for await (const record of stream) {
 }
 ```
 
-### Using WASMBinaryCSVParser (For Manual Control)
+### Using WASMBinaryObjectCSVParser (For Manual Control)
 
 ```typescript
-import { loadWASM, WASMBinaryCSVParser } from "web-csv-toolbox";
+import { loadWASM, WASMBinaryObjectCSVParser } from "web-csv-toolbox";
 
 await loadWASM();
 
-const parser = new WASMBinaryCSVParser();
+const parser = new WASMBinaryObjectCSVParser();
 const response = await fetch('data.csv');
 const reader = response.body!.getReader();
 
@@ -74,7 +74,7 @@ const tsvStream = response.body!
 
 ```typescript
 // Use custom headers instead of first row
-const parser = new WASMBinaryCSVParser({
+const parser = new WASMBinaryObjectCSVParser({
   header: ['id', 'name', 'email'] as const
 });
 
@@ -184,7 +184,7 @@ await response.body
 The binary parser correctly handles UTF-8 multibyte characters that may be split across chunks:
 
 ```typescript
-const parser = new WASMBinaryCSVParser();
+const parser = new WASMBinaryObjectCSVParser();
 const encoder = new TextEncoder();
 
 // "東京" may be split across chunks
@@ -202,7 +202,7 @@ for (const record of parser.parse(chunk2, { stream: true })) {
 
 ## Configuration Options
 
-Both `WASMBinaryCSVParser` and `WASMBinaryCSVStreamTransformer` support the following options:
+Both `WASMBinaryObjectCSVParser` and `WASMBinaryCSVStreamTransformer` support the following options:
 
 ```typescript
 interface Options {

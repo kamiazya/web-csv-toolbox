@@ -1,4 +1,4 @@
-import { loadWASM, WASMBinaryCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
+import { loadWASM, WASMBinaryObjectCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -27,7 +27,7 @@ console.log("\n" + "=".repeat(60) + "\n");
 
 // Test integrated approach
 console.log("Integrated approach:");
-const parser = new WASMBinaryCSVParser();
+const parser = new WASMBinaryObjectCSVParser();
 const integratedRecords = [...parser.parse(data)];
 console.log(`Records: ${integratedRecords.length}`);
 for (const record of integratedRecords) {

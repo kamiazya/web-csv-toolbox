@@ -1,6 +1,7 @@
-import { parseStringToArraySyncWASM } from "#/parser/api/string/parseStringToArraySyncWASM.main.js";
-import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
+import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
 import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
+import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
 
 /**
  * Parse CSV binary using WebAssembly in main thread.
@@ -16,7 +17,7 @@ import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
  * WASM module is automatically initialized on first use if not already loaded.
  * However, it is recommended to call {@link loadWASM} beforehand for better performance.
  *
- * Converts binary to string then uses WASM parser.
+ * Uses optimized WASM binary parser with direct byte processing.
  * WASM parser has limitations:
  * - Only supports UTF-8 encoding
  * - Only supports double-quote (") as quotation character
@@ -25,14 +26,77 @@ export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
   binary: BufferSource,
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  // Convert binary to string with proper option handling
-  const csv = convertBinaryToString(binary, options ?? {});
+  // Validate charset - WASM parser only supports UTF-8
+  const charset = options?.charset;
+  if (charset !== undefined && charset.toLowerCase() !== "utf-8") {
+    throw new RangeError(
+      `WASM parser only supports UTF-8 encoding. Specified charset: "${charset}". ` +
+        `Use the JavaScript parser for other encodings.`,
+    );
+  }
 
-  // Use WASM parser (automatically initialized if needed)
-  const records = parseStringToArraySyncWASM(csv, options);
+  // Validate maxBinarySize
+  const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
+  if (
+    !(
+      Number.isFinite(maxBinarySize) ||
+      maxBinarySize === Number.POSITIVE_INFINITY
+    ) ||
+    (Number.isFinite(maxBinarySize) && maxBinarySize < 0)
+  ) {
+    throw new RangeError(
+      "maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY",
+    );
+  }
 
-  // Yield records
-  for (const record of records) {
+  // Check binary size to prevent DoS
+  if (Number.isFinite(maxBinarySize) && binary.byteLength > maxBinarySize) {
+    throw new RangeError(
+      `Binary size (${binary.byteLength} bytes) exceeded maximum allowed size of ${maxBinarySize} bytes`,
+    );
+  }
+
+  // Convert BufferSource to Uint8Array
+  let bytes = convertBinaryToUint8Array(binary);
+
+  // Handle BOM if ignoreBOM is false (default behavior)
+  // UTF-8 BOM is EF BB BF (3 bytes)
+  const ignoreBOM = options?.ignoreBOM ?? false;
+  if (
+    !ignoreBOM &&
+    bytes.length >= 3 &&
+    bytes[0] === 0xef &&
+    bytes[1] === 0xbb &&
+    bytes[2] === 0xbf
+  ) {
+    // Skip UTF-8 BOM
+    bytes = bytes.subarray(3);
+  }
+
+  // Handle fatal option - validate UTF-8 if fatal is true
+  const fatal = options?.fatal ?? false;
+  if (fatal) {
+    // Validate UTF-8 encoding by attempting to decode
+    const decoder = new TextDecoder("utf-8", { fatal: true });
+    try {
+      decoder.decode(bytes);
+    } catch {
+      throw new TypeError(
+        "The encoded data was not valid UTF-8. Set fatal: false to use replacement characters for invalid sequences.",
+      );
+    }
+  }
+
+  // Use optimized WASM binary parser (automatically initialized if needed)
+  const parser = new WASMBinaryObjectCSVParser<Header>({
+    delimiter: options?.delimiter ?? ",",
+    quotation: options?.quotation ?? '"',
+    maxFieldCount: options?.maxFieldCount,
+    header: options?.header,
+  });
+
+  // Yield records directly from WASM parser
+  for (const record of parser.parse(bytes as BufferSource)) {
     yield record;
   }
 }

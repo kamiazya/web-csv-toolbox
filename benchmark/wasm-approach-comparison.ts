@@ -2,14 +2,14 @@
  * Benchmark: WASM Integrated vs Separated approach comparison
  *
  * Compares performance of:
- * 1. Integrated approach (WASMBinaryCSVParser)
+ * 1. Integrated approach (WASMBinaryObjectCSVParser)
  * 2. Separated approach (WASMBinaryCSVLexer + WASMCSVObjectRecordAssembler)
  */
 
 import { loadWASM } from "../src/wasm/WasmInstance.main.web.ts";
-import { WASMBinaryCSVParser } from "../src/parser/models/WASMBinaryCSVParser.ts";
+import { WASMBinaryObjectCSVParser } from "../src/parser/models/WASMBinaryObjectCSVParser.ts";
 import { WASMBinaryCSVLexer } from "../src/parser/models/WASMBinaryCSVLexer.ts";
-import { WASMCSVObjectRecordAssembler } from "../src/parser/models/WASMCSVRecordAssembler.ts";
+import { WASMCSVObjectRecordAssembler } from "../src/parser/models/WASMCSVObjectRecordAssembler.ts";
 
 // Generate test CSV data
 function generateCSV(rows: number, columns: number): Uint8Array {
@@ -74,9 +74,9 @@ async function runBenchmarks() {
 
     // Test 1: Integrated approach
     const integratedTime = benchmark(
-      "Integrated (WASMBinaryCSVParser)",
+      "Integrated (WASMBinaryObjectCSVParser)",
       () => {
-        const parser = new WASMBinaryCSVParser();
+        const parser = new WASMBinaryObjectCSVParser();
         const records = [...parser.parse(data)];
         if (records.length !== rows) {
           throw new Error(`Expected ${rows} records, got ${records.length}`);
@@ -126,7 +126,7 @@ async function runBenchmarks() {
   const oneShot = benchmark(
     "One-shot processing",
     () => {
-      const parser = new WASMBinaryCSVParser();
+      const parser = new WASMBinaryObjectCSVParser();
       const records = [...parser.parse(streamData)];
       if (records.length !== 1000) {
         throw new Error("Unexpected record count");
@@ -140,7 +140,7 @@ async function runBenchmarks() {
   const streaming = benchmark(
     "Streaming processing",
     () => {
-      const parser = new WASMBinaryCSVParser();
+      const parser = new WASMBinaryObjectCSVParser();
       let recordCount = 0;
 
       for (let offset = 0; offset < streamData.length; offset += chunkSize) {

@@ -4,7 +4,6 @@ pub mod assembler;
 mod csv_json;
 mod error;
 pub mod lexer;
-pub mod parser;
 pub mod parser_optimized;
 
 // Re-export optimized types as default
@@ -28,7 +27,7 @@ mod tests;
 ///
 /// # Returns
 ///
-/// Result containing JsValue with the JSON string representation of parsed CSV data.
+/// Result containing JsValue array of record objects (direct conversion without JSON serialization).
 ///
 /// # Errors
 ///
@@ -41,7 +40,6 @@ pub fn parse_string_to_array_sync(
     source: &str,
 ) -> Result<JsValue, wasm_bindgen::JsError> {
     let source_opt = (!source.is_empty()).then_some(source);
-    csv_json::parse_csv_to_json(input, delimiter, max_buffer_size, source_opt)
-        .map(|json_str| JsValue::from_str(&json_str))
+    csv_json::parse_csv_to_jsvalue(input, delimiter, max_buffer_size, source_opt)
         .map_err(|err| wasm_bindgen::JsError::new(&err))
 }

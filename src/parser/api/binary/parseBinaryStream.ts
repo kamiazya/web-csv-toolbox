@@ -10,6 +10,8 @@ import type {
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
+import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
+import { loadWASM } from "@/wasm/WasmInstance.main.web.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -86,6 +88,59 @@ export async function* parseBinaryStream<
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
+    }
+  } else if (engineConfig.hasWasm()) {
+    // WASM execution for streams
+    // Validate that array output format is not used with WASM
+    if (options?.outputFormat === "array") {
+      throw new Error(
+        "Array output format is not supported with WASM execution. " +
+          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+      );
+    }
+
+    // Validate charset - WASM only supports UTF-8
+    const { charset, decompression } = options ?? {};
+    if (charset && charset.toLowerCase() !== "utf-8") {
+      throw new Error(
+        `Charset '${charset}' is not supported with WASM execution. ` +
+          "WASM only supports UTF-8 encoding. " +
+          "Use charset: 'utf-8' (default) or disable WASM (engine: { wasm: false }).",
+      );
+    }
+
+    // Initialize WASM
+    await loadWASM();
+
+    // Create WASM stream transformer with options
+    const transformer = new WASMBinaryCSVStreamTransformer({
+      delimiter: options?.delimiter,
+      quotation: options?.quotation,
+      header: options?.header as readonly string[] | undefined,
+      maxFieldCount: options?.maxFieldCount,
+    });
+
+    // Handle decompression if specified
+    const recordStream = decompression
+      ? stream
+          .pipeThrough(
+            new DecompressionStream(
+              decompression,
+            ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+          )
+          .pipeThrough(transformer)
+      : stream.pipeThrough(transformer);
+    const iterator = convertStreamToAsyncIterableIterator(recordStream);
+
+    try {
+      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    } catch (error) {
+      try {
+        await recordStream.cancel().catch(() => {});
+      } catch {
+        // Ignore cancellation errors
+      }
+      throw error;
     }
   } else {
     // Main thread execution (default for streams)

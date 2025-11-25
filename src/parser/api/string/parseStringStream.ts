@@ -10,6 +10,8 @@ import type {
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
+import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
+import { loadWASM } from "@/wasm/WasmInstance.main.web.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -45,8 +47,10 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * }
  * ```
  *
- * Note: WASM execution is not supported for streams. If you specify
- * `engine: { wasm: true }` with a stream, it will fall back to main thread.
+ * **WASM Execution:**
+ * - `engine: { wasm: true }` enables WASM-based parsing for better performance
+ * - `engine: { wasm: true, worker: true }` combines WASM with worker offloading
+ * - WASM only supports UTF-8 encoding and object output format
  *
  * @example Parsing CSV files from strings
  *
@@ -152,6 +156,44 @@ export async function* parseStringStream<
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
+    }
+  } else if (engineConfig.hasWasm()) {
+    // WASM execution for string streams
+    // Validate that array output format is not used with WASM
+    if (options?.outputFormat === "array") {
+      throw new Error(
+        "Array output format is not supported with WASM execution. " +
+          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+      );
+    }
+
+    // Initialize WASM
+    await loadWASM();
+
+    // Create WASM stream transformer with options
+    const transformer = new WASMBinaryCSVStreamTransformer({
+      delimiter: options?.delimiter,
+      quotation: options?.quotation,
+      header: options?.header as readonly string[] | undefined,
+      maxFieldCount: options?.maxFieldCount,
+    });
+
+    // Convert string stream to binary stream, then process with WASM
+    const recordStream = stream
+      .pipeThrough(new TextEncoderStream())
+      .pipeThrough(transformer);
+
+    const iterator = convertStreamToAsyncIterableIterator(recordStream);
+
+    try {
+      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    } catch (error) {
+      try {
+        await recordStream.cancel().catch(() => {});
+      } catch {
+        // Ignore cancellation errors
+      }
+      throw error;
     }
   } else {
     // Main thread execution (default for streams)

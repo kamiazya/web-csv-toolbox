@@ -1,11 +1,9 @@
 import type {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
-  Field,
-  FieldDelimiter,
   Newline,
-  RecordDelimiter,
 } from "@/core/constants.ts";
+import { TokenType } from "@/core/constants.ts";
 
 /**
  * Position object.
@@ -93,7 +91,7 @@ export interface TokenLocation {
  * @category Types
  */
 export interface FieldToken {
-  type: typeof Field;
+  type: TokenType.Field;
   value: string;
   location: TokenLocation;
 }
@@ -103,7 +101,7 @@ export interface FieldToken {
  * @category Types
  */
 export interface FieldDelimiterToken {
-  type: typeof FieldDelimiter;
+  type: TokenType.FieldDelimiter;
   value: string;
   location: TokenLocation;
 }
@@ -113,7 +111,7 @@ export interface FieldDelimiterToken {
  * @category Types
  */
 export interface RecordDelimiterToken {
-  type: typeof RecordDelimiter;
+  type: TokenType.RecordDelimiter;
   value: string;
   location: TokenLocation;
 }

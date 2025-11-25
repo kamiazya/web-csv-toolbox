@@ -175,8 +175,8 @@ describe("parseStringToArraySyncWASM.shared", () => {
   });
 
   describe("parseWithWASM", () => {
-    it("should parse WASM output as JSON", () => {
-      const mockWasmFunction = () => '[{"a":"1","b":"2"}]';
+    it("should return WASM output directly (JsValue)", () => {
+      const mockWasmFunction = () => [{ a: "1", b: "2" }];
       const result = parseWithWASM(
         "a,b\n1,2",
         44,
@@ -192,7 +192,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
       let capturedParams: any[] = [];
       const mockWasmFunction = (...args: any[]) => {
         capturedParams = args;
-        return "[]";
+        return [];
       };
 
       parseWithWASM("test csv", 59, 2048, "test.csv", mockWasmFunction);
@@ -201,26 +201,29 @@ describe("parseStringToArraySyncWASM.shared", () => {
     });
 
     it("should handle empty result", () => {
-      const mockWasmFunction = () => "[]";
+      const mockWasmFunction = () => [];
       const result = parseWithWASM("", 44, 10485760, "", mockWasmFunction);
 
       expect(result).toEqual([]);
     });
 
     it("should handle complex nested data", () => {
-      const mockWasmFunction = () =>
-        '[{"name":"Alice","address":{"city":"NYC"}}]';
+      const mockWasmFunction = () => [
+        { name: "Alice", address: { city: "NYC" } },
+      ];
       const result = parseWithWASM("", 44, 10485760, "", mockWasmFunction);
 
       expect(result).toEqual([{ name: "Alice", address: { city: "NYC" } }]);
     });
 
-    it("should propagate JSON parse errors", () => {
-      const mockWasmFunction = () => "invalid json";
+    it("should propagate errors from WASM function", () => {
+      const mockWasmFunction = () => {
+        throw new Error("WASM parsing failed");
+      };
 
       expect(() =>
         parseWithWASM("", 44, 10485760, "", mockWasmFunction),
-      ).toThrow(SyntaxError);
+      ).toThrow("WASM parsing failed");
     });
   });
 
@@ -248,14 +251,14 @@ describe("parseStringToArraySyncWASM.shared", () => {
 
       // Parse with WASM
       const mockWasmFunction = (input: string) => {
-        // Simulate WASM parsing
+        // Simulate WASM parsing (returns JsValue directly)
         const lines = input.split("\n");
         const headers = lines[0]!.split(",");
         const values = lines[1]!.split(",");
         const record = Object.fromEntries(
           headers.map((h, i) => [h, values[i]]),
         );
-        return JSON.stringify([record]);
+        return [record];
       };
 
       const result = parseWithWASM(

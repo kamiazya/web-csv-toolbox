@@ -12,6 +12,7 @@ import type {
   CSVRecordAssemblerCommonOptions,
   Token,
 } from "@/core/types.ts";
+import { validateMaxFieldCount } from "@/parser/utils/validateMaxFieldCount.ts";
 
 /**
  * Flexible CSV Array Record Assembler implementation.
@@ -76,14 +77,7 @@ export class FlexibleCSVArrayRecordAssembler<
 
     const mfc = options.maxFieldCount ?? DEFAULT_ASSEMBLER_MAX_FIELD_COUNT;
     // Validate maxFieldCount
-    if (
-      !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||
-      (Number.isFinite(mfc) && (mfc < 1 || !Number.isInteger(mfc)))
-    ) {
-      throw new RangeError(
-        "maxFieldCount must be a positive integer or Number.POSITIVE_INFINITY",
-      );
-    }
+    validateMaxFieldCount(mfc);
     this.#maxFieldCount = mfc;
     this.#skipEmptyLines = options.skipEmptyLines ?? false;
     this.#source = options.source;

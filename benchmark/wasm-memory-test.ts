@@ -2,11 +2,11 @@
  * Memory Usage Test: Integrated vs Separated approach
  *
  * Compares memory consumption between:
- * 1. Integrated approach (WASMBinaryCSVParser)
+ * 1. Integrated approach (WASMBinaryObjectCSVParser)
  * 2. Separated approach (WASMBinaryCSVLexer + WASMCSVObjectRecordAssembler)
  */
 
-import { loadWASM, WASMBinaryCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
+import { loadWASM, WASMBinaryObjectCSVParser, WASMBinaryCSVLexer, WASMCSVObjectRecordAssembler } from "../dist/main.web.js";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -67,13 +67,13 @@ for (const { rows, columns, name } of testCases) {
   // ========================================================================
   // Test 1: Integrated Approach
   // ========================================================================
-  console.log("1️⃣  Integrated Approach (WASMBinaryCSVParser)");
+  console.log("1️⃣  Integrated Approach (WASMBinaryObjectCSVParser)");
   console.log("-".repeat(70));
 
   const beforeIntegrated = getMemoryUsage();
   const startTimeIntegrated = performance.now();
 
-  const parser = new WASMBinaryCSVParser();
+  const parser = new WASMBinaryObjectCSVParser();
   const integratedRecords = [...parser.parse(data)];
 
   const endTimeIntegrated = performance.now();
