@@ -5,7 +5,7 @@ import {
 } from "@/core/constants.ts";
 import type {
   CSVLexerTransformerStreamOptions,
-  StringCSVLexer,
+  SyncStringCSVLexer,
   Token,
 } from "@/core/types.ts";
 
@@ -100,7 +100,7 @@ export class CSVLexerTransformer<
   _Delimiter extends string = DEFAULT_DELIMITER,
   _Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token> {
-  public readonly lexer: StringCSVLexer;
+  public readonly lexer: SyncStringCSVLexer;
 
   /**
    * Yields to the event loop to allow backpressure handling.
@@ -112,7 +112,7 @@ export class CSVLexerTransformer<
   }
 
   constructor(
-    lexer: StringCSVLexer,
+    lexer: SyncStringCSVLexer,
     options: CSVLexerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,

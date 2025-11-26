@@ -77,12 +77,6 @@ export interface WorkerPresetOptions extends BasePresetOptions {
 }
 
 /**
- * Options for customizing engine presets.
- * @deprecated Use {@link MainThreadPresetOptions} or {@link WorkerPresetOptions} instead.
- */
-export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
-
-/**
  * Predefined engine configuration presets optimized for specific performance characteristics.
  *
  * All presets are functions that optionally accept configuration options.

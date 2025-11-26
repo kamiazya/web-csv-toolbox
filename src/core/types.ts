@@ -2135,11 +2135,11 @@ export interface CSVLexerLexOptions {
 }
 
 /**
- * String CSV Lexer interface
+ * Synchronous String CSV Lexer interface
  *
- * StringCSVLexer tokenizes string CSV data into fields and records.
+ * SyncStringCSVLexer tokenizes string CSV data into fields and records synchronously.
  */
-export interface StringCSVLexer {
+export interface SyncStringCSVLexer {
   /**
    * Lexes the given chunk of CSV string data.
    * @param chunk - The chunk of CSV string data to be lexed. Omit to flush remaining data.
@@ -2150,11 +2150,11 @@ export interface StringCSVLexer {
 }
 
 /**
- * Binary CSV Lexer interface
+ * Synchronous Binary CSV Lexer interface
  *
- * BinaryCSVLexer tokenizes binary CSV data (Uint8Array) into fields and records.
+ * SyncBinaryCSVLexer tokenizes binary CSV data (Uint8Array) into fields and records synchronously.
  */
-export interface BinaryCSVLexer {
+export interface SyncBinaryCSVLexer {
   /**
    * Lexes the given chunk of CSV binary data.
    * @param chunk - The chunk of CSV binary data (Uint8Array) to be lexed. Omit to flush remaining data.
@@ -2165,6 +2165,25 @@ export interface BinaryCSVLexer {
     chunk?: Uint8Array,
     options?: CSVLexerLexOptions,
   ): IterableIterator<Token>;
+}
+
+/**
+ * Asynchronous Binary CSV Lexer interface
+ *
+ * AsyncBinaryCSVLexer tokenizes binary CSV data (Uint8Array) into fields and records asynchronously.
+ * This is designed for GPU-accelerated or other async processing backends.
+ */
+export interface AsyncBinaryCSVLexer {
+  /**
+   * Lexes the given chunk of CSV binary data asynchronously.
+   * @param chunk - The chunk of CSV binary data (Uint8Array) to be lexed. Omit to flush remaining data.
+   * @param options - Lexer options.
+   * @returns An async iterable iterator of tokens.
+   */
+  lex(
+    chunk?: Uint8Array,
+    options?: CSVLexerLexOptions,
+  ): AsyncIterableIterator<Token>;
 }
 
 /**
