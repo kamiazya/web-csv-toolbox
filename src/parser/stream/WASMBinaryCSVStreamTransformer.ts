@@ -1,4 +1,4 @@
-import { CSVParserOptimized as CSVParser } from "web-csv-toolbox-wasm";
+import { CSVParser } from "web-csv-toolbox-wasm";
 import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   DEFAULT_DELIMITER,
@@ -19,24 +19,24 @@ export interface WASMBinaryCSVStreamTransformerOptions<
    * Field delimiter character.
    * @defaultValue ","
    */
-  delimiter?: string;
+  delimiter?: string | undefined;
 
   /**
    * Quote character for escaping fields.
    * @defaultValue '"'
    */
-  quotation?: string;
+  quotation?: string | undefined;
 
   /**
    * Maximum number of fields per record.
    * @defaultValue 100000
    */
-  maxFieldCount?: number;
+  maxFieldCount?: number | undefined;
 
   /**
    * Custom header names. If not provided, the first row will be used as headers.
    */
-  header?: Header;
+  header?: Header | undefined;
 }
 
 /**

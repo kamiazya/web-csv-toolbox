@@ -796,8 +796,8 @@ version = "0.1.0"
 dependencies = [
  "criterion",
  "csv",
+ "csv-core",
  "js-sys",
- "memchr",
  "proptest",
  "serde",
  "serde_json",

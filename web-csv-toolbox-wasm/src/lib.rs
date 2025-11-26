@@ -2,10 +2,14 @@ use wasm_bindgen::prelude::*;
 
 mod csv_json;
 mod error;
+pub mod parser;
 pub mod parser_optimized;
 
-// Re-export optimized parser
-pub use parser_optimized::CSVParserOptimized;
+// Re-export FlatParseResult from parser_optimized
+pub use parser_optimized::FlatParseResult;
+
+// Re-export csv-core based parser
+pub use parser::CSVParser;
 
 #[cfg(test)]
 mod tests;

@@ -1,6 +1,6 @@
 import {
   type FlatParseResult,
-  CSVParserOptimized as WASMCSVParserOptimizedInternal,
+  CSVParser as WASMCSVParserInternal,
 } from "web-csv-toolbox-wasm";
 import {
   isSyncInitialized,
@@ -38,7 +38,7 @@ export type { FlatParseData } from "./wasm-internal-types.ts";
 export abstract class WASMStringCSVParserBase<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
-  protected parser: WASMCSVParserOptimizedInternal;
+  protected parser: WASMCSVParserInternal;
   protected cachedHeaders: string[] | null = null;
   readonly #encoder = new TextEncoder();
 
@@ -88,7 +88,7 @@ export abstract class WASMStringCSVParserBase<
       wasmOptions.header = header;
     }
 
-    this.parser = new WASMCSVParserOptimizedInternal(wasmOptions as any);
+    this.parser = new WASMCSVParserInternal(wasmOptions as any);
   }
 
   /**

@@ -1981,19 +1981,19 @@ export interface CSVParserOptions<
   /**
    * Field delimiter character
    */
-  delimiter?: string;
+  delimiter?: string | undefined;
   /**
    * Quotation character
    */
-  quotation?: string;
+  quotation?: string | undefined;
   /**
    * Custom header array
    */
-  header?: Header;
+  header?: Header | undefined;
   /**
    * Maximum field count limit
    */
-  maxFieldCount?: number;
+  maxFieldCount?: number | undefined;
 }
 
 /**

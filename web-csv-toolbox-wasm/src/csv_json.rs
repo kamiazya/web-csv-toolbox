@@ -2,7 +2,7 @@ use js_sys::Array;
 use wasm_bindgen::prelude::*;
 
 use crate::error::format_error;
-use crate::parser_optimized::CSVParserOptimized;
+use crate::parser::CSVParser;
 
 // rust-csv is only available in test/bench builds for comparison
 #[cfg(test)]
@@ -65,7 +65,7 @@ pub(crate) fn parse_csv_to_jsvalue(
     );
 
     // Use optimized parser
-    let mut parser = CSVParserOptimized::new(options.into())
+    let mut parser = CSVParser::new(options.into())
         .map_err(|e| format_error(format!("Failed to create parser: {:?}", e), source))?;
 
     // Process input as string chunk
