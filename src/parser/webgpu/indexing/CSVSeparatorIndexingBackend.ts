@@ -5,12 +5,30 @@
  * Implements the GPUComputeBackend interface for consistent GPU compute operations.
  */
 
-import pass1ShaderSource from "@/parser/webgpu/indexing/shaders/csv-indexer-pass1.wgsl?raw";
-import pass2ShaderSource from "@/parser/webgpu/indexing/shaders/csv-indexer-pass2.wgsl?raw";
+// Import WGSL shader templates
+import pass1ShaderTemplate from "@/parser/webgpu/indexing/shaders/csv-indexer-pass1.wgsl?raw";
+import pass2ShaderTemplate from "@/parser/webgpu/indexing/shaders/csv-indexer-pass2.wgsl?raw";
 import type {
-  GPUParseResult,
+  CSVSeparatorIndexResult,
   ParseUniforms,
 } from "@/parser/webgpu/indexing/types.ts";
+
+/**
+ * Internal result type from GPU parsing operation
+ * Used for GPUComputeBackend interface implementation
+ */
+interface GPUParseResult {
+  /** Array of separator positions (packed as u32: offset | type << 31) */
+  readonly sepIndices: Uint32Array;
+  /** Quote state at the end of the chunk (0: false, 1: true) */
+  readonly endInQuote: number;
+  /** Total number of separators found */
+  readonly sepCount: number;
+}
+import {
+  getProcessedBytesCount,
+  sortSeparatorsByOffset,
+} from "@/parser/webgpu/utils/separator-utils.ts";
 import { GPUBufferAllocator } from "@/webgpu/compute/GPUBufferAllocator.ts";
 import type {
   ComputeDispatchResult,
@@ -20,16 +38,27 @@ import type {
 import { GPUShaderLoader } from "@/webgpu/compute/GPUShaderLoader.ts";
 import { alignToU32 } from "@/webgpu/utils/alignToU32.ts";
 import { padToU32Aligned } from "@/webgpu/utils/padToU32Aligned.ts";
+import {
+  DEFAULT_WORKGROUP_SIZE,
+  selectOptimalWorkgroupSize,
+  validateWorkgroupSize,
+  type WorkgroupSize,
+} from "@/webgpu/utils/workgroupSize.ts";
+
+// Re-export workgroup size utilities for backward compatibility
+export {
+  DEFAULT_WORKGROUP_SIZE,
+  SUPPORTED_WORKGROUP_SIZES,
+  selectOptimalWorkgroupSize,
+  selectOptimalWorkgroupSizeFromGPU,
+  validateWorkgroupSize,
+  type WorkgroupSize,
+} from "@/webgpu/utils/workgroupSize.ts";
 
 /**
  * Default chunk size for CSV processing (1MB)
  */
 const DEFAULT_CHUNK_SIZE = 1024 * 1024;
-
-/**
- * Workgroup size for GPU compute (matches shader)
- */
-const WORKGROUP_SIZE = 256;
 
 /**
  * Enable debug timing logs for benchmarking
@@ -38,9 +67,9 @@ const WORKGROUP_SIZE = 256;
 const DEBUG_TIMING = false;
 
 /**
- * Configuration for CSV Indexing Backend
+ * Configuration for CSV Separator Indexing Backend
  */
-export interface CSVIndexingBackendConfig {
+export interface CSVSeparatorIndexingBackendConfig {
   /**
    * Chunk size for processing
    * @default 1MB (1024 * 1024)
@@ -69,6 +98,60 @@ export interface CSVIndexingBackendConfig {
    * @default false
    */
   enableTiming?: boolean;
+
+  /**
+   * Workgroup size for GPU compute.
+   * Must be a power of 2: 32, 64, 128, 256, or 512.
+   * Higher values may be more efficient on some GPUs but must not exceed
+   * the device's maxComputeWorkgroupSizeX limit.
+   * If not specified (undefined), automatically selects optimal size based on GPU limits.
+   * @default auto (selects optimal size based on GPU limits)
+   */
+  workgroupSize?: WorkgroupSize;
+}
+
+/**
+ * Shader template parameters for placeholder replacement
+ */
+interface ShaderTemplateParams {
+  workgroupSize: WorkgroupSize;
+  logIterations: number;
+}
+
+/**
+ * Replace placeholders in shader template with actual values
+ *
+ * @param template - Shader template string with {{PLACEHOLDER}} markers
+ * @param params - Values to substitute for placeholders
+ * @returns Shader code with placeholders replaced
+ */
+function applyShaderTemplate(
+  template: string,
+  params: ShaderTemplateParams,
+): string {
+  return template
+    .replace(/\{\{WORKGROUP_SIZE\}\}/g, String(params.workgroupSize))
+    .replace(/\{\{LOG_ITERATIONS\}\}/g, String(params.logIterations));
+}
+
+/**
+ * Generate Pass 1 shader with configurable workgroup size
+ */
+function generatePass1Shader(workgroupSize: WorkgroupSize): string {
+  return applyShaderTemplate(pass1ShaderTemplate, {
+    workgroupSize,
+    logIterations: Math.log2(workgroupSize),
+  });
+}
+
+/**
+ * Generate Pass 2 shader with configurable workgroup size
+ */
+function generatePass2Shader(workgroupSize: WorkgroupSize): string {
+  return applyShaderTemplate(pass2ShaderTemplate, {
+    workgroupSize,
+    logIterations: Math.log2(workgroupSize),
+  });
 }
 
 /**
@@ -105,19 +188,30 @@ const SHADER_NAMES = {
  * - Correct quote state propagation for fields of any length
  * - Ordered separator writes (no CPU-side sorting)
  * - Race-free separator counting via atomic operations
+ * - AsyncDisposable support for automatic resource cleanup
  *
  * @example
  * ```ts
- * const backend = new CSVIndexingBackend({ chunkSize: 1024 * 1024 });
- * await backend.initialize();
+ * // Recommended: use create() with await using for automatic cleanup
+ * await using backend = await CSVSeparatorIndexingBackend.create();
+ * const result = await backend.run(csvBytes, false);
+ * console.log(`Found ${result.sepCount} separators`);
+ * // backend is automatically destroyed when scope exits
+ * ```
  *
- * const result = await backend.dispatch(csvBytes, { chunkSize: csvBytes.length, prevInQuote: 0 });
- * console.log(`Found ${result.data.sepCount} separators`);
- *
- * await backend.destroy();
+ * @example
+ * ```ts
+ * // Manual lifecycle management (legacy)
+ * const backend = new CSVSeparatorIndexingBackend();
+ * try {
+ *   await backend.initialize();
+ *   const result = await backend.run(csvBytes, false);
+ * } finally {
+ *   await backend.destroy();
+ * }
  * ```
  */
-export class CSVIndexingBackend
+export class CSVSeparatorIndexingBackend
   implements GPUComputeBackend<Uint8Array, ParseUniforms, GPUParseResult>
 {
   private device: GPUDevice | null = null;
@@ -132,25 +226,83 @@ export class CSVIndexingBackend
   private pass2BindGroup: GPUBindGroup | null = null;
 
   private readonly config: Required<
-    Omit<CSVIndexingBackendConfig, "gpu" | "device">
+    Omit<CSVSeparatorIndexingBackendConfig, "gpu" | "device" | "workgroupSize">
   > & {
     gpu?: GPU;
     device?: GPUDevice;
+    workgroupSize?: WorkgroupSize; // undefined means "auto"
   };
+  private resolvedWorkgroupSize: WorkgroupSize | null = null;
   private readonly ownDevice: boolean;
   private initialized = false;
   private currentBufferSize = 0;
 
-  constructor(config: CSVIndexingBackendConfig = {}) {
+  constructor(config: CSVSeparatorIndexingBackendConfig = {}) {
     const chunkSize = config.chunkSize || DEFAULT_CHUNK_SIZE;
+
+    // Validate workgroup size if specified
+    if (config.workgroupSize !== undefined) {
+      validateWorkgroupSize(config.workgroupSize);
+    }
+
     this.config = {
       chunkSize: alignToU32(chunkSize),
       maxSeparators: config.maxSeparators ?? chunkSize,
       gpu: config.gpu,
       device: config.device,
       enableTiming: config.enableTiming ?? false,
+      workgroupSize: config.workgroupSize, // undefined means "auto"
     };
     this.ownDevice = !config.device;
+  }
+
+  /**
+   * Create and initialize a new CSVSeparatorIndexingBackend
+   *
+   * This is the recommended way to create a backend instance.
+   * Combines construction and initialization into a single async call,
+   * making it easy to use with `await using` for automatic resource cleanup.
+   *
+   * @param config - Backend configuration options
+   * @returns Initialized backend ready for use
+   * @throws Error if GPU initialization fails
+   *
+   * @example
+   * ```ts
+   * // Recommended: automatic resource management
+   * await using backend = await CSVSeparatorIndexingBackend.create();
+   * const result = await backend.run(data, false);
+   * // backend is automatically destroyed when scope exits
+   * ```
+   *
+   * @example
+   * ```ts
+   * // With custom configuration
+   * await using backend = await CSVSeparatorIndexingBackend.create({
+   *   chunkSize: 2 * 1024 * 1024,
+   *   workgroupSize: 256,
+   * });
+   * ```
+   */
+  static async create(
+    config: CSVSeparatorIndexingBackendConfig = {},
+  ): Promise<CSVSeparatorIndexingBackend> {
+    const backend = new CSVSeparatorIndexingBackend(config);
+    await backend.initialize();
+    return backend;
+  }
+
+  /**
+   * Get the resolved workgroup size.
+   * Returns the configured size, or the auto-selected size after initialization.
+   * If undefined (auto) is configured and backend is not yet initialized, returns DEFAULT_WORKGROUP_SIZE.
+   */
+  get workgroupSize(): WorkgroupSize {
+    if (this.resolvedWorkgroupSize !== null) {
+      return this.resolvedWorkgroupSize;
+    }
+    // Return configured size or default if auto (undefined)
+    return this.config.workgroupSize ?? DEFAULT_WORKGROUP_SIZE;
   }
 
   /**
@@ -161,34 +313,29 @@ export class CSVIndexingBackend
   }
 
   /**
-   * Get the underlying GPU device
-   */
-  getDevice(): GPUDevice | null {
-    return this.device;
-  }
-
-  /**
    * Get the maximum safe chunk size for a single GPU dispatch
    *
    * Calculated from GPU device limits:
    * - maxComputeWorkgroupsPerDimension (default: 65535)
-   * - WORKGROUP_SIZE (256 bytes per workgroup)
+   * - workgroupSize (resolved value, default: 256)
    *
    * @returns Maximum chunk size in bytes, or default if device not initialized
    */
   getMaxChunkSize(): number {
+    const wgSize = this.workgroupSize;
     if (!this.device) {
-      // Fallback to conservative default (65535 * 256)
-      return 65535 * WORKGROUP_SIZE;
+      // Fallback to conservative default (65535 * workgroupSize)
+      return 65535 * wgSize;
     }
     const maxWorkgroups = this.device.limits.maxComputeWorkgroupsPerDimension;
-    return maxWorkgroups * WORKGROUP_SIZE;
+    return maxWorkgroups * wgSize;
   }
 
   /**
    * Initialize the backend
    *
    * Sets up GPU device, compiles shaders, creates pipelines.
+   * If workgroupSize is undefined, selects optimal size based on device limits.
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -198,6 +345,9 @@ export class CSVIndexingBackend
     // Get or create GPU device
     if (this.config.device) {
       this.device = this.config.device;
+      // Resolve workgroup size using device limits
+      this.resolvedWorkgroupSize =
+        this.config.workgroupSize ?? selectOptimalWorkgroupSize(this.device);
     } else {
       const gpu =
         this.config.gpu ??
@@ -211,21 +361,53 @@ export class CSVIndexingBackend
         throw new Error("Failed to get GPU adapter");
       }
 
-      this.device = await adapter.requestDevice();
+      // Determine the workgroup size to use
+      const requestedWgSize = this.config.workgroupSize;
+
+      // If workgroup size is specified and > 256, we need to request higher limits
+      const requiredLimits: GPUDeviceDescriptor["requiredLimits"] = {};
+      if (requestedWgSize !== undefined && requestedWgSize > 256) {
+        // Check if adapter supports the requested size
+        if (requestedWgSize > adapter.limits.maxComputeWorkgroupSizeX) {
+          throw new Error(
+            `Requested workgroup size ${requestedWgSize} exceeds adapter limit ${adapter.limits.maxComputeWorkgroupSizeX}`,
+          );
+        }
+        if (
+          requestedWgSize > adapter.limits.maxComputeInvocationsPerWorkgroup
+        ) {
+          throw new Error(
+            `Requested workgroup size ${requestedWgSize} exceeds adapter's maxComputeInvocationsPerWorkgroup limit ${adapter.limits.maxComputeInvocationsPerWorkgroup}`,
+          );
+        }
+        requiredLimits.maxComputeWorkgroupSizeX = requestedWgSize;
+        requiredLimits.maxComputeInvocationsPerWorkgroup = requestedWgSize;
+      }
+
+      this.device = await adapter.requestDevice({ requiredLimits });
+
+      // Resolve workgroup size: use configured value or auto-select
+      if (requestedWgSize !== undefined) {
+        this.resolvedWorkgroupSize = requestedWgSize;
+      } else {
+        // Auto-select: use the largest supported size within device limits
+        this.resolvedWorkgroupSize = selectOptimalWorkgroupSize(this.device);
+      }
     }
 
     // Initialize buffer allocator and shader loader
     this.bufferAllocator = new GPUBufferAllocator(this.device);
     this.shaderLoader = new GPUShaderLoader(this.device);
 
-    // Compile shaders
+    // Generate and compile shaders with resolved workgroup size
+    const wgSize = this.resolvedWorkgroupSize;
     this.shaderLoader.compile(SHADER_NAMES.PASS1, {
-      code: pass1ShaderSource,
-      label: "CSV Indexer Pass 1 Shader",
+      code: generatePass1Shader(wgSize),
+      label: `CSV Indexer Pass 1 Shader (WG=${wgSize})`,
     });
     this.shaderLoader.compile(SHADER_NAMES.PASS2, {
-      code: pass2ShaderSource,
-      label: "CSV Indexer Pass 2 Shader",
+      code: generatePass2Shader(wgSize),
+      label: `CSV Indexer Pass 2 Shader (WG=${wgSize})`,
     });
 
     // Create bind group layouts and pipelines
@@ -396,7 +578,7 @@ export class CSVIndexingBackend
     });
 
     // Create workgroup XORs buffer
-    const maxWorkgroups = Math.ceil(alignedSize / WORKGROUP_SIZE);
+    const maxWorkgroups = Math.ceil(alignedSize / this.workgroupSize);
     this.bufferAllocator.create(BUFFER_NAMES.WORKGROUP_XORS, {
       size: Math.max(4, maxWorkgroups * 4),
       usage:
@@ -480,7 +662,7 @@ export class CSVIndexingBackend
     uniforms: ParseUniforms,
   ): Promise<ComputeDispatchResult<GPUParseResult>> {
     if (!this.initialized || !this.device || !this.bufferAllocator) {
-      throw new Error("CSVIndexingBackend not initialized");
+      throw new Error("CSVSeparatorIndexingBackend not initialized");
     }
 
     const timing: ComputeTiming = {
@@ -500,7 +682,7 @@ export class CSVIndexingBackend
     // Pad input to u32 alignment
     const paddedInput = padToU32Aligned(input);
     const actualSize = input.length;
-    const workgroupCount = Math.ceil(actualSize / WORKGROUP_SIZE);
+    const workgroupCount = Math.ceil(actualSize / this.workgroupSize);
 
     // Ensure buffers are large enough
     this.ensureBuffers(paddedInput.length);
@@ -734,7 +916,7 @@ export class CSVIndexingBackend
         total: timing.totalMs.toFixed(3),
       };
       console.log(
-        "[CSVIndexingBackend Timing]",
+        "[CSVSeparatorIndexingBackend Timing]",
         JSON.stringify(timingData, null, 2),
       );
 
@@ -751,6 +933,55 @@ export class CSVIndexingBackend
         sepCount: actualSepCount,
       },
       timing: this.config.enableTiming ? timing : undefined,
+    };
+  }
+
+  /**
+   * Run separator detection on a chunk of CSV data
+   *
+   * This is the simplified interface for CSV separator indexing.
+   * It wraps the `dispatch()` method and returns a unified result
+   * with sorted separators and processedBytes for streaming.
+   *
+   * @param chunk - Input bytes to process
+   * @param prevInQuote - Quote state from previous chunk (false: outside, true: inside)
+   * @returns Result with sorted separators and processedBytes for streaming boundary
+   *
+   * @example
+   * ```ts
+   * const backend = new CSVSeparatorIndexingBackend();
+   * await backend.initialize();
+   *
+   * const result = await backend.run(csvBytes, 0);
+   * // result.separators: sorted separator indices
+   * // result.processedBytes: bytes up to last LF
+   * // result.endInQuote: quote state at end
+   *
+   * await backend.destroy();
+   * ```
+   */
+  async run(
+    chunk: Uint8Array,
+    prevInQuote: boolean,
+  ): Promise<CSVSeparatorIndexResult> {
+    const result = await this.dispatch(chunk, {
+      chunkSize: chunk.length,
+      prevInQuote: prevInQuote ? 1 : 0,
+    });
+
+    const processedBytes = getProcessedBytesCount(
+      result.data.sepIndices,
+      result.data.sepCount,
+    );
+
+    return {
+      separators: sortSeparatorsByOffset(
+        result.data.sepIndices,
+        result.data.sepCount,
+      ),
+      sepCount: result.data.sepCount,
+      processedBytes,
+      endInQuote: Boolean(result.data.endInQuote),
     };
   }
 
@@ -782,5 +1013,22 @@ export class CSVIndexingBackend
     this.device = null;
     this.initialized = false;
     this.currentBufferSize = 0;
+  }
+
+  /**
+   * AsyncDisposable implementation for automatic resource cleanup
+   *
+   * Enables usage with `await using` syntax for automatic lifecycle management.
+   *
+   * @example
+   * ```ts
+   * await using backend = new CSVSeparatorIndexingBackend();
+   * await backend.initialize();
+   * const result = await backend.run(data, false);
+   * // backend is automatically destroyed when scope exits
+   * ```
+   */
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.destroy();
   }
 }

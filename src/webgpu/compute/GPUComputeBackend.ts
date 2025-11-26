@@ -63,17 +63,30 @@ export interface ComputeTiming {
  * Provides a common contract for GPU compute operations.
  * Each implementation handles specific algorithms and data formats.
  *
+ * Implements `AsyncDisposable` for automatic resource cleanup with `await using`.
+ *
  * @typeParam TInput - Input data type for dispatch
  * @typeParam TUniforms - Uniforms/parameters type
  * @typeParam TResult - Result data type
  *
  * @example
  * ```ts
- * // CSV Indexing implementation
- * class CSVIndexingBackend implements GPUComputeBackend<Uint8Array, ParseUniforms, GPUParseResult> {
- *   async dispatch(input: Uint8Array, uniforms: ParseUniforms): Promise<ComputeDispatchResult<GPUParseResult>> {
- *     // CSV-specific GPU compute logic
- *   }
+ * // Automatic resource management with await using
+ * await using backend = new CSVIndexingBackend();
+ * await backend.initialize();
+ * const result = await backend.dispatch(data, uniforms);
+ * // backend.destroy() is automatically called when scope exits
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Manual lifecycle management
+ * const backend = new CSVIndexingBackend();
+ * try {
+ *   await backend.initialize();
+ *   const result = await backend.dispatch(data, uniforms);
+ * } finally {
+ *   await backend.destroy();
  * }
  * ```
  */
@@ -81,7 +94,7 @@ export interface GPUComputeBackend<
   TInput = Uint8Array,
   TUniforms = unknown,
   TResult = unknown,
-> {
+> extends AsyncDisposable {
   /**
    * Initialize the backend
    *
@@ -117,13 +130,6 @@ export interface GPUComputeBackend<
    * Call initialize() again to reuse.
    */
   destroy(): Promise<void>;
-
-  /**
-   * Get the underlying GPU device
-   *
-   * @returns GPU device or null if not initialized
-   */
-  getDevice(): GPUDevice | null;
 }
 
 /**

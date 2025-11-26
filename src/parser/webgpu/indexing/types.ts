@@ -5,6 +5,11 @@
  * that performs parallel index construction rather than full parsing.
  */
 
+// Import and re-export WorkgroupSize from the generic WebGPU utilities
+import type { WorkgroupSize } from "@/webgpu/utils/workgroupSize.ts";
+
+export type { WorkgroupSize };
+
 /**
  * Separator type constants
  */
@@ -22,15 +27,20 @@ export interface Separator {
 }
 
 /**
- * Result from GPU parsing operation
+ * Result from CSV separator indexing operation
+ *
+ * This is the new unified result type for the `run()` method.
+ * Separators are sorted by offset and include processedBytes for streaming.
  */
-export interface GPUParseResult {
-  /** Array of separator positions (packed as u32: offset | type << 31) */
-  readonly sepIndices: Uint32Array;
-  /** Quote state at the end of the chunk (0: false, 1: true) */
-  readonly endInQuote: number;
-  /** Total number of separators found */
+export interface CSVSeparatorIndexResult {
+  /** Array of separator positions, sorted by offset (packed as u32: offset | type << 31) */
+  readonly separators: Uint32Array;
+  /** Number of valid separators in the array */
   readonly sepCount: number;
+  /** Byte offset after the last LF (for streaming boundary) */
+  readonly processedBytes: number;
+  /** Quote state at end of chunk: true = inside quote, false = outside quote */
+  readonly endInQuote: boolean;
 }
 
 /**
@@ -45,6 +55,20 @@ export interface WebGPUParserConfig {
   readonly gpu?: GPU;
   /** Reuse GPU device if provided */
   readonly device?: GPUDevice;
+  /**
+   * Workgroup size for GPU compute.
+   * Must be a power of 2: 32, 64, 128, 256, or 512.
+   * Higher values may be more efficient on some GPUs but must not exceed
+   * the device's maxComputeWorkgroupSizeX limit.
+   * If not specified, automatically selects optimal size based on GPU limits.
+   * @default auto (selects optimal size based on GPU limits)
+   */
+  readonly workgroupSize?: WorkgroupSize;
+  /**
+   * Enable timing instrumentation for performance profiling.
+   * @default false
+   */
+  readonly enableTiming?: boolean;
 }
 
 /**
@@ -89,54 +113,3 @@ export interface GPUBuffers {
   pass2BindGroup: GPUBindGroup;
 }
 
-/**
- * CSV field extracted from indexed data
- */
-export interface CSVField {
-  /** Start offset in input buffer */
-  readonly start: number;
-  /** End offset in input buffer */
-  readonly end: number;
-  /** Field content (lazy-loaded) */
-  readonly value: string;
-}
-
-/**
- * CSV record (row) composed of fields
- */
-export interface CSVRecord {
-  /** Array of fields in this record */
-  readonly fields: CSVField[];
-  /** Record number (0-indexed) */
-  readonly recordIndex: number;
-}
-
-/**
- * Options for streaming parser
- */
-export interface StreamingParserOptions {
-  /** Parser configuration */
-  readonly config?: WebGPUParserConfig;
-  /** Callback for each parsed record */
-  readonly onRecord?: (record: CSVRecord) => void | Promise<void>;
-  /** Callback for errors */
-  readonly onError?: (error: Error) => void;
-  /** Whether to skip BOM detection (default: false) */
-  readonly skipBOM?: boolean;
-}
-
-/**
- * Internal state for streaming parser
- */
-export interface StreamingState {
-  /** Leftover bytes from previous chunk */
-  leftover: Uint8Array;
-  /** Quote state from previous chunk */
-  prevInQuote: number;
-  /** Whether this is the first chunk */
-  isFirstChunk: boolean;
-  /** Current record index */
-  recordIndex: number;
-  /** Current field start position in global stream */
-  globalOffset: number;
-}

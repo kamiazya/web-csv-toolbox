@@ -1,5 +1,9 @@
 // WebGPU CSV Indexer - Pass 1: Collect Quote Parities
 // Purpose: Collect quote parity for each workgroup to enable cross-workgroup propagation
+//
+// Template placeholders:
+//   {{WORKGROUP_SIZE}} - Workgroup size (32, 64, 128, 256, or 512)
+//   {{LOG_ITERATIONS}} - log2(WORKGROUP_SIZE) for loop iterations
 
 // ============================================================================
 // Data Structures
@@ -24,14 +28,14 @@ struct ParseUniforms {
 // Constants
 // ============================================================================
 
-const WORKGROUP_SIZE: u32 = 256u;
+const WORKGROUP_SIZE: u32 = {{WORKGROUP_SIZE}}u;
 const QUOTE: u32 = 34u;  // '"'
 
 // ============================================================================
 // Shared Memory
 // ============================================================================
 
-var<workgroup> sharedScanTemp: array<u32, WORKGROUP_SIZE>;
+var<workgroup> sharedScanTemp: array<u32, {{WORKGROUP_SIZE}}>;
 
 // ============================================================================
 // Helper Functions
@@ -46,7 +50,7 @@ fn getByte(index: u32) -> u32 {
 
 fn workgroupPrefixXOR(localId: u32) {
     var step = 1u;
-    for (var i = 0u; i < 8u; i++) {
+    for (var i = 0u; i < {{LOG_ITERATIONS}}u; i++) {
         workgroupBarrier();
 
         if (localId >= step) {
@@ -65,7 +69,7 @@ fn workgroupPrefixXOR(localId: u32) {
 // Main Compute Shader
 // ============================================================================
 
-@compute @workgroup_size(256, 1, 1)
+@compute @workgroup_size({{WORKGROUP_SIZE}}, 1, 1)
 fn main(
     @builtin(global_invocation_id) globalId: vec3<u32>,
     @builtin(local_invocation_id) localId: vec3<u32>,
@@ -91,10 +95,8 @@ fn main(
     // Perform prefix XOR scan
     workgroupPrefixXOR(tid);
 
-    // Last thread in workgroup stores the total parity
+    // Last thread stores the total parity (inclusive scan result)
     if (tid == WORKGROUP_SIZE - 1u) {
-        // Inclusive scan result at last position = total XOR for workgroup
-        let workgroupParity = sharedScanTemp[tid] ^ isQuote;
-        atomicStore(&workgroupXORs[workgroupId.x], workgroupParity);
+        atomicStore(&workgroupXORs[workgroupId.x], sharedScanTemp[tid]);
     }
 }

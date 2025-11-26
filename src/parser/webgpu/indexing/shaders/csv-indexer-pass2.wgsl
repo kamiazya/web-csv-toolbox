@@ -1,6 +1,10 @@
-// WebGPU CSV Indexer Compute Shader
+// WebGPU CSV Indexer Compute Shader - Pass 2
 // Purpose: Parallel scan to identify separator positions (comma and newline)
 // Architecture: Index-only output for minimal memory bandwidth usage
+//
+// Template placeholders:
+//   {{WORKGROUP_SIZE}} - Workgroup size (32, 64, 128, 256, or 512)
+//   {{LOG_ITERATIONS}} - log2(WORKGROUP_SIZE) for loop iterations
 
 // ============================================================================
 // Data Structures
@@ -35,7 +39,7 @@ struct ResultMeta {
 // Constants
 // ============================================================================
 
-const WORKGROUP_SIZE: u32 = 256u;
+const WORKGROUP_SIZE: u32 = {{WORKGROUP_SIZE}}u;
 const QUOTE: u32 = 34u;      // '"'
 const COMMA: u32 = 44u;      // ','
 const LF: u32 = 10u;         // '\n'
@@ -48,9 +52,9 @@ const SEP_TYPE_LF: u32 = 1u;
 // Shared Memory for Workgroup Scan
 // ============================================================================
 
-var<workgroup> sharedQuoteXOR: array<u32, WORKGROUP_SIZE>;
-var<workgroup> sharedScanTemp: array<u32, WORKGROUP_SIZE>;
-var<workgroup> sharedSeparatorFlags: array<u32, WORKGROUP_SIZE>;
+var<workgroup> sharedQuoteXOR: array<u32, {{WORKGROUP_SIZE}}>;
+var<workgroup> sharedScanTemp: array<u32, {{WORKGROUP_SIZE}}>;
+var<workgroup> sharedSeparatorFlags: array<u32, {{WORKGROUP_SIZE}}>;
 var<workgroup> workgroupSeparatorBase: atomic<u32>;
 
 // ============================================================================
@@ -78,7 +82,7 @@ fn workgroupPrefixXOR(localId: u32) {
     // Use iterative doubling for prefix XOR
     // After log2(WORKGROUP_SIZE) iterations, all values are computed
     var step = 1u;
-    for (var i = 0u; i < 8u; i++) { // log2(256) = 8 iterations
+    for (var i = 0u; i < {{LOG_ITERATIONS}}u; i++) {
         workgroupBarrier();
 
         if (localId >= step) {
@@ -91,16 +95,14 @@ fn workgroupPrefixXOR(localId: u32) {
     }
 
     // Convert from inclusive to exclusive scan by shifting
+    // IMPORTANT: Read BEFORE barrier to avoid race condition
     workgroupBarrier();
-    let temp = sharedScanTemp[localId];
-    workgroupBarrier();
-
+    var prevValue = 0u;
     if (localId > 0u) {
-        sharedScanTemp[localId] = sharedScanTemp[localId - 1u];
-    } else {
-        sharedScanTemp[0] = 0u;
+        prevValue = sharedScanTemp[localId - 1u];
     }
-
+    workgroupBarrier();
+    sharedScanTemp[localId] = prevValue;
     workgroupBarrier();
 }
 
@@ -113,7 +115,7 @@ fn workgroupPrefixSum(localId: u32, hasSeparator: u32) -> u32 {
 
     // Iterative doubling for prefix sum
     var step = 1u;
-    for (var i = 0u; i < 8u; i++) { // log2(256) = 8 iterations
+    for (var i = 0u; i < {{LOG_ITERATIONS}}u; i++) {
         workgroupBarrier();
 
         var sum = sharedSeparatorFlags[localId];
@@ -139,7 +141,7 @@ fn workgroupPrefixSum(localId: u32, hasSeparator: u32) -> u32 {
 // Main Compute Shader
 // ============================================================================
 
-@compute @workgroup_size(256, 1, 1)
+@compute @workgroup_size({{WORKGROUP_SIZE}}, 1, 1)
 fn main(
     @builtin(global_invocation_id) globalId: vec3<u32>,
     @builtin(local_invocation_id) localId: vec3<u32>,
