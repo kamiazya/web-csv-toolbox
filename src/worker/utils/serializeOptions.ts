@@ -14,11 +14,11 @@ import type { ParseBinaryOptions, ParseOptions } from "@/core/types.ts";
  * - `engine.worker`: Worker flag (not needed inside worker)
  * - `engine.gpu`: GPU flag (main thread decision, not needed in worker)
  * - `engine.wasm`: WASM flag (main thread decision, not needed in worker)
- * - `engine.gpuOptions`: GPU options (not needed in worker)
  *
  * **Preserved fields** (serializable and worker-relevant):
  * - `engine.workerStrategy`: Strategy for worker communication
  * - `engine.strict`: Strict mode flag
+ * - `engine.gpuOptions`: GPU configuration (devicePreference, adapterOptions, deviceDescriptor)
  *
  * @internal
  */
@@ -54,8 +54,7 @@ export function serializeOptions<
       worker: _worker,
       gpu: _gpu,
       wasm: _wasm,
-      gpuOptions: _gpuOptions,
-      // Note: workerStrategy and strict are serializable and should be preserved
+      // Note: workerStrategy, strict, and gpuOptions are serializable and should be preserved
       ...serializableEngine
     } = engine;
 

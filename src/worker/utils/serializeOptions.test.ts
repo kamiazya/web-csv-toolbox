@@ -232,6 +232,95 @@ describe("serializeOptions", () => {
     });
   });
 
+  describe("Engine options serialization", () => {
+    it("should preserve gpuOptions for worker GPU configuration", () => {
+      const options = {
+        delimiter: ",",
+        engine: {
+          worker: true,
+          gpu: true,
+          gpuOptions: {
+            devicePreference: "high-performance",
+            adapterOptions: { powerPreference: "high-performance" },
+            deviceDescriptor: { label: "CSV Parser GPU" },
+          },
+        },
+      } as any;
+      const result = serializeOptions(options);
+      expect(result).toEqual({
+        delimiter: ",",
+        engine: {
+          gpuOptions: {
+            devicePreference: "high-performance",
+            adapterOptions: { powerPreference: "high-performance" },
+            deviceDescriptor: { label: "CSV Parser GPU" },
+          },
+        },
+      });
+    });
+
+    it("should preserve workerStrategy alongside gpuOptions", () => {
+      const options = {
+        delimiter: ",",
+        engine: {
+          worker: true,
+          workerStrategy: "stream-transfer",
+          gpuOptions: { devicePreference: "low-power" },
+        },
+      } as any;
+      const result = serializeOptions(options);
+      expect(result).toEqual({
+        delimiter: ",",
+        engine: {
+          workerStrategy: "stream-transfer",
+          gpuOptions: { devicePreference: "low-power" },
+        },
+      });
+    });
+
+    it("should preserve strict mode alongside gpuOptions", () => {
+      const options = {
+        delimiter: ",",
+        engine: {
+          worker: true,
+          strict: true,
+          gpuOptions: { devicePreference: "auto" },
+        },
+      } as any;
+      const result = serializeOptions(options);
+      expect(result).toEqual({
+        delimiter: ",",
+        engine: {
+          strict: true,
+          gpuOptions: { devicePreference: "auto" },
+        },
+      });
+    });
+
+    it("should remove non-serializable engine fields but keep gpuOptions", () => {
+      const options = {
+        delimiter: ",",
+        engine: {
+          worker: true,
+          gpu: true,
+          wasm: false,
+          workerPool: { maxWorkers: 4 } as any,
+          workerURL: "/worker.js",
+          onFallback: () => {},
+          gpuDeviceManager: { device: {} } as any,
+          gpuOptions: { devicePreference: "high-performance" },
+        },
+      } as any;
+      const result = serializeOptions(options);
+      expect(result).toEqual({
+        delimiter: ",",
+        engine: {
+          gpuOptions: { devicePreference: "high-performance" },
+        },
+      });
+    });
+  });
+
   describe("Real-world scenarios", () => {
     it("should serialize options for worker message passing", () => {
       const controller = new AbortController();
