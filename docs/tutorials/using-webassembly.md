@@ -29,12 +29,15 @@ The library provides two entry points for WASM functionality. Choose based on yo
 ### Main Entry Point (`web-csv-toolbox`) - Recommended for Most Users
 
 ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
 
-// Auto-initialization occurs on first WASM use.
-// Optional but recommended: preload to reduce first‑parse latency
+// Optional: Preload WASM at app startup to reduce first-parse latency
 await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+
+// WASM auto-initializes on first use if not preloaded
+for await (const record of parse(csv, { engine: EnginePresets.fast() })) {
+  console.log(record);
+}
 ```
 
 **Best for:**
@@ -43,19 +46,22 @@ const records = parseStringToArraySyncWASM(csv);
 - ✅ Applications where bundle size is not critical
 
 **Characteristics:**
-- Automatic WASM initialization on first WASM use (not at import time)
-- Preloading via `loadWASM()` is recommended to minimize first‑parse latency
+- **Automatic initialization**: WASM initializes on first use (no manual `loadWASM()` required)
+- **Optional preloading**: Call `loadWASM()` at startup to reduce first-parse latency
 - Larger bundle size (WASM embedded as base64)
 - ⚠️ Experimental auto-initialization may change in future
 
 ### Slim Entry Point (`web-csv-toolbox/slim`) - For Bundle Size Optimization
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox/slim';
 
-// Manual initialization required
+// Required: Initialize WASM before use
 await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+
+for await (const record of parse(csv, { engine: EnginePresets.fast() })) {
+  console.log(record);
+}
 ```
 
 **Best for:**
@@ -64,20 +70,20 @@ const records = parseStringToArraySyncWASM(csv);
 - ✅ When you want explicit control over WASM loading
 
 **Characteristics:**
-- Manual `loadWASM()` call required before using WASM features
-- Smaller main bundle size (WASM external)
-- External WASM file for better caching
+- **Manual initialization required**: Must call `loadWASM()` before using WASM features
+- Smaller main bundle size (WASM loaded externally)
+- External WASM file enables better caching
 
 **Comparison:**
 
 | Aspect | Main | Slim |
 |--------|------|------|
 | **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
-| **Initialization** | Automatic | Manual |
-| **API Complexity** | Simpler | Requires `loadWASM()` |
+| **Initialization** | Automatic (optional preload) | Manual (`loadWASM()` required) |
+| **`loadWASM()` Call** | Optional (reduces first-parse latency) | Required before WASM use |
 | **Use Case** | Convenience | Bundle optimization |
 
-> **Note**: This tutorial uses the **main entry point** (`web-csv-toolbox`) for simplicity. To use the slim entry, simply import from `web-csv-toolbox/slim` and add `await loadWASM()` before using WASM functions.
+> **Note**: This tutorial uses the **main entry point** (`web-csv-toolbox`) for simplicity. Examples show `await loadWASM()` for best practice (preloading), but it's optional with the main entry. For slim entry, `loadWASM()` is required.
 
 ## What is WebAssembly?
 
@@ -95,15 +101,14 @@ WebAssembly (WASM) is a binary instruction format that runs in modern browsers a
 - Parsing UTF-8 CSV files
 - Server-side parsing where blocking is acceptable
 - CSV uses standard delimiters (comma, tab, etc.)
-- CSV uses double-quote (`"`) as quotation character
+- Using any single-character quotation mark
 
 **❌ Skip WASM when:**
 - CSV uses non-UTF-8 encoding (Shift-JIS, EUC-JP, etc.)
-- CSV uses single-quote (`'`) as quotation character
 - Stability is the highest priority (use JavaScript parser instead)
 - WASM initialization overhead matters for your use case
 
-**Note:** WASM parser is stable but the implementation may change in future versions. For maximum stability, use the JavaScript parser (`mainThread` preset).
+**Note:** WASM parser is stable but the implementation may change in future versions. For maximum stability, use the JavaScript parser (`stable` preset).
 
 ## Step 1: Load the WASM Module
 
@@ -231,12 +236,76 @@ await fetchAndParseCSV('https://example.com/large-data.csv');
 
 ---
 
-## Step 6: Synchronous Parsing with WASM
+## Step 5.5: Parse Binary Data with WASM
 
-For special use cases, WASM provides a synchronous API:
+WASM supports binary input (`Uint8Array`, `ArrayBuffer`) with streaming:
 
 ```typescript
-import { parseStringToArraySyncWASM, loadWASM } from 'web-csv-toolbox';
+import { parseBinary, loadWASM, EnginePresets } from 'web-csv-toolbox';
+
+await loadWASM();
+
+const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
+
+for await (const record of parseBinary(buffer, {
+  engine: EnginePresets.fast()
+})) {
+  console.log(record);
+}
+```
+
+---
+
+## Step 5.6: Stream Processing with WASM
+
+For large files, use `WASMBinaryCSVStreamTransformer` for memory-efficient streaming:
+
+```typescript
+import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
+
+await loadWASM();
+
+const transformer = new WASMBinaryCSVStreamTransformer();
+
+await fetch('large-file.csv')
+  .then(res => res.body)
+  .pipeThrough(transformer)
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record);
+    }
+  }));
+```
+
+Or use the high-level `parseBinaryStream` API:
+
+```typescript
+import { parseBinaryStream, loadWASM } from 'web-csv-toolbox';
+
+await loadWASM();
+
+const stream = await fetch('large-file.csv').then(r => r.body);
+
+for await (const record of parseBinaryStream(stream, {
+  engine: { wasm: true }
+})) {
+  console.log(record);
+}
+```
+
+**Benefits of streaming:**
+- ✅ Constant memory usage (doesn't load entire file)
+- ✅ Process files larger than available memory
+- ✅ Start processing before download completes
+
+---
+
+## Step 6: Synchronous Parsing with WASM
+
+For special use cases, WASM provides synchronous APIs through the high-level parsing functions:
+
+```typescript
+import { parseString, parseBinary, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
@@ -244,14 +313,23 @@ const csv = `name,age
 Alice,30
 Bob,25`;
 
-// Synchronous parsing (returns array)
-const records = parseStringToArraySyncWASM(csv);
+// Synchronous parsing with WASM (returns array)
+const records = parseString.toArraySync(csv, {
+  engine: { wasm: true }
+});
 
 console.log(records);
 // [
 //   { name: 'Alice', age: '30' },
 //   { name: 'Bob', age: '25' }
 // ]
+
+// Binary data can also be parsed synchronously with WASM
+const encoder = new TextEncoder();
+const binary = encoder.encode(csv);
+const binaryRecords = parseBinary.toArraySync(binary, {
+  engine: { wasm: true }
+});
 ```
 
 **Use case:** When you need all records immediately (not streaming)
@@ -300,45 +378,6 @@ for await (const record of parse(shiftJISBinary, {
 
 ---
 
-### Double-Quote Only
-
-WASM only supports double-quote (`"`) as quotation character.
-
-```typescript
-import { parse, loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-// ✅ Works (double-quote)
-for await (const record of parse(csv, {
-  engine: { wasm: true },
-  quotation: '"'
-})) {
-  console.log(record);
-}
-
-// ❌ Error (single-quote not supported)
-for await (const record of parse(csv, {
-  engine: { wasm: true },
-  quotation: "'"
-})) {
-  console.log(record);
-}
-```
-
-**Workaround:** Use JavaScript parser for single-quote CSVs:
-
-```typescript
-for await (const record of parse(csv, {
-  engine: { wasm: false },
-  quotation: "'"
-})) {
-  console.log(record);
-}
-```
-
----
-
 ## Error Handling
 
 ### WASM Not Loaded
@@ -371,29 +410,6 @@ for await (const record of parse(csv, {
   engine: { wasm: true }
 })) {
   console.log(record);
-}
-```
-
----
-
-### Invalid Options for WASM
-
-```typescript
-import { parse, loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-try {
-  // ❌ Single-quote not supported
-  for await (const record of parse(csv, {
-    engine: { wasm: true },
-    quotation: "'"
-  })) {
-    console.log(record);
-  }
-} catch (error) {
-  console.error('Invalid quotation for WASM:', error.message);
-  // "Invalid quotation, must be double quote on WASM."
 }
 ```
 
@@ -518,7 +534,7 @@ You've learned how to:
 - ✅ Load the WASM module with `loadWASM()`
 - ✅ Parse CSV using WASM acceleration
 - ✅ Combine WASM with Worker Threads
-- ✅ Handle WASM limitations (UTF-8, double-quote only)
+- ✅ Handle WASM limitations (UTF-8 only)
 - ✅ Initialize WASM in browser and server applications
 - ✅ Handle errors related to WASM
 

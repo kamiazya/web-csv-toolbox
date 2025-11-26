@@ -423,8 +423,7 @@ impl CSVParser {
         while input_pos < self.input_buffer.len() {
             let input = &self.input_buffer[input_pos..];
 
-            let (result, nin, nout) =
-                self.reader.read_field(input, &mut self.field_buffer);
+            let (result, nin, nout) = self.reader.read_field(input, &mut self.field_buffer);
 
             match result {
                 ReadFieldResult::InputEmpty => {
@@ -488,17 +487,18 @@ impl CSVParser {
     fn take_partial_field_as_string(&mut self) -> Result<String, JsError> {
         let bytes = std::mem::take(&mut self.partial_field);
         String::from_utf8(bytes).map_err(|e| {
-                JsError::new(&format!(
-                    "Invalid UTF-8 at line {}:{}: {}",
-                    self.line, self.byte, e
-                ))
-            })
+            JsError::new(&format!(
+                "Invalid UTF-8 at line {}:{}: {}",
+                self.line, self.byte, e
+            ))
+        })
     }
 
     /// Accumulate field output to partial_field buffer
     #[inline]
     fn accumulate_field_output(&mut self, nout: usize) {
-        self.partial_field.extend_from_slice(&self.field_buffer[..nout]);
+        self.partial_field
+            .extend_from_slice(&self.field_buffer[..nout]);
     }
 
     /// Double the field buffer size when OutputFull is encountered
@@ -523,27 +523,27 @@ impl CSVParser {
             self.headers_js_cache = arr.into();
             self.headers = Some(headers);
             self.headers_parsed = true;
-        } else {
-            if let Some(ref headers) = self.headers {
-                let actual_count = self.current_record.len();
-                buffer.actual_field_counts.push(actual_count);
+        } else if let Some(ref headers) = self.headers {
+            let actual_count = self.current_record.len();
+            buffer.actual_field_counts.push(actual_count);
 
-                let header_len = headers.len();
-                let record_len = self.current_record.len();
+            let header_len = headers.len();
+            let record_len = self.current_record.len();
 
-                // Move existing fields
-                buffer.field_data.extend(self.current_record.drain(..record_len.min(header_len)));
+            // Move existing fields
+            buffer
+                .field_data
+                .extend(self.current_record.drain(..record_len.min(header_len)));
 
-                // Fill missing fields with empty strings
-                for _ in record_len..header_len {
-                    buffer.field_data.push(String::new());
-                }
-
-                buffer.record_count += 1;
-                self.current_record.clear();
-            } else {
-                self.current_record.clear();
+            // Fill missing fields with empty strings
+            for _ in record_len..header_len {
+                buffer.field_data.push(String::new());
             }
+
+            buffer.record_count += 1;
+            self.current_record.clear();
+        } else {
+            self.current_record.clear();
         }
     }
 
@@ -755,7 +755,11 @@ mod tests {
 
         assert_eq!(fields.len(), 2, "Expected 2 fields, got {:?}", fields);
         assert_eq!(fields[0], "Alice");
-        assert_eq!(fields[1], "test value", "Expected 'test value', got '{}'", fields[1]);
+        assert_eq!(
+            fields[1], "test value",
+            "Expected 'test value', got '{}'",
+            fields[1]
+        );
     }
 
     /// Test csv-core with partial field accumulation (mimics CSVParser behavior)
@@ -763,10 +767,19 @@ mod tests {
     fn test_csv_core_partial_field_accumulation() {
         let all_records = parse_csv_to_records(b"header,value\nAlice,\"test value\"\n");
 
-        assert_eq!(all_records.len(), 2, "Expected 2 records, got {:?}", all_records);
+        assert_eq!(
+            all_records.len(),
+            2,
+            "Expected 2 records, got {:?}",
+            all_records
+        );
         assert_eq!(all_records[0], vec!["header", "value"]);
         assert_eq!(all_records[1][0], "Alice");
-        assert_eq!(all_records[1][1], "test value", "Expected 'test value', got '{}'", all_records[1][1]);
+        assert_eq!(
+            all_records[1][1], "test value",
+            "Expected 'test value', got '{}'",
+            all_records[1][1]
+        );
     }
 
     /// Test csv-core handles escaped quotes correctly
@@ -775,17 +788,29 @@ mod tests {
         // Test 1: "" (empty quoted field)
         let fields1 = parse_csv_to_fields(b"\"\"");
         assert_eq!(fields1.len(), 1);
-        assert_eq!(fields1[0], "", "\"\" should be empty string, got '{}'", fields1[0]);
+        assert_eq!(
+            fields1[0], "",
+            "\"\" should be empty string, got '{}'",
+            fields1[0]
+        );
 
         // Test 2: """" with newline (should complete the field)
         let fields2 = parse_csv_to_fields(b"\"\"\"\"\n");
         assert_eq!(fields2.len(), 1);
-        assert_eq!(fields2[0], "\"", "\"\"\"\"\\n should be single quote, got '{}'", fields2[0]);
+        assert_eq!(
+            fields2[0], "\"",
+            "\"\"\"\"\\n should be single quote, got '{}'",
+            fields2[0]
+        );
 
         // Test 3: """""" with newline
         let fields3 = parse_csv_to_fields(b"\"\"\"\"\"\"\n");
         assert_eq!(fields3.len(), 1);
-        assert_eq!(fields3[0], "\"\"", "\"\"\"\"\"\"\\n should be two quotes, got '{}'", fields3[0]);
+        assert_eq!(
+            fields3[0], "\"\"",
+            "\"\"\"\"\"\"\\n should be two quotes, got '{}'",
+            fields3[0]
+        );
     }
 
     /// Test parsing fields larger than the initial 64KB buffer
@@ -798,9 +823,19 @@ mod tests {
 
         let fields = parse_csv_to_fields(csv_input.as_bytes());
 
-        assert_eq!(fields.len(), 2, "Expected 2 fields (header + data), got {:?}", fields.len());
+        assert_eq!(
+            fields.len(),
+            2,
+            "Expected 2 fields (header + data), got {:?}",
+            fields.len()
+        );
         assert_eq!(fields[0], "header");
-        assert_eq!(fields[1].len(), 100_000, "Large field should be 100KB, got {} bytes", fields[1].len());
+        assert_eq!(
+            fields[1].len(),
+            100_000,
+            "Large field should be 100KB, got {} bytes",
+            fields[1].len()
+        );
         assert_eq!(fields[1], large_content, "Large field content mismatch");
     }
 

@@ -13,7 +13,9 @@ describe("WASMBinaryCSVArrayParser", () => {
   describe("basic functionality", () => {
     test("should parse simple CSV into arrays", () => {
       const parser = new WASMBinaryCSVArrayParser();
-      const records = [...parser.parse(encoder.encode("id,name\n1,Alice\n2,Bob"))];
+      const records = [
+        ...parser.parse(encoder.encode("id,name\n1,Alice\n2,Bob")),
+      ];
 
       expect(records).toHaveLength(2);
       expect(records[0]).toEqual(["1", "Alice"]);
@@ -113,11 +115,17 @@ describe("WASMBinaryCSVArrayParser", () => {
       const parser = new WASMBinaryCSVArrayParser();
 
       // First chunk with header and partial data
-      const records1 = [...parser.parse(encoder.encode("id,name\n1,Alice\n2,"), { stream: true })];
+      const records1 = [
+        ...parser.parse(encoder.encode("id,name\n1,Alice\n2,"), {
+          stream: true,
+        }),
+      ];
       expect(records1.length).toBeGreaterThanOrEqual(1);
 
       // Second chunk completing the record
-      const records2 = [...parser.parse(encoder.encode("Bob\n"), { stream: true })];
+      const records2 = [
+        ...parser.parse(encoder.encode("Bob\n"), { stream: true }),
+      ];
 
       // Flush remaining
       const records3 = [...parser.parse()];
@@ -143,10 +151,14 @@ describe("WASMBinaryCSVArrayParser", () => {
       const parser = new WASMBinaryCSVArrayParser();
 
       // First chunk ends with CR
-      const records1 = [...parser.parse(encoder.encode("a,b\r\n1,2\r"), { stream: true })];
+      const records1 = [
+        ...parser.parse(encoder.encode("a,b\r\n1,2\r"), { stream: true }),
+      ];
 
       // Second chunk starts with LF
-      const records2 = [...parser.parse(encoder.encode("\n3,4"), { stream: true })];
+      const records2 = [
+        ...parser.parse(encoder.encode("\n3,4"), { stream: true }),
+      ];
 
       // Flush
       const records3 = [...parser.parse()];
@@ -166,7 +178,9 @@ describe("WASMBinaryCSVArrayParser", () => {
       // First chunk: header + first byte of multi-byte char
       const chunk1 = new Uint8Array([
         ...encoder.encode("name\n"),
-        0xe6, 0x97, 0xa5, // 日
+        0xe6,
+        0x97,
+        0xa5, // 日
         0xe6, // First byte of 本 (incomplete)
       ]);
       const records1 = [...parser.parse(chunk1, { stream: true })];
@@ -194,7 +208,9 @@ describe("WASMBinaryCSVArrayParser", () => {
       [...parser.parse(incompleteUtf8, { stream: true })];
 
       // Flush should throw error for incomplete UTF-8
-      expect(() => [...parser.parse()]).toThrow(/incomplete utf-8|byte sequence/i);
+      expect(() => [...parser.parse()]).toThrow(
+        /incomplete utf-8|byte sequence/i,
+      );
     });
 
     test("should error on flush with truncated 4-byte UTF-8 sequence", () => {
@@ -210,7 +226,9 @@ describe("WASMBinaryCSVArrayParser", () => {
       [...parser.parse(incompleteEmoji, { stream: true })];
 
       // Flush should throw error
-      expect(() => [...parser.parse()]).toThrow(/incomplete utf-8|byte sequence/i);
+      expect(() => [...parser.parse()]).toThrow(
+        /incomplete utf-8|byte sequence/i,
+      );
     });
   });
 
@@ -268,8 +286,14 @@ describe("WASMBinaryCSVArrayParser", () => {
     test("should preserve non-empty field values in correct positions", () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
           (headers, values) => {
             // Clean headers (no commas, quotes, newlines, and unique)
             const cleanHeaders = headers

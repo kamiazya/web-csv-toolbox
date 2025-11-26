@@ -24,14 +24,6 @@ export function parseBinaryStreamToStream<
   const engineConfig = new InternalEngineConfig(options?.engine);
 
   if (engineConfig.hasWasm()) {
-    // Validate that array output format is not used with WASM
-    if (options?.outputFormat === "array") {
-      throw new Error(
-        "Array output format is not supported with WASM execution. " +
-          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-      );
-    }
-
     // Validate charset - WASM only supports UTF-8
     const { charset, decompression } = options ?? {};
     if (charset && charset.toLowerCase() !== "utf-8") {
@@ -49,14 +41,16 @@ export function parseBinaryStreamToStream<
       quotation: options?.quotation,
       header: options?.header as readonly string[] | undefined,
       maxFieldCount: options?.maxFieldCount,
+      outputFormat: options?.outputFormat,
     });
 
     if (decompression) {
       return stream
         .pipeThrough(
-          new DecompressionStream(
-            decompression,
-          ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+          new DecompressionStream(decompression) as unknown as TransformStream<
+            Uint8Array,
+            Uint8Array
+          >,
         )
         .pipeThrough(transformer) as ReadableStream<
         InferCSVRecord<Header, Options>

@@ -277,11 +277,11 @@ For more details on the `strict` option, refer to the [`EngineConfig`](https://k
 - **Browser**: UI responsiveness is critical (non-blocking parsing required)
 - **Server**: Processing multiple files concurrently
 - **Server**: Spare CPU cores available for parallel processing
-- Need stable non-blocking execution (`worker` preset)
+- Need stable non-blocking execution (`responsive` preset)
 - Accept experimental API with stable fallback (`balanced` preset)
 
 ❌ **Skip workers when:**
-- **Stability is highest priority**: Use `mainThread` preset instead
+- **Stability is highest priority**: Use `stable` preset instead
 - Worker initialization overhead is unacceptable for your use case
 - Simple scripts or command-line tools
 - Very tight latency requirements
@@ -640,23 +640,23 @@ Memory: O(1) - constant per record (streaming)
 
 ```mermaid
 graph TD
-    Start{File Size} --> |< 100KB| MainThread[mainThread]
+    Start{File Size} --> |< 100KB| Stable[stable]
     Start --> |100KB-1MB| Choice1{Browser?}
-    Choice1 --> |Yes| Worker1[worker]
-    Choice1 --> |No| MainThread
+    Choice1 --> |Yes| Responsive[responsive]
+    Choice1 --> |No| Stable
 
     Start --> |1MB-10MB| Balanced[balanced<br/>worker + stream]
 
     Start --> |10MB-100MB| UTF8{UTF-8?}
-    UTF8 --> |Yes| Fastest[fastest<br/>worker + wasm + stream]
+    UTF8 --> |Yes| ResponsiveFast[responsiveFast<br/>worker + wasm]
     UTF8 --> |No| Balanced2[balanced<br/>any encoding]
 
     Start --> |> 100MB| Stream[balanced<br/>with streaming input]
 
-    style MainThread fill:#e1f5ff
-    style Worker1 fill:#ccffcc
+    style Stable fill:#e1f5ff
+    style Responsive fill:#ccffcc
     style Balanced fill:#ccffcc
-    style Fastest fill:#ffffcc
+    style ResponsiveFast fill:#ffffcc
     style Balanced2 fill:#ccffcc
     style Stream fill:#ccffcc
 ```
@@ -664,39 +664,39 @@ graph TD
 ### By Requirements
 
 **Browser - Need UI responsiveness?**
-→ Use worker (`balanced`, `worker`, `fastest`)
+→ Use worker (`balanced`, `responsive`, `responsiveFast`)
 
 **Server - Need high throughput?**
-→ Use worker with pool (`balanced`, `fastest`)
+→ Use worker with pool (`balanced`, `responsiveFast`)
 
 **Need maximum speed?**
-→ Use WASM (`wasm`, `fastest`)
+→ Use WASM (`fast`, `responsiveFast`)
 
 **Need broad format support (non-UTF-8, custom quotes)?**
-→ Avoid WASM (`balanced`, `worker`, `mainThread`)
+→ Avoid WASM (`balanced`, `responsive`, `stable`)
 
 **Browser - Safari support required?**
-→ Use message-streaming (`worker`, not `workerStreamTransfer`)
+→ Use message-streaming (`responsive`, not `memoryEfficient`)
 
 **Need maximum compatibility?**
-→ Use `mainThread` (works everywhere)
+→ Use `stable` (works everywhere)
 
 ### By Environment
 
 **Browser (UI-critical):**
-→ `balanced` or `fastest` (keep UI responsive)
+→ `balanced` or `responsiveFast` (keep UI responsive)
 
 **Node.js/Deno/Bun (server-side):**
 → `balanced` with `WorkerPool` (concurrent processing)
 
 **Safari:**
-→ `worker` or `balanced` (auto-fallback to message-streaming)
+→ `responsive` or `balanced` (auto-fallback to message-streaming)
 
 **Chrome/Firefox/Edge:**
-→ `fastest` or `workerStreamTransfer` (zero-copy streams)
+→ `responsiveFast` or `memoryEfficient` (zero-copy streams)
 
 **CLI tools / Scripts:**
-→ `mainThread` or `wasm` (no worker overhead)
+→ `stable` or `fast` (no worker overhead)
 
 ---
 

@@ -1,5 +1,6 @@
-import { parseStringToArraySyncWASM } from "#/parser/api/string/parseStringToArraySyncWASM.main.js";
-import type { CSVRecord, ParseOptions } from "@/core/types.ts";
+import type { CSVArrayRecord, CSVRecord, ParseOptions } from "@/core/types.ts";
+import { WASMStringCSVArrayParser } from "@/parser/models/WASMStringCSVArrayParser.ts";
+import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
 
 /**
  * Parse CSV string using WebAssembly in main thread.
@@ -21,12 +22,32 @@ import type { CSVRecord, ParseOptions } from "@/core/types.ts";
 export async function* parseStringInWASM<Header extends ReadonlyArray<string>>(
   csv: string,
   options?: ParseOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
-  // Use WASM implementation (automatically initialized if needed)
-  const records = parseStringToArraySyncWASM(csv, options);
+): AsyncIterableIterator<CSVRecord<Header> | CSVArrayRecord<Header>> {
+  const outputFormat = options?.outputFormat ?? "object";
 
-  // Yield records
-  for (const record of records) {
-    yield record;
+  if (outputFormat === "array") {
+    // Use array parser for array output
+    const parser = new WASMStringCSVArrayParser<Header>({
+      delimiter: options?.delimiter ?? ",",
+      quotation: options?.quotation ?? '"',
+      maxFieldCount: options?.maxFieldCount,
+      header: options?.header,
+    });
+
+    for (const record of parser.parse(csv)) {
+      yield record;
+    }
+  } else {
+    // Use object parser for object output (default)
+    const parser = new WASMStringObjectCSVParser<Header>({
+      delimiter: options?.delimiter ?? ",",
+      quotation: options?.quotation ?? '"',
+      maxFieldCount: options?.maxFieldCount,
+      header: options?.header,
+    });
+
+    for (const record of parser.parse(csv)) {
+      yield record;
+    }
   }
 }

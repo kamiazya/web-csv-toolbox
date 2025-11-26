@@ -30,7 +30,9 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
   - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `CSVLexerTransformer`, `CSVRecordAssemblerTransformer`
 - Worker management (`WorkerPool`, `WorkerSession`)
-- WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
+- WASM utilities (`loadWASM`, `loadWASMSync`, `isWASMReady`, `ensureWASMInitialized`)
+- WASM Parser Models: `WASMStringObjectCSVParser`, `WASMStringCSVArrayParser`, `WASMBinaryObjectCSVParser`, `WASMBinaryCSVArrayParser`
+- WASM Stream Transformer: `WASMBinaryCSVStreamTransformer`
 
 **Characteristics**:
 - ✅ Automatic WASM initialization on first use (not at import time)
@@ -40,7 +42,7 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 ### `web-csv-toolbox/slim` (Slim Entry - Smaller Bundle)
 
 ```typescript
-import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { parseString, loadWASM } from 'web-csv-toolbox/slim';
 ```
 
 **Resolves to**: platform-specific builds
@@ -54,8 +56,7 @@ import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolb
 - Worker management (same as main)
 - WASM utilities with **manual initialization required**:
   - `loadWASM()` - **Must be called before using WASM functions**
-  - `isSyncInitialized()` - Check WASM initialization status
-  - `parseStringToArraySyncWASM()` - Synchronous WASM parsing
+  - `isWASMReady()` - Check WASM initialization status
 
 **Characteristics**:
 - ✅ Smaller main bundle (WASM not embedded in JavaScript)
@@ -64,13 +65,13 @@ import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolb
 
 **Usage pattern**:
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
 // Must initialize WASM before use
 await loadWASM();
 
-// Now can use WASM functions
-const records = parseStringToArraySyncWASM(csv);
+// Now can use WASM functions via engine option
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 ## Worker Export
@@ -155,6 +156,57 @@ When combined with future distribution improvements, this export could enable:
 4. **Custom loading strategies**: Implement lazy-loading or conditional loading
 
 **See**: [Package Exports Explanation](../explanation/package-exports.md#3-wasm-module-web-csv-toolboxcsvwasm) for detailed discussion of current limitations and future improvements.
+
+## WASM Utilities
+
+Utility functions for managing WASM initialization and high-level synchronous parsing.
+
+### Initialization Functions
+
+- **`loadWASM(input?)`** - Asynchronous WASM module initialization
+  - **Parameters**: Optional `InitInput` (URL, Response, ArrayBuffer, or WebAssembly.Module)
+  - **Returns**: `Promise<void>`
+  - **Use case**: Pre-load WASM module to avoid latency on first parse
+  - **Example**:
+    ```typescript
+    import { loadWASM } from 'web-csv-toolbox';
+
+    // Pre-load at app startup
+    await loadWASM();
+
+    // Later parsing will be instant (no initialization delay)
+    ```
+
+- **`loadWASMSync(input?)`** - Synchronous WASM module initialization
+  - **Parameters**: Optional `SyncInitInput`
+  - **Returns**: `void`
+  - **Use case**: Initialize WASM synchronously (used internally by WASM parsers)
+  - **Example**:
+    ```typescript
+    import { loadWASMSync, parseString } from 'web-csv-toolbox';
+
+    loadWASMSync(); // Blocking initialization
+    const records = parseString.toArraySync(csv, { engine: { wasm: true } });
+    ```
+
+- **`ensureWASMInitialized()`** - Ensure WASM is initialized (call `loadWASM` if needed)
+  - **Returns**: `Promise<void>`
+  - **Use case**: Ensure initialization without knowing current state
+
+- **`isWASMReady()`** - Check if WASM module is initialized
+  - **Returns**: `boolean`
+  - **Use case**: Conditional logic based on WASM availability
+
+### Synchronous Parsing with WASM
+
+Use the unified API with `{ engine: { wasm: true } }` option:
+
+```typescript
+import { parseString } from 'web-csv-toolbox';
+
+const records = parseString.toArraySync('name,age\nAlice,30', { engine: { wasm: true } });
+// records: [{ name: 'Alice', age: '30' }]
+```
 
 ## Low-level API Reference
 
@@ -255,6 +307,59 @@ The library exports a 3-tier architecture for low-level CSV parsing:
       .then(res => res.body)
       .pipeThrough(stream)
       .pipeTo(yourSink);
+    ```
+
+#### WASM Parsing (High-Performance)
+
+**For maximum parsing performance.** Uses WebAssembly-based parser with Rust `csv-core` implementation.
+
+> ⚠️ **Limitations**: WASM parsers only support UTF-8 encoding and double-quote (`"`) as quotation character. Custom delimiters (comma, tab, etc.) are supported.
+
+- **String Parsing**:
+  - **`WASMStringObjectCSVParser`** - WASM-accelerated string parser outputting object records
+  - **`WASMStringCSVArrayParser`** - WASM-accelerated string parser outputting array records
+  - **Example**:
+    ```typescript
+    import { WASMStringObjectCSVParser, loadWASM } from 'web-csv-toolbox';
+
+    await loadWASM(); // Initialize WASM (once)
+
+    const parser = new WASMStringObjectCSVParser();
+    const records = parser.parse('name,age\nAlice,30\nBob,25');
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+    ```
+
+- **Binary Parsing**:
+  - **`WASMBinaryObjectCSVParser`** - WASM-accelerated binary parser outputting object records
+  - **`WASMBinaryCSVArrayParser`** - WASM-accelerated binary parser outputting array records
+  - **Example**:
+    ```typescript
+    import { WASMBinaryObjectCSVParser, loadWASM } from 'web-csv-toolbox';
+
+    await loadWASM(); // Initialize WASM (once)
+
+    const parser = new WASMBinaryObjectCSVParser();
+    const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
+    const records = parser.parse(new Uint8Array(buffer));
+    // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
+    ```
+
+- **`WASMBinaryCSVStreamTransformer`** - TransformStream for WASM-accelerated binary CSV parsing
+  - **Use case**: High-performance streaming with chunk-based processing
+  - **Example**:
+    ```typescript
+    import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
+
+    await loadWASM();
+
+    const transformer = new WASMBinaryCSVStreamTransformer();
+
+    await fetch('large.csv')
+      .then(res => res.body)
+      .pipeThrough(transformer)
+      .pipeTo(new WritableStream({
+        write(record) { console.log(record); }
+      }));
     ```
 
 ### Tier 2: Lexer + Assembler (Advanced Control)

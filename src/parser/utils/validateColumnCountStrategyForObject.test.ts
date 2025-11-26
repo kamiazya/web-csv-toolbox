@@ -10,18 +10,28 @@ describe("validateColumnCountStrategyForObject", () => {
     });
 
     test("should accept 'truncate' strategy", () => {
-      expect(() => validateColumnCountStrategyForObject("truncate")).not.toThrow();
+      expect(() =>
+        validateColumnCountStrategyForObject("truncate"),
+      ).not.toThrow();
     });
 
     test("should accept 'strict' strategy", () => {
-      expect(() => validateColumnCountStrategyForObject("strict")).not.toThrow();
+      expect(() =>
+        validateColumnCountStrategyForObject("strict"),
+      ).not.toThrow();
     });
 
     test("PBT: should accept any valid strategy except 'keep'", () => {
-      const validStrategies: ColumnCountStrategy[] = ["pad", "truncate", "strict"];
+      const validStrategies: ColumnCountStrategy[] = [
+        "pad",
+        "truncate",
+        "strict",
+      ];
       fc.assert(
         fc.property(fc.constantFrom(...validStrategies), (strategy) => {
-          expect(() => validateColumnCountStrategyForObject(strategy)).not.toThrow();
+          expect(() =>
+            validateColumnCountStrategyForObject(strategy),
+          ).not.toThrow();
         }),
       );
     });
@@ -29,7 +39,9 @@ describe("validateColumnCountStrategyForObject", () => {
 
   describe("invalid strategies for object format", () => {
     test("should throw TypeError for 'keep' strategy", () => {
-      expect(() => validateColumnCountStrategyForObject("keep")).toThrow(TypeError);
+      expect(() => validateColumnCountStrategyForObject("keep")).toThrow(
+        TypeError,
+      );
     });
 
     test("should throw with correct error message for 'keep'", () => {
@@ -63,17 +75,25 @@ describe("validateColumnCountStrategyForObject", () => {
       // - pad: fills missing keys with undefined
       // - truncate: ignores extra values beyond header length
       // - strict: requires exact match to header length
-      const headerCompatibleStrategies: ColumnCountStrategy[] = ["pad", "truncate", "strict"];
+      const headerCompatibleStrategies: ColumnCountStrategy[] = [
+        "pad",
+        "truncate",
+        "strict",
+      ];
 
       for (const strategy of headerCompatibleStrategies) {
-        expect(() => validateColumnCountStrategyForObject(strategy)).not.toThrow();
+        expect(() =>
+          validateColumnCountStrategyForObject(strategy),
+        ).not.toThrow();
       }
     });
 
     test("'keep' is invalid because it preserves variable column counts", () => {
       // 'keep' returns rows with variable lengths, which doesn't make sense
       // for object format where every object needs consistent keys
-      expect(() => validateColumnCountStrategyForObject("keep")).toThrow(TypeError);
+      expect(() => validateColumnCountStrategyForObject("keep")).toThrow(
+        TypeError,
+      );
     });
   });
 });

@@ -42,7 +42,11 @@ pub fn parse_string_to_array_sync(
     max_field_count: usize,
     source: &str,
 ) -> Result<FlatParseResult, wasm_bindgen::JsError> {
-    let source_opt = if source.is_empty() { None } else { Some(source) };
+    let source_opt = if source.is_empty() {
+        None
+    } else {
+        Some(source)
+    };
 
     // Validate input size
     if input.len() > max_buffer_size {
@@ -70,15 +74,17 @@ pub fn parse_string_to_array_sync(
     );
 
     // Use CSVParser with parseAll for one-shot parsing
-    let mut parser = CSVParser::new(options.into())
-        .map_err(|e| wasm_bindgen::JsError::new(&error::format_error(
+    let mut parser = CSVParser::new(options.into()).map_err(|e| {
+        wasm_bindgen::JsError::new(&error::format_error(
             format!("Failed to create parser: {:?}", e),
             source_opt,
-        )))?;
+        ))
+    })?;
 
-    parser.parse_all(input)
-        .map_err(|e| wasm_bindgen::JsError::new(&error::format_error(
+    parser.parse_all(input).map_err(|e| {
+        wasm_bindgen::JsError::new(&error::format_error(
             format!("Failed to parse CSV: {:?}", e),
             source_opt,
-        )))
+        ))
+    })
 }

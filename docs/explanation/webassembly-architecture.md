@@ -102,7 +102,7 @@ WASM is opt-in rather than always-on because:
 **Trade-offs:**
 - **Size:** WASM binary adds to bundle size
 - **Initialization:** Module loading adds overhead
-- **Limitations:** UTF-8 only, double-quote only, object output only (array tuples require the JavaScript engine)
+- **Limitations:** UTF-8 only
 
 **Flexibility:**
 - Users can choose based on their needs
@@ -134,31 +134,79 @@ export async function loadWASM(input?: InitInput) {
 
 ---
 
-### WASM Parsing Function
+### WASM Parser Architecture
+
+The WASM module exposes a `CSVParser` class that uses a "Flat" output format for efficient data transfer:
 
 ```typescript
-// parseStringToArraySyncWASM.ts
-import { parseStringToArraySync } from "web-csv-toolbox-wasm";
+// Rust-side CSVParser (simplified)
+class CSVParser {
+  // Streaming API - process chunks incrementally
+  processChunk(chunk: string): void;
+  processChunkBytes(chunk: Uint8Array): void;
 
-export function parseStringToArraySyncWASM<Header>(
-  csv: string,
-  options?: CommonOptions
-): CSVRecord<Header>[] {
-  // Validate options
-  if (quotation !== '"') {
-    throw new RangeError("Invalid quotation, must be double quote on WASM.");
-  }
+  // Finalize and get results
+  finish(): FlatParseResult;
 
-  // Call WASM function
-  const delimiterCode = delimiter.charCodeAt(0);
-  return JSON.parse(parseStringToArraySync(csv, delimiterCode));
+  // One-shot API - parse complete input
+  parseAll(input: string): FlatParseResult;
+  parseAllBytes(input: Uint8Array): FlatParseResult;
+}
+
+// FlatParseResult - efficient flat data structure
+interface FlatParseResult {
+  headers: string[];           // Column headers
+  fieldData: string[];         // All field values in row-major order
+  actualFieldCounts: number[]; // Actual field count per record (for sparse data)
+  recordCount: number;         // Total number of records
+  fieldCount: number;          // Number of fields per record (header count)
 }
 ```
 
 **Key implementation details:**
-- WASM function returns JSON string (not JavaScript objects)
-- JSON parsing happens in JavaScript (efficient for object creation)
+- WASM returns `FlatParseResult` (flat arrays, not nested objects)
+- JavaScript-side converts flat data to objects via `flatToObjects()` utility
 - Single-character delimiter passed as char code (u8 in Rust)
+- Supports both streaming (`processChunk`/`finish`) and one-shot (`parseAll`) modes
+
+---
+
+### JavaScript WASM Wrapper Classes
+
+The library provides JavaScript wrapper classes that integrate the WASM `CSVParser` with the standard API:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ High-Level API (parse, parseString, parseBinary, etc.)      │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ WASM Parser Models (JavaScript wrappers)                     │
+│                                                              │
+│ String Input:                Binary Input:                   │
+│ - WASMStringObjectCSVParser  - WASMBinaryObjectCSVParser     │
+│ - WASMStringCSVArrayParser   - WASMBinaryCSVArrayParser      │
+│                                                              │
+│ Streaming:                                                   │
+│ - WASMBinaryCSVStreamTransformer (TransformStream)           │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│ WASM CSVParser (Rust/csv-core)                               │
+│ - processChunk/processChunkBytes (streaming)                 │
+│ - finish() → FlatParseResult                                 │
+│ - parseAll/parseAllBytes (one-shot)                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Parser Models:**
+- `WASMStringObjectCSVParser`: Parses string input, outputs object records
+- `WASMStringCSVArrayParser`: Parses string input, outputs array records
+- `WASMBinaryObjectCSVParser`: Parses `Uint8Array` input, outputs object records
+- `WASMBinaryCSVArrayParser`: Parses `Uint8Array` input, outputs array records
+
+**Stream Transformer:**
+- `WASMBinaryCSVStreamTransformer`: `TransformStream` that converts `ReadableStream<Uint8Array>` to records using WASM
 
 ---
 
@@ -171,25 +219,25 @@ export function parseStringToArraySyncWASM<Header>(
 │ JavaScript Heap  │                    │ WASM Linear      │
 │                  │                    │ Memory           │
 │ - JS Objects     │  Copy data         │                  │
-│ - Strings        │ ────────────────>  │ - CSV String     │
-│ - Arrays         │                    │ - Parsing State  │
-│                  │  Copy result       │ - Output Buffer  │
-│                  │ <────────────────  │                  │
+│ - Strings        │ ────────────────>  │ - CSV String/    │
+│ - Uint8Array     │                    │   Bytes          │
+│                  │  FlatParseResult   │ - Parsing State  │
+│                  │ <────────────────  │ - Field Buffer   │
 └──────────────────┘                    └──────────────────┘
 ```
 
 **Data Flow:**
 
-1. **Input:** JavaScript string copied to WASM linear memory
-2. **Processing:** WASM parses CSV entirely in linear memory
-3. **Output:** JSON string copied back to JavaScript heap
-4. **Cleanup:** WASM memory automatically freed after parsing
+1. **Input:** JavaScript string or `Uint8Array` copied to WASM linear memory
+2. **Processing:** WASM parses CSV using `csv-core` library (streaming DFA)
+3. **Output:** `FlatParseResult` (headers + flat field array) returned to JavaScript
+4. **Conversion:** JavaScript converts flat data to objects via `flatToObjects()`
 
 **Memory Efficiency:**
-- Input string: Temporary copy in WASM memory
-- Parsing state: Small, constant size
-- Output: JSON string (similar size to input)
-- **Total overhead:** Approximately 3x input size during parsing
+- Input: Copied to WASM memory (string or bytes)
+- Parsing state: DFA state + field buffer (configurable via `maxBufferSize`)
+- Output: Flat arrays (more efficient than nested objects)
+- **Total overhead:** Approximately 2x input size during parsing
 
 ---
 
@@ -369,57 +417,83 @@ for await (const record of parse(csv, {
 
 ---
 
-### Object Output Only
+### Output Format Support
 
-**Limitation:**
-WASM parser always emits object-shaped records. `outputFormat: 'array'` (named tuples) currently runs only on the JavaScript engine.
-
-**Why:**
-- WASM returns JSON that maps headers to values (object form)
-- Supporting tuple output would require a different serialization path and additional memory copying
-
-**Workaround:**
-Force the JavaScript engine whenever you need array output or `includeHeader`:
+WASM supports both object and array output formats through the high-level API:
 
 ```typescript
-const rows = await parse.toArray(csv, {
-  header: ["name", "age"] as const,
-  outputFormat: "array",
-  includeHeader: true,
-  engine: { wasm: false }, // Skip WASM, use JS implementation
+// Object output (default)
+const objects = await parse.toArray(csv, {
+  engine: { wasm: true },
+  outputFormat: "object", // or omit for default
 });
+// [{ name: "Alice", age: "30" }, ...]
+
+// Array output
+const arrays = await parse.toArray(csv, {
+  engine: { wasm: true },
+  outputFormat: "array",
+});
+// [["Alice", "30"], ...]
+```
+
+Low-level WASM parsers are also available for direct access:
+
+```typescript
+import { WASMStringCSVArrayParser, WASMStringObjectCSVParser, loadWASM } from 'web-csv-toolbox';
+
+await loadWASM();
+
+// Array parser
+const arrayParser = new WASMStringCSVArrayParser();
+const arrays = [...arrayParser.parse("name,age\nAlice,30")];
+// [['Alice', '30'], ...]
+
+// Object parser
+const objectParser = new WASMStringObjectCSVParser();
+const objects = [...objectParser.parse("name,age\nAlice,30")];
+// [{ name: 'Alice', age: '30' }, ...]
 ```
 
 ---
 
-### Processes Entire String
+### String Input Requires Complete Data
 
 **Limitation:**
-WASM parser processes the entire CSV string at once.
+WASM string parsing (`parseString`, `parse` with string input) processes the entire CSV string at once.
 
 **Why:**
-- Simpler implementation
-- Optimized for complete strings
-- Avoids complex state management across calls
+- String-based API (`parseAll`) is optimized for complete strings
+- Avoids complex UTF-8 boundary handling across chunks
 
 **Impact:**
-- Memory usage proportional to file size
-- Not suitable for unbounded streams
-- Choose appropriate approach based on your file size and memory constraints
+- Memory usage proportional to file size for string inputs
+- Not suitable for unbounded string streams
 
-**Workaround:**
-For incremental parsing, the JavaScript implementation supports chunk-by-chunk processing:
+**Binary Streaming Available:**
+For streaming use cases, use binary input with `WASMBinaryCSVStreamTransformer`:
 
 ```typescript
-const lexer = new FlexibleStringCSVLexer();
+import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
 
-for (const chunk of chunks) {
-  for (const token of lexer.lex(chunk, true)) {
-    // Process tokens incrementally
-  }
-}
+await loadWASM();
 
-lexer.flush();
+const transformer = new WASMBinaryCSVStreamTransformer();
+
+await fetch('large.csv')
+  .then(res => res.body)
+  .pipeThrough(transformer)
+  .pipeTo(new WritableStream({
+    write(record) { console.log(record); }
+  }));
+```
+
+Or via high-level APIs with binary/Response input:
+
+```typescript
+// These support WASM streaming via WASMBinaryCSVStreamTransformer
+for await (const record of parseBinaryStream(stream, { engine: { wasm: true } })) { ... }
+for await (const record of parseResponse(response, { engine: { wasm: true } })) { ... }
 ```
 
 ---
@@ -531,7 +605,7 @@ web-csv-toolbox/
 - **[Using WebAssembly Tutorial](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WASM Performance Optimization](../how-to-guides/wasm-performance-optimization.md)** - Optimization techniques
 - **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
-- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
+- **[parseString API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseString.html)** - String parsing (use `{ engine: { wasm: true } }` for WASM)
 - **[Execution Strategies](./execution-strategies.md)** - Understanding execution modes
 
 ---
@@ -548,7 +622,6 @@ web-csv-toolbox's WebAssembly implementation provides:
 
 **Trade-offs:**
 - UTF-8 only (no Shift-JIS, EUC-JP, etc.)
-- Double-quote only (no single-quote)
 - Processes entire string at once (not incremental)
 - Module loading adds initial overhead
 

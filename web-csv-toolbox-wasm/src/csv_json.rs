@@ -1,10 +1,10 @@
 // Imports for test-only functions
 #[cfg(test)]
+use crate::error::format_error;
+#[cfg(test)]
 use csv::ReaderBuilder;
 #[cfg(test)]
 use serde_json::json;
-#[cfg(test)]
-use crate::error::format_error;
 
 /// Default maximum field count per record (matches TypeScript DEFAULT_ASSEMBLER_MAX_FIELD_COUNT)
 /// Note: Not directly used in this module but exported for documentation consistency

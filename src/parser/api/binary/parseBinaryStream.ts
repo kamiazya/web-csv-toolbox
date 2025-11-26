@@ -91,14 +91,6 @@ export async function* parseBinaryStream<
     }
   } else if (engineConfig.hasWasm()) {
     // WASM execution for streams
-    // Validate that array output format is not used with WASM
-    if (options?.outputFormat === "array") {
-      throw new Error(
-        "Array output format is not supported with WASM execution. " +
-          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-      );
-    }
-
     // Validate charset - WASM only supports UTF-8
     const { charset, decompression } = options ?? {};
     if (charset && charset.toLowerCase() !== "utf-8") {
@@ -117,6 +109,7 @@ export async function* parseBinaryStream<
       delimiter: options?.delimiter,
       quotation: options?.quotation,
       header: options?.header as readonly string[] | undefined,
+      outputFormat: options?.outputFormat,
       maxFieldCount: options?.maxFieldCount,
     });
 

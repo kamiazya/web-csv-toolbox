@@ -141,7 +141,12 @@ fn test_crlf_no_empty_records() {
     let parsed: Vec<Value> = serde_json::from_str(&result).unwrap();
 
     // Should have exactly 2 records, not 4 (if CRLF was treated as 2 line endings)
-    assert_eq!(parsed.len(), 2, "CRLF should not create empty records. Got {} records", parsed.len());
+    assert_eq!(
+        parsed.len(),
+        2,
+        "CRLF should not create empty records. Got {} records",
+        parsed.len()
+    );
 
     // Verify no empty values
     assert_eq!(parsed[0]["a"], "1");

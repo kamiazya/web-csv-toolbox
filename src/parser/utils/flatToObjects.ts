@@ -111,9 +111,7 @@ export function flatToObjects<
       }
     }
 
-    records.push(
-      Object.fromEntries(entries) as CSVObjectRecord<Header>,
-    );
+    records.push(Object.fromEntries(entries) as CSVObjectRecord<Header>);
   }
 
   return records;

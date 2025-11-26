@@ -1,6 +1,11 @@
-import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
-import type { CSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
+import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
+import type {
+  CSVArrayRecord,
+  CSVRecord,
+  ParseBinaryOptions,
+} from "@/core/types.ts";
+import { WASMBinaryCSVArrayParser } from "@/parser/models/WASMBinaryCSVArrayParser.ts";
 import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
 
 /**
@@ -25,7 +30,7 @@ import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVPa
 export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
   binary: BufferSource,
   options?: ParseBinaryOptions<Header>,
-): AsyncIterableIterator<CSVRecord<Header>> {
+): AsyncIterableIterator<CSVRecord<Header> | CSVArrayRecord<Header>> {
   // Validate charset - WASM parser only supports UTF-8
   const charset = options?.charset;
   if (charset !== undefined && charset.toLowerCase() !== "utf-8") {
@@ -87,16 +92,31 @@ export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
     }
   }
 
-  // Use optimized WASM binary parser (automatically initialized if needed)
-  const parser = new WASMBinaryObjectCSVParser<Header>({
-    delimiter: options?.delimiter ?? ",",
-    quotation: options?.quotation ?? '"',
-    maxFieldCount: options?.maxFieldCount,
-    header: options?.header,
-  });
+  const outputFormat = options?.outputFormat ?? "object";
 
-  // Yield records directly from WASM parser
-  for (const record of parser.parse(bytes as BufferSource)) {
-    yield record;
+  if (outputFormat === "array") {
+    // Use array parser for array output
+    const parser = new WASMBinaryCSVArrayParser<Header>({
+      delimiter: options?.delimiter ?? ",",
+      quotation: options?.quotation ?? '"',
+      maxFieldCount: options?.maxFieldCount,
+      header: options?.header,
+    });
+
+    for (const record of parser.parse(bytes as BufferSource)) {
+      yield record;
+    }
+  } else {
+    // Use object parser for object output (default)
+    const parser = new WASMBinaryObjectCSVParser<Header>({
+      delimiter: options?.delimiter ?? ",",
+      quotation: options?.quotation ?? '"',
+      maxFieldCount: options?.maxFieldCount,
+      header: options?.header,
+    });
+
+    for (const record of parser.parse(bytes as BufferSource)) {
+      yield record;
+    }
   }
 }

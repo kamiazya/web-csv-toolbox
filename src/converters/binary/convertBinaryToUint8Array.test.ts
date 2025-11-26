@@ -104,8 +104,12 @@ describe("convertBinaryToUint8Array", () => {
   describe("Error handling", () => {
     it("should throw TypeError for invalid input", () => {
       expect(() => convertBinaryToUint8Array(null as any)).toThrow(TypeError);
-      expect(() => convertBinaryToUint8Array(undefined as any)).toThrow(TypeError);
-      expect(() => convertBinaryToUint8Array("string" as any)).toThrow(TypeError);
+      expect(() => convertBinaryToUint8Array(undefined as any)).toThrow(
+        TypeError,
+      );
+      expect(() => convertBinaryToUint8Array("string" as any)).toThrow(
+        TypeError,
+      );
       expect(() => convertBinaryToUint8Array(123 as any)).toThrow(TypeError);
       expect(() => convertBinaryToUint8Array({} as any)).toThrow(TypeError);
       expect(() => convertBinaryToUint8Array([] as any)).toThrow(TypeError);

@@ -53,7 +53,7 @@ let wasmModule: InitOutput | undefined;
  *
  * This function uses the inlined WASM module (base64-encoded at build time)
  * to enable synchronous initialization. This is useful for:
- * - Synchronous APIs like parseStringToArraySyncWASM
+ * - Synchronous APIs with `{ engine: { wasm: true } }` option
  * - Contexts where async initialization is not possible
  *
  * **Trade-offs:**
@@ -69,25 +69,25 @@ let wasmModule: InitOutput | undefined;
  *
  * @example
  * ```ts
- * import { loadWASMSync, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+ * import { loadWASMSync, parseString } from 'web-csv-toolbox';
  *
  * // Synchronous initialization
  * loadWASMSync();
  *
- * // Now you can use sync APIs without await
- * const result = parseStringToArraySyncWASM(csv);
+ * // Now you can use sync APIs with WASM without await
+ * const result = parseString.toArraySync(csv, { engine: { wasm: true } });
  * ```
  *
  * @example
  * Automatic initialization (recommended to call loadWASM beforehand)
  * ```ts
- * import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+ * import { loadWASM, parseString } from 'web-csv-toolbox';
  *
  * // Recommended: Load WASM beforehand for better performance
  * await loadWASM();
  *
  * // WASM is automatically initialized on first use if not preloaded
- * const result = parseStringToArraySyncWASM(csv);
+ * const result = parseString.toArraySync(csv, { engine: { wasm: true } });
  * ```
  *
  * @internal

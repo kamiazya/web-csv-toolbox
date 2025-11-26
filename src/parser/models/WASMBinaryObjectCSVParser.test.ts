@@ -13,7 +13,9 @@ describe("WASMBinaryObjectCSVParser", () => {
   describe("basic functionality", () => {
     test("should parse simple CSV with headers", () => {
       const parser = new WASMBinaryObjectCSVParser();
-      const records = [...parser.parse(encoder.encode("id,name\n1,Alice\n2,Bob"))];
+      const records = [
+        ...parser.parse(encoder.encode("id,name\n1,Alice\n2,Bob")),
+      ];
 
       expect(records).toHaveLength(2);
       expect(records[0]).toEqual({ id: "1", name: "Alice" });
@@ -35,7 +37,10 @@ describe("WASMBinaryObjectCSVParser", () => {
       const records = [...parser.parse(encoder.encode(csv))];
 
       expect(records).toHaveLength(1);
-      expect(records[0]).toEqual({ name: "Alice", address: "123 Main St, Apt 4" });
+      expect(records[0]).toEqual({
+        name: "Alice",
+        address: "123 Main St, Apt 4",
+      });
     });
 
     test("should handle quoted fields with newlines", () => {
@@ -124,11 +129,17 @@ describe("WASMBinaryObjectCSVParser", () => {
       const parser = new WASMBinaryObjectCSVParser();
 
       // First chunk with header and partial data
-      const records1 = [...parser.parse(encoder.encode("id,name\n1,Alice\n2,"), { stream: true })];
+      const records1 = [
+        ...parser.parse(encoder.encode("id,name\n1,Alice\n2,"), {
+          stream: true,
+        }),
+      ];
       expect(records1.length).toBeGreaterThanOrEqual(1);
 
       // Second chunk completing the record
-      const records2 = [...parser.parse(encoder.encode("Bob\n"), { stream: true })];
+      const records2 = [
+        ...parser.parse(encoder.encode("Bob\n"), { stream: true }),
+      ];
 
       // Flush remaining
       const records3 = [...parser.parse()];
@@ -197,8 +208,14 @@ describe("WASMBinaryObjectCSVParser", () => {
     test("should preserve non-empty field values", () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
           (headers, values) => {
             // Clean headers (no commas, quotes, newlines, and unique)
             const cleanHeaders = headers
@@ -221,7 +238,11 @@ describe("WASMBinaryObjectCSVParser", () => {
             expect(records.length).toBeGreaterThanOrEqual(1);
 
             // Check first record has expected values
-            for (let i = 0; i < cleanValues.length && i < cleanHeaders.length; i++) {
+            for (
+              let i = 0;
+              i < cleanValues.length && i < cleanHeaders.length;
+              i++
+            ) {
               const header = cleanHeaders[i] as string;
               expect(records[0]?.[header]).toBe(cleanValues[i]);
             }

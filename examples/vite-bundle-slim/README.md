@@ -23,13 +23,13 @@ dist/bundle.js  2.08 kB │ gzip: 0.96 kB
 ## Usage
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
 // Manual WASM initialization required (streaming load)
 await loadWASM();
 
 const csv = 'name,age\nAlice,30\nBob,25';
-const result = parseStringToArraySyncWASM(csv);
+const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 console.log(result);
 ```
 

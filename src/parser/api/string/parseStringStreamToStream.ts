@@ -55,20 +55,13 @@ export function parseStringStreamToStream<
   const engineConfig = new InternalEngineConfig(options?.engine);
 
   if (engineConfig.hasWasm()) {
-    // Validate that array output format is not used with WASM
-    if (options?.outputFormat === "array") {
-      throw new Error(
-        "Array output format is not supported with WASM execution. " +
-          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-      );
-    }
-
     // WASM path - convert string to binary then use WASM transformer
     const transformer = new WASMBinaryCSVStreamTransformer({
       delimiter: options?.delimiter,
       quotation: options?.quotation,
       header: options?.header as readonly string[] | undefined,
       maxFieldCount: options?.maxFieldCount,
+      outputFormat: options?.outputFormat,
     });
 
     return stream

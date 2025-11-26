@@ -20,24 +20,24 @@
  *
  * @example Basic usage (recommended)
  * ```ts
- * import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+ * import { loadWASM, parseString } from 'web-csv-toolbox/slim';
  * import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
  *
  * // REQUIRED: Manual initialization with WASM URL
  * await loadWASM(wasmUrl);
  *
- * // Now you can use WASM-based APIs
- * const result = parseStringToArraySyncWASM(csv);
+ * // Now you can use WASM-based APIs via engine option
+ * const result = parseString.toArraySync(csv, { engine: { wasm: true } });
  * ```
  *
  * @example Custom WASM URL
  * ```ts
- * import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+ * import { loadWASM, parseString } from 'web-csv-toolbox/slim';
  *
  * // Load from custom URL (e.g., CDN)
  * await loadWASM('https://cdn.example.com/csv.wasm');
  *
- * const result = parseStringToArraySyncWASM(csv);
+ * const result = parseString.toArraySync(csv, { engine: { wasm: true } });
  * ```
  *
  * @packageDocumentation

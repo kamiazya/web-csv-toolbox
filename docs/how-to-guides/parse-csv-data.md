@@ -408,14 +408,14 @@ engine: EnginePresets.memoryEfficient()
 engine: EnginePresets.fast()
 // ✅ WASM-accelerated parsing
 // ❌ Blocks main thread
-// ❌ UTF-8 and double-quote only
+// ❌ UTF-8 only
 ```
 
 **Balanced (General-Purpose):**
 ```typescript
 engine: EnginePresets.balanced()
 // ✅ Non-blocking + memory efficient
-// ✅ Supports all encodings and quotation characters
+// ✅ Supports all encodings
 // ✅ Auto-fallback on Safari
 // ⚠️ Experimental (with stable fallback)
 ```
@@ -425,7 +425,7 @@ engine: EnginePresets.balanced()
 engine: EnginePresets.responsiveFast()
 // ✅ Worker + WASM
 // ✅ Non-blocking UI
-// ❌ UTF-8 and double-quote only
+// ❌ UTF-8 only
 ```
 
 For detailed configuration options, see [Engine Presets Reference](../reference/engine-presets.md).

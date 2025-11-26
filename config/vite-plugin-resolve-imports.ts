@@ -197,10 +197,6 @@ export function resolveImportsPlugin(): Plugin {
           node: "/src/utils/charset/getCharsetValidation.constants.node.ts",
           web: "/src/utils/charset/getCharsetValidation.constants.web.ts",
         },
-        "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
-          node: "/src/parser/api/string/parseStringToArraySyncWASM.main.node.ts",
-          web: "/src/parser/api/string/parseStringToArraySyncWASM.main.web.ts",
-        },
       };
 
       const mapping = importMap[source];

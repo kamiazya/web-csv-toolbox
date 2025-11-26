@@ -1,6 +1,9 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
+import { WASMBinaryCSVArrayParser } from "@/parser/models/WASMBinaryCSVArrayParser.ts";
+import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -32,6 +35,32 @@ export function parseBinaryToArraySync<
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
+    // Parse engine configuration
+    const engineConfig = new InternalEngineConfig(options?.engine);
+
+    if (engineConfig.hasWasm()) {
+      // WASM execution (direct binary processing, UTF-8 only)
+      const outputFormat = options?.outputFormat ?? "object";
+
+      if (outputFormat === "array") {
+        const parser = new WASMBinaryCSVArrayParser<Header>({
+          delimiter: options?.delimiter ?? ",",
+          quotation: options?.quotation ?? '"',
+          maxFieldCount: options?.maxFieldCount,
+          header: options?.header,
+        });
+        return [...parser.parse(binary)] as InferCSVRecord<Header, Options>[];
+      }
+      const parser = new WASMBinaryObjectCSVParser<Header>({
+        delimiter: options?.delimiter ?? ",",
+        quotation: options?.quotation ?? '"',
+        maxFieldCount: options?.maxFieldCount,
+        header: options?.header,
+      });
+      return [...parser.parse(binary)] as InferCSVRecord<Header, Options>[];
+    }
+
+    // Main thread JavaScript execution (default)
     const csv = convertBinaryToString(binary, options ?? {});
     return parseStringToArraySync(csv, options);
   } catch (error) {

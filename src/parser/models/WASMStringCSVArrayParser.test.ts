@@ -120,7 +120,9 @@ describe("WASMStringCSVArrayParser", () => {
       const parser = new WASMStringCSVArrayParser();
 
       // First chunk with header and partial data
-      const records1 = [...parser.parse("id,name\n1,Alice\n2,", { stream: true })];
+      const records1 = [
+        ...parser.parse("id,name\n1,Alice\n2,", { stream: true }),
+      ];
       expect(records1.length).toBeGreaterThanOrEqual(1);
 
       // Second chunk completing the record
@@ -150,7 +152,9 @@ describe("WASMStringCSVArrayParser", () => {
       const parser = new WASMStringCSVArrayParser();
 
       // Start with incomplete quoted field
-      const records1 = [...parser.parse('name,notes\nAlice,"hello', { stream: true })];
+      const records1 = [
+        ...parser.parse('name,notes\nAlice,"hello', { stream: true }),
+      ];
 
       // Complete the quoted field
       const records2 = [...parser.parse(' world"', { stream: true })];
@@ -300,8 +304,14 @@ describe("WASMStringCSVArrayParser", () => {
     test("should preserve non-empty field values in correct positions", () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
           (headers, values) => {
             // Clean headers (no commas, quotes, newlines, and unique)
             const cleanHeaders = headers

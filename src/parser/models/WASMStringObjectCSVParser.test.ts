@@ -33,7 +33,10 @@ describe("WASMStringObjectCSVParser", () => {
       const records = [...parser.parse(csv)];
 
       expect(records).toHaveLength(1);
-      expect(records[0]).toEqual({ name: "Alice", address: "123 Main St, Apt 4" });
+      expect(records[0]).toEqual({
+        name: "Alice",
+        address: "123 Main St, Apt 4",
+      });
     });
 
     test("should handle quoted fields with newlines", () => {
@@ -131,7 +134,9 @@ describe("WASMStringObjectCSVParser", () => {
       const parser = new WASMStringObjectCSVParser();
 
       // First chunk with header and partial data
-      const records1 = [...parser.parse("id,name\n1,Alice\n2,", { stream: true })];
+      const records1 = [
+        ...parser.parse("id,name\n1,Alice\n2,", { stream: true }),
+      ];
       expect(records1.length).toBeGreaterThanOrEqual(1);
 
       // Second chunk completing the record
@@ -160,7 +165,9 @@ describe("WASMStringObjectCSVParser", () => {
       const parser = new WASMStringObjectCSVParser();
 
       // Start with incomplete quoted field
-      const records1 = [...parser.parse('name,notes\nAlice,"hello', { stream: true })];
+      const records1 = [
+        ...parser.parse('name,notes\nAlice,"hello', { stream: true }),
+      ];
 
       // Complete the quoted field
       const records2 = [...parser.parse(' world"', { stream: true })];
@@ -203,8 +210,14 @@ describe("WASMStringObjectCSVParser", () => {
     test("should preserve non-empty field values", () => {
       fc.assert(
         fc.property(
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
-          fc.array(fc.string({ minLength: 1, maxLength: 20 }), { minLength: 2, maxLength: 5 }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
+          fc.array(fc.string({ minLength: 1, maxLength: 20 }), {
+            minLength: 2,
+            maxLength: 5,
+          }),
           (headers, values) => {
             // Clean headers (no commas, quotes, newlines, and unique)
             const cleanHeaders = headers
@@ -227,7 +240,11 @@ describe("WASMStringObjectCSVParser", () => {
             expect(records.length).toBeGreaterThanOrEqual(1);
 
             // Check first record has expected values
-            for (let i = 0; i < cleanValues.length && i < cleanHeaders.length; i++) {
+            for (
+              let i = 0;
+              i < cleanValues.length && i < cleanHeaders.length;
+              i++
+            ) {
               const header = cleanHeaders[i] as string;
               expect(records[0]?.[header]).toBe(cleanValues[i]);
             }

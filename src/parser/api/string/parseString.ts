@@ -148,13 +148,6 @@ export async function* parseString<
     } else {
       // Main thread execution
       if (engineConfig.hasWasm()) {
-        // Validate that array output format is not used with WASM
-        if (options?.outputFormat === "array") {
-          throw new Error(
-            "Array output format is not supported with WASM execution. " +
-              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-          );
-        }
         // WASM execution with implicit initialization
         yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
           InferCSVRecord<Header, Options>

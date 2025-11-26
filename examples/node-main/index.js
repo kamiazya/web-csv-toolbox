@@ -1,4 +1,4 @@
-import { parseString, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseString } from 'web-csv-toolbox';
 
 console.log('🚀 Node.js Main Version Test');
 console.log('Features: Auto WASM initialization\n');
@@ -27,7 +27,8 @@ async function testWASM() {
   console.log('Test 2: WASM (auto-initialized)');
   console.log('----------------------------------------');
 
-  const result = parseStringToArraySyncWASM(csv);
+  // Use the unified API with engine.wasm option
+  const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 
   console.log('✅ Parsed Result:');
   console.log(JSON.stringify(result, null, 2));

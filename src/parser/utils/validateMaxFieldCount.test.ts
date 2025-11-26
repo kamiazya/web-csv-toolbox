@@ -11,7 +11,9 @@ describe("validateMaxFieldCount", () => {
     });
 
     test("should accept Number.POSITIVE_INFINITY", () => {
-      expect(() => validateMaxFieldCount(Number.POSITIVE_INFINITY)).not.toThrow();
+      expect(() =>
+        validateMaxFieldCount(Number.POSITIVE_INFINITY),
+      ).not.toThrow();
     });
 
     test("PBT: should accept any positive integer", () => {
@@ -47,7 +49,9 @@ describe("validateMaxFieldCount", () => {
     });
 
     test("should throw RangeError for NEGATIVE_INFINITY", () => {
-      expect(() => validateMaxFieldCount(Number.NEGATIVE_INFINITY)).toThrow(RangeError);
+      expect(() => validateMaxFieldCount(Number.NEGATIVE_INFINITY)).toThrow(
+        RangeError,
+      );
     });
 
     test("PBT: should throw for any negative integer", () => {
@@ -69,9 +73,13 @@ describe("validateMaxFieldCount", () => {
     test("PBT: should throw for any positive non-integer", () => {
       fc.assert(
         fc.property(
-          fc.integer({ min: 1, max: 1000 }).chain((base) =>
-            fc.double({ min: 0.01, max: 0.99, noNaN: true }).map((decimal) => base + decimal),
-          ),
+          fc
+            .integer({ min: 1, max: 1000 })
+            .chain((base) =>
+              fc
+                .double({ min: 0.01, max: 0.99, noNaN: true })
+                .map((decimal) => base + decimal),
+            ),
           (n) => {
             expect(() => validateMaxFieldCount(n)).toThrow(RangeError);
           },

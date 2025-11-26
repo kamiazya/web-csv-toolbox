@@ -23,4 +23,4 @@ deno run index.ts
 ## What's tested
 
 - JavaScript-based CSV parsing with `parseString`
-- WASM-based parsing with `parseStringToArraySyncWASM` (auto-initialized)
+- WASM-based parsing with `parseString.toArraySync` (auto-initialized)

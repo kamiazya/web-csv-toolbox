@@ -72,13 +72,6 @@ export async function* parseBinary<
   } else {
     // Main thread execution
     if (engineConfig.hasWasm()) {
-      // Validate that array output format is not used with WASM
-      if (options?.outputFormat === "array") {
-        throw new Error(
-          "Array output format is not supported with WASM execution. " +
-            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-        );
-      }
       yield* parseBinaryInWASM(
         bytes,
         options as ParseBinaryOptions<Header> | undefined,

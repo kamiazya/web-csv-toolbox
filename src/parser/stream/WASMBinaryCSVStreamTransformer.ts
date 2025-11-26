@@ -1,11 +1,12 @@
-import { type FlatParseResult, CSVParser } from "web-csv-toolbox-wasm";
+import { CSVParser, type FlatParseResult } from "web-csv-toolbox-wasm";
 import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
 } from "@/core/constants.ts";
-import type { CSVObjectRecord } from "@/core/types.ts";
+import type { CSVArrayRecord, CSVObjectRecord } from "@/core/types.ts";
 import type { WASMParserOptions } from "@/parser/models/wasm-internal-types.ts";
+import { flatToArrays } from "@/parser/utils/flatToArrays.ts";
 import { flatToObjects } from "@/parser/utils/flatToObjects.ts";
 
 /**
@@ -38,6 +39,14 @@ export interface WASMBinaryCSVStreamTransformerOptions<
    * Custom header names. If not provided, the first row will be used as headers.
    */
   header?: Header | undefined;
+
+  /**
+   * Output format for records.
+   * - 'object': Output records as objects with header keys (default)
+   * - 'array': Output records as arrays
+   * @defaultValue "object"
+   */
+  outputFormat?: "object" | "array" | undefined;
 }
 
 /**
@@ -127,12 +136,15 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  */
 export class WASMBinaryCSVStreamTransformer<
   Header extends ReadonlyArray<string> = readonly string[],
-> extends TransformStream<Uint8Array, CSVObjectRecord<Header>> {
+> extends TransformStream<
+  Uint8Array,
+  CSVObjectRecord<Header> | CSVArrayRecord<Header>
+> {
   constructor(
     options: WASMBinaryCSVStreamTransformerOptions<Header> = {},
     writableStrategy: QueuingStrategy<Uint8Array> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<
-      CSVObjectRecord<Header>
+      CSVObjectRecord<Header> | CSVArrayRecord<Header>
     > = DEFAULT_READABLE_STRATEGY,
   ) {
     const {
@@ -140,6 +152,7 @@ export class WASMBinaryCSVStreamTransformer<
       quotation = DEFAULT_QUOTATION,
       maxFieldCount = DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
       header,
+      outputFormat = "object",
     } = options;
 
     // Create parser with options object (will be passed to WASM)
@@ -167,13 +180,15 @@ export class WASMBinaryCSVStreamTransformer<
     let cachedFieldCount = 0;
 
     /**
-     * Convert FlatParseResult from WASM to object records using shared utility.
+     * Convert FlatParseResult from WASM to records using shared utility.
      *
-     * This is the JS-side object assembly for the Flat data transfer optimization.
-     * By doing object construction in JavaScript instead of WASM, we reduce
+     * This is the JS-side assembly for the Flat data transfer optimization.
+     * By doing record construction in JavaScript instead of WASM, we reduce
      * WASM↔JS boundary crossings by 99.98%+ (from N×M to ~3 crossings).
      */
-    const assembleRecords = (result: FlatParseResult): CSVObjectRecord<Header>[] => {
+    const assembleRecords = (
+      result: FlatParseResult,
+    ): (CSVObjectRecord<Header> | CSVArrayRecord<Header>)[] => {
       // Update cached headers if available
       const headers = result.headers as string[] | null;
       if (headers && !cachedHeaders) {
@@ -185,14 +200,19 @@ export class WASMBinaryCSVStreamTransformer<
         return [];
       }
 
-      // Extract data from WASM result and pass to shared utility
-      return flatToObjects<Header>({
+      const flatData = {
         headers: cachedHeaders,
         fieldData: result.fieldData as string[],
         actualFieldCounts: result.actualFieldCounts as number[] | null,
         recordCount: result.recordCount,
         fieldCount: cachedFieldCount,
-      });
+      };
+
+      // Use appropriate conversion based on output format
+      if (outputFormat === "array") {
+        return flatToArrays<Header>(flatData);
+      }
+      return flatToObjects<Header>(flatData);
     };
 
     super(

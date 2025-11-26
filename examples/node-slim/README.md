@@ -20,10 +20,10 @@ pnpm start
 ## WASM Init
 
 ```ts
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
 await loadWASM(); // Node resolves the WASM file internally
-const rows = parseStringToArraySyncWASM(csv);
+const rows = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 ## Using Presets (optional)

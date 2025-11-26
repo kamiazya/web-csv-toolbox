@@ -159,14 +159,6 @@ export async function* parseStringStream<
     }
   } else if (engineConfig.hasWasm()) {
     // WASM execution for string streams
-    // Validate that array output format is not used with WASM
-    if (options?.outputFormat === "array") {
-      throw new Error(
-        "Array output format is not supported with WASM execution. " +
-          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-      );
-    }
-
     // Initialize WASM
     await loadWASM();
 
@@ -176,6 +168,7 @@ export async function* parseStringStream<
       quotation: options?.quotation,
       header: options?.header as readonly string[] | undefined,
       maxFieldCount: options?.maxFieldCount,
+      outputFormat: options?.outputFormat,
     });
 
     // Convert string stream to binary stream, then process with WASM

@@ -2,8 +2,8 @@ import type {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   Newline,
+  TokenType,
 } from "@/core/constants.ts";
-import { TokenType } from "@/core/constants.ts";
 
 /**
  * Position object.

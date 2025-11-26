@@ -43,12 +43,12 @@ Use the main entry (`web-csv-toolbox`) when:
 Example (with optional preloading for faster first parse):
 
 ```ts
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { loadWASM, parseString } from 'web-csv-toolbox';
 
 // Optional but recommended: preload at app startup to avoid first‑use init cost
 await loadWASM();
 
-const rows = parseStringToArraySyncWASM(csv);
+const rows = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 ## When to Use Slim
@@ -61,10 +61,10 @@ Use the slim entry (`web-csv-toolbox/slim`) when:
 Example (Node.js):
 
 ```ts
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
 await loadWASM();
-const rows = parseStringToArraySyncWASM(csv);
+const rows = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 Example (Vite):
