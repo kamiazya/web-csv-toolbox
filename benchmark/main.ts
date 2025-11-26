@@ -1,4 +1,3 @@
-
 import { withCodSpeed } from "@codspeed/tinybench-plugin";
 import { Bench } from 'tinybench';
 import {
@@ -14,6 +13,37 @@ import {
   parseStringToArraySyncWASM,
   parseBinaryStream
 } from 'web-csv-toolbox';
+
+// ============================================================
+// WebGPU Setup (using webgpu npm package - Google Dawn)
+// ============================================================
+let webgpuAvailable = false;
+let gpu: GPU | null = null;
+
+try {
+  const webgpuModule = await import("webgpu");
+
+  // Install WebGPU globals (GPUBufferUsage, GPUMapMode, etc.)
+  if (webgpuModule.globals) {
+    Object.assign(globalThis, webgpuModule.globals);
+  }
+
+  // Create GPU instance using Dawn backend
+  gpu = webgpuModule.create([]) as unknown as GPU;
+
+  // Make GPU available as navigator.gpu
+  Object.defineProperty(globalThis, "navigator", {
+    value: { gpu },
+    writable: true,
+    configurable: true,
+  });
+
+  // Check if adapter is available
+  const adapter = await gpu.requestAdapter();
+  webgpuAvailable = adapter !== null;
+} catch {
+  // webgpu package not available or GPU creation failed
+}
 
 // Helper to generate CSV with specified columns and rows
 function generateCSV(columns: number, rows: number, quoted: boolean = false): string {
@@ -135,7 +165,7 @@ try {
   console.warn('WASM module not available, WASM-dependent benchmarks will be skipped');
 }
 
-let binaryCSV: Uint8Array = await getAsBinary()
+let binaryCSV = await getAsBinary() as BufferSource;
 let stringCSV: string = await getAsString();
 
 // CSV with more rows for worker overhead comparison
@@ -212,6 +242,7 @@ console.log('  14. Engine comparison at scale - identifies optimal engine for da
 console.log('  15. Memory allocation patterns - compares allocation strategies');
 console.log('  16. Low-level API performance - measures lexer and assembler separately');
 console.log('  17. Binary vs Stream approach - determines optimal threshold for parseBlob');
+console.log('  18. WebGPU parsing - GPU-accelerated CSV parsing');
 console.log('\nNote: Any WASM initialization warnings can be safely ignored.');
 console.log('CodSpeed will use tinybench for local execution (this is expected behavior).');
 if (!isWorkerAvailable) {
@@ -221,6 +252,12 @@ if (!isWorkerAvailable) {
 if (!wasmAvailable) {
   console.log('\n⚠️  WASM module not available - WASM-dependent benchmarks will be skipped.');
   console.log('Run benchmarks with WASM support to test WASM performance.');
+}
+if (!webgpuAvailable) {
+  console.log('\n⚠️  WebGPU not available - GPU-accelerated benchmarks will be skipped.');
+  console.log('Install webgpu package and ensure GPU adapter is available.');
+} else {
+  console.log('\n✅ WebGPU available via Google Dawn (webgpu npm package)');
 }
 console.log();
 
@@ -766,10 +803,217 @@ bench = bench
     }
   });
 
+// ============================================================
+// WebGPU Benchmarks (GPU-accelerated CSV parsing)
+// ============================================================
+
+import {
+  ensureDataDir,
+  getDataPath,
+  generateCSVString,
+  generateLongQuotedCSVString,
+  generateLargeCSVFile,
+  generateLargeLongQuotedCSVFile,
+  createBinaryFileStream,
+  getFileSizeSync,
+  formatSize,
+} from "./data-generator.ts";
+
+// WebGPU large file benchmarks run separately with fewer iterations
+let gpuLargeFileBench: Bench | null = null;
+
+if (webgpuAvailable) {
+  console.log('\n=== Preparing WebGPU Test Data ===\n');
+
+  // Ensure data directory exists
+  await ensureDataDir();
+
+  // Small datasets (in-memory)
+  const gpuSmall = generateCSVString(100, 10);
+  const gpuMedium = generateCSVString(1000, 10);
+
+  // Long quoted fields for two-pass algorithm testing (in-memory)
+  const gpuLongQuoted300 = generateLongQuotedCSVString(100, 300);
+  const gpuLongQuoted1K = generateLongQuotedCSVString(100, 1000);
+
+  // Large datasets (file-based) - these show GPU acceleration benefits
+  const gpu10MBPath = getDataPath("gpu-10mb");
+  const gpu100MBPath = getDataPath("gpu-100mb");
+  const gpu500MBPath = getDataPath("gpu-500mb");
+  const gpu1GBPath = getDataPath("gpu-1gb");
+  const gpuLongQuoted500MBPath = getDataPath("gpu-longquoted-500mb");
+
+  // Generate large test files (cached if already exist)
+  console.log('Generating/verifying large test files...');
+  console.log('Note: First run will take time to generate large files (500MB, 1GB)...');
+  await generateLargeCSVFile(gpu10MBPath, 10, 10, 20);
+  await generateLargeCSVFile(gpu100MBPath, 100, 10, 20);
+  await generateLargeCSVFile(gpu500MBPath, 500, 10, 20);
+  await generateLargeCSVFile(gpu1GBPath, 1024, 10, 20);
+  await generateLargeLongQuotedCSVFile(gpuLongQuoted500MBPath, 500, 500);
+
+  console.log('\nWebGPU Dataset sizes:');
+  console.log(`  In-memory datasets:`);
+  console.log(`    - gpuSmall: ${(gpuSmall.length / 1024).toFixed(1)} KB (100 rows)`);
+  console.log(`    - gpuMedium: ${(gpuMedium.length / 1024).toFixed(1)} KB (1000 rows)`);
+  console.log(`    - gpuLongQuoted300: ${(gpuLongQuoted300.length / 1024).toFixed(1)} KB (300B quoted fields)`);
+  console.log(`    - gpuLongQuoted1K: ${(gpuLongQuoted1K.length / 1024).toFixed(1)} KB (1KB quoted fields)`);
+  console.log(`  File-based datasets (for GPU acceleration):`);
+  console.log(`    - gpu-10mb: ${formatSize(getFileSizeSync(gpu10MBPath))}`);
+  console.log(`    - gpu-100mb: ${formatSize(getFileSizeSync(gpu100MBPath))}`);
+  console.log(`    - gpu-500mb: ${formatSize(getFileSizeSync(gpu500MBPath))}`);
+  console.log(`    - gpu-1gb: ${formatSize(getFileSizeSync(gpu1GBPath))}`);
+  console.log(`    - gpu-longquoted-500mb: ${formatSize(getFileSizeSync(gpuLongQuoted500MBPath))} (500B quoted fields)`);
+
+  // Warmup GPU
+  console.log('\nWarming up GPU...');
+  for await (const _ of parseString(gpuSmall, { engine: EnginePresets.gpuAccelerated() })) {
+    // warmup
+  }
+  console.log('GPU warmup complete.\n');
+
+  // Add small WebGPU benchmarks to main bench (with normal 50 iterations)
+  bench = bench
+    // WebGPU basic benchmarks (small datasets - in-memory)
+    .add('WebGPU: small (100 rows)', async () => {
+      for await (const _ of parseString(gpuSmall, { engine: EnginePresets.gpuAccelerated() })) {
+        // noop
+      }
+    })
+    .add('WebGPU: medium (1000 rows)', async () => {
+      for await (const _ of parseString(gpuMedium, { engine: EnginePresets.gpuAccelerated() })) {
+        // noop
+      }
+    })
+    // WebGPU two-pass algorithm benchmarks (long quoted fields)
+    .add('WebGPU: longQuoted 300B (two-pass)', async () => {
+      for await (const _ of parseString(gpuLongQuoted300, { engine: EnginePresets.gpuAccelerated() })) {
+        // noop
+      }
+    })
+    .add('WebGPU: longQuoted 1KB (two-pass)', async () => {
+      for await (const _ of parseString(gpuLongQuoted1K, { engine: EnginePresets.gpuAccelerated() })) {
+        // noop
+      }
+    });
+
+  // Create separate bench for large file tests (fewer iterations)
+  gpuLargeFileBench = new Bench({
+    iterations: 3, // Fewer iterations for large files (1GB takes time)
+    warmupIterations: 1,
+  })
+    // Large file benchmarks (file-based streaming) - GPU acceleration shows here
+    .add('WebGPU stream: 10MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu10MBPath), {
+        engine: EnginePresets.gpuAccelerated(),
+      })) {
+        // noop
+      }
+    })
+    .add('WebGPU stream: 100MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu100MBPath), {
+        engine: EnginePresets.gpuAccelerated(),
+      })) {
+        // noop
+      }
+    })
+    .add('WebGPU stream: 500MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu500MBPath), {
+        engine: EnginePresets.gpuAccelerated(),
+      })) {
+        // noop
+      }
+    })
+    .add('WebGPU stream: 1GB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu1GBPath), {
+        engine: EnginePresets.gpuAccelerated(),
+      })) {
+        // noop
+      }
+    })
+    // Long quoted fields with large file (two-pass + streaming)
+    .add('WebGPU stream: 500MB longQuoted (two-pass)', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpuLongQuoted500MBPath), {
+        engine: EnginePresets.gpuAccelerated(),
+      })) {
+        // noop
+      }
+    })
+    // CPU comparison for large files
+    .add('CPU stream: 10MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu10MBPath), {
+        engine: EnginePresets.stable(),
+      })) {
+        // noop
+      }
+    })
+    .add('CPU stream: 100MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu100MBPath), {
+        engine: EnginePresets.stable(),
+      })) {
+        // noop
+      }
+    })
+    .add('CPU stream: 500MB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu500MBPath), {
+        engine: EnginePresets.stable(),
+      })) {
+        // noop
+      }
+    })
+    .add('CPU stream: 1GB', async () => {
+      for await (const _ of parseBinaryStream(createBinaryFileStream(gpu1GBPath), {
+        engine: EnginePresets.stable(),
+      })) {
+        // noop
+      }
+    });
+}
+
 await bench.run();
 
 console.log('\n=== Benchmark Results ===\n');
 console.table(bench.table());
+
+// Run large file benchmarks separately (if WebGPU is available)
+if (gpuLargeFileBench) {
+  console.log('\n=== WebGPU Large File Benchmark (3 iterations) ===\n');
+  console.log('Running GPU vs CPU comparison for large files (10MB - 1GB)...\n');
+  await gpuLargeFileBench.run();
+  console.log('\n=== Large File Benchmark Results ===\n');
+  console.table(gpuLargeFileBench.table());
+
+  // Calculate throughput for large file tests
+  console.log('\n=== Throughput Analysis (Large Files) ===\n');
+  const fileSizes: Record<string, number> = {
+    '10MB': 10 * 1024 * 1024,
+    '100MB': 100 * 1024 * 1024,
+    '500MB': 500 * 1024 * 1024,
+    '1GB': 1024 * 1024 * 1024,
+  };
+
+  for (const task of gpuLargeFileBench.tasks) {
+    if (!task.result) continue;
+
+    // Extract file size from task name
+    let fileSize = 0;
+    for (const [key, size] of Object.entries(fileSizes)) {
+      if (task.name.includes(key)) {
+        fileSize = size;
+        break;
+      }
+    }
+
+    if (fileSize === 0) continue;
+
+    const avgTimeMs = task.result.mean;
+    const throughputMBps = (fileSize / (1024 * 1024)) / (avgTimeMs / 1000);
+
+    console.log(`${task.name}:`);
+    console.log(`  Avg time: ${avgTimeMs.toFixed(0)} ms`);
+    console.log(`  Throughput: ${throughputMBps.toFixed(1)} MB/s`);
+  }
+}
 
 console.log('\n=== Performance Summary ===');
 console.log('✓ Basic parsing operations completed');
@@ -790,6 +1034,14 @@ console.log('✓ Engine comparison at scale completed');
 console.log('✓ Memory allocation pattern tests completed');
 console.log('✓ Low-level API performance tests completed');
 console.log('✓ Binary vs Stream approach tests completed');
+if (webgpuAvailable) {
+  console.log('✓ WebGPU parsing tests completed');
+  console.log('✓ WebGPU two-pass algorithm tests completed');
+  console.log('✓ WebGPU large file tests (10MB-1GB) completed');
+  console.log('✓ GPU vs CPU comparison tests completed');
+} else {
+  console.log('⚠️  WebGPU parsing tests skipped (GPU not available)');
+}
 console.log('\n=== Bottleneck Detection Guide ===');
 console.log('Review the benchmark results to identify bottlenecks:');
 console.log('  • Row count scaling: Check if performance degrades linearly (O(n))');
@@ -798,5 +1050,10 @@ console.log('  • Quote ratio: Measure quote handling overhead');
 console.log('  • Engine comparison: Find optimal engine for your data size');
 console.log('  • Memory patterns: Compare allocation strategies');
 console.log('  • Binary vs Stream: Determine optimal threshold for parseBlob auto-selection');
+if (webgpuAvailable) {
+  console.log('  • GPU vs CPU: Compare WebGPU acceleration (effect shows at 100MB+)');
+  console.log('  • Two-pass algorithm: Measure overhead for long quoted fields (>256 bytes)');
+  console.log('  • Streaming performance: Compare file-based streaming throughput');
+}
 console.log('\nFor detailed analysis, review the ops/sec values in the table above.');
 console.log('Higher ops/sec = better performance\n');

@@ -12,6 +12,7 @@
     "@codspeed/tinybench-plugin": "catalog:",
     "tinybench": "catalog:",
     "tsx": "catalog:",
-    "web-csv-toolbox": "workspace:*"
+    "web-csv-toolbox": "workspace:*",
+    "webgpu": "catalog:"
   }
 }
