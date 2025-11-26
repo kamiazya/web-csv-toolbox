@@ -14,7 +14,10 @@ pub use parser::CSVParser;
 #[cfg(test)]
 mod tests;
 
-/// Parse CSV string to array synchronously (WASM binding)
+/// Parse CSV string to flat format synchronously (WASM binding)
+///
+/// Returns FlatParseResult for efficient WASM↔JS boundary crossing.
+/// Object assembly should be done on the JavaScript side using flatToObjects().
 ///
 /// # Arguments
 ///
@@ -26,7 +29,7 @@ mod tests;
 ///
 /// # Returns
 ///
-/// Result containing JsValue array of record objects (direct conversion without JSON serialization).
+/// Result containing FlatParseResult with headers, fieldData, fieldCount, recordCount, actualFieldCounts.
 ///
 /// # Errors
 ///
@@ -38,8 +41,44 @@ pub fn parse_string_to_array_sync(
     max_buffer_size: usize,
     max_field_count: usize,
     source: &str,
-) -> Result<JsValue, wasm_bindgen::JsError> {
-    let source_opt = (!source.is_empty()).then_some(source);
-    csv_json::parse_csv_to_jsvalue(input, delimiter, max_buffer_size, max_field_count, source_opt)
-        .map_err(|err| wasm_bindgen::JsError::new(&err))
+) -> Result<FlatParseResult, wasm_bindgen::JsError> {
+    let source_opt = if source.is_empty() { None } else { Some(source) };
+
+    // Validate input size
+    if input.len() > max_buffer_size {
+        return Err(wasm_bindgen::JsError::new(&error::format_error(
+            format!(
+                "Input size ({} bytes) exceeds maximum allowed size ({} bytes)",
+                input.len(),
+                max_buffer_size
+            ),
+            source_opt,
+        )));
+    }
+
+    // Create parser with options
+    let options = js_sys::Object::new();
+    let _ = js_sys::Reflect::set(
+        &options,
+        &JsValue::from_str("delimiter"),
+        &JsValue::from_str(&String::from_utf8_lossy(&[delimiter])),
+    );
+    let _ = js_sys::Reflect::set(
+        &options,
+        &JsValue::from_str("maxFieldCount"),
+        &JsValue::from_f64(max_field_count as f64),
+    );
+
+    // Use CSVParser with parseAll for one-shot parsing
+    let mut parser = CSVParser::new(options.into())
+        .map_err(|e| wasm_bindgen::JsError::new(&error::format_error(
+            format!("Failed to create parser: {:?}", e),
+            source_opt,
+        )))?;
+
+    parser.parse_all(input)
+        .map_err(|e| wasm_bindgen::JsError::new(&error::format_error(
+            format!("Failed to parse CSV: {:?}", e),
+            source_opt,
+        )))
 }

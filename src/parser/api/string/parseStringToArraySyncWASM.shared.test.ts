@@ -1,9 +1,29 @@
+import type { FlatParseResult } from "web-csv-toolbox-wasm";
 import { describe, expect, it } from "vitest";
 import {
   parseWithWASM,
   prepareCSVWithHeader,
   validateWASMOptions,
 } from "./parseStringToArraySyncWASM.shared.ts";
+
+// Helper to create mock FlatParseResult for testing
+function createMockFlatResult(
+  headers: string[] | null,
+  fieldData: string[],
+  actualFieldCounts: number[],
+  recordCount: number,
+  fieldCount: number,
+): FlatParseResult {
+  return {
+    headers,
+    fieldData,
+    actualFieldCounts,
+    recordCount,
+    fieldCount,
+    free: () => {},
+    [Symbol.dispose]: () => {},
+  } as FlatParseResult;
+}
 
 describe("parseStringToArraySyncWASM.shared", () => {
   describe("validateWASMOptions", () => {
@@ -211,8 +231,9 @@ describe("parseStringToArraySyncWASM.shared", () => {
   });
 
   describe("parseWithWASM", () => {
-    it("should return WASM output directly (JsValue)", () => {
-      const mockWasmFunction = () => [{ a: "1", b: "2" }];
+    it("should convert FlatParseResult to object array", () => {
+      const mockWasmFunction = () =>
+        createMockFlatResult(["a", "b"], ["1", "2"], [2], 1, 2);
       const result = parseWithWASM(
         "a,b\n1,2",
         44,
@@ -229,7 +250,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
       let capturedParams: any[] = [];
       const mockWasmFunction = (...args: any[]) => {
         capturedParams = args;
-        return [];
+        return createMockFlatResult(null, [], [], 0, 0);
       };
 
       parseWithWASM("test csv", 59, 2048, 50000, "test.csv", mockWasmFunction);
@@ -244,7 +265,8 @@ describe("parseStringToArraySyncWASM.shared", () => {
     });
 
     it("should handle empty result", () => {
-      const mockWasmFunction = () => [];
+      const mockWasmFunction = () =>
+        createMockFlatResult(null, [], [], 0, 0);
       const result = parseWithWASM(
         "",
         44,
@@ -257,10 +279,16 @@ describe("parseStringToArraySyncWASM.shared", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle complex nested data", () => {
-      const mockWasmFunction = () => [
-        { name: "Alice", address: { city: "NYC" } },
-      ];
+    it("should handle sparse records with actualFieldCounts", () => {
+      // Second record has only 2 fields, third field should be undefined
+      const mockWasmFunction = () =>
+        createMockFlatResult(
+          ["a", "b", "c"],
+          ["1", "2", "3", "4", "5", ""],
+          [3, 2],
+          2,
+          3,
+        );
       const result = parseWithWASM(
         "",
         44,
@@ -270,7 +298,10 @@ describe("parseStringToArraySyncWASM.shared", () => {
         mockWasmFunction,
       );
 
-      expect(result).toEqual([{ name: "Alice", address: { city: "NYC" } }]);
+      expect(result).toEqual([
+        { a: "1", b: "2", c: "3" },
+        { a: "4", b: "5", c: undefined },
+      ]);
     });
 
     it("should propagate errors from WASM function", () => {
@@ -306,16 +337,15 @@ describe("parseStringToArraySyncWASM.shared", () => {
 
       expect(csvToParse).toBe("a,b,c\n1,2,3");
 
-      // Parse with WASM
-      const mockWasmFunction = (input: string) => {
-        // Simulate WASM parsing (returns JsValue directly)
-        const lines = input.split("\n");
-        const headers = lines[0]!.split(",");
-        const values = lines[1]!.split(",");
-        const record = Object.fromEntries(
-          headers.map((h, i) => [h, values[i]]),
+      // Parse with WASM - returns FlatParseResult
+      const mockWasmFunction = (_input: string) => {
+        return createMockFlatResult(
+          ["a", "b", "c"],
+          ["1", "2", "3"],
+          [3],
+          1,
+          3,
         );
-        return [record];
       };
 
       const result = parseWithWASM(

@@ -1,11 +1,13 @@
+import type { FlatParseResult } from "web-csv-toolbox-wasm";
 import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   DOUBLE_QUOTE,
 } from "@/core/constants.ts";
-import type { CommonOptions } from "@/core/types.ts";
+import type { CommonOptions, CSVRecord } from "@/core/types.ts";
 import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
+import { fromFlatParseResult } from "@/parser/utils/flatToObjects.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 /**
@@ -116,17 +118,22 @@ export function prepareCSVWithHeader(
 /**
  * Parses CSV string using WASM function and returns parsed result.
  *
+ * WASM returns FlatParseResult for efficient boundary crossing.
+ * Object assembly is done on the JavaScript side using flatToObjects().
+ *
  * @param csv - CSV string to parse
  * @param delimiterCode - Character code of delimiter
  * @param maxBufferSize - Maximum buffer size
  * @param maxFieldCount - Maximum number of fields per record (prevents DoS)
  * @param source - Source identifier for error messages
- * @param wasmFunction - WASM parsing function (now returns JsValue directly)
+ * @param wasmFunction - WASM parsing function that returns FlatParseResult
  * @returns Parsed CSV records
  *
  * @internal
  */
-export function parseWithWASM<T>(
+export function parseWithWASM<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
   csv: string,
   delimiterCode: number,
   maxBufferSize: number,
@@ -138,8 +145,18 @@ export function parseWithWASM<T>(
     maxBufferSize: number,
     maxFieldCount: number,
     source: string,
-  ) => T,
-): T {
-  // WASM function now returns JsValue directly (no JSON serialization)
-  return wasmFunction(csv, delimiterCode, maxBufferSize, maxFieldCount, source);
+  ) => FlatParseResult,
+): CSVRecord<Header>[] {
+  // WASM returns FlatParseResult for efficient boundary crossing
+  const flatResult = wasmFunction(
+    csv,
+    delimiterCode,
+    maxBufferSize,
+    maxFieldCount,
+    source,
+  );
+
+  // Convert flat result to objects using shared utility
+  // This uses Object.fromEntries for prototype pollution safety
+  return fromFlatParseResult<Header>(flatResult);
 }

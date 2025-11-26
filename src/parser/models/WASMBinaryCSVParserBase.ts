@@ -116,9 +116,8 @@ export abstract class WASMBinaryCSVParserBase<
    * @returns Flat parse data for conversion
    */
   protected parseFlatChunk(chunk: Uint8Array): FlatParseData {
-    // Pass stream: true to indicate we will call flush() separately
-    const result: FlatParseResult =
-      this.parser.processChunkBytes(chunk, true);
+    // Process chunk in streaming mode (call finish() to finalize)
+    const result: FlatParseResult = this.parser.processChunkBytes(chunk);
 
     // Cache headers if available
     const headers = result.headers as string[] | null;
@@ -136,10 +135,10 @@ export abstract class WASMBinaryCSVParserBase<
   }
 
   /**
-   * Flush remaining data using Flat format (consistent with parseFlatChunk output)
+   * Finish parsing and get remaining data (consistent with parseFlatChunk output)
    */
   protected flushFlat(): FlatParseData {
-    const result: FlatParseResult = this.parser.flush();
+    const result: FlatParseResult = this.parser.finish();
 
     // Update cached headers if flush returned new headers
     // (handles case where header row spans multiple chunks)

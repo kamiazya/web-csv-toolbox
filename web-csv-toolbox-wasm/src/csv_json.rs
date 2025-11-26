@@ -1,10 +1,12 @@
+// Imports for test-only functions
+#[cfg(test)]
 use js_sys::{Array, Object, Reflect};
+#[cfg(test)]
 use wasm_bindgen::prelude::*;
-
+#[cfg(test)]
 use crate::error::format_error;
+#[cfg(test)]
 use crate::parser::CSVParser;
-
-// rust-csv is only available in test/bench builds for comparison
 #[cfg(test)]
 use csv::ReaderBuilder;
 #[cfg(test)]
@@ -15,6 +17,7 @@ use serde_json::json;
 #[allow(dead_code)]
 pub const DEFAULT_MAX_FIELD_COUNT: usize = 100_000;
 
+#[cfg(test)]
 /// Parse CSV string to JsValue array (direct conversion without JSON serialization)
 ///
 /// Uses optimized parser with flat format internally, then converts to objects.
@@ -35,6 +38,7 @@ pub const DEFAULT_MAX_FIELD_COUNT: usize = 100_000;
 /// # Returns
 ///
 /// JsValue array of record objects
+#[allow(dead_code)]
 pub(crate) fn parse_csv_to_jsvalue(
     input: &str,
     delimiter: u8,

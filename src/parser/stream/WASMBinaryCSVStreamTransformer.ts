@@ -6,6 +6,7 @@ import {
 } from "@/core/constants.ts";
 import type { CSVObjectRecord } from "@/core/types.ts";
 import type { WASMParserOptions } from "@/parser/models/wasm-internal-types.ts";
+import { flatToObjects } from "@/parser/utils/flatToObjects.ts";
 
 /**
  * Options for WASMBinaryCSVStreamTransformer.
@@ -163,43 +164,35 @@ export class WASMBinaryCSVStreamTransformer<
 
     // Cache headers across chunks for object assembly
     let cachedHeaders: string[] | null = null;
-    let fieldCount = 0;
+    let cachedFieldCount = 0;
 
     /**
-     * Convert flat parse result to object records.
+     * Convert FlatParseResult from WASM to object records using shared utility.
      *
      * This is the JS-side object assembly for the Flat data transfer optimization.
      * By doing object construction in JavaScript instead of WASM, we reduce
      * WASM↔JS boundary crossings by 99.98%+ (from N×M to ~3 crossings).
      */
     const assembleRecords = (result: FlatParseResult): CSVObjectRecord<Header>[] => {
-      const records: CSVObjectRecord<Header>[] = [];
-
       // Update cached headers if available
       const headers = result.headers as string[] | null;
       if (headers && !cachedHeaders) {
         cachedHeaders = headers;
-        fieldCount = result.fieldCount;
+        cachedFieldCount = result.fieldCount;
       }
 
       if (!cachedHeaders || result.recordCount === 0) {
-        return records;
+        return [];
       }
 
-      const fieldData = result.fieldData as string[];
-
-      // Assemble objects from flat data
-      for (let r = 0; r < result.recordCount; r++) {
-        const obj: Record<string, string> = {};
-        for (let f = 0; f < fieldCount; f++) {
-          // Headers and fieldData are guaranteed to be valid since we checked bounds above
-          const header = cachedHeaders[f]!;
-          obj[header] = fieldData[r * fieldCount + f] ?? "";
-        }
-        records.push(obj as CSVObjectRecord<Header>);
-      }
-
-      return records;
+      // Extract data from WASM result and pass to shared utility
+      return flatToObjects<Header>({
+        headers: cachedHeaders,
+        fieldData: result.fieldData as string[],
+        actualFieldCounts: result.actualFieldCounts as number[] | null,
+        recordCount: result.recordCount,
+        fieldCount: cachedFieldCount,
+      });
     };
 
     super(
@@ -208,11 +201,7 @@ export class WASMBinaryCSVStreamTransformer<
           if (chunk.byteLength !== 0) {
             try {
               // Process chunk using flat API (minimizes WASM↔JS boundary crossings)
-              // Pass stream: true to indicate we will call flush() separately
-              const result: FlatParseResult = parser.processChunkBytes(
-                chunk,
-                true,
-              );
+              const result: FlatParseResult = parser.processChunkBytes(chunk);
 
               // Assemble and enqueue records
               for (const record of assembleRecords(result)) {
@@ -225,8 +214,8 @@ export class WASMBinaryCSVStreamTransformer<
         },
         flush: async (controller) => {
           try {
-            // Flush remaining data using flat API
-            const result: FlatParseResult = parser.flush();
+            // Finalize parsing and get remaining data
+            const result: FlatParseResult = parser.finish();
 
             // Assemble and enqueue final records
             for (const record of assembleRecords(result)) {
