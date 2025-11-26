@@ -471,6 +471,10 @@ pub struct CSVParserOptimized {
     dfa: DfaTable,
     /// Byte class mapping (256 bytes -> 5 classes)
     byte_classes: ByteClassMap,
+
+    /// Track if previous byte was CR (for CRLF handling)
+    /// When true, skip record completion on LF to treat CRLF as single line ending
+    prev_was_cr: bool,
 }
 
 #[wasm_bindgen]
@@ -564,6 +568,7 @@ impl CSVParserOptimized {
             utf8_buffer: Vec::new(),
             dfa,
             byte_classes,
+            prev_was_cr: false,
         })
     }
 
@@ -676,11 +681,20 @@ impl CSVParserOptimized {
             }
         }
 
+        // Check for incomplete UTF-8 bytes in buffer
+        if !self.utf8_buffer.is_empty() {
+            return Err(JsError::new(&format!(
+                "Incomplete UTF-8 byte sequence at end of stream: {} bytes remaining ({:02X?})",
+                self.utf8_buffer.len(),
+                &self.utf8_buffer[..std::cmp::min(self.utf8_buffer.len(), 8)]
+            )));
+        }
+
         // Reset state
         self.state = OptimizedParserState::FieldStart;
         self.current_field.clear();
         self.current_record.clear();
-        self.utf8_buffer.clear();
+        self.prev_was_cr = false;
 
         Ok(completed_records.into())
     }
@@ -728,10 +742,14 @@ impl CSVParserOptimized {
                 }
 
                 // Handle field/record completion
+                // CRITICAL: Only process delimiters/line endings if NOT in quoted field
+                // In InQuotedField state, delimiters and newlines are part of the field content
                 if self.state != OptimizedParserState::InQuotedField {
                     if class == ByteClass::Delimiter {
                         self.finish_field()?;
-                    } else if class == ByteClass::LF || class == ByteClass::CR {
+                        self.prev_was_cr = false;
+                    } else if class == ByteClass::CR {
+                        // CR - finish field and record, mark for CRLF detection
                         let was_after_quote = self.state == OptimizedParserState::AfterQuote;
                         let was_field_start = self.state == OptimizedParserState::FieldStart;
 
@@ -750,19 +768,51 @@ impl CSVParserOptimized {
                                 &mut record_count,
                             );
                         }
+
+                        // Mark CR for CRLF detection - next LF should be skipped for record completion
+                        self.prev_was_cr = true;
+                    } else if class == ByteClass::LF {
+                        // LF - only finish record if not part of CRLF sequence
+                        if self.prev_was_cr {
+                            // This LF is part of CRLF - skip record completion (already done on CR)
+                            self.prev_was_cr = false;
+                        } else {
+                            // Standalone LF - finish field and record
+                            let was_after_quote = self.state == OptimizedParserState::AfterQuote;
+                            let was_field_start = self.state == OptimizedParserState::FieldStart;
+
+                            if !self.current_field.is_empty()
+                                || was_after_quote
+                                || (was_field_start && !self.current_record.is_empty())
+                            {
+                                self.finish_field()?;
+                            }
+
+                            // Finish record and add fields to flat array
+                            if !self.current_record.is_empty() {
+                                self.finish_record_to_flat(
+                                    &mut field_data,
+                                    &mut actual_field_counts,
+                                    &mut record_count,
+                                );
+                            }
+                        }
                     }
+                } else {
+                    // In quoted field - reset CRLF tracking
+                    self.prev_was_cr = false;
                 }
 
-                // Line number advancement
+                // Handle line number advancement for different line ending styles
+                // Supports LF, CR, and CRLF line endings
                 if class == ByteClass::CR {
                     self.position.advance_line();
                 } else if class == ByteClass::LF {
-                    let prev_was_cr = if i > 0 {
-                        self.utf8_buffer[i - 1] == b'\r'
-                    } else {
-                        false
-                    };
-                    if !prev_was_cr {
+                    // Only advance line if not part of CRLF (CR already advanced it)
+                    // Check both struct flag (for cross-chunk CRLF) and buffer check (for same-chunk CRLF)
+                    let was_crlf =
+                        self.prev_was_cr || (i > 0 && self.utf8_buffer[i - 1] == b'\r');
+                    if !was_crlf {
                         self.position.advance_line();
                     }
                 }
@@ -843,15 +893,12 @@ impl CSVParserOptimized {
                 if self.state != OptimizedParserState::InQuotedField {
                     if class == ByteClass::Delimiter {
                         self.finish_field()?;
-                    } else if class == ByteClass::LF || class == ByteClass::CR {
-                        // Line ending - finish field and potentially record
+                        self.prev_was_cr = false;
+                    } else if class == ByteClass::CR {
+                        // CR - finish field and record, mark for CRLF detection
                         let was_after_quote = self.state == OptimizedParserState::AfterQuote;
                         let was_field_start = self.state == OptimizedParserState::FieldStart;
 
-                        // Finish field if:
-                        // 1. Field has content, OR
-                        // 2. We just closed a quoted field (AfterQuote state), OR
-                        // 3. We're at FieldStart with existing fields (e.g., after delimiter: "a,\n" should be ["a",""])
                         if !self.current_field.is_empty()
                             || was_after_quote
                             || (was_field_start && !self.current_record.is_empty())
@@ -859,44 +906,55 @@ impl CSVParserOptimized {
                             self.finish_field()?;
                         }
 
-                        // Finish record if we have any fields
                         if !self.current_record.is_empty() {
                             if let Some(record) = self.finish_record() {
                                 completed_records.push(&record);
                             }
                         }
+
+                        // Mark CR for CRLF detection - next LF should be skipped for record completion
+                        self.prev_was_cr = true;
+                    } else if class == ByteClass::LF {
+                        // LF - only finish record if not part of CRLF sequence
+                        // Save the CRLF state before clearing it (needed for line advancement)
+                        let was_crlf = self.prev_was_cr;
+                        if self.prev_was_cr {
+                            // This LF is part of CRLF - skip record completion (already done on CR)
+                            self.prev_was_cr = false;
+                        } else {
+                            // Standalone LF - finish field and record
+                            let was_after_quote = self.state == OptimizedParserState::AfterQuote;
+                            let was_field_start = self.state == OptimizedParserState::FieldStart;
+
+                            if !self.current_field.is_empty()
+                                || was_after_quote
+                                || (was_field_start && !self.current_record.is_empty())
+                            {
+                                self.finish_field()?;
+                            }
+
+                            if !self.current_record.is_empty() {
+                                if let Some(record) = self.finish_record() {
+                                    completed_records.push(&record);
+                                }
+                            }
+                        }
+
+                        // Handle line advancement for LF here (after capturing was_crlf)
+                        // Only advance line if not part of CRLF (CR already advanced it)
+                        // Check both struct flag (for cross-chunk CRLF) and buffer check (for same-chunk CRLF)
+                        if !was_crlf && (i == 0 || self.utf8_buffer[i - 1] != b'\r') {
+                            self.position.advance_line();
+                        }
                     }
+                } else {
+                    // In quoted field - reset CRLF tracking
+                    self.prev_was_cr = false;
                 }
 
-                // Handle line number advancement for different line ending styles
-                // Supports LF, CR, and CRLF line endings
+                // Handle line number advancement for CR
                 if class == ByteClass::CR {
-                    // Check if next byte is LF (CRLF sequence)
-                    let next_is_lf = if i + 1 < self.utf8_buffer.len() {
-                        self.utf8_buffer[i + 1] == b'\n'
-                    } else {
-                        false
-                    };
-
-                    // Advance line for CR (will skip LF in CRLF case)
                     self.position.advance_line();
-
-                    // Mark that we just processed CR for CRLF detection
-                    if next_is_lf {
-                        // Next iteration will be LF, which we'll skip for line counting
-                        // (but still process for state machine)
-                    }
-                } else if class == ByteClass::LF {
-                    // Only advance line if previous byte wasn't CR (not part of CRLF)
-                    let prev_was_cr = if i > 0 {
-                        self.utf8_buffer[i - 1] == b'\r'
-                    } else {
-                        false
-                    };
-
-                    if !prev_was_cr {
-                        self.position.advance_line();
-                    }
                 }
 
                 // Update state

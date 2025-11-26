@@ -138,6 +138,80 @@ describe("WASMBinaryCSVArrayParser", () => {
       const flushed = [...parser.parse()];
       expect(flushed.length).toBeGreaterThanOrEqual(0);
     });
+
+    test("should handle CRLF split across chunks (CR at end, LF at start)", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+
+      // First chunk ends with CR
+      const records1 = [...parser.parse(encoder.encode("a,b\r\n1,2\r"), { stream: true })];
+
+      // Second chunk starts with LF
+      const records2 = [...parser.parse(encoder.encode("\n3,4"), { stream: true })];
+
+      // Flush
+      const records3 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3];
+
+      // Should have exactly 2 data records, not 3 (if CRLF split was mishandled)
+      expect(allRecords).toHaveLength(2);
+      expect(allRecords[0]).toEqual(["1", "2"]);
+      expect(allRecords[1]).toEqual(["3", "4"]);
+    });
+
+    test("should handle incomplete UTF-8 split across chunks", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+
+      // Japanese "日本" = 0xE6 0x97 0xA5 0xE6 0x9C 0xAC
+      // First chunk: header + first byte of multi-byte char
+      const chunk1 = new Uint8Array([
+        ...encoder.encode("name\n"),
+        0xe6, 0x97, 0xa5, // 日
+        0xe6, // First byte of 本 (incomplete)
+      ]);
+      const records1 = [...parser.parse(chunk1, { stream: true })];
+
+      // Second chunk: remaining bytes
+      const chunk2 = new Uint8Array([0x9c, 0xac]); // Remaining bytes of 本
+      const records2 = [...parser.parse(chunk2, { stream: true })];
+
+      // Flush
+      const records3 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3];
+      expect(allRecords).toHaveLength(1);
+      expect(allRecords[0]?.[0]).toBe("日本");
+    });
+
+    test("should error on flush with incomplete UTF-8 sequence", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+
+      // Send incomplete UTF-8: first byte of a 3-byte sequence without continuation bytes
+      const incompleteUtf8 = new Uint8Array([
+        ...encoder.encode("name\n"),
+        0xe6, // First byte of a 3-byte UTF-8 sequence (expects 2 more bytes)
+      ]);
+      [...parser.parse(incompleteUtf8, { stream: true })];
+
+      // Flush should throw error for incomplete UTF-8
+      expect(() => [...parser.parse()]).toThrow(/incomplete utf-8|byte sequence/i);
+    });
+
+    test("should error on flush with truncated 4-byte UTF-8 sequence", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+
+      // Emoji 🎉 = F0 9F 8E 89 (4 bytes)
+      // Send only first 2 bytes
+      const incompleteEmoji = new Uint8Array([
+        ...encoder.encode("emoji\n"),
+        0xf0,
+        0x9f, // First 2 bytes of 4-byte sequence
+      ]);
+      [...parser.parse(incompleteEmoji, { stream: true })];
+
+      // Flush should throw error
+      expect(() => [...parser.parse()]).toThrow(/incomplete utf-8|byte sequence/i);
+    });
   });
 
   describe("BufferSource input types", () => {
@@ -236,6 +310,50 @@ describe("WASMBinaryCSVArrayParser", () => {
       expect(records).toHaveLength(2);
       expect(records[0]?.[1]).toBe("Alice");
       expect(records[1]?.[1]).toBe("Bob");
+    });
+
+    test("should not create empty records from CRLF (regression)", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+      const csv = "a,b\r\n1,2\r\n3,4\r\n";
+      const records = [...parser.parse(encoder.encode(csv))];
+
+      // CRLF should be treated as single line ending, not two
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+    });
+
+    test("should handle mixed line endings (LF, CR, CRLF)", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+      const csv = "a,b\r\n1,2\n3,4\r5,6";
+      const records = [...parser.parse(encoder.encode(csv))];
+
+      expect(records).toHaveLength(3);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+      expect(records[2]).toEqual(["5", "6"]);
+    });
+
+    test("should handle CR-only line endings", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+      const csv = "a,b\r1,2\r3,4";
+      const records = [...parser.parse(encoder.encode(csv))];
+
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+    });
+
+    test("should preserve CRLF inside quoted fields", () => {
+      const parser = new WASMBinaryCSVArrayParser();
+      const csv = 'name,notes\r\nAlice,"Line 1\r\nLine 2"\r\nBob,normal';
+      const records = [...parser.parse(encoder.encode(csv))];
+
+      expect(records).toHaveLength(2);
+      expect(records[0]?.[0]).toBe("Alice");
+      expect(records[0]?.[1]).toBe("Line 1\r\nLine 2");
+      expect(records[1]?.[0]).toBe("Bob");
+      expect(records[1]?.[1]).toBe("normal");
     });
 
     test("should handle unicode in fields", () => {

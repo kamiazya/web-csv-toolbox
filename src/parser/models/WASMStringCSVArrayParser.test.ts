@@ -162,6 +162,60 @@ describe("WASMStringCSVArrayParser", () => {
       const aliceRecord = allRecords.find((r) => r[0] === "Alice");
       expect(aliceRecord?.[1]).toBe("hello world");
     });
+
+    test("should handle CRLF split across chunks (CR at end, LF at start)", () => {
+      const parser = new WASMStringCSVArrayParser();
+
+      // First chunk ends with CR
+      const records1 = [...parser.parse("a,b\r\n1,2\r", { stream: true })];
+
+      // Second chunk starts with LF
+      const records2 = [...parser.parse("\n3,4", { stream: true })];
+
+      // Flush
+      const records3 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3];
+
+      // Should have exactly 2 data records, not 3 (if CRLF split was mishandled)
+      expect(allRecords).toHaveLength(2);
+      expect(allRecords[0]).toEqual(["1", "2"]);
+      expect(allRecords[1]).toEqual(["3", "4"]);
+    });
+
+    test("should handle CRLF in header split across chunks", () => {
+      const parser = new WASMStringCSVArrayParser();
+
+      // Header ends with CR
+      const records1 = [...parser.parse("name,age\r", { stream: true })];
+
+      // Data starts after LF
+      const records2 = [...parser.parse("\nAlice,30", { stream: true })];
+
+      // Flush
+      const records3 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3];
+      expect(allRecords).toHaveLength(1);
+      expect(allRecords[0]).toEqual(["Alice", "30"]);
+    });
+
+    test("should handle multiple CRLFs split across chunks", () => {
+      const parser = new WASMStringCSVArrayParser();
+
+      // Multiple records with CRLF split
+      const records1 = [...parser.parse("a,b\r\n1,2\r", { stream: true })];
+      const records2 = [...parser.parse("\n3,4\r", { stream: true })];
+      const records3 = [...parser.parse("\n5,6", { stream: true })];
+      const records4 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3, ...records4];
+
+      expect(allRecords).toHaveLength(3);
+      expect(allRecords[0]).toEqual(["1", "2"]);
+      expect(allRecords[1]).toEqual(["3", "4"]);
+      expect(allRecords[2]).toEqual(["5", "6"]);
+    });
   });
 
   describe("positional access", () => {
@@ -256,6 +310,50 @@ describe("WASMStringCSVArrayParser", () => {
       expect(records).toHaveLength(2);
       expect(records[0]?.[1]).toBe("Alice");
       expect(records[1]?.[1]).toBe("Bob");
+    });
+
+    test("should not create empty records from CRLF (regression)", () => {
+      const parser = new WASMStringCSVArrayParser();
+      const csv = "a,b\r\n1,2\r\n3,4\r\n";
+      const records = [...parser.parse(csv)];
+
+      // CRLF should be treated as single line ending, not two
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+    });
+
+    test("should handle mixed line endings (LF, CR, CRLF)", () => {
+      const parser = new WASMStringCSVArrayParser();
+      const csv = "a,b\r\n1,2\n3,4\r5,6";
+      const records = [...parser.parse(csv)];
+
+      expect(records).toHaveLength(3);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+      expect(records[2]).toEqual(["5", "6"]);
+    });
+
+    test("should handle CR-only line endings", () => {
+      const parser = new WASMStringCSVArrayParser();
+      const csv = "a,b\r1,2\r3,4";
+      const records = [...parser.parse(csv)];
+
+      expect(records).toHaveLength(2);
+      expect(records[0]).toEqual(["1", "2"]);
+      expect(records[1]).toEqual(["3", "4"]);
+    });
+
+    test("should preserve CRLF inside quoted fields", () => {
+      const parser = new WASMStringCSVArrayParser();
+      const csv = 'name,notes\r\nAlice,"Line 1\r\nLine 2"\r\nBob,normal';
+      const records = [...parser.parse(csv)];
+
+      expect(records).toHaveLength(2);
+      expect(records[0]?.[0]).toBe("Alice");
+      expect(records[0]?.[1]).toBe("Line 1\r\nLine 2");
+      expect(records[1]?.[0]).toBe("Bob");
+      expect(records[1]?.[1]).toBe("normal");
     });
 
     test("should handle unicode in fields", () => {
