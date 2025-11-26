@@ -1,4 +1,4 @@
-use js_sys::Array;
+use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
 
 use crate::error::format_error;
@@ -7,8 +7,6 @@ use crate::parser::CSVParser;
 // rust-csv is only available in test/bench builds for comparison
 #[cfg(test)]
 use csv::ReaderBuilder;
-#[cfg(test)]
-use js_sys::{Object, Reflect};
 #[cfg(test)]
 use serde_json::json;
 
@@ -19,7 +17,12 @@ pub const DEFAULT_MAX_FIELD_COUNT: usize = 100_000;
 
 /// Parse CSV string to JsValue array (direct conversion without JSON serialization)
 ///
-/// Uses optimized parser instead of rust-csv for better performance.
+/// Uses optimized parser with flat format internally, then converts to objects.
+/// This is a convenience function for one-shot parsing that returns the traditional
+/// array of objects format expected by most use cases.
+///
+/// For high-performance streaming or batch processing, prefer using
+/// `CSVParser::process_chunk_bytes_flat` directly and assembling objects on the JS side.
 ///
 /// # Arguments
 ///
@@ -64,34 +67,66 @@ pub(crate) fn parse_csv_to_jsvalue(
         &JsValue::from_f64(max_field_count as f64),
     );
 
-    // Use optimized parser
+    // Use optimized parser with flat format (stream: None = auto-flush)
     let mut parser = CSVParser::new(options.into())
         .map_err(|e| format_error(format!("Failed to create parser: {:?}", e), source))?;
 
-    // Process input as string chunk
-    let records = parser
-        .process_chunk(input)
+    let flat_result = parser
+        .process_chunk(input, None)
         .map_err(|e| format_error(format!("Failed to parse CSV: {:?}", e), source))?;
 
-    // Flush remaining data
-    let flush_records = parser
-        .flush()
-        .map_err(|e| format_error(format!("Failed to flush parser: {:?}", e), source))?;
+    // Convert flat result to array of objects
+    let records = Array::new();
+    let headers_js = flat_result.headers();
+    let field_count = flat_result.field_count();
+    let record_count = flat_result.record_count();
+    let field_data_js = flat_result.field_data();
 
-    // Combine results
-    let combined = Array::new();
-    if let Some(records_array) = records.dyn_ref::<Array>() {
-        for i in 0..records_array.length() {
-            combined.push(&records_array.get(i));
-        }
-    }
-    if let Some(flush_array) = flush_records.dyn_ref::<Array>() {
-        for i in 0..flush_array.length() {
-            combined.push(&flush_array.get(i));
-        }
+    if headers_js.is_null() || field_count == 0 {
+        return Ok(records.into());
     }
 
-    Ok(combined.into())
+    // Extract headers
+    let headers_arr = Array::from(&headers_js);
+    let mut headers: Vec<String> = Vec::with_capacity(field_count);
+    for i in 0..headers_arr.length() {
+        if let Some(h) = headers_arr.get(i).as_string() {
+            headers.push(h);
+        }
+    }
+
+    // Extract field data
+    let field_data_arr = Array::from(&field_data_js);
+
+    // Build objects
+    for r in 0..record_count {
+        let obj = Object::new();
+        for (f, header) in headers.iter().enumerate() {
+            let idx = r * field_count + f;
+            let value = if (idx as u32) < field_data_arr.length() {
+                field_data_arr.get(idx as u32)
+            } else {
+                JsValue::UNDEFINED
+            };
+
+            let key = JsValue::from_str(header);
+
+            // Handle prototype pollution protection
+            if header == "__proto__" || header == "constructor" || header == "prototype" {
+                let descriptor = Object::new();
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("value"), &value);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("writable"), &JsValue::TRUE);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("enumerable"), &JsValue::TRUE);
+                let _ = Reflect::set(&descriptor, &JsValue::from_str("configurable"), &JsValue::TRUE);
+                let _ = Object::define_property(&obj, &key, &descriptor);
+            } else {
+                let _ = Reflect::set(&obj, &key, &value);
+            }
+        }
+        records.push(&obj);
+    }
+
+    Ok(records.into())
 }
 
 #[cfg(test)]

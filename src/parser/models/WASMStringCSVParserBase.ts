@@ -21,7 +21,7 @@ import type {
 export type { FlatParseData } from "./wasm-internal-types.ts";
 
 /**
- * Base class for WASM-based String CSV parsers using Truly Flat optimization.
+ * Base class for WASM-based String CSV parsers using Flat data transfer optimization.
  *
  * This base class handles the WASM interaction and returns intermediate flat data
  * that derived classes can convert to Object or Array format.
@@ -29,8 +29,29 @@ export type { FlatParseData } from "./wasm-internal-types.ts";
  * Unlike {@link WASMBinaryCSVParserBase}, this class accepts string input directly
  * and handles the conversion to binary internally using TextEncoder.
  *
- * **Performance**: Uses Truly Flat optimization for 16-31% faster parsing
- * with 99.8%+ reduction in WASM↔JS boundary crossings.
+ * ## Design Philosophy: Flat Data Transfer Format
+ *
+ * This parser uses a "Flat" data transfer format optimized for WASM↔JS boundary
+ * crossing efficiency. The key insight is that **WASM↔JS boundary crossings are
+ * expensive** - each call to create a JavaScript object, set a property, or push
+ * to an array requires crossing this boundary.
+ *
+ * ### Traditional Object Approach (SLOW)
+ * For N records with M fields each:
+ * - N × Object.new() calls
+ * - N × M × Reflect.set() calls
+ * - Total: N × (M + 2) boundary crossings
+ *
+ * ### Flat Array Approach (FAST)
+ * - 1 × headers array (cached, created once)
+ * - 1 × fieldData array (all field values in a single flat array)
+ * - Total: ~3 boundary crossings
+ *
+ * For a 1000-row × 20-column CSV, this reduces boundary crossings from
+ * ~21,000 to just 3 - a **99.98% reduction**.
+ *
+ * Object assembly is then performed on the JavaScript side, which is much
+ * faster than crossing the WASM↔JS boundary for each property.
  *
  * @template Header - Array of header field names
  * @internal
@@ -92,7 +113,7 @@ export abstract class WASMStringCSVParserBase<
   }
 
   /**
-   * Parse chunk using Truly Flat optimization and return intermediate data.
+   * Parse chunk using Flat data transfer optimization and return intermediate data.
    * Derived classes use this to build their specific output format.
    *
    * @param chunk - String CSV data
@@ -101,8 +122,9 @@ export abstract class WASMStringCSVParserBase<
   protected parseFlatChunk(chunk: string): FlatParseData {
     // Convert string to Uint8Array for WASM
     const bytes = this.#encoder.encode(chunk);
+    // Pass stream: true to indicate we will call flush() separately
     const result: FlatParseResult =
-      this.parser.processChunkBytesTrulyFlat(bytes);
+      this.parser.processChunkBytes(bytes, true);
 
     // Cache headers if available
     const headers = result.headers as string[] | null;
@@ -120,10 +142,10 @@ export abstract class WASMStringCSVParserBase<
   }
 
   /**
-   * Flush remaining data using Truly Flat format (consistent with parseFlatChunk output)
+   * Flush remaining data using Flat format (consistent with parseFlatChunk output)
    */
   protected flushFlat(): FlatParseData {
-    const result: FlatParseResult = this.parser.flushTrulyFlat();
+    const result: FlatParseResult = this.parser.flush();
 
     // Update cached headers if flush returned new headers
     // (handles case where header row spans multiple chunks)
@@ -139,15 +161,6 @@ export abstract class WASMStringCSVParserBase<
       recordCount: result.recordCount,
       fieldCount: result.fieldCount,
     };
-  }
-
-  /**
-   * Flush remaining data using legacy method (object format)
-   * @deprecated Use flushFlat() for consistent output format
-   */
-  protected flushLegacy(): any[] {
-    const result = this.parser.flush();
-    return Array.isArray(result) ? result : [];
   }
 
   /**
