@@ -133,10 +133,9 @@
   <script type="module">
     import {
       parseString,
+      parseBinaryStream,
       isWebGPUAvailable,
       loadGPU,
-      parseCSVStream,
-      StreamParser
     } from './src/main.web.ts';
 
     // Generate CSV test data
@@ -309,16 +308,10 @@
                   const records = [];
                   const blobStream = new Blob([csvBytes], { type: 'text/csv' }).stream();
 
-                  // Use StreamParser directly for WebGPU
-                  const parser = new StreamParser({
-                    onRecord: (record) => {
-                      records.push(record);
-                    }
-                  });
-
-                  await parser.initialize();
-                  await parser.parseStream(blobStream);
-                  await parser.destroy();
+                  // Use parseBinaryStream with GPU execution
+                  for await (const record of parseBinaryStream(blobStream, { engine: { gpu: true } })) {
+                    records.push(record);
+                  }
                 },
                 5
               );

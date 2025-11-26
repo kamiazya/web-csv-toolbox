@@ -258,7 +258,6 @@
       parseBinaryStream,
       isWebGPUAvailable,
       loadGPU,
-      StreamParser
     } from './src/main.web.ts';
 
     let opfsRoot = null;
@@ -540,15 +539,10 @@
         const stream = file.stream();
         let recordCount = 0;
 
-        const parser = new StreamParser({
-          onRecord: () => {
-            recordCount++;
-          }
-        });
-
-        await parser.initialize();
-        await parser.parseStream(stream);
-        await parser.destroy();
+        // Use parseBinaryStream with GPU execution
+        for await (const record of parseBinaryStream(stream, { engine: { gpu: true } })) {
+          recordCount++;
+        }
 
         const endTime = performance.now();
         times.push((endTime - startTime) / 1000);

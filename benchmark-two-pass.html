@@ -163,7 +163,7 @@
   </div>
 
   <script type="module">
-    import { StreamParser } from './src/main.web.ts';
+    import { CSVSeparatorIndexingBackend, loadGPU, isWebGPUAvailable } from './src/main.web.ts';
 
     // Generate test CSV data with long quoted fields
     function generateTestData(sizeBytes) {
@@ -190,6 +190,14 @@
       statusEl.className = 'status';
 
       try {
+        // Check WebGPU availability
+        if (!isWebGPUAvailable()) {
+          throw new Error('WebGPU is not available in this browser');
+        }
+
+        // Initialize GPU
+        await loadGPU();
+
         // Generate test data
         const testData = generateTestData(dataSize);
         const workgroupCount = Math.ceil(dataSize / 256);
@@ -233,38 +241,35 @@
         total: 0
       };
 
-      // We need to instrument the gpu-backend.ts dispatch method
-      // For now, create a parser and manually time each phase
-      const parser = new StreamParser();
-      await parser.initialize();
+      // Use CSVSeparatorIndexingBackend directly for two-pass timing
+      const backend = new CSVSeparatorIndexingBackend({
+        gpu: navigator.gpu,
+        enableTiming: true,
+      });
 
-      // Access the backend directly (internal API)
-      const backend = parser['backend'];
-      if (!backend) {
-        throw new Error('Failed to access GPU backend');
-      }
+      await backend.initialize();
 
       const totalStart = performance.now();
 
-      // Create test stream
-      const stream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(inputBytes);
-          controller.close();
-        }
+      // Run the two-pass algorithm directly on the backend
+      const result = await backend.dispatch(inputBytes, {
+        chunkSize: inputBytes.length,
+        prevInQuote: 0,
       });
-
-      // Parse (this will run the two-pass algorithm)
-      // We'll need to measure via Chrome DevTools Timeline for accurate GPU timing
-      // For now, measure the total CPU-visible time
-      await parser.parseStream(stream);
 
       timing.total = (performance.now() - totalStart) * 1000; // Convert to microseconds
 
-      await parser.destroy();
+      // Extract timing from the result if available
+      if (result.timing) {
+        timing.pass1 = result.timing.pass1 || 0;
+        timing.gpuToCpu = result.timing.gpuToCpu || 0;
+        timing.cpuCompute = result.timing.cpuCompute || 0;
+        timing.cpuToGpu = result.timing.cpuToGpu || 0;
+        timing.pass2 = result.timing.pass2 || 0;
+      }
 
-      // Note: For accurate per-phase timing, we need to instrument gpu-backend.ts
-      // This is a simplified measurement showing total overhead
+      await backend.destroy();
+
       return timing;
     }
 
