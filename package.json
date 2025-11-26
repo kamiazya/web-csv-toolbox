@@ -232,7 +232,7 @@
     "vitest": "4.0.3",
     "wasm-pack": "^0.13.1",
     "webdriverio": "^9.20.0",
-    "webgpu": "^0.3.8"
+    "webgpu": "catalog:"
   },
   "pnpm": {
     "overrides": {

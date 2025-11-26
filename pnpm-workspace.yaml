@@ -41,3 +41,6 @@ catalogs:
 
     # Validation
     zod: ^4.1.12
+
+    # WebGPU
+    webgpu: ^0.3.8
