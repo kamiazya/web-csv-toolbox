@@ -81,6 +81,7 @@ pub(crate) fn parse_csv_to_jsvalue(
     let field_count = flat_result.field_count();
     let record_count = flat_result.record_count();
     let field_data_js = flat_result.field_data();
+    let actual_field_counts_js = flat_result.actual_field_counts();
 
     if headers_js.is_null() || field_count == 0 {
         return Ok(records.into());
@@ -98,13 +99,31 @@ pub(crate) fn parse_csv_to_jsvalue(
     // Extract field data
     let field_data_arr = Array::from(&field_data_js);
 
+    // Extract actual field counts per record
+    let actual_counts_arr = Array::from(&actual_field_counts_js);
+    let mut actual_counts: Vec<usize> = Vec::with_capacity(record_count);
+    for i in 0..actual_counts_arr.length() {
+        if let Some(n) = actual_counts_arr.get(i).as_f64() {
+            actual_counts.push(n as usize);
+        }
+    }
+
     // Build objects
     for r in 0..record_count {
         let obj = Object::new();
+        // Get actual field count for this record (default to field_count if not available)
+        let actual_count = actual_counts.get(r).copied().unwrap_or(field_count);
+
         for (f, header) in headers.iter().enumerate() {
-            let idx = r * field_count + f;
-            let value = if (idx as u32) < field_data_arr.length() {
-                field_data_arr.get(idx as u32)
+            // Only set value if this field was actually present in the record
+            // Fields beyond actual_count should remain undefined (sparse record handling)
+            let value = if f < actual_count {
+                let idx = r * field_count + f;
+                if (idx as u32) < field_data_arr.length() {
+                    field_data_arr.get(idx as u32)
+                } else {
+                    JsValue::UNDEFINED
+                }
             } else {
                 JsValue::UNDEFINED
             };
