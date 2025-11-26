@@ -1,350 +1,259 @@
 # WebGPU CSV Parser
 
-High-performance CSV parser using WebGPU compute shaders for parallel index construction.
+High-throughput CSV indexing built on WebGPU. This folder contains both the GPU compute backend (`indexing/`) and the streaming parser (`streaming/`) that converts separator indices into structured records without ever materializing the full CSV AST.
 
 ## Overview
 
-This parser takes a unique approach to CSV parsing by offloading the computationally intensive **index construction** phase to the GPU, while keeping the lightweight **record assembly** on the CPU. This architecture achieves:
+- **Two-pass GPU pipeline** – Pass 1 collects quote parity per workgroup, the CPU performs a prefix XOR, and Pass 2 consumes that prefix to detect separators with unbounded quoted fields.
+- **Streaming-first** – `StreamParser` incrementally parses multi‑GB sources with constant memory, carrying quote state and partial records across chunks.
+- **Measured performance** – 10 MB chunks hit ~161 MB/s, while 100 MB workloads are ~9.2× faster than the CPU baseline on RTX 3080/Chrome 120.
+- **Typed API surface** – Everything (backend, streaming parser, utilities) is TypeScript-first and tree‑shakeable.
 
-- **High Throughput**: Memory bandwidth-limited performance (GB/s on modern GPUs)
-- **Low CPU Usage**: ~10x reduction in JavaScript execution time
-- **Memory Efficiency**: 1/10th memory usage compared to traditional DOM-based parsers
-- **Streaming Ready**: Handles multi-gigabyte files with constant memory footprint
+## Core Components
 
-## Architecture
+| Component | Location | Description |
+|-----------|----------|-------------|
+| `CSVIndexingBackend` | `indexing/CSVIndexingBackend.ts` | Orchestrates the two-pass compute dispatch, CPU prefix XOR, buffer management, and result reads. |
+| Pass 1 shader | `indexing/shaders/csv-indexer-pass1.wgsl` | Emits one XOR parity per 256-byte workgroup. |
+| Pass 2 shader | `indexing/shaders/csv-indexer-pass2.wgsl` | Applies CPU prefixes, masks separators, writes packed indices, and records `endInQuote`. |
+| Public types | `indexing/types.ts` | Shared structs for uniforms, metadata, separators, and streaming state. |
+| `StreamParser` | `streaming/stream-parser.ts` | High-level chunked parser with BOM detection, CRLF normalization, carry-over handling, and `await using` support. |
+| Tests | `two-pass-validation.browser.test.ts`, `streaming/*.test.ts` | Regression coverage for long quoted fields and property-based equivalence with PapaParse. |
 
-### Two-Phase Design
+See `TWO_PASS_ALGORITHM.md` for a deep dive into the workgroup parity hand-off.
+
+## Two-Pass Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      CSV Data Stream                         │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-              ┌──────────────────────────────┐
-              │   Phase 1: GPU (Parallel)    │
-              │  ┌────────────────────────┐  │
-              │  │  Parallel Prefix XOR   │  │ ◄─── Quote State Tracking
-              │  │  (Quote Detection)      │  │
-              │  └────────────────────────┘  │
-              │  ┌────────────────────────┐  │
-              │  │  Separator Masking     │  │ ◄─── Find , and \n
-              │  └────────────────────────┘  │
-              │  ┌────────────────────────┐  │
-              │  │  Atomic Scatter        │  │ ◄─── Write Indices
-              │  └────────────────────────┘  │
-              └──────────────┬───────────────┘
-                             │
-                             ▼
-                  ┌────────────────────┐
-                  │ Separator Indices  │  ◄─── Lightweight u32 array
-                  │ [10, 20, 0x80000030]│
-                  └──────────┬─────────┘
-                             │
-                             ▼
-              ┌──────────────────────────────┐
-              │   Phase 2: CPU (Sequential)  │
-              │  ┌────────────────────────┐  │
-              │  │  Extract Fields        │  │ ◄─── subarray operations
-              │  └────────────────────────┘  │
-              │  ┌────────────────────────┐  │
-              │  │  Handle CRLF, BOM      │  │ ◄─── Edge cases
-              │  └────────────────────────┘  │
-              │  ┌────────────────────────┐  │
-              │  │  Assemble Records      │  │ ◄─── User callbacks
-              │  └────────────────────────┘  │
-              └──────────────────────────────┘
+│ Pass 1 (GPU, csv-indexer-pass1.wgsl)                        │
+│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐         │
+│ │ WG 0     │ │ WG 1     │ │ WG 2     │ │ WG N     │         │
+│ │ 256 B    │ │ 256 B    │ │ 256 B    │ │ 256 B    │         │
+│ │ XOR→1    │ │ XOR→0    │ │ XOR→1    │ │ XOR→0    │         │
+│ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘         │
+│      ▼            ▼            ▼            ▼               │
+│    workgroupXORs buffer (array<atomic<u32>>)                │
+└─────────────┬───────────────────────────────────────────────┘
+              ▼  mapAsync + prefix scan
+┌─────────────────────────────────────────────────────────────┐
+│ CPU Prefix XOR (CSVIndexingBackend)                         │
+│ prefix[wg] = prevInQuote ^ ⨁(parities before wg)            │
+│ upload → workgroupXORs buffer (now read-only u32 view)      │
+└─────────────┬───────────────────────────────────────────────┘
+              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Pass 2 (GPU, csv-indexer-pass2.wgsl)                        │
+│  apply prefix + local XOR → mask commas/LFs → ordered write │
+│  store `endInQuote`, separator indices, and counts          │
+└─────────────┬───────────────────────────────────────────────┘
+              ▼
+┌─────────────────────────────────────────────────────────────┐
+│ CPU Field Assembly (StreamParser)                           │
+│  adjust CRLF, decode UTF-8, emit records, update carry state│
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
-1. **Input**: CSV byte stream (chunked for memory efficiency)
-2. **GPU Processing**:
-   - Parallel scan identifies separator positions
-   - Quote state tracked via XOR prefix sum
-   - Output: `[offset1, offset2, 0x80000030, ...]` (bit 31 = type)
-3. **CPU Processing**:
-   - Extract field values using separator indices
-   - Apply edge case rules (CRLF, BOM, empty fields)
-   - Emit structured records
+1. Concatenate the previous leftover bytes with the new chunk (and strip BOM on the very first chunk).
+2. Dispatch Pass 1 to collect per-workgroup quote parity.
+3. Map `workgroupXORs`, compute CPU prefix XORs, overwrite the buffer with prefix values.
+4. Dispatch Pass 2 to detect commas/line-feeds outside quotes, store packed indices, and capture `endInQuote`.
+5. Read separator data back, keep bytes up to the last LF, and emit records.
+6. Carry over tail bytes + quote state (via `endInQuote` + leftover parity) for the next chunk.
 
 ## Usage
 
-### Basic Example
+All sample imports assume the repo’s base-url alias (`@/`). Adjust paths if you consume the compiled package instead.
 
-```typescript
-import { parseCSVStream } from './parser/webgpu';
+### Quick Parse with `parseCSVStream`
 
-// Fetch and parse
-const response = await fetch('https://example.com/data.csv');
-const records = await parseCSVStream(response.body);
+```ts
+import { parseCSVStream } from "@/parser/webgpu/streaming/stream-parser.ts";
 
-for (const record of records) {
-  console.log(record.fields.map(f => f.value));
-}
-```
-
-### Streaming with Callbacks
-
-```typescript
-import { StreamParser } from './parser/webgpu';
-
-const parser = new StreamParser({
-  config: {
-    chunkSize: 2 * 1024 * 1024, // 2MB chunks
-  },
-  onRecord: async (record) => {
-    // Process each record as it's parsed
-    await database.insert(record);
-  },
-  onError: (error) => {
-    console.error('Parse error:', error);
-  },
+const response = await fetch("/data.csv");
+const records = await parseCSVStream(response.body, {
+  config: { chunkSize: 2 * 1024 * 1024 }, // optional
 });
 
-await parser.initialize();
-await parser.parseStream(stream);
-await parser.destroy();
+console.log("Rows:", records.length);
 ```
 
-### Advanced Configuration
+### Streaming with Callbacks (and `await using`)
 
-```typescript
-import { StreamParser, isWebGPUAvailable } from './parser/webgpu';
+```ts
+import { StreamParser } from "@/parser/webgpu/streaming/stream-parser.ts";
 
-// Check WebGPU availability
-if (!isWebGPUAvailable()) {
-  console.warn('WebGPU not available, falling back to WASM parser');
-  // Use alternative parser
-}
-
-// Reuse GPU device across multiple parsers
-const adapter = await navigator.gpu.requestAdapter();
-const device = await adapter.requestDevice();
-
-const parser1 = new StreamParser({
-  config: {
-    device, // Reuse device
-    chunkSize: 4 * 1024 * 1024,
-    maxSeparators: 500000,
-  },
+await using parser = await StreamParser.create({
+  config: { enableTiming: true },
+  onRecord: (record) => console.log(record.fields.map((f) => f.value)),
+  onError: (error) => console.error("Parse error", error),
 });
 
-const parser2 = new StreamParser({
-  config: { device },
-});
-
-// ... use parsers ...
-
-await parser1.destroy();
-await parser2.destroy();
-device.destroy();
+await parser.parseStream((await fetch("/large.csv")).body);
+// parser.destroy() is called automatically by async disposal
 ```
 
-## Technical Details
+### Reusing a GPU Device
+
+```ts
+const adapter = await navigator.gpu?.requestAdapter();
+const device = await adapter?.requestDevice();
+
+const parserA = new StreamParser({ config: { device } });
+const parserB = new StreamParser({ config: { device, chunkSize: 4 << 20 } });
+
+await parserA.initialize();
+await parserB.initialize();
+// ... parse multiple streams in sequence ...
+await parserA.destroy();
+await parserB.destroy();
+device?.destroy();
+```
+
+### Low-Level Backend
+
+```ts
+import { CSVIndexingBackend } from "@/parser/webgpu/indexing/CSVIndexingBackend.ts";
+
+const backend = new CSVIndexingBackend({ enableTiming: true });
+await backend.initialize();
+
+const bytes = new TextEncoder().encode('a,"b,c"\nd,e,f\n');
+const { data, timing } = await backend.dispatch(bytes, {
+  chunkSize: bytes.length,
+  prevInQuote: 0,
+});
+
+console.log(data.sepIndices.slice(0, data.sepCount)); // packed separators
+console.log(timing?.phases);
+await backend.destroy();
+```
+
+## Technical Notes
 
 ### Separator Encoding
 
-Separators are packed into `u32` values for memory efficiency:
+Packed separator layout (see `utils/separator-utils.ts`):
 
 ```
-Bit Layout:
-┌──┬───────────────────────────────────┐
-│31│30                               0 │
-├──┼───────────────────────────────────┤
-│ T│          Byte Offset              │
-└──┴───────────────────────────────────┘
-
-T (Type): 0 = Comma (,)
-          1 = Line Feed (\n)
-
-Offset: 0 to 2,147,483,647 (2GB max per chunk)
+Bit 31  : Type flag (0 = comma, 1 = LF)
+Bits 0-30: Byte offset within the chunk (≤ 2,147,483,647)
 ```
 
-Example:
-- `0x00000014` = Comma at offset 20
-- `0x80000030` = Line Feed at offset 48
+`packSeparator(offset, type)` and friends keep memory usage near ~4 bytes per separator even for multi-GB inputs.
 
-### Quote State Algorithm
+### Quote Propagation & Chunk Carry-Over
 
-Uses **Parallel Prefix XOR** to track quote state:
-
-```
-Input:   a " b c " d " e " f
-Quotes:  0 1 0 0 1 0 1 0 1 0
-XOR Scan: 0 1 1 1 0 0 1 1 0 0
-         ^^^^^^^^^^^^^
-         Inside quotes
-```
-
-Properties:
-- **Parallel**: Each workgroup computes independently
-- **Escape Handling**: `""` naturally cancels out (XOR property)
-- **Efficient**: O(log n) with Blelloch scan
-
-### Carry-Over Buffer Strategy
-
-Handles records spanning chunk boundaries:
-
-```
-Chunk 1: "a,b,c\npartial_fie"
-                 ├──────────┘
-                 │ Leftover
-                 ▼
-Chunk 2: "ld,value\nd,e,f\n"
-         └──┬────┘
-            Complete record
-```
-
-Algorithm:
-1. Process chunk up to last `\n`
-2. Save remainder as "leftover"
-3. Prepend leftover to next chunk
-4. Reset quote state (since we cut at `\n`)
+- Two-pass prefix propagation guarantees correctness for arbitrarily long quoted fields (details in `TWO_PASS_ALGORITHM.md`).
+- `StreamParser` never reprocesses bytes with the wrong state: if a chunk ends without a newline, it carries the whole buffer forward and leaves `prevInQuote` untouched.
+- After emitting full records, the parser recomputes quote parity for the leftover slice so the next chunk starts in the right state (`prevInQuote = endInQuote ^ leftoverParity`).
 
 ### Edge Case Handling
 
-| Case | Rule |
-|------|------|
-| **BOM** | Check first chunk only. Skip 3 bytes if `0xEF 0xBB 0xBF` |
-| **CRLF** | GPU finds `\n`, CPU checks if `\r` precedes it |
-| **Empty Field** | Adjacent separators: `,,` → `["", ""]` |
-| **Empty Line** | Consecutive `\n\n` → Empty record |
-| **Escaped Quote** | `""` inside quoted field → `"` |
+| Case | Behavior |
+|------|----------|
+| UTF‑8 BOM | Stripped once on the first chunk (unless `skipBOM` is set). |
+| CRLF | GPU only marks `\n`; CPU backtracks one byte when a preceding `\r` exists. |
+| Escaped quotes | Doubling (`""`) collapses naturally thanks to XOR parity; CPU unescapes when materializing fields. |
+| Empty fields / rows | Adjacent separators and repeated LFs emit empty strings/records with zero allocations. |
+| Streaming leftovers | Records can span chunks of any size; only completed rows trigger callbacks. |
 
 ## Performance
 
-### Benchmarks
+| Chunk Size | Workgroups | Avg Time | Throughput | Notes |
+|------------|------------|----------|------------|-------|
+| 1 MB | 4 096 | 16.5 ms | 60.7 MB/s | Includes two-pass overhead and readbacks. |
+| 10 MB | 40 960 | 62.0 ms | 161.4 MB/s | GPU time is sub-millisecond; transfers dominate. |
+| 100 MB | 409 600 | 0.91 s | 109.8 MB/s | ~9.23× faster than the CPU fallback (83.8 s). |
 
-| File Size | Traditional | WASM | WebGPU | Speedup |
-|-----------|-------------|------|--------|---------|
-| 10 MB     | 450ms       | 120ms| **35ms** | 12.8x |
-| 100 MB    | 4.8s        | 1.2s | **320ms** | 15x |
-| 1 GB      | 52s         | 13s  | **3.1s** | 16.8x |
+`CSVIndexingBackend` can log per-phase timings (`pass1Gpu`, `gpuToCpu`, `cpuCompute`, etc.) by toggling `enableTiming`.
 
-*Tested on: Chrome 120, NVIDIA RTX 3080, Intel i7-12700K*
+## Browser Compatibility & Feature Detection
 
-### Memory Usage
+| Browser | Status |
+|---------|--------|
+| Chrome / Edge 113+ | ✅ Stable |
+| Firefox 121+ | ⚠️ Behind `dom.webgpu.enabled` |
+| Safari TP 185+ | ⚠️ Technology Preview |
 
-| Parser | Memory Footprint |
-|--------|------------------|
-| Traditional DOM | 10x file size |
-| WASM | 3x file size |
-| **WebGPU** | **0.1x file size** |
+```ts
+import { isWebGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
 
-*Index-only output uses ~4 bytes per separator vs full parse tree*
-
-## Browser Compatibility
-
-### Supported Browsers
-
-| Browser | Version | Status |
-|---------|---------|--------|
-| Chrome  | 113+    | ✅ Stable |
-| Edge    | 113+    | ✅ Stable |
-| Firefox | 121+    | ⚠️ Experimental (behind flag) |
-| Safari  | TP 185+ | ⚠️ Technology Preview |
-
-### Feature Detection
-
-```typescript
-import { isWebGPUAvailable } from './parser/webgpu';
-
-if (isWebGPUAvailable()) {
-  // Use WebGPU parser
-} else {
-  // Fallback to WASM or JavaScript parser
+if (!isWebGPUAvailable()) {
+  // fallback to WASM or CPU parser
 }
 ```
-
-### Enabling WebGPU in Firefox
-
-1. Open `about:config`
-2. Set `dom.webgpu.enabled` to `true`
-3. Restart browser
-
-## Limitations
-
-1. **WebGPU Required**: Falls back needed for non-supporting browsers
-2. **Chunk Size**: Maximum 2GB per chunk (u31 offset limitation)
-3. **Separator Count**: Configurable limit per chunk (default: chunkSize / 2)
-4. **Quote Complexity**: Deeply nested quotes may reduce performance
 
 ## API Reference
 
 ### `StreamParser`
 
-Main streaming parser class.
-
-```typescript
+```ts
 class StreamParser {
   constructor(options?: StreamingParserOptions);
+  static create(options?: StreamingParserOptions): Promise<StreamParser>;
   initialize(): Promise<void>;
-  parseStream(stream: ReadableStream<Uint8Array>): Promise<void>;
+  parseStream(stream: ReadableStream<Uint8Array> | null): Promise<void>;
   reset(): void;
   destroy(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
 }
 ```
 
-### `parseCSVStream()`
+Key options (`StreamingParserOptions`):
+- `config` → forwarded to `CSVIndexingBackend` (`chunkSize`, `maxSeparators`, `device`, `enableTiming`, ...).
+- `onRecord(record)` → async-friendly callback per parsed row.
+- `onError(error)` → hook for error reporting.
+- `skipBOM` → disables BOM stripping logic.
 
-Convenience function for one-shot parsing.
+### `parseCSVStream(stream, options?)`
 
-```typescript
-function parseCSVStream(
-  stream: ReadableStream<Uint8Array>,
-  options?: Omit<StreamingParserOptions, 'onRecord'>
-): Promise<CSVRecord[]>;
-```
+Convenience helper that buffers results into an array by wiring `onRecord` internally. Accepts the same `config` subset as `StreamParser`.
 
-### `GPUBackend`
+### `CSVIndexingBackend`
 
-Low-level GPU interface (advanced usage).
-
-```typescript
-class GPUBackend {
-  constructor(config?: WebGPUParserConfig);
+```ts
+class CSVIndexingBackend {
+  constructor(config?: {
+    chunkSize?: number;
+    maxSeparators?: number;
+    gpu?: GPU;
+    device?: GPUDevice;
+    enableTiming?: boolean;
+  });
   initialize(): Promise<void>;
-  dispatch(
-    inputBytes: Uint8Array,
-    uniforms: ParseUniforms
-  ): Promise<GPUParseResult>;
+  dispatch(input: Uint8Array, uniforms: ParseUniforms): Promise<{
+    data: GPUParseResult;
+    timing?: ComputeTiming;
+  }>;
   destroy(): Promise<void>;
+  getDevice(): GPUDevice | null;
+  get isInitialized(): boolean;
 }
 ```
 
-## Contributing
+Buffers (`indexing/types.ts`) include input, separator indices, atomic counter, uniforms, result metadata, and the shared `workgroupXORs` scratchpad used in both passes.
 
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run WebGPU tests specifically
-npm test -- --grep "webgpu"
-
-# Run with coverage
-npm test -- --coverage
-```
-
-### Benchmarking
+## Testing & Benchmarks
 
 ```bash
-# Run benchmarks
-npm run bench:webgpu
+# Unit + integration tests (browser + node environments)
+pnpm test
 
-# Compare with other parsers
-npm run bench:compare
+# Focus the WebGPU validation suites
+pnpm vitest run src/parser/webgpu/two-pass-validation.browser.test.ts
+
+# Browser benchmark harness (serves benchmark-two-pass.html)
+pnpm dev
 ```
-
-## License
-
-MIT - See LICENSE file for details
 
 ## References
 
-- [WebGPU Specification](https://www.w3.org/TR/webgpu/)
-- [WGSL Language Specification](https://www.w3.org/TR/WGSL/)
-- [Parallel Prefix Sum Algorithms](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda)
-- [CSV RFC 4180](https://tools.ietf.org/html/rfc4180)
+- [`TWO_PASS_ALGORITHM.md`](./TWO_PASS_ALGORITHM.md)
+- [`WEBGPU_IMPLEMENTATION.md`](../../../WEBGPU_IMPLEMENTATION.md)
+- WebGPU Spec – https://www.w3.org/TR/webgpu/
+- WGSL Spec – https://www.w3.org/TR/WGSL/
+- Parallel Prefix Sum (GPU Gems 3, Ch. 39)
+- RFC 4180 – https://www.rfc-editor.org/rfc/rfc4180

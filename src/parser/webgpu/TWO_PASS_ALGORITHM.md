@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the two-pass algorithm implemented for correct quote state propagation across workgroup boundaries in the WebGPU CSV parser.
+This document describes the two-pass algorithm implemented in `src/parser/webgpu/indexing/CSVIndexingBackend.ts` (and the WGSL shaders under `src/parser/webgpu/indexing/shaders/`) for correct quote state propagation across workgroup boundaries in the WebGPU CSV parser.
 
 ## Problem Statement
 
@@ -38,8 +38,6 @@ This limitation causes **serious data corruption** in common scenarios:
    "Company Name","contact@really-long-domain-name.com","123 Street with a very long name that goes on and on, Suite 456
    Building Name, City, State, ZIP"
    ```
-
-As the user stated: **"これはたぶん現実のデータとしては頻出で長いメールアドレスなどで重大な不整合を発生させます"** ("This is probably frequent in real data and causes serious inconsistencies with long email addresses").
 
 ## Solution: Two-Pass Algorithm
 
@@ -93,7 +91,7 @@ As the user stated: **"これはたぶん現実のデータとしては頻出で
 
 ### Pass 1: Collect Quote Parities
 
-**Shader**: `csv-indexer-pass1.wgsl`
+**Shader**: `src/parser/webgpu/indexing/shaders/csv-indexer-pass1.wgsl`
 
 **Purpose**: Lightweight shader that only computes the XOR parity of quotes within each workgroup.
 
@@ -101,6 +99,8 @@ As the user stated: **"これはたぶん現実のデータとしては頻出で
 1. Each thread loads a byte and checks if it's a quote (0: no, 1: yes)
 2. Workgroup-level prefix XOR scan computes cumulative parity
 3. Last thread in each workgroup stores the total parity to `workgroupXORs[workgroupId]`
+
+The shader writes into `workgroupXORs`, an `array<atomic<u32>>` buffer that is later mapped on the CPU and overwritten with prefix XOR values before Pass 2 runs.
 
 **Output**: Array of quote parities, one per workgroup.
 
@@ -115,7 +115,7 @@ if (tid == WORKGROUP_SIZE - 1u) {
 
 ### CPU: Compute Prefix XOR
 
-**Location**: `gpu-backend.ts:386-394`
+**Location**: `src/parser/webgpu/indexing/CSVIndexingBackend.ts:521-585`
 
 **Purpose**: Compute the quote state at the start of each workgroup by propagating state across workgroups.
 
@@ -128,6 +128,8 @@ for (let i = 0; i < workgroupCount; i++) {
   prefix ^= workgroupParities[i];   // Update for next workgroup
 }
 ```
+
+The resulting prefix values replace the raw Pass 1 parities in the same `workgroupXORs` buffer, allowing Pass 2 to consume the per-workgroup starting quote states without extra GPU allocations.
 
 **Example**:
 - Previous chunk ended inside quotes: `prevInQuote = 1`
@@ -144,15 +146,16 @@ prefixXORs[2] = 0 ^ 0 = 0      // Start WG2: outside quotes (WG1 had no net chan
 
 ### Pass 2: Detect Separators
 
-**Shader**: `csv-indexer.wgsl`
+**Shader**: `src/parser/webgpu/indexing/shaders/csv-indexer-pass2.wgsl`
 
 **Purpose**: Detect separators using CPU-computed quote states for cross-workgroup correctness.
 
 **Algorithm**:
-1. Each thread computes local quote parity (within workgroup)
-2. Apply CPU-computed prefix: `inQuote = localXOR ^ prefixXORs[workgroupId]`
-3. Mask separators: only commas/LFs outside quotes are real separators
-4. Ordered writes using workgroup-level block allocation
+1. Each thread classifies its byte and stages the quote bit in shared memory.
+2. `workgroupPrefixXOR` produces an exclusive quote state within the workgroup.
+3. CPU-computed prefixes are applied, then the current byte toggles the parity (`inQuote ^= isQuote`) to keep the state accurate for quote characters.
+4. Separators are masked so that commas/LFs count only when `inQuote == 0`.
+5. A workgroup prefix sum plus a single atomic allocation (`atomicIndex`) ensures ordered, race-free writes.
 
 **Key Code**:
 ```wgsl
@@ -160,6 +163,9 @@ prefixXORs[2] = 0 ^ 0 = 0      // Start WG2: outside quotes (WG1 had no net chan
 if (workgroupId.x < uniforms.maxWorkgroups) {
     inQuote ^= workgroupPrefixXORs[workgroupId.x];
 }
+
+// Account for the current byte
+inQuote ^= isQuote;
 
 // Only valid separators are outside quotes
 if (inQuote == 0u) {
@@ -177,22 +183,23 @@ if (inQuote == 0u) {
 
 ### Files Modified
 
-1. **`gpu-backend.ts`**:
-   - Import both shader sources
-   - Create separate pipelines and bind group layouts for Pass 1 and Pass 2
-   - Implement two-pass dispatch logic with CPU prefix XOR computation
+1. **`src/parser/webgpu/indexing/CSVIndexingBackend.ts`**:
+   - Imports both shader sources and owns the compute pipelines/bind groups
+   - Runs Pass 1, maps the `workgroupXORs` buffer, computes CPU prefix XORs, and writes them back
+   - Dispatches Pass 2 and reads back separator indices, metadata, and timings
 
-2. **`csv-indexer-pass1.wgsl`** (new):
+2. **`src/parser/webgpu/indexing/shaders/csv-indexer-pass1.wgsl`**:
    - Lightweight shader for collecting workgroup quote parities
    - Minimal bindings (input, workgroupXORs, uniforms)
 
-3. **`csv-indexer.wgsl`** (modified):
-   - Accept CPU-computed prefix XORs via binding 5
-   - Apply prefix XORs for correct cross-workgroup propagation
-   - Remove obsolete workgroup parity storage code
+3. **`src/parser/webgpu/indexing/shaders/csv-indexer-pass2.wgsl`**:
+   - Accepts CPU-computed prefix XORs via binding 5
+   - Applies prefix XORs for correct cross-workgroup propagation
+   - Performs ordered separator writes and stores `endInQuote` in `resultMeta`
 
-4. **`types.ts`**:
-   - Add `pass1BindGroup` and `pass2BindGroup` to `GPUBuffers`
+4. **`src/parser/webgpu/indexing/types.ts`**:
+   - Includes `pass1BindGroup`/`pass2BindGroup` in `GPUBuffers`
+   - Defines `ParseUniforms`, `ResultMeta`, and separator packing constants shared by the backend and shaders
 
 ### Buffer Layout
 
@@ -212,6 +219,8 @@ if (inQuote == 0u) {
 @binding(4): resultMeta           (storage, write)
 @binding(5): workgroupPrefixXORs  (read-only storage, CPU-computed)
 ```
+
+The `workgroupXORs` buffer (binding 1 in Pass 1, binding 5 in Pass 2) is reused between passes: Pass 1 treats it as `array<atomic<u32>>` for parity writes, the CPU maps/overwrites it with prefix values, and Pass 2 reads it as a plain `array<u32>` containing the per-workgroup starting quote state.
 
 ### Performance Characteristics
 
@@ -246,7 +255,7 @@ Two-pass overhead: ~28%
 
 ### Validation Test Suite
 
-**File**: `two-pass-validation.browser.test.ts`
+**File**: `src/parser/webgpu/two-pass-validation.browser.test.ts`
 
 **Test Cases**:
 1. ✅ Quoted field longer than 256 bytes
@@ -256,7 +265,7 @@ Two-pass overhead: ~28%
 
 ### Property-Based Testing
 
-**File**: `stream-parser.equivalence.browser.test.ts`
+**File**: `src/parser/webgpu/streaming/stream-parser.equivalence.browser.test.ts`
 
 **Strategy**: Fast-check generates random CSV data and verifies equivalence with reference implementation (PapaParse).
 

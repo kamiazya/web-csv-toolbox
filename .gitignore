@@ -144,3 +144,6 @@ deno.lock
 
 # Built example directories (should be in examples/*/dist/, not repo root)
 example-*/
+
+# Benchmark generated test data (large CSV files)
+benchmark/data/
