@@ -15,7 +15,7 @@ import type {
   CSVLexerLexOptions,
   Position,
   RecordDelimiterToken,
-  StringCSVLexer,
+  SyncStringCSVLexer,
   Token,
 } from "@/core/types.ts";
 import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
@@ -36,7 +36,7 @@ import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 export class FlexibleStringCSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> implements StringCSVLexer
+> implements SyncStringCSVLexer
 {
   #delimiter: string;
   #quotation: string;
