@@ -59,8 +59,14 @@ export function parseStringToArraySyncWASM<
   const { header } = options;
 
   // Validate options
-  const { delimiter, delimiterCode, quotation, maxBufferSize, source } =
-    validateWASMOptions(options);
+  const {
+    delimiter,
+    delimiterCode,
+    quotation,
+    maxBufferSize,
+    maxFieldCount,
+    source,
+  } = validateWASMOptions(options);
 
   // Check if WASM is initialized (required for slim entry)
   if (!isInitialized()) {
@@ -78,6 +84,7 @@ export function parseStringToArraySyncWASM<
     csvToParse,
     delimiterCode,
     maxBufferSize,
+    maxFieldCount,
     source,
     wasmParseStringToArraySync,
   );

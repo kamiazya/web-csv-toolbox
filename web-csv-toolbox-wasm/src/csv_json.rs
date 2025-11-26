@@ -12,6 +12,11 @@ use js_sys::{Object, Reflect};
 #[cfg(test)]
 use serde_json::json;
 
+/// Default maximum field count per record (matches TypeScript DEFAULT_ASSEMBLER_MAX_FIELD_COUNT)
+/// Note: Not directly used in this module but exported for documentation consistency
+#[allow(dead_code)]
+pub const DEFAULT_MAX_FIELD_COUNT: usize = 100_000;
+
 /// Parse CSV string to JsValue array (direct conversion without JSON serialization)
 ///
 /// Uses optimized parser instead of rust-csv for better performance.
@@ -21,6 +26,7 @@ use serde_json::json;
 /// * `input` - CSV string to parse
 /// * `delimiter` - Delimiter character (e.g., b',' for comma)
 /// * `max_buffer_size` - Maximum allowed input size in bytes
+/// * `max_field_count` - Maximum number of fields allowed per record (prevents DoS)
 /// * `source` - Optional source identifier for error reporting (e.g., filename)
 ///
 /// # Returns
@@ -30,6 +36,7 @@ pub(crate) fn parse_csv_to_jsvalue(
     input: &str,
     delimiter: u8,
     max_buffer_size: usize,
+    max_field_count: usize,
     source: Option<&str>,
 ) -> Result<JsValue, String> {
     // Validate input size to prevent memory exhaustion attacks
@@ -54,7 +61,7 @@ pub(crate) fn parse_csv_to_jsvalue(
     let _ = js_sys::Reflect::set(
         &options,
         &JsValue::from_str("maxFieldCount"),
-        &JsValue::from_f64(max_buffer_size as f64),
+        &JsValue::from_f64(max_field_count as f64),
     );
 
     // Use optimized parser

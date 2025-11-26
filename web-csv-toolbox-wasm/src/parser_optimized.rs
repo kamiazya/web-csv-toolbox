@@ -12,6 +12,7 @@
 //! - Better streaming support
 
 use js_sys::{Array, Object, Reflect};
+use memchr::memchr3;
 use std::ops::Range;
 use wasm_bindgen::prelude::*;
 
@@ -181,13 +182,24 @@ impl RecordBuffer {
         }
     }
 
-    /// Add a field to the record
+    /// Add a field to the record (by reference - copies the data)
     #[inline]
     pub fn push_field(&mut self, field: &str) {
         let start = self.buffer.len();
         self.buffer.push_str(field);
         let end = self.buffer.len();
         self.bounds.push(start..end);
+    }
+
+    /// Add a field by taking ownership of a String buffer and appending its contents
+    /// This is more efficient when the caller has an owned String they no longer need
+    #[inline]
+    pub fn push_field_from_buffer(&mut self, field: &mut String) {
+        let start = self.buffer.len();
+        self.buffer.push_str(field);
+        let end = self.buffer.len();
+        self.bounds.push(start..end);
+        field.clear(); // Reuse the allocation for next field
     }
 
     /// Get a field by index
@@ -431,10 +443,9 @@ impl DfaTable {
 pub struct CSVParserOptimized {
     /// Current parser state
     state: OptimizedParserState,
-    /// Field delimiter (stored for potential debugging, actual logic uses byte_classes)
-    #[allow(dead_code)]
+    /// Field delimiter (used in scan_and_copy_dfa for memchr3 optimization)
     delimiter: u8,
-    /// Quote character (stored for potential debugging, actual logic uses byte_classes)
+    /// Quote character (used in ByteClassMap for DFA-based parsing)
     #[allow(dead_code)]
     quote: u8,
     /// Maximum field count per record
@@ -912,29 +923,44 @@ impl CSVParserOptimized {
     ///
     /// CRITICAL: Only processes ASCII bytes (< 0x80) to avoid corrupting UTF-8 sequences.
     /// Multi-byte UTF-8 characters must be handled by process_multibyte_utf8.
+    ///
+    /// OPTIMIZATION: Uses memchr3 to find the next special character, then bulk copies
+    /// the entire range at once instead of pushing one character at a time.
+    /// Note: We use memchr3 for delimiter, \n, \r. Quotes are not searched because
+    /// in InField state (unquoted field), quotes are treated as normal characters.
     #[inline(always)]
     fn scan_and_copy_dfa(&mut self, start: usize, valid_up_to: usize) -> usize {
-        let mut copied = 0;
-
-        for i in start..valid_up_to {
-            let byte = self.utf8_buffer[i];
-
-            // CRITICAL: Stop at non-ASCII bytes (>= 0x80) to avoid corrupting UTF-8
-            // Multi-byte UTF-8 sequences must be handled by the main loop's process_multibyte_utf8
-            if byte >= 0x80 {
-                break;
-            }
-
-            // Check if byte is still Normal class (fast table lookup)
-            if self.byte_classes.get(byte) != ByteClass::Normal {
-                break;
-            }
-
-            self.current_field.push(byte as char);
-            copied += 1;
+        let slice = &self.utf8_buffer[start..valid_up_to];
+        if slice.is_empty() {
+            return 0;
         }
 
-        copied
+        // Use memchr3 to find next delimiter, \n, or \r
+        // In InField state (unquoted field), quotes are normal characters
+        let special_pos = memchr3(self.delimiter, b'\n', b'\r', slice);
+
+        // Determine how far we can copy: either to the special char or end of slice
+        let end_pos = special_pos.unwrap_or(slice.len());
+
+        // Also check for non-ASCII bytes (>= 0x80) which must be handled separately
+        // Find the first non-ASCII byte in the range we want to copy
+        let ascii_end = slice[..end_pos]
+            .iter()
+            .position(|&b| b >= 0x80)
+            .unwrap_or(end_pos);
+
+        if ascii_end == 0 {
+            return 0;
+        }
+
+        // BULK COPY: Convert the ASCII slice to &str and push at once
+        // SAFETY: We've verified all bytes in slice[..ascii_end] are ASCII (< 0x80)
+        let ascii_slice = &slice[..ascii_end];
+        // SAFETY: All bytes are valid ASCII, which is valid UTF-8
+        let s = unsafe { std::str::from_utf8_unchecked(ascii_slice) };
+        self.current_field.push_str(s);
+
+        ascii_end
     }
 
     /// Process multi-byte UTF-8 character
@@ -1033,6 +1059,7 @@ impl CSVParserOptimized {
     }
 
     /// Finish current field and add to record
+    /// Uses push_field_from_buffer to reuse the String allocation instead of creating new one
     fn finish_field(&mut self) -> Result<(), JsError> {
         if self.current_record.len() >= self.max_field_count {
             return Err(JsError::new(&format!(
@@ -1041,8 +1068,9 @@ impl CSVParserOptimized {
             )));
         }
 
-        let field = std::mem::take(&mut self.current_field);
-        self.current_record.push_field(&field);
+        // Use push_field_from_buffer to avoid std::mem::take allocation overhead
+        // This pushes the content and clears current_field, reusing its allocation
+        self.current_record.push_field_from_buffer(&mut self.current_field);
         Ok(())
     }
 

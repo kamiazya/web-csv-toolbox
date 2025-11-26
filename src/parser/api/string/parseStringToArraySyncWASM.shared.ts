@@ -1,4 +1,5 @@
 import {
+  DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   DOUBLE_QUOTE,
@@ -15,6 +16,7 @@ export interface ValidatedWASMOptions {
   delimiterCode: number;
   quotation: string;
   maxBufferSize: number;
+  maxFieldCount: number;
   source: string;
 }
 
@@ -33,12 +35,14 @@ export function validateWASMOptions<
 >(
   options: CommonOptions<Delimiter, Quotation> & {
     header?: readonly string[];
+    maxFieldCount?: number;
   } = {} as CommonOptions<Delimiter, Quotation>,
 ): ValidatedWASMOptions {
   const {
     delimiter = DEFAULT_DELIMITER,
     quotation = DEFAULT_QUOTATION,
     maxBufferSize = 10485760,
+    maxFieldCount = DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
     source,
   } = options;
 
@@ -53,11 +57,21 @@ export function validateWASMOptions<
 
   assertCommonOptions({ delimiter, quotation, maxBufferSize });
 
+  // Validate maxFieldCount
+  if (
+    typeof maxFieldCount !== "number" ||
+    maxFieldCount <= 0 ||
+    !Number.isInteger(maxFieldCount)
+  ) {
+    throw new RangeError("maxFieldCount must be a positive integer");
+  }
+
   return {
     delimiter,
     delimiterCode: delimiter.charCodeAt(0),
     quotation,
     maxBufferSize,
+    maxFieldCount,
     source: source ?? "",
   };
 }
@@ -105,6 +119,7 @@ export function prepareCSVWithHeader(
  * @param csv - CSV string to parse
  * @param delimiterCode - Character code of delimiter
  * @param maxBufferSize - Maximum buffer size
+ * @param maxFieldCount - Maximum number of fields per record (prevents DoS)
  * @param source - Source identifier for error messages
  * @param wasmFunction - WASM parsing function (now returns JsValue directly)
  * @returns Parsed CSV records
@@ -115,14 +130,16 @@ export function parseWithWASM<T>(
   csv: string,
   delimiterCode: number,
   maxBufferSize: number,
+  maxFieldCount: number,
   source: string,
   wasmFunction: (
     input: string,
     delimiter: number,
     maxBufferSize: number,
+    maxFieldCount: number,
     source: string,
   ) => T,
 ): T {
   // WASM function now returns JsValue directly (no JSON serialization)
-  return wasmFunction(csv, delimiterCode, maxBufferSize, source);
+  return wasmFunction(csv, delimiterCode, maxBufferSize, maxFieldCount, source);
 }

@@ -116,8 +116,14 @@ export function parseStringToArraySyncWASM<
   const { header } = options;
 
   // Validate options
-  const { delimiter, delimiterCode, quotation, maxBufferSize, source } =
-    validateWASMOptions(options);
+  const {
+    delimiter,
+    delimiterCode,
+    quotation,
+    maxBufferSize,
+    maxFieldCount,
+    source,
+  } = validateWASMOptions(options);
 
   // Prepare CSV with custom header if provided
   const csvToParse = prepareCSVWithHeader(csv, header, delimiter, quotation);
@@ -145,6 +151,7 @@ export function parseStringToArraySyncWASM<
     csvToParse,
     delimiterCode,
     maxBufferSize,
+    maxFieldCount,
     source,
     wasmParseStringToArraySync,
   );

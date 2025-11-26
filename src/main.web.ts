@@ -38,14 +38,6 @@ export * from "@/parser/models/WASMStringObjectCSVParser.ts";
 export * from "@/parser/models/WASMStringCSVArrayParser.ts";
 
 // ============================================================================
-// Web-specific: WASM Lexer and Assembler (Hybrid approach)
-// ============================================================================
-export * from "@/parser/models/WASMBinaryCSVLexer.ts";
-export * from "@/parser/models/WASMStringCSVLexer.ts";
-export * from "@/parser/models/WASMCSVObjectRecordAssembler.ts";
-export * from "@/parser/models/WASMCSVArrayRecordAssembler.ts";
-
-// ============================================================================
 // Web-specific: Worker helpers
 // ============================================================================
 export * from "@/worker/helpers/ReusableWorkerPool.web.ts";

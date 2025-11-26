@@ -16,8 +16,8 @@ vi.mock("./parseStringToArraySyncWASM.shared.ts", async () => {
   >("./parseStringToArraySyncWASM.shared.ts");
   return {
     ...actual,
-    parseWithWASM: vi.fn((csv, delim, buffer, source, wasmFn) =>
-      JSON.parse(wasmFn(csv, delim, buffer, source)),
+    parseWithWASM: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) =>
+      JSON.parse(wasmFn(csv, delim, buffer, maxFieldCount, source)),
     ),
   };
 });
@@ -185,6 +185,7 @@ describe("parseStringToArraySyncWASM.slim - manual initialization", () => {
         csv,
         44, // delimiter code for ","
         10485760, // default maxBufferSize
+        100000, // default maxFieldCount
         "", // default source
         wasmParseStringToArraySync,
       );
@@ -205,6 +206,7 @@ describe("parseStringToArraySyncWASM.slim - manual initialization", () => {
         csv,
         59, // delimiter code for ";"
         2048,
+        100000, // default maxFieldCount
         "test.csv",
         wasmParseStringToArraySync,
       );

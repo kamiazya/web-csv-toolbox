@@ -15,6 +15,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
         expect(result.delimiterCode).toBe(44); // "," char code
         expect(result.quotation).toBe('"');
         expect(result.maxBufferSize).toBe(10485760);
+        expect(result.maxFieldCount).toBe(100000);
         expect(result.source).toBe("");
       });
 
@@ -29,6 +30,12 @@ describe("parseStringToArraySyncWASM.shared", () => {
         const result = validateWASMOptions({ maxBufferSize: 1024 });
 
         expect(result.maxBufferSize).toBe(1024);
+      });
+
+      it("should accept custom maxFieldCount", () => {
+        const result = validateWASMOptions({ maxFieldCount: 50000 });
+
+        expect(result.maxFieldCount).toBe(50000);
       });
 
       it("should accept source parameter", () => {
@@ -86,6 +93,35 @@ describe("parseStringToArraySyncWASM.shared", () => {
       it("should only accept double quote", () => {
         // Should not throw
         expect(() => validateWASMOptions({ quotation: '"' })).not.toThrow();
+      });
+    });
+
+    describe("invalid maxFieldCount", () => {
+      it("should reject zero maxFieldCount", () => {
+        expect(() => validateWASMOptions({ maxFieldCount: 0 })).toThrow(
+          RangeError,
+        );
+        expect(() => validateWASMOptions({ maxFieldCount: 0 })).toThrow(
+          "maxFieldCount must be a positive integer",
+        );
+      });
+
+      it("should reject negative maxFieldCount", () => {
+        expect(() => validateWASMOptions({ maxFieldCount: -1 })).toThrow(
+          RangeError,
+        );
+      });
+
+      it("should reject non-integer maxFieldCount", () => {
+        expect(() => validateWASMOptions({ maxFieldCount: 1.5 })).toThrow(
+          RangeError,
+        );
+      });
+
+      it("should reject non-number maxFieldCount", () => {
+        expect(() =>
+          validateWASMOptions({ maxFieldCount: "100" as any }),
+        ).toThrow(RangeError);
       });
     });
   });
@@ -181,6 +217,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
         "a,b\n1,2",
         44,
         10485760,
+        100000,
         "",
         mockWasmFunction,
       );
@@ -195,14 +232,27 @@ describe("parseStringToArraySyncWASM.shared", () => {
         return [];
       };
 
-      parseWithWASM("test csv", 59, 2048, "test.csv", mockWasmFunction);
+      parseWithWASM("test csv", 59, 2048, 50000, "test.csv", mockWasmFunction);
 
-      expect(capturedParams).toEqual(["test csv", 59, 2048, "test.csv"]);
+      expect(capturedParams).toEqual([
+        "test csv",
+        59,
+        2048,
+        50000,
+        "test.csv",
+      ]);
     });
 
     it("should handle empty result", () => {
       const mockWasmFunction = () => [];
-      const result = parseWithWASM("", 44, 10485760, "", mockWasmFunction);
+      const result = parseWithWASM(
+        "",
+        44,
+        10485760,
+        100000,
+        "",
+        mockWasmFunction,
+      );
 
       expect(result).toEqual([]);
     });
@@ -211,7 +261,14 @@ describe("parseStringToArraySyncWASM.shared", () => {
       const mockWasmFunction = () => [
         { name: "Alice", address: { city: "NYC" } },
       ];
-      const result = parseWithWASM("", 44, 10485760, "", mockWasmFunction);
+      const result = parseWithWASM(
+        "",
+        44,
+        10485760,
+        100000,
+        "",
+        mockWasmFunction,
+      );
 
       expect(result).toEqual([{ name: "Alice", address: { city: "NYC" } }]);
     });
@@ -222,7 +279,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
       };
 
       expect(() =>
-        parseWithWASM("", 44, 10485760, "", mockWasmFunction),
+        parseWithWASM("", 44, 10485760, 100000, "", mockWasmFunction),
       ).toThrow("WASM parsing failed");
     });
   });
@@ -265,6 +322,7 @@ describe("parseStringToArraySyncWASM.shared", () => {
         csvToParse,
         options.delimiterCode,
         options.maxBufferSize,
+        options.maxFieldCount,
         options.source,
         mockWasmFunction,
       );
