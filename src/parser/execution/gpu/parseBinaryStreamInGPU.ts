@@ -1,93 +1,24 @@
 /**
- * WebGPU execution for parseBinaryStream
+ * WebGPU execution for parseBinaryStream (New Implementation)
  *
  * This module provides GPU-accelerated binary stream CSV parsing using WebGPU.
- * It is the core implementation shared by parseBinaryInGPU.
- *
- * Uses a queue-based streaming approach to yield records as they are parsed,
- * rather than buffering all records first.
+ * It uses the standard Lexer/Assembler pipeline with GPUBinaryCSVLexer.
  *
  * Large chunks are automatically split to stay within GPU dispatch limits.
  */
 
-import type { CSVRecord, ParseBinaryOptions, ParseOptions } from "@/core/types.ts";
-import { convertToStandardRecord } from "@/parser/execution/gpu/convertToStandardRecord.ts";
-import type { CSVRecord as WebGPUCSVRecord } from "@/parser/webgpu/indexing/types.ts";
-import { StreamParser } from "@/parser/webgpu/streaming/stream-parser.ts";
-
-/**
- * Async queue for streaming records from callback-based parser to async generator
- */
-class AsyncRecordQueue<T> {
-  private queue: T[] = [];
-  private waitResolve: ((value: T | null) => void) | null = null;
-  private done = false;
-  private error: Error | null = null;
-
-  /**
-   * Push a record to the queue
-   */
-  push(record: T): void {
-    if (this.waitResolve) {
-      // Consumer is waiting, deliver directly
-      const resolve = this.waitResolve;
-      this.waitResolve = null;
-      resolve(record);
-    } else {
-      // Buffer for later consumption
-      this.queue.push(record);
-    }
-  }
-
-  /**
-   * Signal that parsing is complete
-   */
-  finish(): void {
-    this.done = true;
-    if (this.waitResolve) {
-      const resolve = this.waitResolve;
-      this.waitResolve = null;
-      resolve(null);
-    }
-  }
-
-  /**
-   * Signal an error occurred
-   */
-  setError(err: Error): void {
-    this.error = err;
-    if (this.waitResolve) {
-      const resolve = this.waitResolve;
-      this.waitResolve = null;
-      resolve(null);
-    }
-  }
-
-  /**
-   * Get the next record (async)
-   */
-  async next(): Promise<T | null> {
-    // Check for error first
-    if (this.error) {
-      throw this.error;
-    }
-
-    // Return buffered record if available
-    if (this.queue.length > 0) {
-      return this.queue.shift()!;
-    }
-
-    // Check if done
-    if (this.done) {
-      return null;
-    }
-
-    // Wait for next record
-    return new Promise((resolve) => {
-      this.waitResolve = resolve;
-    });
-  }
-}
+import type {
+  CSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "@/core/types.ts";
+import { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
+import {
+  GPUBinaryCSVLexer,
+  type GPUBinaryCSVLexerConfig,
+} from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
+import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
+import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 
 /**
  * Parse CSV binary stream using WebGPU
@@ -97,7 +28,7 @@ class AsyncRecordQueue<T> {
  * @yields Parsed CSV records as they are parsed (true streaming)
  *
  * @remarks
- * Large chunks are automatically split within StreamParser to stay within
+ * Large chunks are automatically split within the backend to stay within
  * GPU dispatch limits (maxComputeWorkgroupsPerDimension * 256 bytes).
  */
 export async function* parseBinaryStreamInGPU<
@@ -110,65 +41,94 @@ export async function* parseBinaryStreamInGPU<
     | ParseOptions<Header, Delimiter, Quotation>
     | ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  const queue = new AsyncRecordQueue<WebGPUCSVRecord>();
-
   // Get device from gpuDeviceManager if provided
   const gpuDeviceManager = options?.engine?.gpuDeviceManager;
   let device: GPUDevice | undefined;
 
   // Determine header settings
-  let header: ReadonlyArray<string> | undefined = options?.header;
+  const header: ReadonlyArray<string> | undefined = options?.header;
   const isHeaderlessMode =
     options?.header !== undefined &&
     Array.isArray(options.header) &&
     options.header.length === 0;
   const outputFormat = options?.outputFormat ?? "object";
-  let isFirstRecord = true;
+
+  // Initialize backend
+  let backend: CSVSeparatorIndexingBackend | undefined;
 
   try {
+    // Get GPU device
     if (gpuDeviceManager) {
       device = await gpuDeviceManager.getDevice();
     }
 
-    // Start parsing in background
-    const parsePromise = (async () => {
-      try {
-        await using parser = await StreamParser.create({
-          onRecord: (record) => {
-            queue.push(record);
-          },
-          config: device ? { device } : undefined,
-        });
+    // Create backend with device if available
+    backend = new CSVSeparatorIndexingBackend(device ? { device } : undefined);
+    await backend.initialize();
 
-        // StreamParser automatically handles large chunks by splitting them
-        await parser.parseStream(stream);
-        queue.finish();
-      } catch (err) {
-        queue.setError(err instanceof Error ? err : new Error(String(err)));
+    // Create lexer
+    const lexerConfig: GPUBinaryCSVLexerConfig = {
+      backend,
+      delimiter: options?.delimiter ?? ",",
+    };
+    const lexer = new GPUBinaryCSVLexer(lexerConfig);
+
+    // Create assembler based on output format and header settings
+    // The assembler handles auto-header detection internally when header is undefined
+    type AssemblerType =
+      | FlexibleCSVObjectRecordAssembler<Header>
+      | FlexibleCSVArrayRecordAssembler<Header>;
+
+    // Determine header to pass to assembler
+    // - For headerless mode (header: []), pass empty array
+    // - For explicit header, pass it through
+    // - For auto-header (header: undefined), pass undefined so assembler auto-detects
+    const assemblerHeader = isHeaderlessMode
+      ? ([] as unknown as Header)
+      : (header as Header | undefined);
+
+    const assembler: AssemblerType =
+      outputFormat === "array"
+        ? new FlexibleCSVArrayRecordAssembler<Header>({ header: assemblerHeader })
+        : new FlexibleCSVObjectRecordAssembler<Header>({ header: assemblerHeader });
+
+    // Process stream
+    const reader = stream.getReader();
+
+    try {
+      while (true) {
+        const { value: chunk, done } = await reader.read();
+        if (done) break;
+
+        // Lex chunk to tokens
+        for await (const token of lexer.lex(chunk, { stream: true })) {
+          // Assemble tokens to records
+          for (const record of assembler.assemble(token, { stream: true })) {
+            yield record as CSVRecord<Header>;
+          }
+        }
       }
-    })();
 
-    // Yield records as they arrive
-    while (true) {
-      const record = await queue.next();
-      if (record === null) {
-        break;
+      // Flush lexer
+      for await (const token of lexer.lex()) {
+        for (const record of assembler.assemble(token, { stream: true })) {
+          yield record as CSVRecord<Header>;
+        }
       }
 
-      if (isFirstRecord && !header && !isHeaderlessMode) {
-        // Use first record as header
-        header = record.fields.map((f) => f.value);
-        isFirstRecord = false;
-        continue; // Don't yield header row
+      // Flush assembler
+      for (const record of assembler.assemble()) {
+        yield record as CSVRecord<Header>;
       }
-
-      isFirstRecord = false;
-      yield convertToStandardRecord(record, header as Header, outputFormat);
+    } finally {
+      reader.releaseLock();
+    }
+  } finally {
+    // Cleanup
+    if (backend) {
+      await backend.destroy();
     }
 
-    // Ensure parsing completes (catches any errors)
-    await parsePromise;
-  } finally {
     // Release device back to manager
     if (gpuDeviceManager) {
       gpuDeviceManager.releaseDevice();
