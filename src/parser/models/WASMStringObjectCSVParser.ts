@@ -116,9 +116,9 @@ export class WASMStringObjectCSVParser<
     const { stream = false } = options ?? {};
 
     if (chunk === undefined) {
-      // Flush mode - use legacy flush for remaining data
-      const flushed = this.flushLegacy();
-      yield* flushed as CSVObjectRecord<Header>[];
+      // Flush mode - use flat flush for consistent output format
+      const flushed = this.flushFlat();
+      yield* this.flatToObjects(flushed);
       return;
     }
 
@@ -131,8 +131,8 @@ export class WASMStringObjectCSVParser<
       const flatData = this.parseFlatChunk(chunk);
       yield* this.flatToObjects(flatData);
 
-      const flushed = this.flushLegacy();
-      yield* flushed as CSVObjectRecord<Header>[];
+      const flushed = this.flushFlat();
+      yield* this.flatToObjects(flushed);
     }
   }
 }

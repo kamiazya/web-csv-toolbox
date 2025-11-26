@@ -120,8 +120,30 @@ export abstract class WASMStringCSVParserBase<
   }
 
   /**
-   * Flush remaining data using legacy method (Truly Flat doesn't have flush yet)
-   * TODO: Add flushTrulyFlat() to WASM
+   * Flush remaining data using Truly Flat format (consistent with parseFlatChunk output)
+   */
+  protected flushFlat(): FlatParseData {
+    const result: FlatParseResult = this.parser.flushTrulyFlat();
+
+    // Update cached headers if flush returned new headers
+    // (handles case where header row spans multiple chunks)
+    const headers = result.headers as string[] | null;
+    if (headers && !this.cachedHeaders) {
+      this.cachedHeaders = headers;
+    }
+
+    return {
+      headers: this.cachedHeaders,
+      fieldData: result.fieldData as string[],
+      actualFieldCounts: result.actualFieldCounts as number[],
+      recordCount: result.recordCount,
+      fieldCount: result.fieldCount,
+    };
+  }
+
+  /**
+   * Flush remaining data using legacy method (object format)
+   * @deprecated Use flushFlat() for consistent output format
    */
   protected flushLegacy(): any[] {
     const result = this.parser.flush();

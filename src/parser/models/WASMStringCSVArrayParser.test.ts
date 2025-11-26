@@ -216,6 +216,38 @@ describe("WASMStringCSVArrayParser", () => {
       expect(allRecords[1]).toEqual(["3", "4"]);
       expect(allRecords[2]).toEqual(["5", "6"]);
     });
+
+    test("should handle header row spanning multiple chunks (header only complete at flush)", () => {
+      const parser = new WASMStringCSVArrayParser();
+
+      // First chunk: partial header row (no newline yet)
+      const records1 = [...parser.parse("id,na", { stream: true })];
+      expect(records1).toHaveLength(0); // No complete records yet
+
+      // Second chunk: rest of header and first data row
+      const records2 = [...parser.parse("me\n1,Alice", { stream: true })];
+      // May or may not have records depending on implementation
+
+      // Flush - should get the remaining data
+      const records3 = [...parser.parse()];
+
+      const allRecords = [...records1, ...records2, ...records3];
+      expect(allRecords.length).toBeGreaterThanOrEqual(1);
+      expect(allRecords[0]).toEqual(["1", "Alice"]);
+    });
+
+    test("should handle header row only complete at flush time", () => {
+      const parser = new WASMStringCSVArrayParser();
+
+      // Only partial header in first chunk (no newline)
+      const records1 = [...parser.parse("a,b,c", { stream: true })];
+      expect(records1).toHaveLength(0);
+
+      // Complete header and add data only at flush
+      const records2 = [...parser.parse("\n1,2,3")]; // Non-streaming final call
+      expect(records2).toHaveLength(1);
+      expect(records2[0]).toEqual(["1", "2", "3"]);
+    });
   });
 
   describe("positional access", () => {

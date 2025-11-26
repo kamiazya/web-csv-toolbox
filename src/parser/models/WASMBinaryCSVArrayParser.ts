@@ -109,26 +109,6 @@ export class WASMBinaryCSVArrayParser<
   }
 
   /**
-   * Convert legacy object records to array format
-   */
-  private objectsToArrays(
-    objects: Record<string, string | undefined>[],
-  ): CSVArrayRecord<Header>[] {
-    const headers = this.getHeaders();
-    if (!headers) {
-      return [];
-    }
-
-    return objects.map((obj) => {
-      const arr: (string | undefined)[] = [];
-      for (const header of headers) {
-        arr.push(obj[header]);
-      }
-      return arr as unknown as CSVArrayRecord<Header>;
-    });
-  }
-
-  /**
    * Parse a chunk of CSV binary data into array records.
    *
    * @param chunk - CSV binary chunk (BufferSource) to parse (optional for flush)
@@ -142,9 +122,9 @@ export class WASMBinaryCSVArrayParser<
     const { stream = false } = options ?? {};
 
     if (chunk === undefined) {
-      // Flush mode - use legacy flush and convert to array format
-      const flushed = this.flushLegacy();
-      yield* this.objectsToArrays(flushed);
+      // Flush mode - use flat flush for consistent output format
+      const flushed = this.flushFlat();
+      yield* this.flatToArrays(flushed);
       return;
     }
 
@@ -159,8 +139,8 @@ export class WASMBinaryCSVArrayParser<
       const flatData = this.parseFlatChunk(bytes);
       yield* this.flatToArrays(flatData);
 
-      const flushed = this.flushLegacy();
-      yield* this.objectsToArrays(flushed);
+      const flushed = this.flushFlat();
+      yield* this.flatToArrays(flushed);
     }
   }
 }

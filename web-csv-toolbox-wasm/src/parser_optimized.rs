@@ -12,7 +12,7 @@
 //! - Better streaming support
 
 use js_sys::{Array, Object, Reflect};
-use memchr::memchr3;
+use memchr::{memchr, memchr3};
 use std::ops::Range;
 use wasm_bindgen::prelude::*;
 
@@ -31,26 +31,14 @@ pub struct FlatParseResult {
 #[wasm_bindgen]
 impl FlatParseResult {
     /// Create a new FlatParseResult with pre-converted JS arrays
+    /// Takes cached headers JsValue to avoid O(n²) cloning on every chunk
     fn new(
-        headers: Option<Vec<String>>,
+        headers_js_cache: JsValue,
+        field_count: usize,
         field_data: Vec<String>,
         actual_field_counts: Vec<usize>,
         record_count: usize,
     ) -> Self {
-        // Convert headers to JS array once
-        let headers_array = if let Some(ref h) = headers {
-            let arr = Array::new();
-            for header in h {
-                arr.push(&JsValue::from_str(header));
-            }
-            arr.into()
-        } else {
-            JsValue::NULL
-        };
-
-        // Get field count
-        let field_count = headers.as_ref().map(|h| h.len()).unwrap_or(0);
-
         // Convert field data to JS array once
         let field_data_array = {
             let arr = Array::new();
@@ -70,7 +58,7 @@ impl FlatParseResult {
         };
 
         Self {
-            headers_array,
+            headers_array: headers_js_cache,
             field_data_array,
             actual_field_counts_array,
             record_count,
@@ -150,6 +138,16 @@ impl Default for Position {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Action to take after processing a line ending (CR or LF)
+/// Used to consolidate CR/LF handling logic between process_bytes_flat and process_bytes_optimized
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LineEndingAction {
+    /// No action needed (e.g., LF part of CRLF sequence)
+    None,
+    /// Finish record (CR or standalone LF)
+    FinishRecord,
 }
 
 /// Record buffer using contiguous memory for better cache locality
@@ -443,7 +441,8 @@ impl DfaTable {
 pub struct CSVParserOptimized {
     /// Current parser state
     state: OptimizedParserState,
-    /// Field delimiter (used in scan_and_copy_dfa for memchr3 optimization)
+    /// Field delimiter (used in ByteClassMap for DFA-based parsing)
+    #[allow(dead_code)]
     delimiter: u8,
     /// Quote character (used in ByteClassMap for DFA-based parsing)
     #[allow(dead_code)]
@@ -463,6 +462,8 @@ pub struct CSVParserOptimized {
     headers: Option<Vec<String>>,
     /// Whether headers have been parsed
     headers_parsed: bool,
+    /// Cached JS array of headers (to avoid O(n²) cloning on every result)
+    headers_js_cache: JsValue,
 
     /// Buffer for incomplete UTF-8 sequences
     utf8_buffer: Vec<u8>,
@@ -555,6 +556,17 @@ impl CSVParserOptimized {
         let dfa = DfaTable::new();
         let byte_classes = ByteClassMap::new(delimiter, quote);
 
+        // Create initial headers JS cache
+        let headers_js_cache = if let Some(ref h) = headers {
+            let arr = Array::new();
+            for header in h {
+                arr.push(&JsValue::from_str(header));
+            }
+            arr.into()
+        } else {
+            JsValue::NULL
+        };
+
         Ok(Self {
             state: OptimizedParserState::FieldStart,
             delimiter,
@@ -565,6 +577,7 @@ impl CSVParserOptimized {
             current_record: RecordBuffer::with_capacity(10, 512), // Pre-allocate for typical record
             headers,
             headers_parsed,
+            headers_js_cache,
             utf8_buffer: Vec::new(),
             dfa,
             byte_classes,
@@ -652,7 +665,7 @@ impl CSVParserOptimized {
         self.process_bytes_optimized()
     }
 
-    /// Flush any remaining data in the parser
+    /// Flush any remaining data in the parser (legacy object format)
     #[wasm_bindgen]
     pub fn flush(&mut self) -> Result<JsValue, JsError> {
         let completed_records = Array::new();
@@ -698,6 +711,65 @@ impl CSVParserOptimized {
 
         Ok(completed_records.into())
     }
+
+    /// Flush any remaining data in truly flat format (matches processChunkBytesTrulyFlat output)
+    #[wasm_bindgen(js_name = flushTrulyFlat)]
+    pub fn flush_truly_flat(&mut self) -> Result<FlatParseResult, JsError> {
+        let mut field_data = Vec::new();
+        let mut actual_field_counts = Vec::new();
+        let mut record_count = 0;
+
+        // Finish any remaining field/record
+        match self.state {
+            OptimizedParserState::InQuotedField
+            | OptimizedParserState::AfterQuote
+            | OptimizedParserState::InField => {
+                self.finish_field()?;
+                if !self.current_record.is_empty() {
+                    self.finish_record_to_flat(
+                        &mut field_data,
+                        &mut actual_field_counts,
+                        &mut record_count,
+                    );
+                }
+            }
+            OptimizedParserState::FieldStart => {
+                if !self.current_record.is_empty() || !self.current_field.is_empty() {
+                    self.finish_field()?;
+                    if !self.current_record.is_empty() {
+                        self.finish_record_to_flat(
+                            &mut field_data,
+                            &mut actual_field_counts,
+                            &mut record_count,
+                        );
+                    }
+                }
+            }
+        }
+
+        // Check for incomplete UTF-8 bytes in buffer
+        if !self.utf8_buffer.is_empty() {
+            return Err(JsError::new(&format!(
+                "Incomplete UTF-8 byte sequence at end of stream: {} bytes remaining ({:02X?})",
+                self.utf8_buffer.len(),
+                &self.utf8_buffer[..std::cmp::min(self.utf8_buffer.len(), 8)]
+            )));
+        }
+
+        // Reset state
+        self.state = OptimizedParserState::FieldStart;
+        self.current_field.clear();
+        self.current_record.clear();
+        self.prev_was_cr = false;
+
+        Ok(FlatParseResult::new(
+            self.headers_js_cache.clone(),
+            self.headers.as_ref().map(|h| h.len()).unwrap_or(0),
+            field_data,
+            actual_field_counts,
+            record_count,
+        ))
+    }
 }
 
 impl CSVParserOptimized {
@@ -720,7 +792,7 @@ impl CSVParserOptimized {
             if byte < 0x80 {
                 let class = self.byte_classes.get(byte);
 
-                // Bulk copy for normal bytes
+                // Bulk copy for normal bytes using memchr3 optimization
                 if class == ByteClass::Normal
                     && (self.state == OptimizedParserState::FieldStart
                         || self.state == OptimizedParserState::InField)
@@ -734,6 +806,22 @@ impl CSVParserOptimized {
                     continue;
                 }
 
+                // Bulk copy for quoted field content (only quotes are special)
+                // Only use bulk copy when there's enough remaining data to justify overhead
+                if class == ByteClass::Normal
+                    && self.state == OptimizedParserState::InQuotedField
+                    && valid_up_to - i >= 16
+                {
+                    let copied = self.scan_and_copy_quoted(i, valid_up_to);
+                    if copied >= 8 {
+                        // Only skip DFA if we actually copied a significant amount
+                        i += copied;
+                        self.position.byte += copied;
+                        continue;
+                    }
+                    // Fall through to DFA for small copies (overhead not worth it)
+                }
+
                 // DFA transition
                 let (next_state, has_output) = self.dfa.next(self.state, class);
 
@@ -741,80 +829,38 @@ impl CSVParserOptimized {
                     self.current_field.push(byte as char);
                 }
 
-                // Handle field/record completion
-                // CRITICAL: Only process delimiters/line endings if NOT in quoted field
-                // In InQuotedField state, delimiters and newlines are part of the field content
-                if self.state != OptimizedParserState::InQuotedField {
-                    if class == ByteClass::Delimiter {
-                        self.finish_field()?;
-                        self.prev_was_cr = false;
-                    } else if class == ByteClass::CR {
-                        // CR - finish field and record, mark for CRLF detection
-                        let was_after_quote = self.state == OptimizedParserState::AfterQuote;
-                        let was_field_start = self.state == OptimizedParserState::FieldStart;
-
-                        if !self.current_field.is_empty()
-                            || was_after_quote
-                            || (was_field_start && !self.current_record.is_empty())
-                        {
-                            self.finish_field()?;
-                        }
-
-                        // Finish record and add fields to flat array
-                        if !self.current_record.is_empty() {
-                            self.finish_record_to_flat(
-                                &mut field_data,
-                                &mut actual_field_counts,
-                                &mut record_count,
-                            );
-                        }
-
-                        // Mark CR for CRLF detection - next LF should be skipped for record completion
-                        self.prev_was_cr = true;
-                    } else if class == ByteClass::LF {
-                        // LF - only finish record if not part of CRLF sequence
-                        if self.prev_was_cr {
-                            // This LF is part of CRLF - skip record completion (already done on CR)
-                            self.prev_was_cr = false;
-                        } else {
-                            // Standalone LF - finish field and record
-                            let was_after_quote = self.state == OptimizedParserState::AfterQuote;
-                            let was_field_start = self.state == OptimizedParserState::FieldStart;
-
-                            if !self.current_field.is_empty()
-                                || was_after_quote
-                                || (was_field_start && !self.current_record.is_empty())
-                            {
-                                self.finish_field()?;
-                            }
-
-                            // Finish record and add fields to flat array
-                            if !self.current_record.is_empty() {
-                                self.finish_record_to_flat(
-                                    &mut field_data,
-                                    &mut actual_field_counts,
-                                    &mut record_count,
-                                );
-                            }
-                        }
-                    }
-                } else {
-                    // In quoted field - reset CRLF tracking
+                // Handle field/record completion using consolidated handlers
+                if class == ByteClass::Delimiter
+                    && self.state != OptimizedParserState::InQuotedField
+                {
+                    self.finish_field()?;
                     self.prev_was_cr = false;
-                }
-
-                // Handle line number advancement for different line ending styles
-                // Supports LF, CR, and CRLF line endings
-                if class == ByteClass::CR {
-                    self.position.advance_line();
+                } else if class == ByteClass::CR {
+                    let action = self.handle_cr()?;
+                    if action == LineEndingAction::FinishRecord {
+                        self.finish_record_to_flat(
+                            &mut field_data,
+                            &mut actual_field_counts,
+                            &mut record_count,
+                        );
+                    }
                 } else if class == ByteClass::LF {
-                    // Only advance line if not part of CRLF (CR already advanced it)
-                    // Check both struct flag (for cross-chunk CRLF) and buffer check (for same-chunk CRLF)
-                    let was_crlf =
-                        self.prev_was_cr || (i > 0 && self.utf8_buffer[i - 1] == b'\r');
-                    if !was_crlf {
+                    let (action, should_advance_line) = self.handle_lf(i)?;
+                    if action == LineEndingAction::FinishRecord {
+                        self.finish_record_to_flat(
+                            &mut field_data,
+                            &mut actual_field_counts,
+                            &mut record_count,
+                        );
+                    }
+                    if should_advance_line {
                         self.position.advance_line();
                     }
+                } else {
+                    // Clear prev_was_cr for non-newline bytes
+                    // This handles the case where CR appeared inside a quoted field
+                    // and is followed by non-LF content
+                    self.prev_was_cr = false;
                 }
 
                 self.state = next_state;
@@ -822,12 +868,7 @@ impl CSVParserOptimized {
                 self.position.byte += 1;
             } else {
                 // Multi-byte UTF-8 character
-                let char_len = self.process_multibyte_utf8_flat(
-                    i,
-                    &mut field_data,
-                    &mut actual_field_counts,
-                    &mut record_count,
-                )?;
+                let char_len = self.process_multibyte_utf8_flat(i)?;
                 i += char_len;
                 self.position.byte += char_len;
             }
@@ -837,7 +878,8 @@ impl CSVParserOptimized {
         self.utf8_buffer.drain(..valid_up_to);
 
         Ok(FlatParseResult::new(
-            self.headers.clone(),
+            self.headers_js_cache.clone(),
+            self.headers.as_ref().map(|h| h.len()).unwrap_or(0),
             field_data,
             actual_field_counts,
             record_count,
@@ -879,6 +921,22 @@ impl CSVParserOptimized {
                     continue;
                 }
 
+                // Bulk copy for quoted field content (only quotes are special)
+                // Only use bulk copy when there's enough remaining data to justify overhead
+                if class == ByteClass::Normal
+                    && self.state == OptimizedParserState::InQuotedField
+                    && valid_up_to - i >= 16
+                {
+                    let copied = self.scan_and_copy_quoted(i, valid_up_to);
+                    if copied >= 8 {
+                        // Only skip DFA if we actually copied a significant amount
+                        i += copied;
+                        self.position.byte += copied;
+                        continue;
+                    }
+                    // Fall through to DFA for small copies (overhead not worth it)
+                }
+
                 // DFA transition: get next state and output flag
                 let (next_state, has_output) = self.dfa.next(self.state, class);
 
@@ -887,74 +945,34 @@ impl CSVParserOptimized {
                     self.current_field.push(byte as char);
                 }
 
-                // Handle special transitions (field/record completion)
-                // CRITICAL: Only process delimiters/line endings if NOT in quoted field
-                // In InQuotedField state, delimiters and newlines are part of the field content
-                if self.state != OptimizedParserState::InQuotedField {
-                    if class == ByteClass::Delimiter {
-                        self.finish_field()?;
-                        self.prev_was_cr = false;
-                    } else if class == ByteClass::CR {
-                        // CR - finish field and record, mark for CRLF detection
-                        let was_after_quote = self.state == OptimizedParserState::AfterQuote;
-                        let was_field_start = self.state == OptimizedParserState::FieldStart;
-
-                        if !self.current_field.is_empty()
-                            || was_after_quote
-                            || (was_field_start && !self.current_record.is_empty())
-                        {
-                            self.finish_field()?;
-                        }
-
-                        if !self.current_record.is_empty() {
-                            if let Some(record) = self.finish_record() {
-                                completed_records.push(&record);
-                            }
-                        }
-
-                        // Mark CR for CRLF detection - next LF should be skipped for record completion
-                        self.prev_was_cr = true;
-                    } else if class == ByteClass::LF {
-                        // LF - only finish record if not part of CRLF sequence
-                        // Save the CRLF state before clearing it (needed for line advancement)
-                        let was_crlf = self.prev_was_cr;
-                        if self.prev_was_cr {
-                            // This LF is part of CRLF - skip record completion (already done on CR)
-                            self.prev_was_cr = false;
-                        } else {
-                            // Standalone LF - finish field and record
-                            let was_after_quote = self.state == OptimizedParserState::AfterQuote;
-                            let was_field_start = self.state == OptimizedParserState::FieldStart;
-
-                            if !self.current_field.is_empty()
-                                || was_after_quote
-                                || (was_field_start && !self.current_record.is_empty())
-                            {
-                                self.finish_field()?;
-                            }
-
-                            if !self.current_record.is_empty() {
-                                if let Some(record) = self.finish_record() {
-                                    completed_records.push(&record);
-                                }
-                            }
-                        }
-
-                        // Handle line advancement for LF here (after capturing was_crlf)
-                        // Only advance line if not part of CRLF (CR already advanced it)
-                        // Check both struct flag (for cross-chunk CRLF) and buffer check (for same-chunk CRLF)
-                        if !was_crlf && (i == 0 || self.utf8_buffer[i - 1] != b'\r') {
-                            self.position.advance_line();
+                // Handle field/record completion using consolidated handlers
+                if class == ByteClass::Delimiter
+                    && self.state != OptimizedParserState::InQuotedField
+                {
+                    self.finish_field()?;
+                    self.prev_was_cr = false;
+                } else if class == ByteClass::CR {
+                    let action = self.handle_cr()?;
+                    if action == LineEndingAction::FinishRecord {
+                        if let Some(record) = self.finish_record() {
+                            completed_records.push(&record);
                         }
                     }
+                } else if class == ByteClass::LF {
+                    let (action, should_advance_line) = self.handle_lf(i)?;
+                    if action == LineEndingAction::FinishRecord {
+                        if let Some(record) = self.finish_record() {
+                            completed_records.push(&record);
+                        }
+                    }
+                    if should_advance_line {
+                        self.position.advance_line();
+                    }
                 } else {
-                    // In quoted field - reset CRLF tracking
+                    // Clear prev_was_cr for non-newline bytes
+                    // This handles the case where CR appeared inside a quoted field
+                    // and is followed by non-LF content
                     self.prev_was_cr = false;
-                }
-
-                // Handle line number advancement for CR
-                if class == ByteClass::CR {
-                    self.position.advance_line();
                 }
 
                 // Update state
@@ -1021,6 +1039,64 @@ impl CSVParserOptimized {
         ascii_end
     }
 
+    /// Scan ahead and copy contiguous bytes inside a quoted field until quote is found
+    /// This is called only when state is InQuotedField
+    ///
+    /// In quoted fields, delimiters, LF, and CR are normal content - only quotes are special.
+    /// This allows bulk copying of quoted field content for better performance.
+    ///
+    /// CRITICAL: Only processes ASCII bytes (< 0x80) to avoid corrupting UTF-8 sequences.
+    /// Also updates position.line for any newlines within the copied content.
+    #[inline(always)]
+    fn scan_and_copy_quoted(&mut self, start: usize, valid_up_to: usize) -> usize {
+        let slice = &self.utf8_buffer[start..valid_up_to];
+        if slice.is_empty() {
+            return 0;
+        }
+
+        // Use memchr to find next quote (only special char in quoted fields)
+        let quote_pos = memchr(self.quote, slice);
+
+        // Determine how far we can copy: either to the quote or end of slice
+        let end_pos = quote_pos.unwrap_or(slice.len());
+
+        // Also check for non-ASCII bytes (>= 0x80) which must be handled separately
+        let ascii_end = slice[..end_pos]
+            .iter()
+            .position(|&b| b >= 0x80)
+            .unwrap_or(end_pos);
+
+        if ascii_end == 0 {
+            return 0;
+        }
+
+        // Count newlines in the copied content to update position.line
+        // CR and LF are both line endings inside quoted fields
+        let copied_slice = &slice[..ascii_end];
+        for &byte in copied_slice.iter() {
+            if byte == b'\r' {
+                self.position.advance_line();
+                self.prev_was_cr = true;
+            } else if byte == b'\n' {
+                // Only advance line for standalone LF (not part of CRLF)
+                if !self.prev_was_cr {
+                    self.position.advance_line();
+                }
+                self.prev_was_cr = false;
+            } else if self.prev_was_cr {
+                // Non-newline after CR: CR was standalone, clear the flag
+                self.prev_was_cr = false;
+            }
+        }
+
+        // BULK COPY: Convert the ASCII slice to &str and push at once
+        // SAFETY: All bytes are valid ASCII, which is valid UTF-8
+        let s = unsafe { std::str::from_utf8_unchecked(copied_slice) };
+        self.current_field.push_str(s);
+
+        ascii_end
+    }
+
     /// Process multi-byte UTF-8 character
     fn process_multibyte_utf8(
         &mut self,
@@ -1068,6 +1144,9 @@ impl CSVParserOptimized {
         _completed_records: &Array,
     ) -> Result<(), JsError> {
         // Non-ASCII characters are just added to fields, no special meaning
+        // Clear prev_was_cr since non-ASCII is not LF
+        self.prev_was_cr = false;
+
         match self.state {
             OptimizedParserState::FieldStart => {
                 self.current_field.push(ch);
@@ -1083,6 +1162,58 @@ impl CSVParserOptimized {
             }
         }
         Ok(())
+    }
+
+    /// Process multi-byte UTF-8 character (flat variant - no Array parameter needed)
+    /// Used by process_bytes_flat which doesn't need completed_records
+    fn process_multibyte_utf8_flat(&mut self, start: usize) -> Result<usize, JsError> {
+        // Determine character length from first byte
+        let first_byte = self.utf8_buffer[start];
+        let char_len = if (first_byte & 0b1110_0000) == 0b1100_0000 {
+            2
+        } else if (first_byte & 0b1111_0000) == 0b1110_0000 {
+            3
+        } else if (first_byte & 0b1111_1000) == 0b1111_0000 {
+            4
+        } else {
+            return Err(JsError::new(&format!(
+                "Invalid UTF-8 at position {}:{}",
+                self.position.line, self.position.byte
+            )));
+        };
+
+        // Convert to character
+        let char_bytes = &self.utf8_buffer[start..start + char_len];
+        let ch = std::str::from_utf8(char_bytes)
+            .map_err(|e| {
+                JsError::new(&format!(
+                    "Invalid UTF-8 at position {}:{}: {}",
+                    self.position.line, self.position.byte, e
+                ))
+            })?
+            .chars()
+            .next()
+            .unwrap();
+
+        // Add character to current field (same logic as process_char_non_ascii)
+        // Clear prev_was_cr since non-ASCII is not LF
+        self.prev_was_cr = false;
+
+        match self.state {
+            OptimizedParserState::FieldStart => {
+                self.current_field.push(ch);
+                self.state = OptimizedParserState::InField;
+            }
+            OptimizedParserState::InField | OptimizedParserState::InQuotedField => {
+                self.current_field.push(ch);
+            }
+            OptimizedParserState::AfterQuote => {
+                self.current_field.push(ch);
+                self.state = OptimizedParserState::InField;
+            }
+        }
+
+        Ok(char_len)
     }
 
     /// Find the last complete UTF-8 character boundary
@@ -1132,6 +1263,89 @@ impl CSVParserOptimized {
         Ok(())
     }
 
+    /// Check if we should finish field before processing a line ending
+    /// Common logic used by both CR and LF handlers
+    #[inline(always)]
+    fn should_finish_field_before_line_ending(&self) -> bool {
+        let was_after_quote = self.state == OptimizedParserState::AfterQuote;
+        let was_field_start = self.state == OptimizedParserState::FieldStart;
+        !self.current_field.is_empty()
+            || was_after_quote
+            || (was_field_start && !self.current_record.is_empty())
+    }
+
+    /// Handle CR byte - consolidates CR handling logic
+    /// Returns action to take and updates internal state
+    #[inline(always)]
+    fn handle_cr(&mut self) -> Result<LineEndingAction, JsError> {
+        // For quoted fields: CR is content but still counts as line ending for position tracking
+        if self.state == OptimizedParserState::InQuotedField {
+            self.position.advance_line();
+            self.prev_was_cr = true; // Track for potential CRLF inside quoted field
+            return Ok(LineEndingAction::None);
+        }
+
+        // Finish field if needed
+        if self.should_finish_field_before_line_ending() {
+            self.finish_field()?;
+        }
+
+        // Mark CR for CRLF detection
+        self.prev_was_cr = true;
+
+        // Advance line for CR
+        self.position.advance_line();
+
+        // Check if record should be finished
+        if !self.current_record.is_empty() {
+            Ok(LineEndingAction::FinishRecord)
+        } else {
+            Ok(LineEndingAction::None)
+        }
+    }
+
+    /// Handle LF byte - consolidates LF handling logic
+    /// Returns (action, should_advance_line) and updates internal state
+    #[inline(always)]
+    fn handle_lf(&mut self, buffer_index: usize) -> Result<(LineEndingAction, bool), JsError> {
+        // For quoted fields: LF is content but still counts as line ending for position tracking
+        if self.state == OptimizedParserState::InQuotedField {
+            // Only advance line if not part of CRLF (CR already counted it)
+            if !self.prev_was_cr {
+                self.position.advance_line();
+            }
+            self.prev_was_cr = false;
+            return Ok((LineEndingAction::None, false));
+        }
+
+        // Save CRLF state before clearing
+        let was_crlf = self.prev_was_cr;
+
+        if was_crlf {
+            // This LF is part of CRLF - skip record completion (already done on CR)
+            self.prev_was_cr = false;
+            // Don't advance line - CR already did
+            return Ok((LineEndingAction::None, false));
+        }
+
+        // Standalone LF - finish field if needed
+        if self.should_finish_field_before_line_ending() {
+            self.finish_field()?;
+        }
+
+        // Determine if we should advance line
+        // Check buffer for same-chunk CRLF (in case prev_was_cr was already cleared)
+        let should_advance_line =
+            buffer_index == 0 || self.utf8_buffer[buffer_index - 1] != b'\r';
+
+        // Check if record should be finished
+        if !self.current_record.is_empty() {
+            Ok((LineEndingAction::FinishRecord, should_advance_line))
+        } else {
+            Ok((LineEndingAction::None, should_advance_line))
+        }
+    }
+
     /// Finish current record and convert to JavaScript object
     fn finish_record(&mut self) -> Option<JsValue> {
         if self.current_record.is_empty() && !self.headers_parsed {
@@ -1146,6 +1360,12 @@ impl CSVParserOptimized {
                     headers.push(header.to_string());
                 }
             }
+            // Update headers JS cache to avoid O(n²) cloning
+            let arr = Array::new();
+            for header in &headers {
+                arr.push(&JsValue::from_str(header));
+            }
+            self.headers_js_cache = arr.into();
             self.headers = Some(headers);
             self.headers_parsed = true;
             self.current_record.clear();
@@ -1234,6 +1454,12 @@ impl CSVParserOptimized {
                     headers.push(header.to_string());
                 }
             }
+            // Update headers JS cache to avoid O(n²) cloning
+            let arr = Array::new();
+            for header in &headers {
+                arr.push(&JsValue::from_str(header));
+            }
+            self.headers_js_cache = arr.into();
             self.headers = Some(headers);
             self.headers_parsed = true;
             self.current_record.clear();
@@ -1258,64 +1484,6 @@ impl CSVParserOptimized {
                 self.current_record.clear();
             }
         }
-    }
-
-    /// Process multi-byte UTF-8 character (flat variant)
-    /// Uses the same approach as process_multibyte_utf8 to properly handle
-    /// UTF-8 sequences even when the buffer contains incomplete sequences at the end.
-    #[allow(clippy::ptr_arg)]
-    fn process_multibyte_utf8_flat(
-        &mut self,
-        start_pos: usize,
-        _field_data: &mut Vec<String>,
-        _actual_field_counts: &mut Vec<usize>,
-        _record_count: &mut usize,
-    ) -> Result<usize, JsError> {
-        // Determine character length from first byte (same as process_multibyte_utf8)
-        let first_byte = self.utf8_buffer[start_pos];
-        let char_len = if (first_byte & 0b1110_0000) == 0b1100_0000 {
-            2
-        } else if (first_byte & 0b1111_0000) == 0b1110_0000 {
-            3
-        } else if (first_byte & 0b1111_1000) == 0b1111_0000 {
-            4
-        } else {
-            return Err(JsError::new(&format!(
-                "Invalid UTF-8 at position {}:{}",
-                self.position.line, self.position.byte
-            )));
-        };
-
-        // Extract and decode only the specific character bytes
-        let char_bytes = &self.utf8_buffer[start_pos..start_pos + char_len];
-        let ch = std::str::from_utf8(char_bytes)
-            .map_err(|e| {
-                JsError::new(&format!(
-                    "Invalid UTF-8 at position {}:{}: {}",
-                    self.position.line, self.position.byte, e
-                ))
-            })?
-            .chars()
-            .next()
-            .unwrap();
-
-        // Add character to current field (same logic as process_char_non_ascii)
-        match self.state {
-            OptimizedParserState::FieldStart => {
-                self.current_field.push(ch);
-                self.state = OptimizedParserState::InField;
-            }
-            OptimizedParserState::InField | OptimizedParserState::InQuotedField => {
-                self.current_field.push(ch);
-            }
-            OptimizedParserState::AfterQuote => {
-                // After quote, non-ASCII treated as field continuation
-                self.current_field.push(ch);
-                self.state = OptimizedParserState::InField;
-            }
-        }
-
-        Ok(char_len)
     }
 }
 
