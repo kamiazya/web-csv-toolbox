@@ -49,16 +49,36 @@ export type {
   ShaderSource,
 } from "@/webgpu/compute/GPUShaderLoader.ts";
 // CSV Indexing Backend (CSV-specific)
-export { CSVIndexingBackend } from "@/parser/webgpu/indexing/CSVIndexingBackend.ts";
-export type { CSVIndexingBackendConfig } from "@/parser/webgpu/indexing/CSVIndexingBackend.ts";
+export { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
+export type { CSVSeparatorIndexingBackendConfig } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
+// CSV Separator Indexer (stateful streaming wrapper)
+export { CSVSeparatorIndexer } from "@/parser/webgpu/indexing/CSVSeparatorIndexer.ts";
+export type {
+  CSVSeparatorIndexerConfig,
+  CSVSeparatorIndexerIndexOptions,
+  CSVSeparatorIndexingBackendInterface,
+} from "@/parser/webgpu/indexing/CSVSeparatorIndexer.ts";
+// Token conversion for record assemblers
+export {
+  separatorsToTokens,
+  separatorsToTokensGenerator,
+} from "@/parser/webgpu/assembly/separatorsToTokens.ts";
+export type {
+  SeparatorsToTokensOptions,
+  SeparatorsToTokensResult,
+  SeparatorsToTokensState,
+} from "@/parser/webgpu/assembly/separatorsToTokens.ts";
+// GPU Binary CSV Lexer
+export { GPUBinaryCSVLexer } from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
+export type { GPUBinaryCSVLexerConfig } from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
+export { BinaryCSVLexerTransformer } from "@/parser/webgpu/lexer/BinaryCSVLexerTransformer.ts";
+export type { BinaryCSVLexerTransformerOptions } from "@/parser/webgpu/lexer/BinaryCSVLexerTransformer.ts";
 // Core types
 export type {
-  GPUParseResult,
+  CSVSeparatorIndexResult,
   ParseUniforms,
   ResultMeta,
   Separator,
-  StreamingParserOptions,
-  StreamingState,
   WebGPUParserConfig,
 } from "@/parser/webgpu/indexing/types.ts";
 export { SEP_TYPE_COMMA, SEP_TYPE_LF } from "@/parser/webgpu/indexing/types.ts";
@@ -79,17 +99,22 @@ export { ensureGPUInitialized } from "@/webgpu/helpers/ensureGPUInitialized.ts";
 export { isGPUReady } from "@/webgpu/helpers/isGPUReady.ts";
 export { getSharedGPUDevice } from "@/webgpu/helpers/getSharedGPUDevice.ts";
 export { disposeGPU } from "@/webgpu/helpers/disposeGPU.ts";
-// Streaming parser
-export {
-  parseCSVStream,
-  StreamParser,
-} from "@/parser/webgpu/streaming/stream-parser.ts";
 // Buffer utilities (generic)
 export { concatUint8Arrays } from "@/webgpu/utils/concatUint8Arrays.ts";
 export { alignToU32 } from "@/webgpu/utils/alignToU32.ts";
 export { padToU32Aligned } from "@/webgpu/utils/padToU32Aligned.ts";
 export { toUint32View } from "@/webgpu/utils/toUint32View.ts";
 export { BufferPool } from "@/webgpu/utils/BufferPool.ts";
+// Workgroup size utilities (generic)
+export {
+  DEFAULT_WORKGROUP_SIZE,
+  SUPPORTED_WORKGROUP_SIZES,
+  selectOptimalWorkgroupSize,
+  selectOptimalWorkgroupSizeFromAdapter,
+  selectOptimalWorkgroupSizeFromGPU,
+  validateWorkgroupSize,
+} from "@/webgpu/utils/workgroupSize.ts";
+export type { WorkgroupSize } from "@/webgpu/utils/workgroupSize.ts";
 // Buffer utilities (CSV-specific)
 export { hasBOM } from "@/parser/webgpu/utils/hasBOM.ts";
 export { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
