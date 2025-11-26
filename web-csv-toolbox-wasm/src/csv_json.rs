@@ -71,12 +71,12 @@ pub(crate) fn parse_csv_to_jsvalue(
         &JsValue::from_f64(max_field_count as f64),
     );
 
-    // Use optimized parser with flat format (stream: None = auto-flush)
+    // Use optimized parser with one-shot parsing (parse_all handles flush internally)
     let mut parser = CSVParser::new(options.into())
         .map_err(|e| format_error(format!("Failed to create parser: {:?}", e), source))?;
 
     let flat_result = parser
-        .process_chunk(input, None)
+        .parse_all(input)
         .map_err(|e| format_error(format!("Failed to parse CSV: {:?}", e), source))?;
 
     // Convert flat result to array of objects
