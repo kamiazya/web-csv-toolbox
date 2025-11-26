@@ -1,8 +1,9 @@
 /**
- * Vitest fixture for WebGPU testing in Node.js
+ * Vitest fixture for WebGPU testing in both Node.js and browser environments
  *
- * Provides WebGPU context via the `webgpu` npm package (Google Dawn).
- * Use this fixture in Node.js tests to access GPU functionality.
+ * Environment detection:
+ * - Browser: Uses native `navigator.gpu`
+ * - Node.js: Uses `webgpu` npm package (Google Dawn)
  *
  * @example
  * ```typescript
@@ -21,14 +22,25 @@
 
 import { test as baseTest } from "vitest";
 
+/**
+ * Detect if running in a browser environment
+ */
+const isBrowser =
+  typeof window !== "undefined" && typeof navigator !== "undefined";
+
 // Import webgpu package for Node.js WebGPU support
 let webgpuModule: typeof import("webgpu") | null = null;
 let globalsInstalled = false;
 
 /**
- * Lazily loads the webgpu module and installs globals
+ * Lazily loads the webgpu module and installs globals (Node.js only)
  */
-async function loadWebGPU(): Promise<typeof import("webgpu") | null> {
+async function loadWebGPUModule(): Promise<typeof import("webgpu") | null> {
+  if (isBrowser) {
+    // In browser, we don't need the webgpu npm package
+    return null;
+  }
+
   if (webgpuModule !== null) {
     return webgpuModule;
   }
@@ -45,6 +57,28 @@ async function loadWebGPU(): Promise<typeof import("webgpu") | null> {
     return webgpuModule;
   } catch {
     // webgpu package not available (e.g., unsupported platform)
+    return null;
+  }
+}
+
+/**
+ * Get GPU instance for the current environment
+ */
+async function getGPU(): Promise<GPU | null> {
+  if (isBrowser) {
+    // Browser: use native navigator.gpu
+    return navigator.gpu ?? null;
+  }
+
+  // Node.js: use webgpu npm package
+  const webgpu = await loadWebGPUModule();
+  if (!webgpu) {
+    return null;
+  }
+
+  try {
+    return webgpu.create([]) as unknown as GPU;
+  } catch {
     return null;
   }
 }
@@ -77,21 +111,8 @@ export interface WebGPUFixture {
 export const test = baseTest.extend<WebGPUFixture>({
   // biome-ignore lint/correctness/noEmptyPattern: Vitest fixture pattern requires destructuring
   gpu: async ({}, use) => {
-    const webgpu = await loadWebGPU();
-
-    if (!webgpu) {
-      await use(null);
-      return;
-    }
-
-    try {
-      // Create GPU instance using Dawn backend
-      const gpu = webgpu.create([]) as unknown as GPU;
-      await use(gpu);
-    } catch {
-      // GPU creation failed
-      await use(null);
-    }
+    const gpu = await getGPU();
+    await use(gpu);
   },
 
   isWebGPUAvailable: async ({ gpu }, use) => {
