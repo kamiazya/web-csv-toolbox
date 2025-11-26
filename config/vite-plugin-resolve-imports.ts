@@ -7,6 +7,11 @@ import path from "node:path";
 type TargetEnvironment = "node" | "web" | "shared";
 
 /**
+ * Entry variant (main vs slim)
+ */
+type EntryVariant = "main" | "slim";
+
+/**
  * Module metadata tracked during resolution
  */
 interface ModuleMetadata {
@@ -14,6 +19,8 @@ interface ModuleMetadata {
   entryId: string;
   /** Target environment for this module */
   target: TargetEnvironment;
+  /** Entry variant (main vs slim) */
+  variant: EntryVariant;
 }
 
 /**
@@ -51,6 +58,14 @@ export function resolveImportsPlugin(): Plugin {
     if (id.includes(".web.")) return "web";
     if (id.includes("/common.ts")) return "shared";
     return "shared"; // Default for files without explicit target
+  }
+
+  /**
+   * Determine entry variant (main vs slim) from a resolved module ID
+   */
+  function getVariantFromId(id: string): EntryVariant {
+    if (id.includes("/slim.") || id.includes("slim.")) return "slim";
+    return "main"; // Default to main
   }
 
   /**
@@ -97,13 +112,17 @@ export function resolveImportsPlugin(): Plugin {
         // Determine target for this entry
         const target: TargetEnvironment = buildTarget || getTargetFromId(entryId);
 
+        // Determine variant for this entry
+        const variant: EntryVariant = getVariantFromId(entryId);
+
         moduleMetadata.set(entryId, {
           entryId,
           target,
+          variant,
         });
 
         console.log(
-          `[resolve-imports] Entry point: ${path.relative(process.cwd(), entryId)} (target: ${target})`
+          `[resolve-imports] Entry point: ${path.relative(process.cwd(), entryId)} (target: ${target}, variant: ${variant})`
         );
 
         return null; // Let Vite handle the actual resolution
@@ -133,6 +152,7 @@ export function resolveImportsPlugin(): Plugin {
             moduleMetadata.set(resolvedId, {
               entryId: importerMeta.entryId,
               target,
+              variant: importerMeta.variant, // Propagate variant from importer
             });
           }
         }
@@ -175,8 +195,24 @@ export function resolveImportsPlugin(): Plugin {
         `[resolve-imports] Resolving ${source} from ${importer ? path.relative(process.cwd(), importer) : "unknown"}, target=${targetEnv}`
       );
 
+      // Determine variant from metadata
+      let entryVariant: EntryVariant = "main"; // Default to main
+      if (importer) {
+        const normalizedImporter = normalizeId(importer);
+        const importerMeta = moduleMetadata.get(normalizedImporter);
+        if (importerMeta) {
+          entryVariant = importerMeta.variant;
+        }
+      } else if (currentEntry) {
+        const entryMeta = moduleMetadata.get(currentEntry);
+        if (entryMeta) {
+          entryVariant = entryMeta.variant;
+        }
+      }
+
       // Map # imports to actual source files
-      const importMap: Record<string, { node: string; web: string }> = {
+      // Some imports have slim-specific versions that don't bundle base64 WASM
+      const importMap: Record<string, { node: string; web: string; slim?: string }> = {
         "#/wasm/loaders/loadWASM.js": {
           node: "/src/wasm/loaders/loadWASM.node.ts",
           web: "/src/wasm/loaders/loadWASM.web.ts",
@@ -184,6 +220,7 @@ export function resolveImportsPlugin(): Plugin {
         "#/wasm/loaders/loadWASMSync.js": {
           node: "/src/wasm/loaders/loadWASMSync.node.ts",
           web: "/src/wasm/loaders/loadWASMSync.web.ts",
+          slim: "/src/wasm/loaders/loadWASMSync.slim.ts", // Slim version without base64
         },
         "#/worker/helpers/createWorker.js": {
           node: "/src/worker/helpers/createWorker.node.ts",
@@ -205,8 +242,17 @@ export function resolveImportsPlugin(): Plugin {
         return null;
       }
 
-      // Select target file based on environment (shared modules use web by default)
-      const targetFile = targetEnv === "node" ? mapping.node : mapping.web;
+      // Select target file based on environment and variant
+      // For slim entry, use slim-specific version if available
+      let targetFile: string;
+      if (entryVariant === "slim" && mapping.slim) {
+        targetFile = mapping.slim;
+        console.log(
+          `[resolve-imports] Using slim version for ${source} (variant: ${entryVariant})`
+        );
+      } else {
+        targetFile = targetEnv === "node" ? mapping.node : mapping.web;
+      }
       const resolvedPath = path.join(process.cwd(), targetFile);
 
       // Resolve this module through Vite to get normalized ID
@@ -231,6 +277,7 @@ export function resolveImportsPlugin(): Plugin {
           moduleMetadata.set(resolvedId, {
             entryId: importerMeta.entryId,
             target: getTargetFromId(resolvedId),
+            variant: importerMeta.variant, // Propagate variant
           });
         }
       }

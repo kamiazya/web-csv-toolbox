@@ -791,7 +791,7 @@ See [Using WebAssembly Tutorial](https://kamiazya.github.io/web-csv-toolbox/tuto
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
-| `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples; not available when running through WASM today |
+| `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples |
 | `includeHeader`  | Emit header row when using array output | `false` | Only valid with `outputFormat: 'array'` — the header becomes the first emitted record |
 | `columnCountStrategy` | Handle column-count mismatches when a header is provided | `'keep'` for array format / `'pad'` for object format | Choose between `keep`, `pad`, `strict`, or `truncate` to control how rows align with the header |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
@@ -814,7 +814,6 @@ const rows = await parse.toArray(csv, {
   outputFormat: "array",
   includeHeader: true,
   columnCountStrategy: "pad",
-  engine: { wasm: false }, // Array output currently runs on the JS engine only
 });
 // rows[0] === ['name', 'age'] (header row)
 // rows[1] has type readonly [name: string, age: string]
@@ -828,8 +827,6 @@ const rows = await parse.toArray(csv, {
   - `pad`: fill short rows with `undefined` and truncate long rows (default for object output)
   - `strict`: throw if the row length differs from the header
   - `truncate`: discard columns beyond the header length without padding short rows
-
-> ⚠️ Array output is not yet available inside the WebAssembly execution path. If you request `outputFormat: 'array'`, force the JavaScript engine with `engine: { wasm: false }` (or run in an environment where WASM is disabled).
 
 ### Advanced Options (Binary-Specific) 🧬
 

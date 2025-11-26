@@ -7,6 +7,7 @@ import type {
 } from "@/core/types.ts";
 import { WASMBinaryCSVArrayParser } from "@/parser/models/WASMBinaryCSVArrayParser.ts";
 import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
+import { validateWASMCharset } from "@/parser/utils/wasmValidation.ts";
 
 /**
  * Parse CSV binary using WebAssembly in main thread.
@@ -32,13 +33,7 @@ export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
   options?: ParseBinaryOptions<Header>,
 ): AsyncIterableIterator<CSVRecord<Header> | CSVArrayRecord<Header>> {
   // Validate charset - WASM parser only supports UTF-8
-  const charset = options?.charset;
-  if (charset !== undefined && charset.toLowerCase() !== "utf-8") {
-    throw new RangeError(
-      `WASM parser only supports UTF-8 encoding. Specified charset: "${charset}". ` +
-        `Use the JavaScript parser for other encodings.`,
-    );
-  }
+  validateWASMCharset(options?.charset);
 
   // Validate maxBinarySize
   const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
