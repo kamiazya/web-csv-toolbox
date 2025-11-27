@@ -3,6 +3,6 @@
   "nodeModulesDir": "auto",
   "tasks": {
     "setup": "deno run --allow-read --allow-write setup.ts",
-    "start": "deno run --allow-read index.ts"
+    "start": "deno run --allow-read --cached-only index.ts"
   }
 }
