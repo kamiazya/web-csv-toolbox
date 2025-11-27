@@ -25,6 +25,7 @@ interface GPUParseResult {
   /** Total number of separators found */
   readonly sepCount: number;
 }
+
 import {
   getProcessedBytesCount,
   sortSeparatorsByOffset,

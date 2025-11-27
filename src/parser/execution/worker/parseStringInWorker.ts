@@ -25,7 +25,9 @@ export async function* parseStringInWorker<
   csv: string,
   options?: ParseOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create(
+  // TODO: When Node.js 24 becomes the minimum supported version, use:
+  // using session = await WorkerSession.create(...)
+  const session = await WorkerSession.create(
     options?.engine?.worker === true
       ? {
           workerURL: options.engine.workerURL,
@@ -34,15 +36,19 @@ export async function* parseStringInWorker<
       : undefined,
   );
 
-  yield* sendWorkerMessage<CSVRecord<Header>>(
-    session.getWorker(),
-    {
-      id: session.getNextRequestId(),
-      type: "parseString",
-      data: csv,
-      options: serializeOptions(options),
-      useWASM: false,
-    },
-    options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
-  );
+  try {
+    yield* sendWorkerMessage<CSVRecord<Header>>(
+      session.getWorker(),
+      {
+        id: session.getNextRequestId(),
+        type: "parseString",
+        data: csv,
+        options: serializeOptions(options),
+        useWASM: false,
+      },
+      options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
+    );
+  } finally {
+    session.dispose();
+  }
 }

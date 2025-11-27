@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workgroup Size Validation Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .status {
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.info { background: #e3f2fd; color: #1976d2; }
+    .status.success { background: #e8f5e9; color: #388e3c; }
+    .status.error { background: #ffebee; color: #c62828; }
+    #log {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .pass { color: #4caf50; }
+    .fail { color: #f44336; }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 5px;
+    }
+    button:hover { background: #45a049; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th { background-color: #4CAF50; color: white; }
+    .pass-cell { color: #388e3c; font-weight: bold; }
+    .fail-cell { color: #c62828; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Workgroup Size Validation Test</h1>
+  <p>Tests that the WebGPU CSV indexer produces correct results with different workgroup sizes (64, 128, 256).</p>
+
+  <div id="status" class="status info">Initializing...</div>
+
+  <button id="run-btn" onclick="runTests()" disabled>Run Tests</button>
+
+  <div id="results-container" style="display: none;">
+    <h2>Test Results</h2>
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Test Case</th>
+          <th>WG 64</th>
+          <th>WG 128</th>
+          <th>WG 256</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <h2>Log</h2>
+  <div id="log"></div>
+
+  <script type="module">
+    // Helper to align size to 4 bytes
+    function alignToU32(size) {
+      return Math.ceil(size / 4) * 4;
+    }
+
+    // Helper to pad input to u32 alignment
+    function padToU32Aligned(input) {
+      const alignedSize = alignToU32(input.length);
+      if (alignedSize === input.length) {
+        return input;
+      }
+      const padded = new Uint8Array(alignedSize);
+      padded.set(input);
+      return padded;
+    }
+
+    function generatePass1Shader(workgroupSize) {
+      const logIterations = Math.log2(workgroupSize);
+      return `
+struct ParseUniforms {
+    chunkSize: u32,
+    prevInQuote: u32,
+    _padding1: u32,
+    _padding2: u32,
+}
+
+@group(0) @binding(0) var<storage, read> inputBytes: array<u32>;
+@group(0) @binding(1) var<storage, read_write> workgroupXORs: array<atomic<u32>>;
+@group(0) @binding(2) var<uniform> uniforms: ParseUniforms;
+
+const WORKGROUP_SIZE: u32 = ${workgroupSize}u;
+const QUOTE: u32 = 34u;
+
+var<workgroup> sharedScanTemp: array<u32, WORKGROUP_SIZE>;
+
+fn getByte(index: u32) -> u32 {
+    let wordIndex = index / 4u;
+    let byteOffset = index % 4u;
+    let word = inputBytes[wordIndex];
+    return (word >> (byteOffset * 8u)) & 0xFFu;
+}
+
+fn workgroupPrefixXOR(localId: u32) {
+    var step = 1u;
+    for (var i = 0u; i < ${logIterations}u; i++) {
+        workgroupBarrier();
+        if (localId >= step) {
+            let prev = sharedScanTemp[localId - step];
+            sharedScanTemp[localId] ^= prev;
+        }
+        workgroupBarrier();
+        step = step << 1u;
+    }
+    workgroupBarrier();
+}
+
+@compute @workgroup_size(${workgroupSize}, 1, 1)
+fn main(
+    @builtin(global_invocation_id) globalId: vec3<u32>,
+    @builtin(local_invocation_id) localId: vec3<u32>,
+    @builtin(workgroup_id) workgroupId: vec3<u32>,
+) {
+    let tid = localId.x;
+    let globalIndex = globalId.x;
+    let isValid = globalIndex < uniforms.chunkSize;
+
+    var isQuote = 0u;
+    if (isValid) {
+        let byte = getByte(globalIndex);
+        if (byte == QUOTE) {
+            isQuote = 1u;
+        }
+    }
+
+    sharedScanTemp[tid] = isQuote;
+    workgroupBarrier();
+    workgroupPrefixXOR(tid);
+
+    if (tid == WORKGROUP_SIZE - 1u) {
+        let workgroupParity = sharedScanTemp[tid] ^ isQuote;
+        atomicStore(&workgroupXORs[workgroupId.x], workgroupParity);
+    }
+}
+`;
+    }
+
+    function generatePass2Shader(workgroupSize) {
+      const logIterations = Math.log2(workgroupSize);
+      return `
+struct ParseUniforms {
+    chunkSize: u32,
+    prevInQuote: u32,
+    maxWorkgroups: u32,
+    _padding: u32,
+}
+
+struct ResultMeta {
+    endInQuote: u32,
+    sepCount: u32,
+    _padding1: u32,
+    _padding2: u32,
+}
+
+@group(0) @binding(0) var<storage, read> inputBytes: array<u32>;
+@group(0) @binding(1) var<storage, read_write> sepIndices: array<u32>;
+@group(0) @binding(2) var<storage, read_write> atomicIndex: atomic<u32>;
+@group(0) @binding(3) var<uniform> uniforms: ParseUniforms;
+@group(0) @binding(4) var<storage, read_write> resultMeta: ResultMeta;
+@group(0) @binding(5) var<storage, read> workgroupPrefixXORs: array<u32>;
+
+const WORKGROUP_SIZE: u32 = ${workgroupSize}u;
+const QUOTE: u32 = 34u;
+const COMMA: u32 = 44u;
+const LF: u32 = 10u;
+const SEP_TYPE_COMMA: u32 = 0u;
+const SEP_TYPE_LF: u32 = 1u;
+
+var<workgroup> sharedQuoteXOR: array<u32, WORKGROUP_SIZE>;
+var<workgroup> sharedScanTemp: array<u32, WORKGROUP_SIZE>;
+var<workgroup> sharedSeparatorFlags: array<u32, WORKGROUP_SIZE>;
+var<workgroup> workgroupSeparatorBase: atomic<u32>;
+
+fn getByte(index: u32) -> u32 {
+    let wordIndex = index / 4u;
+    let byteOffset = index % 4u;
+    let word = inputBytes[wordIndex];
+    return (word >> (byteOffset * 8u)) & 0xFFu;
+}
+
+fn packSeparator(offset: u32, sepType: u32) -> u32 {
+    return offset | (sepType << 31u);
+}
+
+fn workgroupPrefixXOR(localId: u32) {
+    var step = 1u;
+    for (var i = 0u; i < ${logIterations}u; i++) {
+        workgroupBarrier();
+        if (localId >= step) {
+            let prev = sharedScanTemp[localId - step];
+            sharedScanTemp[localId] ^= prev;
+        }
+        workgroupBarrier();
+        step = step << 1u;
+    }
+    workgroupBarrier();
+    let temp = sharedScanTemp[localId];
+    workgroupBarrier();
+    if (localId > 0u) {
+        sharedScanTemp[localId] = sharedScanTemp[localId - 1u];
+    } else {
+        sharedScanTemp[0] = 0u;
+    }
+    workgroupBarrier();
+}
+
+fn workgroupPrefixSum(localId: u32, hasSeparator: u32) -> u32 {
+    sharedSeparatorFlags[localId] = hasSeparator;
+    workgroupBarrier();
+    var step = 1u;
+    for (var i = 0u; i < ${logIterations}u; i++) {
+        workgroupBarrier();
+        var sum = sharedSeparatorFlags[localId];
+        if (localId >= step) {
+            sum += sharedSeparatorFlags[localId - step];
+        }
+        workgroupBarrier();
+        sharedSeparatorFlags[localId] = sum;
+        step = step << 1u;
+    }
+    workgroupBarrier();
+    if (localId > 0u) {
+        return sharedSeparatorFlags[localId - 1u];
+    }
+    return 0u;
+}
+
+@compute @workgroup_size(${workgroupSize}, 1, 1)
+fn main(
+    @builtin(global_invocation_id) globalId: vec3<u32>,
+    @builtin(local_invocation_id) localId: vec3<u32>,
+    @builtin(workgroup_id) workgroupId: vec3<u32>,
+) {
+    let tid = localId.x;
+    let globalIndex = globalId.x;
+    let isValid = globalIndex < uniforms.chunkSize;
+
+    var byte = 0u;
+    var isQuote = 0u;
+    var isComma = 0u;
+    var isLF = 0u;
+
+    if (isValid) {
+        byte = getByte(globalIndex);
+        if (byte == QUOTE) {
+            isQuote = 1u;
+        } else if (byte == COMMA) {
+            isComma = 1u;
+        } else if (byte == LF) {
+            isLF = 1u;
+        }
+    }
+
+    sharedQuoteXOR[tid] = isQuote;
+    sharedScanTemp[tid] = isQuote;
+    workgroupBarrier();
+
+    workgroupPrefixXOR(tid);
+
+    var inQuote = sharedScanTemp[tid];
+    if (workgroupId.x < uniforms.maxWorkgroups) {
+        inQuote ^= workgroupPrefixXORs[workgroupId.x];
+    }
+    inQuote ^= isQuote;
+
+    var isSeparator = 0u;
+    var sepType = 0u;
+    if (inQuote == 0u) {
+        if (isComma == 1u) {
+            isSeparator = 1u;
+            sepType = SEP_TYPE_COMMA;
+        } else if (isLF == 1u) {
+            isSeparator = 1u;
+            sepType = SEP_TYPE_LF;
+        }
+    }
+
+    let localOffset = workgroupPrefixSum(tid, isSeparator);
+    workgroupBarrier();
+
+    if (tid == WORKGROUP_SIZE - 1u) {
+        let workgroupSeparatorCount = localOffset + isSeparator;
+        if (workgroupSeparatorCount > 0u) {
+            let baseOffset = atomicAdd(&atomicIndex, workgroupSeparatorCount);
+            atomicStore(&workgroupSeparatorBase, baseOffset);
+        } else {
+            atomicStore(&workgroupSeparatorBase, 0u);
+        }
+    }
+    workgroupBarrier();
+
+    if (isValid && isSeparator == 1u) {
+        let baseOffset = atomicLoad(&workgroupSeparatorBase);
+        let globalWritePos = baseOffset + localOffset;
+        sepIndices[globalWritePos] = packSeparator(globalIndex, sepType);
+    }
+
+    if (isValid && globalIndex == uniforms.chunkSize - 1u) {
+        resultMeta.endInQuote = inQuote;
+    }
+}
+`;
+    }
+
+    let device = null;
+    const logEl = document.getElementById('log');
+
+    function log(msg, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      let className = '';
+      if (type === 'pass') className = 'pass';
+      if (type === 'fail') className = 'fail';
+      const line = `[${time}] ${msg}`;
+      if (className) {
+        logEl.innerHTML += `<span class="${className}">${line}</span>\n`;
+      } else {
+        logEl.textContent += line + '\n';
+      }
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function setStatus(msg, type = 'info') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = `status ${type}`;
+    }
+
+    async function runIndexerWithWorkgroupSize(input, workgroupSize, prevInQuote = 0) {
+      const pass1Shader = generatePass1Shader(workgroupSize);
+      const pass2Shader = generatePass2Shader(workgroupSize);
+
+      const pass1Module = device.createShaderModule({ code: pass1Shader });
+      const pass2Module = device.createShaderModule({ code: pass2Shader });
+
+      const pass1BindGroupLayout = device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+          { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+          { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
+        ],
+      });
+
+      const pass2BindGroupLayout = device.createBindGroupLayout({
+        entries: [
+          { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+          { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+          { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+          { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } },
+          { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+          { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
+        ],
+      });
+
+      const pass1Pipeline = device.createComputePipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [pass1BindGroupLayout] }),
+        compute: { module: pass1Module, entryPoint: "main" },
+      });
+
+      const pass2Pipeline = device.createComputePipeline({
+        layout: device.createPipelineLayout({ bindGroupLayouts: [pass2BindGroupLayout] }),
+        compute: { module: pass2Module, entryPoint: "main" },
+      });
+
+      const paddedInput = padToU32Aligned(input);
+      const actualSize = input.length;
+      const workgroupCount = Math.ceil(actualSize / workgroupSize);
+
+      // Create buffers
+      const inputBuffer = device.createBuffer({
+        size: paddedInput.length,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      });
+
+      const workgroupXORsBuffer = device.createBuffer({
+        size: Math.max(4, workgroupCount * 4),
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+      });
+
+      const uniformsBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+
+      const sepIndicesBuffer = device.createBuffer({
+        size: actualSize * 4,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+      });
+
+      const atomicIndexBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+      });
+
+      const resultMetaBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+      });
+
+      // Upload input
+      device.queue.writeBuffer(inputBuffer, 0, paddedInput);
+      device.queue.writeBuffer(workgroupXORsBuffer, 0, new Uint32Array(workgroupCount).fill(0));
+
+      // Pass 1
+      device.queue.writeBuffer(uniformsBuffer, 0, new Uint32Array([actualSize, prevInQuote, 0, 0]));
+
+      const pass1BindGroup = device.createBindGroup({
+        layout: pass1BindGroupLayout,
+        entries: [
+          { binding: 0, resource: { buffer: inputBuffer } },
+          { binding: 1, resource: { buffer: workgroupXORsBuffer } },
+          { binding: 2, resource: { buffer: uniformsBuffer } },
+        ],
+      });
+
+      const pass1Encoder = device.createCommandEncoder();
+      const pass1 = pass1Encoder.beginComputePass();
+      pass1.setPipeline(pass1Pipeline);
+      pass1.setBindGroup(0, pass1BindGroup);
+      pass1.dispatchWorkgroups(workgroupCount);
+      pass1.end();
+
+      const workgroupXORsReadBuffer = device.createBuffer({
+        size: Math.max(4, workgroupCount * 4),
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      pass1Encoder.copyBufferToBuffer(workgroupXORsBuffer, 0, workgroupXORsReadBuffer, 0, Math.max(4, workgroupCount * 4));
+
+      device.queue.submit([pass1Encoder.finish()]);
+
+      await workgroupXORsReadBuffer.mapAsync(GPUMapMode.READ);
+      const workgroupParities = new Uint32Array(workgroupXORsReadBuffer.getMappedRange().slice(0));
+      workgroupXORsReadBuffer.unmap();
+      workgroupXORsReadBuffer.destroy();
+
+      // CPU: Compute prefix XOR
+      const prefixXORs = new Uint32Array(workgroupCount);
+      let prefix = prevInQuote;
+      for (let i = 0; i < workgroupCount; i++) {
+        prefixXORs[i] = prefix;
+        prefix ^= workgroupParities[i];
+      }
+
+      device.queue.writeBuffer(workgroupXORsBuffer, 0, prefixXORs);
+
+      // Pass 2
+      device.queue.writeBuffer(atomicIndexBuffer, 0, new Uint32Array([0]));
+      device.queue.writeBuffer(resultMetaBuffer, 0, new Uint32Array([0, 0, 0, 0]));
+      device.queue.writeBuffer(uniformsBuffer, 0, new Uint32Array([actualSize, prevInQuote, workgroupCount, 0]));
+
+      const pass2BindGroup = device.createBindGroup({
+        layout: pass2BindGroupLayout,
+        entries: [
+          { binding: 0, resource: { buffer: inputBuffer } },
+          { binding: 1, resource: { buffer: sepIndicesBuffer } },
+          { binding: 2, resource: { buffer: atomicIndexBuffer } },
+          { binding: 3, resource: { buffer: uniformsBuffer } },
+          { binding: 4, resource: { buffer: resultMetaBuffer } },
+          { binding: 5, resource: { buffer: workgroupXORsBuffer } },
+        ],
+      });
+
+      const pass2Encoder = device.createCommandEncoder();
+      const pass2 = pass2Encoder.beginComputePass();
+      pass2.setPipeline(pass2Pipeline);
+      pass2.setBindGroup(0, pass2BindGroup);
+      pass2.dispatchWorkgroups(workgroupCount);
+      pass2.end();
+
+      const sepIndicesReadBuffer = device.createBuffer({
+        size: actualSize * 4,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      const atomicIndexReadBuffer = device.createBuffer({
+        size: 4,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+      const resultMetaReadBuffer = device.createBuffer({
+        size: 16,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+      });
+
+      pass2Encoder.copyBufferToBuffer(sepIndicesBuffer, 0, sepIndicesReadBuffer, 0, actualSize * 4);
+      pass2Encoder.copyBufferToBuffer(atomicIndexBuffer, 0, atomicIndexReadBuffer, 0, 4);
+      pass2Encoder.copyBufferToBuffer(resultMetaBuffer, 0, resultMetaReadBuffer, 0, 16);
+
+      device.queue.submit([pass2Encoder.finish()]);
+
+      await Promise.all([
+        sepIndicesReadBuffer.mapAsync(GPUMapMode.READ),
+        atomicIndexReadBuffer.mapAsync(GPUMapMode.READ),
+        resultMetaReadBuffer.mapAsync(GPUMapMode.READ),
+      ]);
+
+      const sepIndices = new Uint32Array(sepIndicesReadBuffer.getMappedRange().slice(0));
+      const atomicIndexData = new Uint32Array(atomicIndexReadBuffer.getMappedRange().slice(0));
+      const metaData = new Uint32Array(resultMetaReadBuffer.getMappedRange().slice(0));
+
+      sepIndicesReadBuffer.unmap();
+      atomicIndexReadBuffer.unmap();
+      resultMetaReadBuffer.unmap();
+
+      // Cleanup
+      inputBuffer.destroy();
+      workgroupXORsBuffer.destroy();
+      uniformsBuffer.destroy();
+      sepIndicesBuffer.destroy();
+      atomicIndexBuffer.destroy();
+      resultMetaBuffer.destroy();
+      sepIndicesReadBuffer.destroy();
+      atomicIndexReadBuffer.destroy();
+      resultMetaReadBuffer.destroy();
+
+      return {
+        sepIndices,
+        sepCount: atomicIndexData[0],
+        endInQuote: metaData[0],
+      };
+    }
+
+    const testCases = [
+      { name: "Simple CSV", csv: "a,b,c\n1,2,3\n4,5,6\n", expectedSeps: 9 },
+      { name: "Quoted field", csv: '"hello,world",test\n', expectedSeps: 2 },
+      { name: "Multi-line quoted", csv: '"line\nbreak",value\n', expectedSeps: 2 },
+      { name: "Long quoted (512 bytes)", generateCsv: (wg) => `"${"x".repeat(wg * 2)}",end\n`, expectedSeps: 2 },
+      { name: "Quote at WG boundary", generateCsv: (wg) => `${"a".repeat(wg - 1)}"quoted,field",end\n`, expectedSeps: 2 },
+    ];
+
+    const workgroupSizes = [64, 128, 256];
+    const results = [];
+
+    async function init() {
+      log('Initializing WebGPU...');
+
+      if (!navigator.gpu) {
+        setStatus('WebGPU not available', 'error');
+        log('ERROR: WebGPU not available in this browser', 'fail');
+        return;
+      }
+
+      try {
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+          throw new Error('No GPU adapter found');
+        }
+
+        device = await adapter.requestDevice();
+        log(`GPU Device: ${adapter.info?.device || 'Unknown'}`);
+        log(`Max workgroups per dimension: ${device.limits.maxComputeWorkgroupsPerDimension}`);
+        log(`Max workgroup size X: ${device.limits.maxComputeWorkgroupSizeX}`);
+
+        setStatus('Ready! Click "Run Tests" to start.', 'success');
+        document.getElementById('run-btn').disabled = false;
+      } catch (e) {
+        setStatus('WebGPU init failed: ' + e.message, 'error');
+        log('ERROR: ' + e.message, 'fail');
+      }
+    }
+
+    window.runTests = async function() {
+      document.getElementById('run-btn').disabled = true;
+      document.getElementById('results-container').style.display = 'none';
+      logEl.textContent = '';
+      results.length = 0;
+      setStatus('Running tests...', 'info');
+
+      let allPassed = true;
+      const tbody = document.getElementById('results-body');
+      tbody.innerHTML = '';
+
+      for (const testCase of testCases) {
+        log(`\n=== ${testCase.name} ===`);
+
+        const wgResults = {};
+        let testPassed = true;
+
+        for (const wgSize of workgroupSizes) {
+          try {
+            const csv = testCase.generateCsv ? testCase.generateCsv(wgSize) : testCase.csv;
+            const input = new TextEncoder().encode(csv);
+            const result = await runIndexerWithWorkgroupSize(input, wgSize);
+
+            wgResults[wgSize] = {
+              sepCount: result.sepCount,
+              endInQuote: result.endInQuote,
+              sepPositions: Array.from(result.sepIndices.slice(0, result.sepCount)).sort((a, b) => a - b),
+            };
+
+            log(`  WG ${wgSize}: sepCount=${result.sepCount}, endInQuote=${result.endInQuote}`);
+
+            if (testCase.expectedSeps !== undefined && result.sepCount !== testCase.expectedSeps) {
+              log(`    FAIL: Expected ${testCase.expectedSeps} separators, got ${result.sepCount}`, 'fail');
+              testPassed = false;
+            }
+          } catch (e) {
+            log(`  WG ${wgSize}: ERROR - ${e.message}`, 'fail');
+            wgResults[wgSize] = { error: e.message };
+            testPassed = false;
+          }
+        }
+
+        // Compare results across workgroup sizes
+        const sizes = Object.keys(wgResults).filter(k => !wgResults[k].error);
+        if (sizes.length >= 2) {
+          const first = wgResults[sizes[0]];
+          for (let i = 1; i < sizes.length; i++) {
+            const other = wgResults[sizes[i]];
+            if (first.sepCount !== other.sepCount) {
+              log(`    FAIL: Inconsistent sepCount between WG${sizes[0]} (${first.sepCount}) and WG${sizes[i]} (${other.sepCount})`, 'fail');
+              testPassed = false;
+            }
+            if (first.endInQuote !== other.endInQuote) {
+              log(`    FAIL: Inconsistent endInQuote between WG${sizes[0]} and WG${sizes[i]}`, 'fail');
+              testPassed = false;
+            }
+            if (JSON.stringify(first.sepPositions) !== JSON.stringify(other.sepPositions)) {
+              log(`    FAIL: Inconsistent separator positions between WG${sizes[0]} and WG${sizes[i]}`, 'fail');
+              testPassed = false;
+            }
+          }
+        }
+
+        if (testPassed) {
+          log(`  PASSED`, 'pass');
+        } else {
+          allPassed = false;
+        }
+
+        // Add to table
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${testCase.name}</td>
+          <td class="${wgResults[64]?.error ? 'fail-cell' : 'pass-cell'}">${wgResults[64]?.sepCount ?? 'ERR'}</td>
+          <td class="${wgResults[128]?.error ? 'fail-cell' : 'pass-cell'}">${wgResults[128]?.sepCount ?? 'ERR'}</td>
+          <td class="${wgResults[256]?.error ? 'fail-cell' : 'pass-cell'}">${wgResults[256]?.sepCount ?? 'ERR'}</td>
+          <td class="${testPassed ? 'pass-cell' : 'fail-cell'}">${testPassed ? 'PASS' : 'FAIL'}</td>
+        `;
+        tbody.appendChild(row);
+
+        results.push({ name: testCase.name, passed: testPassed, results: wgResults });
+      }
+
+      document.getElementById('results-container').style.display = 'block';
+
+      if (allPassed) {
+        setStatus('All tests passed!', 'success');
+        log('\n=== ALL TESTS PASSED ===', 'pass');
+      } else {
+        setStatus('Some tests failed!', 'error');
+        log('\n=== SOME TESTS FAILED ===', 'fail');
+      }
+
+      document.getElementById('run-btn').disabled = false;
+
+      // Store for automation
+      window.testResults = results;
+      window.testComplete = true;
+      window.allPassed = allPassed;
+    };
+
+    init();
+  </script>
+</body>
+</html>

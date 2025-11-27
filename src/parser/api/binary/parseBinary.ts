@@ -8,10 +8,14 @@ import type {
 } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { EnvironmentCapabilities } from "@/execution/EnvironmentCapabilities.ts";
+import {
+  ExecutionPathResolver,
+  type ResolverContext,
+} from "@/execution/ExecutionPathResolver.ts";
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
-import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
 import { parseBinaryInGPU } from "@/parser/execution/gpu/parseBinaryInGPU.ts";
 import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
@@ -49,95 +53,107 @@ export async function* parseBinary<
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
 
-  if (engineConfig.hasWorker()) {
-    // Worker execution
-    const session = engineConfig.workerPool
-      ? await WorkerSession.create({
-          workerPool: engineConfig.workerPool,
-          workerURL: engineConfig.workerURL,
-        })
-      : null;
+  // Get environment capabilities (async to properly detect GPU via requestAdapter)
+  const capabilities = await EnvironmentCapabilities.getInstance();
 
-    try {
-      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
-        bytes,
-        options as
-          | ParseOptions<Header>
-          | ParseBinaryOptions<Header>
-          | undefined,
-        session,
-        engineConfig,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } finally {
-      session?.[Symbol.dispose]();
-    }
-  } else {
-    // Main thread execution
-    // Convert BufferSource to Uint8Array for GPU parsing
-    const uint8Array =
-      bytes instanceof ArrayBuffer
-        ? new Uint8Array(bytes)
-        : ArrayBuffer.isView(bytes)
-          ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-          : bytes;
+  // Build resolver context
+  const resolverContext: ResolverContext = {
+    inputType: "binary",
+    outputFormat: options?.outputFormat ?? "object",
+    charset: options?.charset,
+    engineConfig,
+    capabilities,
+  };
 
-    if (engineConfig.hasGpu() && isGPUAvailable()) {
+  // Resolve execution plan based on optimizationHint and capabilities
+  const resolver = new ExecutionPathResolver();
+  const plan = resolver.resolve(resolverContext);
+
+  // Determine execution path based on plan
+  const backends = plan.backends;
+
+  // Convert BufferSource to Uint8Array for GPU parsing
+  const uint8Array =
+    bytes instanceof ArrayBuffer
+      ? new Uint8Array(bytes)
+      : ArrayBuffer.isView(bytes)
+        ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+        : bytes;
+
+  // Try backends in priority order
+  for (const backend of backends) {
+    if (backend === "gpu" && capabilities.gpu && engineConfig.hasGpu()) {
       // GPU execution
       yield* parseBinaryInGPU(
         uint8Array,
         options as ParseBinaryOptions<Header> | undefined,
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
-      // GPU requested but not available - fallback
-      const fallbackConfig = engineConfig.createGpuFallbackConfig();
-      if (fallbackConfig.hasWasm()) {
-        // Fallback to WASM
-        if (options?.outputFormat === "array") {
-          throw new Error(
-            "Array output format is not supported with WASM execution. " +
-              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-          );
-        }
-        engineConfig.onFallback?.({
-          requestedConfig: engineConfig.toConfig(),
-          actualConfig: fallbackConfig.toConfig(),
-          reason: "WebGPU not available in this environment",
-        });
-        yield* parseBinaryInWASM(
-          bytes,
-          options as ParseBinaryOptions<Header> | undefined,
-        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-      } else {
-        // Fallback to JavaScript
-        engineConfig.onFallback?.({
-          requestedConfig: engineConfig.toConfig(),
-          actualConfig: fallbackConfig.toConfig(),
-          reason: "WebGPU not available in this environment",
-        });
-        const iterator = parseBinaryToIterableIterator(bytes, options);
-        yield* convertIterableIteratorToAsync(
-          iterator,
-        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-      }
-    } else if (engineConfig.hasWasm()) {
+      return;
+    }
+
+    if (backend === "wasm" && engineConfig.hasWasm()) {
       // Validate that array output format is not used with WASM
       if (options?.outputFormat === "array") {
-        throw new Error(
-          "Array output format is not supported with WASM execution. " +
-            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-        );
+        continue; // Skip WASM, try next backend
       }
+      // WASM execution
       yield* parseBinaryInWASM(
         bytes,
         options as ParseBinaryOptions<Header> | undefined,
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } else {
+      return;
+    }
+
+    if (backend === "js") {
+      // Check plan.contexts to determine if worker or main thread should be used
+      // For non-stream inputs, worker-message is viable
+      const preferWorker = plan.contexts.some(
+        (ctx) => ctx === "worker-message" || ctx === "worker-stream-transfer",
+      );
+      const mainFirst = plan.contexts[0] === "main";
+
+      // Use worker only if:
+      // 1. Worker is enabled in config
+      // 2. Worker context is available in plan
+      // 3. Main is NOT the first priority (respecting optimizationHint)
+      if (engineConfig.hasWorker() && preferWorker && !mainFirst) {
+        const session = engineConfig.workerPool
+          ? await WorkerSession.create({
+              workerPool: engineConfig.workerPool,
+              workerURL: engineConfig.workerURL,
+            })
+          : null;
+
+        try {
+          yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+            bytes,
+            options as
+              | ParseOptions<Header>
+              | ParseBinaryOptions<Header>
+              | undefined,
+            session,
+            engineConfig,
+          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+          return;
+        } finally {
+          session?.[Symbol.dispose]();
+        }
+      }
+
+      // JavaScript main thread execution (preferred or fallback)
       const iterator = parseBinaryToIterableIterator(bytes, options);
       yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
         InferCSVRecord<Header, Options>
       >;
+      return;
     }
   }
+
+  // Fallback to JavaScript if no backend succeeded
+  const iterator = parseBinaryToIterableIterator(bytes, options);
+  yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+    InferCSVRecord<Header, Options>
+  >;
 }
 
 export declare namespace parseBinary {

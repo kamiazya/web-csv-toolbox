@@ -6,23 +6,13 @@ import type {
 } from "@/core/types.ts";
 
 /**
- * Build-time constant injected by Vite for worker bundle variants
- * @internal
- */
-declare const __VARIANT__: "main" | "slim";
-
-const parseStringToArrayWasmPath =
-  typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
-    ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-    : "../../parser/api/string/parseStringToArraySyncWASM.main.node.ts";
-
-/**
  * Base interface for Worker requests
  * @internal
  */
 interface BaseParseRequest {
   id: number;
   useWASM?: boolean;
+  useGPU?: boolean;
   resultPort?: MessagePort;
 }
 
@@ -127,6 +117,7 @@ export interface WorkerContext<
 
 /**
  * Helper to stream records incrementally to avoid memory issues.
+ * @deprecated Use streamRecords from outputStrategy.ts instead
  * @internal
  */
 export const streamRecordsToMain = async <
@@ -147,7 +138,6 @@ export const streamRecordsToMain = async <
       };
       workerContext.postMessage(response);
     }
-    // Send done signal
     const doneResponse: ParseStreamResponse<Header> = { id, type: "done" };
     workerContext.postMessage(doneResponse);
   } catch (error) {
@@ -162,6 +152,7 @@ export const streamRecordsToMain = async <
 
 /**
  * Helper to stream records to a MessagePort (for TransferableStream strategy).
+ * @deprecated Use streamRecords from outputStrategy.ts instead
  * @internal
  */
 export const streamRecordsToPort = async <
@@ -179,7 +170,6 @@ export const streamRecordsToPort = async <
         record,
       });
     }
-    // Send done signal
     port.postMessage({ type: "done" });
   } catch (error) {
     port.postMessage({
@@ -191,389 +181,76 @@ export const streamRecordsToPort = async <
 
 /**
  * Worker message handler for CSV parsing.
- * Handles different parsing strategies (regular, WASM, streaming).
+ * Handles different parsing strategies (regular, WASM, GPU, streaming).
  *
  * @internal
  */
 export const createMessageHandler = (workerContext: WorkerContext) => {
   return async (request: ParseRequest) => {
-    const { id, type, useWASM, resultPort } = request;
+    const { id, type, resultPort } = request;
+
+    // Import output strategies
+    const { MainThreadStrategy, MessagePortStrategy } = await import(
+      "@/worker/utils/outputStrategy.ts"
+    );
+
+    // Import handlers directly
+    const { parseStringHandler } = await import(
+      "@/worker/handlers/parseStringHandler.ts"
+    );
+    const { parseStreamHandler } = await import(
+      "@/worker/handlers/parseStreamHandler.ts"
+    );
+    const { parseBinaryHandler } = await import(
+      "@/worker/handlers/parseBinaryHandler.ts"
+    );
+    const { parseBinaryStreamHandler } = await import(
+      "@/worker/handlers/parseBinaryStreamHandler.ts"
+    );
+    const { parseStringStreamHandler } = await import(
+      "@/worker/handlers/parseStringStreamHandler.ts"
+    );
+
+    type AnyHandler = (
+      request: ParseRequest,
+      context: {
+        workerContext: WorkerContext;
+        outputStrategy:
+          | InstanceType<typeof MainThreadStrategy>
+          | InstanceType<typeof MessagePortStrategy>;
+      },
+    ) => Promise<void>;
+
+    // Select handler based on request type
+    const handlers: Record<string, AnyHandler> = {
+      parseString: parseStringHandler as AnyHandler,
+      parseStream: parseStreamHandler as AnyHandler,
+      parseBinary: parseBinaryHandler as AnyHandler,
+      parseBinaryStream: parseBinaryStreamHandler as AnyHandler,
+      parseStringStream: parseStringStreamHandler as AnyHandler,
+    };
+    const handler = handlers[type];
+    if (!handler) {
+      const errorMessage = `Unsupported parse type: ${type}`;
+      if (resultPort) {
+        resultPort.postMessage({ type: "error", error: errorMessage });
+      } else {
+        workerContext.postMessage({ id, type: "error", error: errorMessage });
+      }
+      return;
+    }
+
+    // Select output strategy based on presence of resultPort
+    const outputStrategy = resultPort
+      ? new MessagePortStrategy(resultPort)
+      : new MainThreadStrategy(workerContext, id);
 
     try {
-      // Handle TransferableStream strategy (stream + resultPort)
-      if (resultPort) {
-        if (type === "parseStringStream") {
-          // Type guard: ParseStringStreamRequest
-          const req = request as ParseStringStreamRequest;
-          // Support both 'stream' and 'data' properties for compatibility
-          const stream = req.stream || req.data;
-          if (!stream) {
-            throw new Error(
-              "parseStringStream with resultPort requires 'stream' or 'data' property, but both were undefined. " +
-                "Available properties: " +
-                Object.keys(req).join(", "),
-            );
-          }
-          // Process string stream with TransferableStream strategy
-          const { createStringCSVLexer } = await import(
-            "../../parser/api/model/createStringCSVLexer.ts"
-          );
-          const { createCSVRecordAssembler } = await import(
-            "../../parser/api/model/createCSVRecordAssembler.ts"
-          );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
-          );
-          const { CSVRecordAssemblerTransformer } = await import(
-            "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
-          const lexer = createStringCSVLexer(req.options);
-          const assembler = createCSVRecordAssembler(req.options);
-
-          const resultStream = stream
-            .pipeThrough(new CSVLexerTransformer(lexer))
-            .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
-
-          await streamRecordsToPort(
-            resultPort,
-            convertStreamToAsyncIterableIterator(resultStream),
-          );
-          return;
-        }
-
-        if (type === "parseBinaryStream") {
-          // Type guard: ParseUint8ArrayStreamRequest
-          const req = request as ParseUint8ArrayStreamRequest;
-          // Support both 'stream' and 'data' properties for compatibility
-          const stream = req.stream || req.data;
-          if (!stream) {
-            throw new Error(
-              "parseBinaryStream with resultPort requires 'stream' or 'data' property, but both were undefined. " +
-                "Available properties: " +
-                Object.keys(req).join(", "),
-            );
-          }
-          // Process binary stream with TransferableStream strategy
-          const { createStringCSVLexer } = await import(
-            "../../parser/api/model/createStringCSVLexer.ts"
-          );
-          const { createCSVRecordAssembler } = await import(
-            "../../parser/api/model/createCSVRecordAssembler.ts"
-          );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
-          );
-          const { CSVRecordAssemblerTransformer } = await import(
-            "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-
-          const { charset, fatal, ignoreBOM, decompression } =
-            req.options ?? {};
-
-          const decoderOptions: TextDecoderOptions = {};
-          if (fatal !== undefined) decoderOptions.fatal = fatal;
-          if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;
-
-          // Convert binary stream to text stream then parse
-          const textStream = decompression
-            ? stream
-                .pipeThrough(
-                  new DecompressionStream(
-                    decompression,
-                  ) as unknown as TransformStream<Uint8Array, Uint8Array>,
-                )
-                .pipeThrough(
-                  new TextDecoderStream(
-                    charset ?? "utf-8",
-                    decoderOptions,
-                  ) as unknown as TransformStream<Uint8Array, string>,
-                )
-            : stream.pipeThrough(
-                new TextDecoderStream(
-                  charset ?? "utf-8",
-                  decoderOptions,
-                ) as unknown as TransformStream<Uint8Array, string>,
-              );
-
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
-          const lexer = createStringCSVLexer(req.options);
-          const assembler = createCSVRecordAssembler(req.options);
-
-          const resultStream = textStream
-            .pipeThrough(new CSVLexerTransformer(lexer))
-            .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
-
-          await streamRecordsToPort(
-            resultPort,
-            convertStreamToAsyncIterableIterator(resultStream),
-          );
-          return;
-        }
-      }
-
-      // Handle traditional message-based strategies
-      if (type === "parseString") {
-        // Type guard: ParseStringRequest
-        const req = request as ParseStringRequest;
-        if (typeof req.data === "string") {
-          if (useWASM) {
-            // Dynamic import WASM implementation
-            try {
-              const { parseStringToArraySyncWASM } = await import(
-                /* @vite-ignore */ parseStringToArrayWasmPath
-              );
-              await streamRecordsToMain(
-                workerContext,
-                id,
-                parseStringToArraySyncWASM(req.data, req.options),
-              );
-              return;
-            } catch (_error) {
-              // Fall back to regular parser if WASM is not available
-              const { parseStringToIterableIterator } = await import(
-                "../../parser/api/string/parseStringToIterableIterator.ts"
-              );
-              await streamRecordsToMain(
-                workerContext,
-                id,
-                parseStringToIterableIterator(req.data, req.options),
-              );
-              return;
-            }
-          } else {
-            // Use regular parser with iterator
-            const { parseStringToIterableIterator } = await import(
-              "../../parser/api/string/parseStringToIterableIterator.ts"
-            );
-            await streamRecordsToMain(
-              workerContext,
-              id,
-              parseStringToIterableIterator(req.data, req.options),
-            );
-            return;
-          }
-        }
-      } else if (type === "parseStream") {
-        // Type guard: ParseStringStreamRequest
-        const req = request as ParseStringStreamRequest;
-        if (req.data instanceof ReadableStream) {
-          // Stream processing (WASM not supported for streams)
-          const { createStringCSVLexer } = await import(
-            "../../parser/api/model/createStringCSVLexer.ts"
-          );
-          const { createCSVRecordAssembler } = await import(
-            "../../parser/api/model/createCSVRecordAssembler.ts"
-          );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
-          );
-          const { CSVRecordAssemblerTransformer } = await import(
-            "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
-          const lexer = createStringCSVLexer(req.options);
-          const assembler = createCSVRecordAssembler(req.options);
-
-          const resultStream = req.data
-            .pipeThrough(new CSVLexerTransformer(lexer))
-            .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
-
-          // Convert stream to async iterable and stream records incrementally
-          await streamRecordsToMain(
-            workerContext,
-            id,
-            convertStreamToAsyncIterableIterator(resultStream),
-          );
-          return;
-        }
-      } else if (type === "parseBinaryStream") {
-        // Type guard: ParseUint8ArrayStreamRequest
-        const req = request as ParseUint8ArrayStreamRequest;
-        if (req.data instanceof ReadableStream) {
-          // Binary stream processing
-          const { createStringCSVLexer } = await import(
-            "../../parser/api/model/createStringCSVLexer.ts"
-          );
-          const { createCSVRecordAssembler } = await import(
-            "../../parser/api/model/createCSVRecordAssembler.ts"
-          );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
-          );
-          const { CSVRecordAssemblerTransformer } = await import(
-            "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-
-          const { charset, fatal, ignoreBOM, decompression } =
-            req.options ?? {};
-
-          const decoderOptions2: TextDecoderOptions = {};
-          if (fatal !== undefined) decoderOptions2.fatal = fatal;
-          if (ignoreBOM !== undefined) decoderOptions2.ignoreBOM = ignoreBOM;
-
-          // Convert binary stream to text stream then parse
-          const textStream = decompression
-            ? req.data
-                .pipeThrough(
-                  new DecompressionStream(
-                    decompression,
-                  ) as unknown as TransformStream<Uint8Array, Uint8Array>,
-                )
-                .pipeThrough(
-                  new TextDecoderStream(
-                    charset ?? "utf-8",
-                    decoderOptions2,
-                  ) as unknown as TransformStream<Uint8Array, string>,
-                )
-            : req.data.pipeThrough(
-                new TextDecoderStream(
-                  charset ?? "utf-8",
-                  decoderOptions2,
-                ) as unknown as TransformStream<Uint8Array, string>,
-              );
-
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
-          const lexer = createStringCSVLexer(req.options);
-          const assembler = createCSVRecordAssembler(req.options);
-
-          const resultStream = textStream
-            .pipeThrough(new CSVLexerTransformer(lexer))
-            .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
-
-          // Convert stream to async iterable and stream records incrementally
-          await streamRecordsToMain(
-            workerContext,
-            id,
-            convertStreamToAsyncIterableIterator(resultStream),
-          );
-          return;
-        }
-      } else if (type === "parseBinary") {
-        // Type guard: ParseBinaryRequest
-        const req = request as ParseBinaryRequest;
-
-        if (useWASM) {
-          // Convert (and optionally decompress) then use WASM
-          try {
-            const {
-              charset = "utf-8",
-              fatal,
-              ignoreBOM,
-              decompression,
-            } = req.options ?? {};
-
-            const decoderOptions3: TextDecoderOptions = {};
-            if (fatal !== undefined) decoderOptions3.fatal = fatal;
-            if (ignoreBOM !== undefined) decoderOptions3.ignoreBOM = ignoreBOM;
-
-            const asBytes =
-              req.data instanceof Uint8Array
-                ? req.data
-                : req.data instanceof ArrayBuffer
-                  ? new Uint8Array(req.data)
-                  : new Uint8Array(
-                      req.data.buffer,
-                      req.data.byteOffset,
-                      req.data.byteLength,
-                    );
-            let decoded: string;
-            if (decompression) {
-              // Check for DecompressionStream support (may not be available in all Worker contexts)
-              if (typeof DecompressionStream === "undefined") {
-                throw new Error(
-                  "DecompressionStream is not available in this worker context. " +
-                    "Decompress the data on the main thread before passing to worker.",
-                );
-              }
-              const decompressed = await new Response(
-                new ReadableStream<Uint8Array>({
-                  start(c) {
-                    c.enqueue(asBytes);
-                    c.close();
-                  },
-                }).pipeThrough(
-                  new DecompressionStream(
-                    decompression,
-                  ) as unknown as TransformStream<Uint8Array, Uint8Array>,
-                ),
-              ).arrayBuffer();
-              decoded = new TextDecoder(charset, decoderOptions3).decode(
-                decompressed,
-              );
-            } else {
-              decoded = new TextDecoder(charset, decoderOptions3).decode(
-                asBytes,
-              );
-            }
-            const { parseStringToArraySyncWASM } = await import(
-              /* @vite-ignore */ parseStringToArrayWasmPath
-            );
-            await streamRecordsToMain(
-              workerContext,
-              id,
-              parseStringToArraySyncWASM(decoded, req.options),
-            );
-            return;
-          } catch (_error) {
-            // Fall back to regular parser if WASM is not available
-            const { parseBinaryToIterableIterator } = await import(
-              "../../parser/api/binary/parseBinaryToIterableIterator.ts"
-            );
-            await streamRecordsToMain(
-              workerContext,
-              id,
-              parseBinaryToIterableIterator(req.data, req.options),
-            );
-            return;
-          }
-        } else {
-          // Use regular binary parser with iterator
-          const { parseBinaryToIterableIterator } = await import(
-            "../../parser/api/binary/parseBinaryToIterableIterator.ts"
-          );
-          await streamRecordsToMain(
-            workerContext,
-            id,
-            parseBinaryToIterableIterator(req.data, req.options),
-          );
-          return;
-        }
-      } else {
-        throw new Error(`Unsupported parse type: ${type}`);
-      }
+      await handler(request, { workerContext, outputStrategy });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      // Send error to the appropriate destination
-      if (resultPort) {
-        // Send error via resultPort for TransferableStream strategy
-        resultPort.postMessage({
-          type: "error",
-          error: errorMessage,
-        });
-      } else {
-        // Send error via workerContext for message-streaming strategy
-        const errorResponse: ParseStreamResponse = {
-          id,
-          type: "error",
-          error: errorMessage,
-        };
-        workerContext.postMessage(errorResponse);
-      }
+      outputStrategy.sendError(errorMessage);
     }
   };
 };

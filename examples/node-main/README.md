@@ -1,6 +1,6 @@
-# Node.js (Main)
+# Node.js (Main) - Engine Test Suite
 
-This example uses the main entry (`web-csv-toolbox`) in Node.js. The main entry auto-initializes WASM on first WASM use.
+This example tests JavaScript and WASM engines with web-csv-toolbox in Node.js.
 
 ## Run
 
@@ -15,20 +15,51 @@ pnpm install
 pnpm start
 ```
 
-- Recommended Node.js: 20.6+ (WASM loader relies on `import.meta.resolve`).
+- **Required Node.js: 24.0+** (uses `using` syntax for explicit resource management).
 
-## Using Presets (optional)
+## Engine Availability
+
+| Engine | Status | Notes |
+|--------|--------|-------|
+| JavaScript (stable) | ✅ Available | Pure JS, maximum compatibility |
+| WASM | ✅ Available | Fast parsing, auto-initialized |
+| Worker | ⚠️ Available | Requires worker setup |
+| GPU (WebGPU) | ❌ Not available | Browser-only feature |
+
+## What's tested
+
+1. **stable() Preset** - JavaScript engine with `EnginePresets.stable()`
+2. **WASM Direct** - Using `parseStringToArraySyncWASM`
+3. **WASM via Config** - Using `engine: { wasm: true }`
+4. **Performance** - JS vs WASM comparison (1000 rows)
+
+## Using Presets
 
 ```ts
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
+// JavaScript engine (maximum compatibility)
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast() // Worker + WASM
+  engine: EnginePresets.stable()
+})) {
+  // ...
+}
+
+// WASM engine (faster)
+for await (const record of parseString(csv, {
+  engine: { wasm: true, worker: false, gpu: false }
 })) {
   // ...
 }
 ```
 
-## Cleanup
+## For GPU Testing
 
-This example doesn’t create a WorkerPool. If you use a pool, call `pool.terminate()` when done.
+GPU (WebGPU) is only available in browser environments. Use the `browser-engine-test` example:
+
+```bash
+cd ../browser-engine-test
+pnpm install
+pnpm dev          # Interactive browser testing
+pnpm test:gpu     # Headless GPU tests with Playwright
+```

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>web-csv-toolbox - Engine Test Suite</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #007acc;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #555;
+      margin-top: 30px;
+    }
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #007acc;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .test-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .test-header h3 {
+      margin: 0;
+      color: #333;
+    }
+    button {
+      background: #007acc;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    button:hover:not(:disabled) {
+      background: #005a9e;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result-box {
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .result-box.loading {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+    }
+    .result-box.success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+    }
+    .result-box.error {
+      background: #f8d7da;
+      border-left: 4px solid #dc3545;
+    }
+    .result-box.warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+    }
+    .result-box.info {
+      background: #e7f3ff;
+      border-left: 4px solid #007acc;
+    }
+    .result-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 10px 0 0 0;
+      font-size: 12px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    .badge.success {
+      background: #28a745;
+      color: white;
+    }
+    .badge.warning {
+      background: #ffc107;
+      color: #333;
+    }
+    .badge.error {
+      background: #dc3545;
+      color: white;
+    }
+    #gpu-status {
+      font-size: 14px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+    .run-all-section {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .run-all-section button {
+      background: #28a745;
+      padding: 15px 40px;
+      font-size: 16px;
+    }
+    .run-all-section button:hover:not(:disabled) {
+      background: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>web-csv-toolbox - Engine Test Suite</h1>
+
+  <div class="info-box">
+    <strong>Purpose:</strong> Test and compare different parsing engines (JavaScript, WASM, Worker, GPU).
+    <br>
+    <strong>Usage:</strong> Click individual test buttons or "Run All Tests" to execute tests.
+    <br>
+    <strong>Automated Testing:</strong> Use Playwright with <code>pnpm test</code> to run headless tests.
+  </div>
+
+  <h2>GPU Status</h2>
+  <div id="gpu-status">Checking WebGPU availability...</div>
+
+  <div class="run-all-section">
+    <button id="btn-run-all">Run All Tests</button>
+  </div>
+
+  <div class="grid">
+    <!-- JavaScript Engine Test -->
+    <div class="test-section">
+      <div class="test-header">
+        <h3>JavaScript Engine (stable)</h3>
+        <button id="btn-test-js">Run Test</button>
+      </div>
+      <p>Pure JavaScript implementation. Maximum compatibility, runs on main thread.</p>
+      <div id="result-js"></div>
+    </div>
+
+    <!-- WASM Engine Test -->
+    <div class="test-section">
+      <div class="test-header">
+        <h3>WASM Engine</h3>
+        <button id="btn-test-wasm">Run Test</button>
+      </div>
+      <p>WebAssembly-based parsing. Faster than JS, runs on main thread.</p>
+      <div id="result-wasm"></div>
+    </div>
+
+    <!-- Worker Engine Test -->
+    <div class="test-section">
+      <div class="test-header">
+        <h3>Worker Engine (recommended)</h3>
+        <button id="btn-test-worker">Run Test</button>
+      </div>
+      <p>WASM in Web Worker. Non-blocking UI, good performance.</p>
+      <div id="result-worker"></div>
+    </div>
+
+    <!-- GPU Engine Test -->
+    <div class="test-section">
+      <div class="test-header">
+        <h3>GPU Engine (turbo)</h3>
+        <button id="btn-test-gpu">Run Test</button>
+      </div>
+      <p>WebGPU-accelerated parsing. Maximum speed for large files.</p>
+      <div id="result-gpu"></div>
+    </div>
+  </div>
+
+  <h2>Performance Comparison</h2>
+  <div class="test-section">
+    <div class="test-header">
+      <h3>10,000 Row Benchmark</h3>
+      <button id="btn-test-perf">Run Benchmark</button>
+    </div>
+    <p>Compare parsing speed across all available engines with a larger dataset.</p>
+    <div id="result-perf"></div>
+  </div>
+
+  <div class="warning-box">
+    <strong>Note for Headless GPU Testing:</strong>
+    <br>
+    To test GPU in headless Chrome, use these flags:
+    <pre>--headless=new --use-angle=vulkan --enable-features=Vulkan --disable-vulkan-surface --enable-unsafe-webgpu</pre>
+    See <a href="https://developer.chrome.com/blog/supercharge-web-ai-testing" target="_blank">Chrome WebGPU Testing Guide</a> for details.
+  </div>
+
+  <script type="module" src="./index.ts"></script>
+</body>
+</html>

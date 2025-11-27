@@ -9,44 +9,51 @@ Pre-configured engine settings for common use cases.
 
 ## Overview
 
-Engine presets provide convenient configurations that combine worker execution, WASM acceleration, and streaming strategies for optimal performance in different scenarios.
+Engine presets provide convenient configurations that combine worker execution, WASM acceleration, GPU acceleration, and streaming strategies for optimal performance in different scenarios.
 
-**Stability Considerations:**
+**Three Simple Presets:**
 
-- **Most Stable**: `stable` - Uses only standard JavaScript APIs, works everywhere, supports WHATWG Encoding Standard encodings
-- **Stable**: `responsive`, `fast`, `responsiveFast` - Use stable Web Workers and/or WebAssembly APIs but may require bundler configuration
-- **Experimental**: `memoryEfficient`, `balanced` - Use Transferable Streams API which is still evolving and may change (both have automatic stable fallback)
+| Preset | Backend Priority | Context | Use Case |
+|--------|------------------|---------|----------|
+| `stable()` | JS | Main thread | Maximum compatibility, server-side |
+| `recommended()` | WASM > JS | Worker | UI responsiveness + performance (default) |
+| `turbo()` | GPU > WASM > JS | Main thread | Maximum speed (>10MB files) |
 
-**All presets are functions** that optionally accept configuration options like `workerPool`, `workerURL`, `arrayBufferThreshold`, `backpressureCheckInterval`, `queuingStrategy`, and `onFallback`.
-
-**Each preset is optimized for specific performance characteristics:**
-- Parse speed (execution time)
-- UI responsiveness (non-blocking)
-- Memory efficiency
-- Stability
+**All presets are functions** that optionally accept configuration options like `workerPool`, `workerURL`, `arrayBufferThreshold`, `backpressureCheckInterval`, `queuingStrategy`, `optimizationHint`, and `onFallback`.
 
 **Basic usage:**
 ```typescript
-engine: EnginePresets.balanced()
+import { parseString, EnginePresets } from 'web-csv-toolbox';
+
+// Recommended for most browser applications
+for await (const record of parseString(csv, {
+  engine: EnginePresets.recommended()
+})) {
+  console.log(record);
+}
 ```
 
 **With WorkerPool:**
 ```typescript
 import { ReusableWorkerPool } from 'web-csv-toolbox';
 const pool = new ReusableWorkerPool({ maxWorkers: 4 });
-engine: EnginePresets.balanced({ workerPool: pool })
+engine: EnginePresets.recommended({ workerPool: pool })
+```
+
+**With fallback tracking:**
+```typescript
+engine: EnginePresets.turbo({
+  onFallback: (info) => console.warn(`Fallback: ${info.reason}`)
+})
 ```
 
 ## Quick Reference
 
-| Preset | Optimization Target | Worker | WASM | Strategy | Stability |
-|--------|---------------------|--------|------|----------|-----------|
-| `stable` | Stability | ❌ | ❌ | - | ⭐ Most Stable |
-| `responsive` | UI responsiveness | ✅ | ❌ | message-streaming | ✅ Stable |
-| `memoryEfficient` | Memory efficiency | ✅ | ❌ | stream-transfer | ⚠️ Experimental |
-| `fast` | Parse speed | ❌ | ✅ | - | ✅ Stable |
-| `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | message-streaming | ✅ Stable |
-| `balanced` | Balanced (general-purpose) | ✅ | ❌ | stream-transfer | ⚠️ Experimental |
+| Preset | Backend | Context | Worker | WASM | GPU | Default Hint |
+|--------|---------|---------|--------|------|-----|--------------|
+| `stable()` | JS only | Main thread | - | - | - | `responsive` |
+| `recommended()` | WASM > JS | Worker | Yes | Yes | - | `balanced` |
+| `turbo()` | GPU > WASM > JS | Main thread | - | Yes | Yes | `speed` |
 
 ## Available Presets
 
@@ -55,34 +62,35 @@ engine: EnginePresets.balanced({ workerPool: pool })
 ```typescript
 {
   worker: false,
-  wasm: false
+  wasm: false,
+  gpu: false,
+  optimizationHint: "responsive"
 }
 ```
 
-**Description:** Most stable configuration using only standard JavaScript APIs.
+**Description:** Maximum compatibility configuration using only standard JavaScript APIs.
 
-**Optimization target:** Stability
+**Backend:** JS
+**Context:** Main thread
 
 **Performance characteristics:**
 - Parse speed: Standard (JavaScript execution)
-- UI responsiveness: ❌ Blocks main thread
+- UI responsiveness: Blocks main thread
 - Memory efficiency: Standard
-- Stability: ⭐ Most stable (standard JavaScript APIs only)
+- Stability: Most stable (standard JavaScript APIs only)
 
 **Trade-offs:**
-- ✅ Most stable: Uses only standard JavaScript APIs
-- ✅ No worker initialization overhead
-- ✅ No worker communication overhead
-- ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-- ✅ Supports all quotation characters
-- ✅ Works everywhere without configuration
-- ❌ Blocks main thread during parsing
+- Works everywhere without configuration
+- Supports WHATWG Encoding Standard encodings (via TextDecoder)
+- Supports all quotation characters
+- No worker/WASM initialization overhead
+- Blocks main thread during parsing
 
 **Use when:**
-- Stability is the highest priority
-- UI blocking is acceptable
-- Server-side parsing
+- Server-side parsing (Node.js, Deno)
 - Maximum compatibility required
+- UI blocking is acceptable
+- Non-UTF-8 encodings needed
 
 **Example:**
 ```typescript
@@ -97,248 +105,55 @@ for await (const record of parseString(csv, {
 
 ---
 
-### `EnginePresets.responsive()`
+### `EnginePresets.recommended()`
 
 ```typescript
 {
   worker: true,
-  wasm: false,
-  workerStrategy: "message-streaming"
+  wasm: true,
+  gpu: false,
+  workerStrategy: "stream-transfer",
+  optimizationHint: "balanced"
 }
 ```
 
-**Description:** UI responsiveness optimized configuration.
+**Description:** Balanced configuration for browser applications. Uses WASM for speed and Worker for non-blocking UI. Automatically falls back when features are unavailable.
 
-**Optimization target:** UI responsiveness (non-blocking)
+**Backend:** WASM > JS
+**Context:** Worker (with stream-transfer) > Main (fallback)
 
 **Performance characteristics:**
-- Parse speed: Slower (worker communication overhead)
-- UI responsiveness: ✅ Non-blocking (worker execution)
-- Memory efficiency: Standard
-- Stability: ✅ Stable (Web Workers API)
+- Parse speed: Fast (WASM acceleration when available)
+- UI responsiveness: Non-blocking (worker execution)
+- Memory efficiency: Optimized (zero-copy stream transfer when supported)
+- Stability: Stable with automatic fallback
 
 **Trade-offs:**
-- ✅ Non-blocking UI: Parsing runs in worker thread
-- ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-- ✅ Supports all quotation characters
-- ✅ Works on all browsers including Safari
-- ⚠️ Worker communication overhead: Data transfer between threads
-- ⚠️ Requires bundler configuration for worker URL
+- Non-blocking UI: Parsing runs in worker thread
+- Fast parsing: WASM acceleration when UTF-8
+- Memory efficient: Zero-copy stream transfer when supported
+- Automatic fallback to message-streaming on Safari
+- Requires bundler configuration for worker URL
 
 **Use when:**
-- UI responsiveness is critical
-- Browser applications with interactive UI
-- Broad encoding support required
-- Safari compatibility needed
+- Browser applications (recommended default)
+- UI responsiveness is important
+- Good performance without blocking
 
 **Example:**
 ```typescript
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
+// Recommended for most browser applications
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsive()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // UI stays responsive!
 }
 ```
 
----
-
-### `EnginePresets.memoryEfficient()`
-
-```typescript
-{
-  worker: true,
-  wasm: false,
-  workerStrategy: "stream-transfer"
-}
-```
-
-**Description:** Memory efficiency optimized configuration.
-
-**Optimization target:** Memory efficiency
-
-**Performance characteristics:**
-- Parse speed: Slower (worker communication overhead)
-- UI responsiveness: ✅ Non-blocking (worker execution)
-- Memory efficiency: ✅ Optimized (zero-copy stream transfer)
-- Stability: ⚠️ Experimental (Transferable Streams API)
-
-**Trade-offs:**
-- ✅ Memory efficient: Zero-copy stream transfer when supported
-- ✅ Non-blocking UI: Parsing runs in worker thread
-- ✅ Constant memory usage for streaming workloads
-- ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-- ✅ Supports all quotation characters
-- ✅ Automatic fallback to message-streaming on Safari
-- ⚠️ Experimental API: Transferable Streams may change
-- ⚠️ Worker communication overhead: Data transfer between threads
-
-**Use when:**
-- Memory efficiency is important
-- Streaming large CSV files
-- Chrome/Firefox/Edge browsers (auto-fallback on Safari)
-
-**Example:**
-```typescript
-import { parse, EnginePresets } from 'web-csv-toolbox';
-
-const response = await fetch('huge-data.csv');
-
-for await (const record of parse(response, {
-  engine: EnginePresets.memoryEfficient()
-})) {
-  console.log(record);
-  // Memory: O(1) per record
-}
-```
-
----
-
-### `EnginePresets.fast()`
-
-```typescript
-{
-  worker: false,
-  wasm: true
-}
-```
-
-**Description:** Parse speed optimized configuration.
-
-**Optimization target:** Parse speed (execution time)
-
-**Performance characteristics:**
-- Parse speed: ✅ Fast (compiled WASM code, no worker overhead)
-- UI responsiveness: ❌ Blocks main thread
-- Memory efficiency: Standard
-- Stability: ✅ Stable (WebAssembly standard)
-
-**Trade-offs:**
-- ✅ Fast parse speed: Compiled WASM code
-- ✅ No worker initialization overhead
-- ✅ No worker communication overhead
-- ⚠️ WASM implementation may change in future versions
-- ❌ Blocks main thread during parsing
-- ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
-- ❌ Requires loadWASM() initialization
-
-**Use when:**
-- Parse speed is the highest priority
-- UI blocking is acceptable
-- UTF-8 CSV files with double-quote
-- Server-side parsing
-
-**Limitations:**
-- Only supports UTF-8 encoding
-- Only supports double-quote (`"`) as quotation character
-- Must call `loadWASM()` before use
-
-**Example:**
-```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-for await (const record of parseString(csv, {
-  engine: EnginePresets.fast()
-})) {
-  console.log(record);
-}
-```
-
----
-
-### `EnginePresets.responsiveFast()`
-
-```typescript
-{
-  worker: true,
-  wasm: true,
-  workerStrategy: "message-streaming"
-}
-```
-
-**Description:** UI responsiveness + parse speed optimized configuration.
-
-**Optimization target:** UI responsiveness + parse speed
-
-**Performance characteristics:**
-- Parse speed: Fast (compiled WASM code) but slower than fast() due to worker overhead
-- UI responsiveness: ✅ Non-blocking (worker execution)
-- Memory efficiency: Standard
-- Stability: ✅ Stable (Web Workers + WebAssembly)
-
-**Trade-offs:**
-- ✅ Non-blocking UI: Parsing runs in worker thread
-- ✅ Fast parse speed: Compiled WASM code
-- ⚠️ Worker communication overhead: Slower than fast() on main thread
-- ⚠️ Requires bundler configuration for worker URL
-- ⚠️ WASM implementation may change in future versions
-- ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
-- ❌ Requires loadWASM() initialization
-
-**Use when:**
-- Both UI responsiveness and parse speed are important
-- UTF-8 CSV files with double-quote
-- Browser applications requiring non-blocking parsing
-
-**Example:**
-```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast()
-})) {
-  console.log(record);
-  // Fast + non-blocking!
-}
-```
-
----
-
-### `EnginePresets.balanced()`
-
-```typescript
-{
-  worker: true,
-  wasm: false,
-  workerStrategy: "stream-transfer"
-}
-```
-
-**Description:** Balanced configuration for general-purpose CSV processing.
-
-**Optimization target:** Balanced (UI responsiveness + memory efficiency + broad compatibility)
-
-**Performance characteristics:**
-- Parse speed: Slower (worker communication overhead)
-- UI responsiveness: ✅ Non-blocking (worker execution)
-- Memory efficiency: ✅ Optimized (zero-copy stream transfer when supported)
-- Stability: ⚠️ Experimental (Transferable Streams) with stable fallback
-
-**Trade-offs:**
-- ✅ Non-blocking UI: Parsing runs in worker thread
-- ✅ Memory efficient: Zero-copy stream transfer when supported
-- ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-- ✅ Supports all quotation characters
-- ✅ Automatic fallback to message-streaming on Safari
-- ✅ Broad compatibility: Handles user uploads with various encodings
-- ⚠️ Experimental API: Transferable Streams may change
-- ⚠️ Worker communication overhead: Data transfer between threads
-
-**Use when:**
-- General-purpose CSV processing
-- Broad encoding support required
-- Safari compatibility needed (auto-fallback)
-- User-uploaded files with various encodings
-
-**Example:**
+**Example with WorkerPool:**
 ```typescript
 import { parseStringStream, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox';
 
@@ -352,51 +167,59 @@ app.post('/validate-csv', async (c) => {
   const csvStream = c.req.raw.body?.pipeThrough(new TextDecoderStream());
 
   for await (const record of parseStringStream(csvStream, {
-    engine: EnginePresets.balanced({ workerPool: pool })
+    engine: EnginePresets.recommended({ workerPool: pool })
   })) {
-    // Process securely...
+    // Process records...
   }
 });
 ```
 
-**Example with Custom Blob Reading Threshold:**
+---
+
+### `EnginePresets.turbo()`
+
 ```typescript
-import { parseBlob, EnginePresets } from 'web-csv-toolbox';
-
-// Optimize for small files: always use arrayBuffer up to 512KB
-const config = EnginePresets.balanced({
-  arrayBufferThreshold: 512 * 1024  // 512KB
-});
-
-for await (const record of parseBlob(file, {
-  engine: config
-})) {
-  console.log(record);
+{
+  worker: false,
+  wasm: true,
+  gpu: true,
+  optimizationHint: "speed"
 }
 ```
 
-**Example with Advanced Performance Tuning (Experimental):**
+**Description:** Maximum speed configuration. Uses GPU acceleration when available, with WASM and JS fallbacks. Runs on main thread for maximum throughput.
+
+**Backend:** GPU > WASM > JS
+**Context:** Main thread
+
+**Performance characteristics:**
+- Parse speed: Maximum (GPU acceleration when available)
+- UI responsiveness: Blocks main thread
+- Memory efficiency: Standard
+- Stability: Stable with automatic fallback
+
+**Trade-offs:**
+- Maximum throughput: GPU acceleration when available
+- Automatic fallback: WASM > JS when GPU unavailable
+- No worker communication overhead
+- Blocks main thread during parsing
+- GPU: WebGPU required (Chrome 113+, experimental)
+
+**Use when:**
+- Processing large CSV files (>10MB)
+- Maximum throughput is critical
+- UI blocking is acceptable
+- Batch processing scenarios
+
+**Example:**
 ```typescript
-import { parseBlob, EnginePresets } from 'web-csv-toolbox';
+import { parseString, EnginePresets } from 'web-csv-toolbox';
 
-// Configuration tuned for potential high-throughput scenarios
-const config = EnginePresets.balanced({
-  arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB
-  backpressureCheckInterval: {
-    lexer: 200,      // Check every 200 tokens (less frequent checks)
-    assembler: 20    // Check every 20 records (less frequent checks)
-  },
-  queuingStrategy: {
-    // Tune entire pipeline with larger buffers
-    lexerWritable: new CountQueuingStrategy({ highWaterMark: 200 }),
-    lexerReadable: new CountQueuingStrategy({ highWaterMark: 100 }),
-    assemblerWritable: new CountQueuingStrategy({ highWaterMark: 100 }),
-    assemblerReadable: new CountQueuingStrategy({ highWaterMark: 50 })
-  }
-});
-
-for await (const record of parseBlob(file, {
-  engine: config
+// Maximum speed for large files
+for await (const record of parseString(csv, {
+  engine: EnginePresets.turbo({
+    onFallback: (info) => console.warn(`Fallback: ${info.reason}`)
+  })
 })) {
   console.log(record);
 }
@@ -404,88 +227,102 @@ for await (const record of parseBlob(file, {
 
 ---
 
+## Deprecated Aliases
+
+The following preset names are deprecated but still available for backward compatibility:
+
+| Deprecated Name | Maps To | Notes |
+|-----------------|---------|-------|
+| `balanced()` | `recommended()` | Use `recommended()` instead |
+| `responsive()` | `recommended()` | Use `recommended()` instead |
+| `memoryEfficient()` | `recommended()` | Use `recommended()` instead |
+| `fast()` | `turbo()` | Use `turbo()` instead |
+| `responsiveFast()` | `turbo()` | Use `turbo()` instead |
+| `gpuAccelerated()` | `turbo()` | Use `turbo()` instead |
+| `ultraFast()` | `turbo()` | Use `turbo()` instead |
+
+**Migration example:**
+```typescript
+// Before (deprecated)
+engine: EnginePresets.balanced()
+engine: EnginePresets.responsiveFast()
+
+// After (recommended)
+engine: EnginePresets.recommended()
+engine: EnginePresets.turbo()
+```
+
+---
+
 ## Decision Guide
 
-### By Optimization Priority
+### By Priority
 
-Choose the preset that matches your primary optimization goal:
-
-- **Stability:** `stable` ⭐
-  - Most stable: Uses only standard JavaScript APIs
-  - WHATWG Encoding Standard encodings and all quotation characters
-  - Works everywhere without configuration
-  - Accept main thread blocking
-
-- **UI Responsiveness:** `responsive` or `balanced`
-  - `responsive`: ✅ Stable, WHATWG Encoding Standard encodings
-  - `balanced`: ⚠️ Experimental (with stable fallback), memory efficient
-
-- **Parse Speed:** `fast` or `responsiveFast`
-  - `fast`: ✅ Fastest parse time, blocks main thread, UTF-8 only
-  - `responsiveFast`: ✅ Non-blocking + fast parsing, UTF-8 only
-
-- **Memory Efficiency:** `memoryEfficient` or `balanced`
-  - `memoryEfficient`: ⚠️ Experimental, zero-copy streams
-  - `balanced`: ⚠️ Experimental (with stable fallback), general-purpose
-
-### By Use Case
-
-- **General-purpose CSV processing:** `balanced`
-  - Balanced performance characteristics
-  - WHATWG Encoding Standard encodings supported
-  - Automatic Safari fallback
-  - ⚠️ Uses experimental API but has stable fallback
-
-- **Maximum stability required:** `stable`
-  - Uses only standard JavaScript APIs
-  - WHATWG Encoding Standard encodings
-  - Accept main thread blocking
-
-- **Browser with interactive UI:** `responsive` or `balanced`
-  - `responsive`: ✅ Stable, WHATWG Encoding Standard encodings
-  - `balanced`: ⚠️ Experimental with fallback, memory efficient
-
-- **Server-side parsing:** `stable` or `fast`
-  - `stable`: ⭐ Most stable, WHATWG Encoding Standard encodings
-  - `fast`: ✅ Faster parse speed, UTF-8 only
-
-- **UTF-8 files only:** `fast` or `responsiveFast`
-  - `fast`: ✅ Fastest parse time, blocks main thread
-  - `responsiveFast`: ✅ Non-blocking + fast parsing
-
-- **Streaming large files:** `memoryEfficient` or `balanced`
-  - Zero-copy streams when supported
-  - Constant memory usage
-  - ⚠️ Both use experimental API
+| Priority | Recommended Preset |
+|----------|-------------------|
+| Maximum compatibility | `stable()` |
+| UI responsiveness + performance | `recommended()` |
+| Maximum speed | `turbo()` |
 
 ### By Environment
 
-- **Browser (UI-critical):** `responsive` or `balanced`
-  - Non-blocking UI
-  - WHATWG Encoding Standard encodings
-  - `responsive`: ✅ Stable
-  - `balanced`: ⚠️ Experimental with stable fallback
+| Environment | Recommended Preset |
+|-------------|-------------------|
+| Browser (general) | `recommended()` |
+| Browser (large files, blocking OK) | `turbo()` |
+| Server-side (Node.js/Deno) | `stable()` |
+| Safari required | `recommended()` (auto-fallback) |
 
-- **Browser (UTF-8 only):** `responsiveFast`
-  - ✅ Stable
-  - Non-blocking UI + fast parsing
-  - Compiled WASM code
+### By Use Case
 
-- **Server-side:** `stable` or `fast`
-  - No worker overhead
-  - Blocking acceptable
-  - `stable`: ⭐ Most stable, WHATWG Encoding Standard encodings
-  - `fast`: ✅ Faster parsing, UTF-8 only
+| Use Case | Recommended Preset |
+|----------|-------------------|
+| Interactive web application | `recommended()` |
+| Batch processing | `turbo()` |
+| File upload validation | `recommended()` |
+| CLI tool | `stable()` or `turbo()` |
+| API server | `stable()` |
 
-- **Safari required:** `responsive` or `balanced`
-  - `responsive`: ✅ Stable, message-streaming
-  - `balanced`: ⚠️ Experimental with automatic fallback
+---
 
-- **Chrome/Firefox/Edge only:** `memoryEfficient`
-  - ⚠️ Experimental
-  - Zero-copy stream transfer
+## Preset Options
 
-**Note:** Choose execution strategy based on your requirements (stability, blocking vs non-blocking, parse speed, memory efficiency, encoding support) rather than file size alone. Benchmark your specific use case to determine the best approach.
+All presets accept the following options:
+
+### Common Options (`PresetOptions`)
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `arrayBufferThreshold` | `number` | Blob reading strategy threshold (default: 1MB) |
+| `backpressureCheckInterval` | `{ lexer: number, assembler: number }` | Backpressure monitoring intervals |
+| `queuingStrategy` | `QueuingStrategyConfig` | Internal streaming queuing strategies |
+| `optimizationHint` | `OptimizationHint` | Override the preset's default hint |
+| `onFallback` | `(info: EngineFallbackInfo) => void` | Callback when fallback occurs |
+
+### Worker Options (`WorkerPresetOptions`)
+
+Available for `recommended()`:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `workerPool` | `WorkerPool` | Worker pool for managing worker lifecycle |
+| `workerURL` | `string \| URL` | Custom worker URL |
+
+**Example with options:**
+```typescript
+import { parseBlob, EnginePresets } from 'web-csv-toolbox';
+
+const config = EnginePresets.recommended({
+  arrayBufferThreshold: 512 * 1024,  // 512KB
+  onFallback: (info) => {
+    console.warn(`Fallback occurred: ${info.reason}`);
+  }
+});
+
+for await (const record of parseBlob(file, { engine: config })) {
+  console.log(record);
+}
+```
 
 ---
 
@@ -493,5 +330,6 @@ Choose the preset that matches your primary optimization goal:
 
 - **[Execution Strategies](../explanation/execution-strategies.md)** - Understanding how strategies work
 - **[How-To: Secure CSV Processing](../how-to-guides/secure-csv-processing.md)** - Using presets securely
+- **[Using with Bundlers](../how-to-guides/using-with-bundlers.md)** - Bundler configuration for workers
 
 For advanced configuration options beyond presets, refer to the [`EngineConfig`](https://kamiazya.github.io/web-csv-toolbox/interfaces/EngineConfig.html) type documentation in your IDE or the [API Reference](https://kamiazya.github.io/web-csv-toolbox/).

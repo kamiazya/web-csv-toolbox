@@ -40,7 +40,7 @@ import { parseString, EnginePresets, ReusableWorkerPool } from 'web-csv-toolbox'
 
 const pool = new ReusableWorkerPool({ maxWorkers: 2 });
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast({ workerPool: pool })
+  engine: EnginePresets.turbo({ workerPool: pool })
 })) {
   // ...
 }

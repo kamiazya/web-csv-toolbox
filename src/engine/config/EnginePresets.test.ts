@@ -22,148 +22,100 @@ describe("EnginePresets", () => {
     }).toThrow(TypeError);
   });
 
+  // ============================================
+  // Main Presets (stable, recommended, turbo)
+  // ============================================
+
   describe("stable", () => {
     it("should return correct configuration without options", () => {
       expect(EnginePresets.stable()).toEqual({
         worker: false,
         wasm: false,
+        gpu: false,
+        optimizationHint: "responsive",
       });
     });
 
-    it("should ignore options (main thread doesn't use them)", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.stable({ workerPool: pool } as any);
-      expect(config).toEqual({
-        worker: false,
-        wasm: false,
-        workerPool: pool,
-      });
+    it("should accept onFallback callback", () => {
+      const onFallback = vi.fn();
+      const config = EnginePresets.stable({ onFallback });
+      expect(config.onFallback).toBe(onFallback);
+    });
+
+    it("should allow overriding optimizationHint", () => {
+      const config = EnginePresets.stable({ optimizationHint: "speed" });
+      expect(config.optimizationHint).toBe("speed");
+    });
+
+    it("should match inline snapshot", () => {
+      expect(EnginePresets.stable()).toMatchInlineSnapshot(`
+        {
+          "gpu": false,
+          "optimizationHint": "responsive",
+          "wasm": false,
+          "worker": false,
+        }
+      `);
     });
   });
 
-  describe("responsive", () => {
+  describe("recommended", () => {
     it("should return correct configuration without options", () => {
-      expect(EnginePresets.responsive()).toEqual({
+      expect(EnginePresets.recommended()).toEqual({
         worker: true,
-        wasm: false,
-        workerStrategy: "message-streaming",
+        wasm: true,
+        gpu: false,
+        workerStrategy: "stream-transfer",
+        optimizationHint: "balanced",
       });
     });
 
     it("should accept workerPool option", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.responsive({ workerPool: pool });
+      const config = EnginePresets.recommended({ workerPool: pool });
       expect(config).toEqual({
         worker: true,
-        wasm: false,
-        workerStrategy: "message-streaming",
+        wasm: true,
+        gpu: false,
+        workerStrategy: "stream-transfer",
+        optimizationHint: "balanced",
         workerPool: pool,
       });
     });
 
     it("should accept workerURL option", () => {
-      const config = EnginePresets.responsive({
+      const config = EnginePresets.recommended({
         workerURL: "/custom-worker.js",
       });
       expect(config).toEqual({
         worker: true,
-        wasm: false,
-        workerStrategy: "message-streaming",
+        wasm: true,
+        gpu: false,
+        workerStrategy: "stream-transfer",
+        optimizationHint: "balanced",
         workerURL: "/custom-worker.js",
       });
     });
 
     it("should accept onFallback callback", () => {
       const onFallback = vi.fn();
-      const config = EnginePresets.responsive({
+      const config = EnginePresets.recommended({
         onFallback,
       }) as WorkerEngineConfig;
       expect(config.onFallback).toBe(onFallback);
     });
-  });
 
-  describe("memoryEfficient", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.memoryEfficient()).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-      });
-    });
-
-    it("should accept all options", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const onFallback = vi.fn();
-      const config = EnginePresets.memoryEfficient({
-        workerPool: pool,
-        workerURL: "/worker.js",
-        onFallback,
-      });
-      expect(config).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-        workerPool: pool,
-        workerURL: "/worker.js",
-        onFallback,
-      });
-    });
-  });
-
-  describe("fast", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.fast()).toEqual({
-        worker: false,
-        wasm: true,
-      });
-    });
-  });
-
-  describe("responsiveFast", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.responsiveFast()).toEqual({
-        worker: true,
-        wasm: true,
-        workerStrategy: "message-streaming",
-      });
-    });
-
-    it("should accept workerPool option", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.responsiveFast({ workerPool: pool });
-      expect(config).toEqual({
-        worker: true,
-        wasm: true,
-        workerStrategy: "message-streaming",
-        workerPool: pool,
-      });
-    });
-  });
-
-  describe("balanced", () => {
-    it("should return correct configuration without options", () => {
-      expect(EnginePresets.balanced()).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-      });
-    });
-
-    it("should accept workerPool option", () => {
-      const pool = new WorkerPool({ maxWorkers: 4 });
-      const config = EnginePresets.balanced({ workerPool: pool });
-      expect(config).toEqual({
-        worker: true,
-        wasm: false,
-        workerStrategy: "stream-transfer",
-        workerPool: pool,
-      });
+    it("should allow overriding optimizationHint", () => {
+      const config = EnginePresets.recommended({ optimizationHint: "speed" });
+      expect(config.optimizationHint).toBe("speed");
     });
 
     it("should match inline snapshot", () => {
-      expect(EnginePresets.balanced()).toMatchInlineSnapshot(`
+      expect(EnginePresets.recommended()).toMatchInlineSnapshot(`
         {
-          "wasm": false,
+          "gpu": false,
+          "optimizationHint": "balanced",
+          "wasm": true,
           "worker": true,
           "workerStrategy": "stream-transfer",
         }
@@ -171,10 +123,104 @@ describe("EnginePresets", () => {
     });
   });
 
+  describe("turbo", () => {
+    it("should return correct configuration without options", () => {
+      expect(EnginePresets.turbo()).toEqual({
+        worker: false,
+        wasm: true,
+        gpu: true,
+        optimizationHint: "speed",
+      });
+    });
+
+    it("should accept onFallback callback", () => {
+      const onFallback = vi.fn();
+      const config = EnginePresets.turbo({ onFallback });
+      expect(config.onFallback).toBe(onFallback);
+    });
+
+    it("should allow overriding optimizationHint", () => {
+      const config = EnginePresets.turbo({ optimizationHint: "balanced" });
+      expect(config.optimizationHint).toBe("balanced");
+    });
+
+    it("should match inline snapshot", () => {
+      expect(EnginePresets.turbo()).toMatchInlineSnapshot(`
+        {
+          "gpu": true,
+          "optimizationHint": "speed",
+          "wasm": true,
+          "worker": false,
+        }
+      `);
+    });
+  });
+
+  // ============================================
+  // Deprecated Aliases
+  // ============================================
+
+  describe("deprecated aliases", () => {
+    describe("balanced (alias for recommended)", () => {
+      it("should return same configuration as recommended", () => {
+        expect(EnginePresets.balanced()).toEqual(EnginePresets.recommended());
+      });
+
+      it("should pass options through", () => {
+        const onFallback = vi.fn();
+        expect(EnginePresets.balanced({ onFallback })).toEqual(
+          EnginePresets.recommended({ onFallback }),
+        );
+      });
+    });
+
+    describe("responsive (alias for recommended)", () => {
+      it("should return same configuration as recommended", () => {
+        expect(EnginePresets.responsive()).toEqual(EnginePresets.recommended());
+      });
+    });
+
+    describe("memoryEfficient (alias for recommended)", () => {
+      it("should return same configuration as recommended", () => {
+        expect(EnginePresets.memoryEfficient()).toEqual(
+          EnginePresets.recommended(),
+        );
+      });
+    });
+
+    describe("fast (alias for turbo)", () => {
+      it("should return same configuration as turbo", () => {
+        expect(EnginePresets.fast()).toEqual(EnginePresets.turbo());
+      });
+    });
+
+    describe("responsiveFast (alias for turbo)", () => {
+      it("should return same configuration as turbo", () => {
+        expect(EnginePresets.responsiveFast()).toEqual(EnginePresets.turbo());
+      });
+    });
+
+    describe("gpuAccelerated (alias for turbo)", () => {
+      it("should return same configuration as turbo", () => {
+        expect(EnginePresets.gpuAccelerated()).toEqual(EnginePresets.turbo());
+      });
+    });
+
+    describe("ultraFast (alias for turbo)", () => {
+      it("should return same configuration as turbo", () => {
+        expect(EnginePresets.ultraFast()).toEqual(EnginePresets.turbo());
+      });
+    });
+  });
+
+  // ============================================
+  // Integration Tests
+  // ============================================
+
   describe("Integration tests", () => {
     it("should create new config objects each call (not cached)", () => {
-      const config1 = EnginePresets.responsiveFast();
-      const config2 = EnginePresets.responsiveFast();
+      const config1 = EnginePresets.recommended();
+      const config2 = EnginePresets.recommended();
 
       expect(config1).toEqual(config2);
       expect(config1).not.toBe(config2); // Different objects
@@ -184,10 +230,10 @@ describe("EnginePresets", () => {
       const pool1 = new WorkerPool({ maxWorkers: 2 });
       const pool2 = new WorkerPool({ maxWorkers: 4 });
 
-      const config1 = EnginePresets.responsiveFast({
+      const config1 = EnginePresets.recommended({
         workerPool: pool1,
       }) as WorkerEngineConfig;
-      const config2 = EnginePresets.responsiveFast({
+      const config2 = EnginePresets.recommended({
         workerPool: pool2,
       }) as WorkerEngineConfig;
 
@@ -195,17 +241,32 @@ describe("EnginePresets", () => {
       expect(config2.workerPool).toBe(pool2);
     });
 
-    it("should support all preset names as type", () => {
-      const presets: Array<keyof typeof EnginePresets> = [
+    it("should support all main preset names", () => {
+      const mainPresets: Array<"stable" | "recommended" | "turbo"> = [
         "stable",
+        "recommended",
+        "turbo",
+      ];
+
+      for (const presetName of mainPresets) {
+        const config = EnginePresets[presetName]();
+        expect(config).toBeDefined();
+        expect(typeof config).toBe("object");
+      }
+    });
+
+    it("should support all deprecated preset names", () => {
+      const deprecatedPresets: Array<keyof typeof EnginePresets> = [
+        "balanced",
         "responsive",
         "memoryEfficient",
         "fast",
         "responsiveFast",
-        "balanced",
+        "gpuAccelerated",
+        "ultraFast",
       ];
 
-      for (const presetName of presets) {
+      for (const presetName of deprecatedPresets) {
         const config = EnginePresets[presetName]();
         expect(config).toBeDefined();
         expect(typeof config).toBe("object");
@@ -213,19 +274,23 @@ describe("EnginePresets", () => {
     });
   });
 
+  // ============================================
+  // Real-world Usage Patterns
+  // ============================================
+
   describe("Real-world usage patterns", () => {
     it("should work in server environment with shared pool", () => {
       // Simulating a server with a shared worker pool
       const sharedPool = new WorkerPool({ maxWorkers: 4 });
 
       // Request 1
-      const config1 = EnginePresets.balanced({
+      const config1 = EnginePresets.recommended({
         workerPool: sharedPool,
       }) as WorkerEngineConfig;
       expect(config1.workerPool).toBe(sharedPool);
 
       // Request 2
-      const config2 = EnginePresets.balanced({
+      const config2 = EnginePresets.recommended({
         workerPool: sharedPool,
       }) as WorkerEngineConfig;
       expect(config2.workerPool).toBe(sharedPool);
@@ -236,7 +301,7 @@ describe("EnginePresets", () => {
     });
 
     it("should work with custom worker URL", () => {
-      const config = EnginePresets.responsiveFast({
+      const config = EnginePresets.recommended({
         workerURL: new URL("/workers/csv-parser.js", "https://example.com"),
       }) as WorkerEngineConfig;
 
@@ -246,10 +311,36 @@ describe("EnginePresets", () => {
       );
     });
 
-    it("should work with fallback callback", () => {
+    it("should work with fallback callback for turbo preset", () => {
       const fallbacks: any[] = [];
 
-      const config = EnginePresets.responsiveFast({
+      const config = EnginePresets.turbo({
+        onFallback: (info) => fallbacks.push(info),
+      });
+
+      // Simulate fallback
+      config.onFallback?.({
+        requestedConfig: {
+          worker: false,
+          wasm: true,
+          gpu: true,
+        },
+        actualConfig: {
+          worker: false,
+          wasm: true,
+          gpu: false,
+        },
+        reason: "WebGPU not supported",
+      });
+
+      expect(fallbacks).toHaveLength(1);
+      expect(fallbacks[0].reason).toBe("WebGPU not supported");
+    });
+
+    it("should work with fallback callback for recommended preset", () => {
+      const fallbacks: any[] = [];
+
+      const config = EnginePresets.recommended({
         onFallback: (info) => fallbacks.push(info),
       }) as WorkerEngineConfig;
 
@@ -261,9 +352,8 @@ describe("EnginePresets", () => {
           workerStrategy: "stream-transfer",
         },
         actualConfig: {
-          worker: true,
+          worker: false,
           wasm: true,
-          workerStrategy: "message-streaming",
         },
         reason: "Transferable streams not supported",
       });

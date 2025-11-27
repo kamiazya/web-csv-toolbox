@@ -189,7 +189,7 @@ Worker execution works across different JavaScript runtimes with platform-specif
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -205,7 +205,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Worker threads are used automatically
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
@@ -238,7 +238,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Request stream-transfer strategy
 for await (const record of parseString(csv, {
-  engine: EnginePresets.memoryEfficient()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
@@ -295,7 +295,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Worker with message streaming (Safari compatible)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsive()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -303,7 +303,7 @@ for await (const record of parse(csv, {
 
 // Worker with stream transfer (best for Chrome/Firefox/Edge)
 for await (const record of parse(response, {
-  engine: EnginePresets.memoryEfficient()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // Zero-copy streaming!
@@ -458,7 +458,7 @@ await loadWASM();
 
 // Parse with WASM
 for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -472,7 +472,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 // WASM is automatically initialized on first use
 // However, this can cause a noticeable delay on the first parse
 for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -565,7 +565,7 @@ await loadWASM();
 
 // Best of both worlds: Worker + WASM + stream-transfer
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
   // Fast + non-blocking!
@@ -580,7 +580,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 // WASM is automatically initialized on first use
 // However, this can cause a delay on the first parse
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -640,63 +640,199 @@ Memory: O(1) - constant per record (streaming)
 
 ```mermaid
 graph TD
-    Start{File Size} --> |< 100KB| MainThread[mainThread]
+    Start{File Size} --> |< 100KB| Stable[stable<br/>main thread]
     Start --> |100KB-1MB| Choice1{Browser?}
-    Choice1 --> |Yes| Worker1[worker]
-    Choice1 --> |No| MainThread
+    Choice1 --> |Yes| Recommended[recommended<br/>worker + wasm]
+    Choice1 --> |No| Stable
 
-    Start --> |1MB-10MB| Balanced[balanced<br/>worker + stream]
+    Start --> |1MB-10MB| Recommended2[recommended<br/>worker + stream]
 
     Start --> |10MB-100MB| UTF8{UTF-8?}
-    UTF8 --> |Yes| Fastest[fastest<br/>worker + wasm + stream]
-    UTF8 --> |No| Balanced2[balanced<br/>any encoding]
+    UTF8 --> |Yes| Turbo[turbo<br/>gpu/wasm acceleration]
+    UTF8 --> |No| Recommended3[recommended<br/>any encoding]
 
-    Start --> |> 100MB| Stream[balanced<br/>with streaming input]
+    Start --> |> 100MB| Turbo2[turbo<br/>maximum speed]
 
-    style MainThread fill:#e1f5ff
-    style Worker1 fill:#ccffcc
-    style Balanced fill:#ccffcc
-    style Fastest fill:#ffffcc
-    style Balanced2 fill:#ccffcc
-    style Stream fill:#ccffcc
+    style Stable fill:#e1f5ff
+    style Recommended fill:#ccffcc
+    style Recommended2 fill:#ccffcc
+    style Turbo fill:#ffffcc
+    style Recommended3 fill:#ccffcc
+    style Turbo2 fill:#ffffcc
 ```
 
 ### By Requirements
 
 **Browser - Need UI responsiveness?**
-→ Use worker (`balanced`, `worker`, `fastest`)
+→ Use `recommended()` (Worker + WASM)
 
 **Server - Need high throughput?**
-→ Use worker with pool (`balanced`, `fastest`)
+→ Use `turbo()` or `stable()` with `WorkerPool`
 
 **Need maximum speed?**
-→ Use WASM (`wasm`, `fastest`)
+→ Use `turbo()` (GPU > WASM > JS)
 
 **Need broad format support (non-UTF-8, custom quotes)?**
-→ Avoid WASM (`balanced`, `worker`, `mainThread`)
+→ Use `stable()` or `recommended()` (JS backend)
 
 **Browser - Safari support required?**
-→ Use message-streaming (`worker`, not `workerStreamTransfer`)
+→ Use `recommended()` (auto-fallback to message-streaming)
 
 **Need maximum compatibility?**
-→ Use `mainThread` (works everywhere)
+→ Use `stable()` (works everywhere)
 
 ### By Environment
 
 **Browser (UI-critical):**
-→ `balanced` or `fastest` (keep UI responsive)
+→ `recommended()` (keep UI responsive)
 
 **Node.js/Deno/Bun (server-side):**
-→ `balanced` with `WorkerPool` (concurrent processing)
+→ `stable()` or `turbo()` (no worker overhead)
 
 **Safari:**
-→ `worker` or `balanced` (auto-fallback to message-streaming)
+→ `recommended()` (auto-fallback to message-streaming)
 
 **Chrome/Firefox/Edge:**
-→ `fastest` or `workerStreamTransfer` (zero-copy streams)
+→ `turbo()` (GPU/WASM acceleration)
 
 **CLI tools / Scripts:**
-→ `mainThread` or `wasm` (no worker overhead)
+→ `stable()` or `turbo()` (main thread, no worker overhead)
+
+---
+
+## Execution Path Resolution
+
+web-csv-toolbox uses an internal `ExecutionPathResolver` to determine the optimal execution path based on your configuration and environment. Understanding how it works helps you make better decisions about engine configuration.
+
+### How It Works
+
+The resolver considers:
+
+1. **Engine configuration** (what you requested via `engine` option)
+2. **Environment capabilities** (what your runtime supports)
+3. **Input type** (string, binary, stream)
+4. **Output format** (object or array)
+5. **Optimization hint** (speed, memory, balanced, responsive)
+
+Based on these factors, it generates a prioritized list of backends and contexts to try.
+
+### Backend Priority by Optimization Hint
+
+Each optimization hint prioritizes backends differently:
+
+| Hint | Backend Priority | Rationale |
+|------|-----------------|-----------|
+| `speed` | GPU > WASM > JS | GPU achieves GB/s throughput; WASM is 1-2x faster than JS |
+| `memory` | JS > WASM > GPU | JS streaming has O(1) memory; GPU has initialization overhead |
+| `balanced` | WASM > GPU > JS | WASM is consistently fast and widely available |
+| `responsive` | JS > WASM > GPU | JS has fastest initialization, no async setup overhead |
+
+### Context Priority by Optimization Hint
+
+| Hint | Context Priority | Rationale |
+|------|-----------------|-----------|
+| `speed` | main > worker-stream-transfer > worker-message | Main thread is fastest (no communication overhead) |
+| `memory` | main > worker-stream-transfer > worker-message | Main thread minimizes memory (no worker overhead) |
+| `balanced` | worker-stream-transfer > worker-message > main | Worker prevents UI blocking |
+| `responsive` | worker-stream-transfer > worker-message > main | Worker keeps UI responsive |
+
+### Backend Constraints
+
+Not all backends work in all situations:
+
+| Backend | Charset | Output Format | Requirements |
+|---------|---------|---------------|--------------|
+| **JS** | Any | Any | Always available |
+| **WASM** | UTF-8 only | `object` only | `engine.wasm: true` |
+| **GPU** | UTF-8 only | `object` only | `engine.gpu: true` + WebGPU support |
+
+**Important:** WASM and GPU backends are automatically disabled when:
+- `charset` is not UTF-8 (e.g., `charset: 'shift-jis'`)
+- `outputFormat: 'array'` is specified
+
+```typescript
+// ❌ WASM/GPU disabled - non-UTF-8 charset
+for await (const record of parse(csv, {
+  charset: 'shift-jis',
+  engine: { wasm: true }  // Ignored, falls back to JS
+})) { ... }
+
+// ❌ WASM/GPU disabled - array output format
+for await (const record of parse(csv, {
+  outputFormat: 'array',
+  engine: { wasm: true }  // Ignored, falls back to JS
+})) { ... }
+
+// ✅ WASM enabled - UTF-8 + object output (default)
+for await (const record of parse(csv, {
+  engine: { wasm: true }
+})) { ... }
+```
+
+### Context Constraints (Stream Inputs)
+
+For stream inputs (`ReadableStream<string>` or `ReadableStream<Uint8Array>`):
+
+| Context | Stream Input Support | Requirements |
+|---------|---------------------|--------------|
+| `main` | ✅ Always | None |
+| `worker-stream-transfer` | ✅ With Transferable Streams | Browser support (Chrome, Firefox, Edge) |
+| `worker-message` | ❌ Not supported | N/A |
+
+**Important:** Stream inputs do NOT support `worker-message` context because `ReadableStream` cannot be serialized via `postMessage`. The resolver automatically excludes this context for stream inputs.
+
+```typescript
+// Stream input: only main or worker-stream-transfer contexts available
+const stream = response.body.pipeThrough(new TextDecoderStream());
+
+for await (const record of parseStringStream(stream, {
+  engine: { worker: true }  // Uses worker-stream-transfer if supported
+})) { ... }
+
+// On Safari (no Transferable Streams): falls back to main thread
+// On Chrome/Firefox/Edge: uses worker-stream-transfer
+```
+
+### Non-Stream Inputs
+
+For non-stream inputs (strings, `ArrayBuffer`, `Uint8Array`):
+
+| Context | Non-Stream Input Support | Requirements |
+|---------|-------------------------|--------------|
+| `main` | ✅ Always | None |
+| `worker-message` | ✅ Always | Worker support |
+| `worker-stream-transfer` | ❌ Not used | N/A (unnecessary overhead) |
+
+**Important:** Non-stream inputs use `worker-message` instead of `worker-stream-transfer` because the data is serializable and stream transfer would add unnecessary overhead.
+
+### Preset Defaults
+
+| Preset | Optimization Hint | Backends Enabled | Default Context |
+|--------|------------------|------------------|-----------------|
+| `stable()` | `responsive` | JS only | main |
+| `recommended()` | `balanced` | WASM > JS | worker-stream-transfer > worker-message > main |
+| `turbo()` | `speed` | GPU > WASM > JS | main |
+
+### Fallback Behavior
+
+When a backend or context fails, the resolver tries the next option in priority order:
+
+```
+GPU (main) → WASM (main) → JS (worker-stream-transfer) → JS (worker-message) → JS (main)
+```
+
+You can be notified of fallbacks using the `onFallback` callback:
+
+```typescript
+for await (const record of parse(csv, {
+  engine: {
+    ...EnginePresets.turbo(),
+    onFallback: ({ requestedConfig, actualConfig, reason }) => {
+      console.warn(`Fallback: ${reason}`);
+    }
+  }
+})) { ... }
+```
 
 ---
 

@@ -7,7 +7,12 @@ group: How-to Guides
 
 This guide shows you how to maximize CSV parsing performance using WebAssembly in web-csv-toolbox.
 
-> **Note for Bundler Users**: When using WASM with bundlers (Vite, Webpack, etc.), you must explicitly configure WASM file loading. When combining WASM with Workers (e.g., `EnginePresets.responsiveFast()`), you also need to specify the `workerURL` option. See [How to Use with Bundlers](./using-with-bundlers.md) for detailed configuration.
+> **Note for Bundler Users**:
+> - **Main entry** (`web-csv-toolbox`): WASM auto-initializes from embedded base64. No WASM URL configuration needed.
+> - **Slim entry** (`web-csv-toolbox/slim`): Requires explicit `loadWASM(wasmUrl)` with bundler-resolved URL.
+> - **Worker URL**: Always required when using Workers with bundlers (both Main and Slim).
+>
+> See [How to Use with Bundlers](./using-with-bundlers.md) for detailed configuration.
 
 ## Prerequisites
 
@@ -121,7 +126,7 @@ for await (const record of parse(csv, {
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -158,7 +163,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast() // Worker + WASM
+  engine: EnginePresets.recommended() // Worker + WASM (non-blocking)
 })) {
   console.log(record);
   // UI stays responsive
@@ -167,7 +172,7 @@ for await (const record of parse(csv, {
 
 **Benefits:**
 - ✅ Non-blocking UI
-- ✅ Maximum performance
+- ✅ Fast WASM parsing
 - ✅ Best user experience
 
 ---
@@ -178,7 +183,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   await processRecord(record); // Async operation
   // Wait for each record to complete
@@ -196,7 +201,7 @@ const BATCH_SIZE = 1000;
 let batch: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   batch.push(record);
 
@@ -283,7 +288,7 @@ await Promise.all(
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   // ❌ Creates new object for each record
   const transformed = {
@@ -306,7 +311,7 @@ for await (const record of parse(csv, {
 const results: any[] = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   // ✅ Modify record in-place
   (record as any).fullName = `${record.firstName} ${record.lastName}`;
@@ -327,7 +332,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Default: 10MB
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -344,7 +349,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Small fields (typical CSV)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast(),
+  engine: EnginePresets.turbo(),
   maxBufferSize: 1024 * 1024 // 1MB
 })) {
   console.log(record);
@@ -354,7 +359,7 @@ for await (const record of parse(csv, {
 ```typescript
 // Large fields (e.g., embedded JSON, long text)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast(),
+  engine: EnginePresets.turbo(),
   maxBufferSize: 50 * 1024 * 1024 // 50MB
 })) {
   console.log(record);
@@ -376,7 +381,7 @@ for await (const record of parse(csv, {
 const records = [];
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   records.push(record);
 }
@@ -393,7 +398,7 @@ processAllRecords(records); // High memory usage
 
 ```typescript
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   // Process immediately
   await processRecord(record);
@@ -413,7 +418,7 @@ for await (const record of parse(csv, {
 
 ```typescript
 for await (const record of parse(largeCSV, {
-  engine: EnginePresets.responsiveFast() // Single worker
+  engine: { worker: true, wasm: true } // Single worker, no pool
 })) {
   console.log(record);
 }
@@ -468,7 +473,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   // ❌ Expensive validation on every record
   const validated = schema.parse(record);
@@ -492,7 +497,7 @@ const schema = z.object({
 });
 
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   // ✅ Quick check first
   if (record.age && Number(record.age) > 0) {
@@ -524,7 +529,7 @@ async function benchmark(csv: string, label: string) {
   let count = 0;
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.responsiveFast()
+    engine: EnginePresets.turbo()
   })) {
     count++;
   }
@@ -563,7 +568,7 @@ for await (const record of parse(csv, {
 
 // Benchmark Worker + WASM
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   count++;
 }
@@ -639,7 +644,7 @@ export default app;
 ### Before Production
 
 - [ ] Call `loadWASM()` once at startup
-- [ ] Use `EnginePresets.responsiveFast()` for UTF-8 CSV
+- [ ] Use `EnginePresets.turbo()` for UTF-8 CSV
 - [ ] Use `ReusableWorkerPool` to limit concurrent workers
 - [ ] Handle errors gracefully
 - [ ] Set appropriate `maxBufferSize`
@@ -657,7 +662,7 @@ export default app;
 
 **Problem:** Using WASM on main thread in browser
 
-**Solution:** Use `EnginePresets.responsiveFast()` (Worker + WASM)
+**Solution:** Use `EnginePresets.recommended()` (Worker + WASM)
 
 ---
 
@@ -708,7 +713,7 @@ export default app;
 To maximize WASM performance:
 
 1. **Initialize once** - Call `loadWASM()` at startup
-2. **Use presets** - `EnginePresets.responsiveFast()` for optimal config
+2. **Use presets** - `EnginePresets.turbo()` for optimal config
 3. **Combine strategies** - Worker + WASM for best results
 4. **Batch processing** - Process records in batches
 5. **Worker pool** - Limit concurrent workers

@@ -11,20 +11,9 @@ WebGPU CSV Parser is now fully integrated into the web-csv-toolbox Engine system
 ```typescript
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
-// GPU-only (automatic fallback to JavaScript if unavailable)
+// Maximum speed with GPU acceleration (falls back automatically)
 for await (const record of parseString(csv, {
-  engine: EnginePresets.gpuAccelerated()
-})) {
-  console.log(record);
-}
-
-// GPU with WASM fallback (best performance across browsers)
-import { loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-for await (const record of parseString(csv, {
-  engine: EnginePresets.ultraFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -38,7 +27,7 @@ import { parseString } from 'web-csv-toolbox';
 for await (const record of parseString(csv, {
   engine: {
     gpu: true,
-    wasm: false,  // Optional: fallback to WASM
+    wasm: true,  // WASM fallback when GPU unavailable
     onFallback: (info) => {
       console.warn(`GPU unavailable: ${info.reason}`);
     }
@@ -50,12 +39,12 @@ for await (const record of parseString(csv, {
 
 ## Engine Presets
 
-### `EnginePresets.gpuAccelerated()`
+### `EnginePresets.turbo()`
 
-**Best for:** Large files on modern browsers
+**Best for:** Maximum performance with automatic fallback
 
 ```typescript
-EnginePresets.gpuAccelerated({
+EnginePresets.turbo({
   onFallback: (info) => {
     console.warn(`Fallback occurred: ${info.reason}`);
   }
@@ -64,63 +53,26 @@ EnginePresets.gpuAccelerated({
 
 **Configuration:**
 - `gpu: true`
-- `wasm: false`
-- `worker: false`
-
-**Fallback chain:**
-1. WebGPU (if available)
-2. JavaScript (automatic)
-
-**When to use:**
-- Processing large CSV files (>10MB)
-- Chrome/Edge 113+ browsers
-- Maximum throughput is priority
-- Low CPU usage required
-
-**Performance:**
-- ✅ Extremely fast (GB/s throughput)
-- ✅ ~10x CPU usage reduction
-- ✅ 1/10th memory usage
-- ⚠️ ~50-100ms GPU initialization overhead
-
-### `EnginePresets.ultraFast()`
-
-**Best for:** Maximum performance with graceful degradation
-
-```typescript
-import { loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
-EnginePresets.ultraFast({
-  onFallback: (info) => {
-    if (info.from === 'gpu') {
-      console.log('Using WASM fallback');
-    }
-  }
-})
-```
-
-**Configuration:**
-- `gpu: true`
 - `wasm: true`
 - `worker: false`
+- `optimizationHint: "speed"`
 
 **Fallback chain:**
 1. WebGPU (if available)
-2. WASM (if initialized)
+2. WASM (if UTF-8)
 3. JavaScript (last resort)
 
 **When to use:**
-- Need best performance across all browsers
-- Can accept WASM limitations (UTF-8 only) as fallback
-- Want automatic optimization per browser
+- Processing large CSV files (>10MB)
+- Maximum throughput is priority
+- UI blocking is acceptable
 
 **Performance:**
-- ✅ GPU-fast on modern browsers
-- ✅ WASM-fast on older browsers
-- ❌ Blocks main thread on WASM fallback
-- ❌ UTF-8 only on WASM fallback
+- Extremely fast (GB/s throughput with GPU)
+- ~10x CPU usage reduction with GPU
+- Automatic fallback to WASM/JS
+
+> **Note:** Previous presets `gpuAccelerated()` and `ultraFast()` are deprecated aliases for `turbo()`.
 
 ## Configuration Options
 
@@ -156,8 +108,8 @@ interface BaseEngineConfig {
 
 ```typescript
 interface EngineFallbackInfo {
-  from: 'gpu' | 'wasm' | 'worker';
-  to: 'wasm' | 'javascript' | 'message-streaming';
+  requestedConfig: EngineConfig;
+  actualConfig: EngineConfig;
   reason: string;
 }
 ```
@@ -168,22 +120,25 @@ interface EngineFallbackInfo {
 
 | Browser | Version | Status | Notes |
 |---------|---------|--------|-------|
-| Chrome | 113+ | ✅ Stable | Full support |
-| Edge | 113+ | ✅ Stable | Full support |
-| Firefox | 121+ | ⚠️ Experimental | Requires `dom.webgpu.enabled` flag |
-| Safari | TP 185+ | ⚠️ Tech Preview | In development |
+| Chrome | 113+ | Stable | Full support |
+| Edge | 113+ | Stable | Full support |
+| Firefox | 121+ | Experimental | Requires `dom.webgpu.enabled` flag |
+| Safari | TP 185+ | Tech Preview | In development |
 
 ### Feature Detection
 
 ```typescript
-import { isWebGPUAvailable } from 'web-csv-toolbox';
+import { parseString, EnginePresets } from 'web-csv-toolbox';
 
-if (isWebGPUAvailable()) {
-  // Use GPU preset
-  engine: EnginePresets.gpuAccelerated()
-} else {
-  // Use WASM preset
-  engine: EnginePresets.fast()
+// turbo() automatically falls back when GPU unavailable
+for await (const record of parseString(csv, {
+  engine: EnginePresets.turbo({
+    onFallback: (info) => {
+      console.log(`Using fallback: ${info.reason}`);
+    }
+  })
+})) {
+  console.log(record);
 }
 ```
 
@@ -204,9 +159,9 @@ if (isWebGPUAvailable()) {
 
 | Parser | CPU Usage | UI Blocking |
 |--------|-----------|-------------|
-| JavaScript | 100% | ✅ Blocking |
-| WASM | 100% | ✅ Blocking |
-| **WebGPU** | **10%** | ❌ Non-blocking |
+| JavaScript | 100% | Blocking |
+| WASM | 100% | Blocking |
+| **WebGPU** | **10%** | Non-blocking |
 
 ### Memory Usage
 
@@ -227,7 +182,7 @@ import { parseFile, EnginePresets } from 'web-csv-toolbox';
 const file = document.getElementById('upload').files[0];
 
 for await (const record of parseFile(file, {
-  engine: EnginePresets.gpuAccelerated()
+  engine: EnginePresets.turbo()
 })) {
   await database.insert(record);
 }
@@ -242,9 +197,9 @@ import { parseResponse, EnginePresets } from 'web-csv-toolbox';
 const response = await fetch('/api/data.csv');
 
 for await (const record of parseResponse(response, {
-  engine: EnginePresets.gpuAccelerated({
+  engine: EnginePresets.turbo({
     onFallback: (info) => {
-      console.warn(`Using ${info.to} fallback`);
+      console.warn(`Fallback: ${info.reason}`);
     }
   })
 })) {
@@ -255,14 +210,11 @@ for await (const record of parseResponse(response, {
 ### Cross-Browser Optimization
 
 ```typescript
-import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
-
-// Initialize WASM for fallback
-await loadWASM();
+import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Automatically uses best engine per browser
 for await (const record of parseString(csv, {
-  engine: EnginePresets.ultraFast()
+  engine: EnginePresets.turbo()
 })) {
   // GPU on Chrome/Edge
   // WASM on Firefox/Safari
@@ -285,7 +237,7 @@ for await (const record of parseString(csv)) {
 **After (GPU-accelerated):**
 ```typescript
 for await (const record of parseString(csv, {
-  engine: EnginePresets.gpuAccelerated()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -308,16 +260,20 @@ for await (const record of parseString(csv, {
 
 **After (GPU + WASM fallback):**
 ```typescript
-import { loadWASM } from 'web-csv-toolbox';
-
-await loadWASM();
-
 for await (const record of parseString(csv, {
-  engine: EnginePresets.ultraFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
 ```
+
+### From Deprecated Presets
+
+| Deprecated Preset | New Preset |
+|-------------------|------------|
+| `gpuAccelerated()` | `turbo()` |
+| `ultraFast()` | `turbo()` |
+| `fast()` | `turbo()` |
 
 ## Troubleshooting
 
@@ -332,13 +288,16 @@ for await (const record of parseString(csv, {
 
 **Solutions:**
 ```typescript
-// Check availability first
-import { isWebGPUAvailable } from 'web-csv-toolbox';
-
-if (!isWebGPUAvailable()) {
-  console.warn('WebGPU not available, using fallback');
-  // Use WASM or JavaScript preset
-  engine: EnginePresets.fast()
+// turbo() automatically falls back - just track it
+for await (const record of parseString(csv, {
+  engine: EnginePresets.turbo({
+    onFallback: (info) => {
+      console.warn(`GPU unavailable: ${info.reason}`);
+      // Will use WASM or JS automatically
+    }
+  })
+})) {
+  console.log(record);
 }
 ```
 
@@ -348,13 +307,13 @@ if (!isWebGPUAvailable()) {
 
 **Cause:** GPU initialization overhead (~50-100ms)
 
-**Solution:** Use WASM for small files, GPU for large files
+**Solution:** Use `recommended()` for small files, `turbo()` for large files
 ```typescript
 const fileSize = csvData.length;
 
 const engine = fileSize > 1024 * 1024 // 1MB threshold
-  ? EnginePresets.gpuAccelerated()
-  : EnginePresets.fast(); // WASM
+  ? EnginePresets.turbo()
+  : EnginePresets.recommended(); // WASM + Worker
 
 for await (const record of parseString(csvData, { engine })) {
   console.log(record);
@@ -375,7 +334,7 @@ if (navigator.userAgent.includes('Firefox')) {
 }
 
 // Or use automatic fallback
-engine: EnginePresets.ultraFast() // Auto-falls back to WASM
+engine: EnginePresets.turbo() // Auto-falls back to WASM
 ```
 
 ## API Reference
@@ -389,7 +348,7 @@ enum EngineFlags {
   STREAM_TRANSFER = 1 << 2,  // 4
   MESSAGE_STREAMING = 1 << 3,// 8
   STRICT = 1 << 4,           // 16
-  GPU = 1 << 5,              // 32 (NEW)
+  GPU = 1 << 5,              // 32
 }
 ```
 
@@ -476,11 +435,10 @@ For issues related to WebGPU integration:
 
 1. Check browser compatibility
 2. Verify GPU drivers are up to date
-3. Test with `isWebGPUAvailable()` check
-4. Review fallback logs from `onFallback` callback
-5. Report issues at: https://github.com/kamiazya/web-csv-toolbox/issues
+3. Review fallback logs from `onFallback` callback
+4. Report issues at: https://github.com/kamiazya/web-csv-toolbox/issues
 
 ---
 
-**Last Updated:** 2025-11-24
+**Last Updated:** 2025-11-27
 **Version:** 0.14.0+webgpu

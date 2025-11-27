@@ -314,7 +314,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('parseString engine:fast (50 rows)', async () => {
-      for await (const _ of parseString(stringCSV, { engine: EnginePresets.fast() })) {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -324,12 +324,12 @@ if (wasmAvailable) {
 if (isWorkerAvailable) {
   bench = bench
     .add('parseString engine:responsive (50 rows)', async () => {
-      for await (const _ of parseString(stringCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('parseString engine:memoryEfficient (50 rows)', async () => {
-      for await (const _ of parseString(stringCSV, { engine: EnginePresets.memoryEfficient() })) {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     });
@@ -337,7 +337,7 @@ if (isWorkerAvailable) {
   // responsiveFast requires both Worker and WASM
   if (wasmAvailable) {
     bench = bench.add('parseString engine:responsiveFast (50 rows)', async () => {
-      for await (const _ of parseString(stringCSV, { engine: EnginePresets.responsiveFast() })) {
+      for await (const _ of parseString(stringCSV, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -356,7 +356,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('parseString engine:fast (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.fast() })) {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -366,12 +366,12 @@ if (wasmAvailable) {
 if (isWorkerAvailable) {
   bench = bench
     .add('parseString engine:responsive (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('parseString engine:memoryEfficient (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.memoryEfficient() })) {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     });
@@ -379,7 +379,7 @@ if (isWorkerAvailable) {
   // responsiveFast requires both Worker and WASM
   if (wasmAvailable) {
     bench = bench.add('parseString engine:responsiveFast (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.responsiveFast() })) {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -387,7 +387,7 @@ if (isWorkerAvailable) {
 
   bench = bench
     .add('parseString engine:balanced (1000 rows)', async () => {
-      for await (const _ of parseString(largeCSV, { engine: EnginePresets.balanced() })) {
+      for await (const _ of parseString(largeCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     });
@@ -446,27 +446,27 @@ bench = bench
 if (isWorkerAvailable) {
   bench = bench
     .add('Worker perf: tiny (10 rows) - worker', async () => {
-      for await (const _ of parseString(tinyCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(tinyCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('Worker perf: small (100 rows) - worker', async () => {
-      for await (const _ of parseString(smallWorkerCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(smallWorkerCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('Worker perf: medium (1000 rows) - worker', async () => {
-      for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('Worker perf: large (10000 rows) - worker', async () => {
-      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.responsive() })) {
+      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.recommended() })) {
         // noop
       }
     })
     .add('Worker perf: large (10000 rows) - responsiveFast', async () => {
-      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.responsiveFast() })) {
+      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -496,7 +496,7 @@ if (isWorkerAvailable) {
   bench = bench
     .add('Concurrent: Sequential worker', async () => {
       for (const csv of concurrentDatasets) {
-        for await (const _ of parseString(csv, { engine: EnginePresets.responsive() })) {
+        for await (const _ of parseString(csv, { engine: EnginePresets.recommended() })) {
           // noop
         }
       }
@@ -504,7 +504,7 @@ if (isWorkerAvailable) {
     .add('Concurrent: Parallel worker', async () => {
       await Promise.all(
         concurrentDatasets.map(async (csv) => {
-          for await (const _ of parseString(csv, { engine: EnginePresets.responsive() })) {
+          for await (const _ of parseString(csv, { engine: EnginePresets.recommended() })) {
             // noop
           }
         })
@@ -513,7 +513,7 @@ if (isWorkerAvailable) {
     .add('Concurrent: Parallel responsiveFast', async () => {
       await Promise.all(
         concurrentDatasets.map(async (csv) => {
-          for await (const _ of parseString(csv, { engine: EnginePresets.responsiveFast() })) {
+          for await (const _ of parseString(csv, { engine: EnginePresets.turbo() })) {
             // noop
           }
         })
@@ -686,7 +686,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('Engine comparison: wasm (500 rows)', async () => {
-      for await (const _ of parseString(csv500rows, { engine: EnginePresets.fast() })) {
+      for await (const _ of parseString(csv500rows, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -702,7 +702,7 @@ bench = bench
 if (wasmAvailable) {
   bench = bench
     .add('Engine comparison: wasm (5000 rows)', async () => {
-      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.fast() })) {
+      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -867,7 +867,7 @@ if (webgpuAvailable) {
 
   // Warmup GPU
   console.log('\nWarming up GPU...');
-  for await (const _ of parseString(gpuSmall, { engine: EnginePresets.gpuAccelerated() })) {
+  for await (const _ of parseString(gpuSmall, { engine: EnginePresets.turbo() })) {
     // warmup
   }
   console.log('GPU warmup complete.\n');
@@ -876,23 +876,23 @@ if (webgpuAvailable) {
   bench = bench
     // WebGPU basic benchmarks (small datasets - in-memory)
     .add('WebGPU: small (100 rows)', async () => {
-      for await (const _ of parseString(gpuSmall, { engine: EnginePresets.gpuAccelerated() })) {
+      for await (const _ of parseString(gpuSmall, { engine: EnginePresets.turbo() })) {
         // noop
       }
     })
     .add('WebGPU: medium (1000 rows)', async () => {
-      for await (const _ of parseString(gpuMedium, { engine: EnginePresets.gpuAccelerated() })) {
+      for await (const _ of parseString(gpuMedium, { engine: EnginePresets.turbo() })) {
         // noop
       }
     })
     // WebGPU two-pass algorithm benchmarks (long quoted fields)
     .add('WebGPU: longQuoted 300B (two-pass)', async () => {
-      for await (const _ of parseString(gpuLongQuoted300, { engine: EnginePresets.gpuAccelerated() })) {
+      for await (const _ of parseString(gpuLongQuoted300, { engine: EnginePresets.turbo() })) {
         // noop
       }
     })
     .add('WebGPU: longQuoted 1KB (two-pass)', async () => {
-      for await (const _ of parseString(gpuLongQuoted1K, { engine: EnginePresets.gpuAccelerated() })) {
+      for await (const _ of parseString(gpuLongQuoted1K, { engine: EnginePresets.turbo() })) {
         // noop
       }
     });
@@ -905,28 +905,28 @@ if (webgpuAvailable) {
     // Large file benchmarks (file-based streaming) - GPU acceleration shows here
     .add('WebGPU stream: 10MB', async () => {
       for await (const _ of parseBinaryStream(createBinaryFileStream(gpu10MBPath), {
-        engine: EnginePresets.gpuAccelerated(),
+        engine: EnginePresets.turbo(),
       })) {
         // noop
       }
     })
     .add('WebGPU stream: 100MB', async () => {
       for await (const _ of parseBinaryStream(createBinaryFileStream(gpu100MBPath), {
-        engine: EnginePresets.gpuAccelerated(),
+        engine: EnginePresets.turbo(),
       })) {
         // noop
       }
     })
     .add('WebGPU stream: 500MB', async () => {
       for await (const _ of parseBinaryStream(createBinaryFileStream(gpu500MBPath), {
-        engine: EnginePresets.gpuAccelerated(),
+        engine: EnginePresets.turbo(),
       })) {
         // noop
       }
     })
     .add('WebGPU stream: 1GB', async () => {
       for await (const _ of parseBinaryStream(createBinaryFileStream(gpu1GBPath), {
-        engine: EnginePresets.gpuAccelerated(),
+        engine: EnginePresets.turbo(),
       })) {
         // noop
       }
@@ -934,7 +934,7 @@ if (webgpuAvailable) {
     // Long quoted fields with large file (two-pass + streaming)
     .add('WebGPU stream: 500MB longQuoted (two-pass)', async () => {
       for await (const _ of parseBinaryStream(createBinaryFileStream(gpuLongQuoted500MBPath), {
-        engine: EnginePresets.gpuAccelerated(),
+        engine: EnginePresets.turbo(),
       })) {
         // noop
       }

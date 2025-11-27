@@ -166,6 +166,25 @@ importers:
         specifier: 'catalog:'
         version: 0.3.8
 
+  examples/browser-engine-test:
+    dependencies:
+      web-csv-toolbox:
+        specifier: workspace:*
+        version: link:../..
+    devDependencies:
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.56.1
+      '@webgpu/types':
+        specifier: ^0.1.57
+        version: 0.1.66
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+
   examples/hono-secure-api:
     dependencies:
       '@hono/node-server':

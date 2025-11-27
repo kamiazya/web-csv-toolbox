@@ -175,7 +175,11 @@ export function separatorsToTokens(
     // Extract field value (from fieldStart to separator)
     // For LF separators, check if preceding byte is CR (CRLF) and exclude it
     let fieldEnd = sepOffset;
-    if (sepType === SEP_TYPE_LF && sepOffset > fieldStart && data[sepOffset - 1] === 0x0d) {
+    if (
+      sepType === SEP_TYPE_LF &&
+      sepOffset > fieldStart &&
+      data[sepOffset - 1] === 0x0d
+    ) {
       fieldEnd = sepOffset - 1; // Exclude CR from field
     }
     const fieldBytes = data.slice(fieldStart, fieldEnd);
@@ -376,7 +380,11 @@ export function* separatorsToTokensGenerator(
     // Extract and yield field token
     // For LF separators, check if preceding byte is CR (CRLF) and exclude it
     let fieldEnd = sepOffset;
-    if (sepType === SEP_TYPE_LF && sepOffset > fieldStart && data[sepOffset - 1] === 0x0d) {
+    if (
+      sepType === SEP_TYPE_LF &&
+      sepOffset > fieldStart &&
+      data[sepOffset - 1] === 0x0d
+    ) {
       fieldEnd = sepOffset - 1; // Exclude CR from field
     }
     const fieldBytes = data.slice(fieldStart, fieldEnd);

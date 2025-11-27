@@ -168,23 +168,29 @@ import { parseString, loadWASM } from "web-csv-toolbox/slim";
 The example uses `ReusableWorkerPool` to manage Workers:
 
 ```typescript
-using pool = new ReusableWorkerPool({
+// TODO: When Node.js 24 becomes the minimum supported version, use:
+// using pool = new ReusableWorkerPool({ maxWorkers: 2, workerURL: workerUrl });
+const pool = new ReusableWorkerPool({
   maxWorkers: 2,
   workerURL: workerUrl,
 });
 
-for await (const record of parseString(csv, {
-  engine: {
-    worker: true,
-    wasm: true,
-    workerPool: pool,
+try {
+  for await (const record of parseString(csv, {
+    engine: {
+      worker: true,
+      wasm: true,
+      workerPool: pool,
+    }
+  })) {
+    // Process record
   }
-})) {
-  // Process record
+} finally {
+  pool.terminate();
 }
 ```
 
-**Note**: Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly.
+**Note**: When Node.js 24 becomes the minimum supported version, you can use `using` syntax for automatic resource management instead of try-finally.
 
 ## Related Examples
 

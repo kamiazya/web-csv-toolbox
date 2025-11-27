@@ -155,17 +155,17 @@ describe("Workgroup Size Invariance", () => {
     // Specific boundary test cases
     const boundaryCases = [
       // Quote at position 31 (WG=32 boundary)
-      "a".repeat(31) + '"quoted,field",end',
+      `${"a".repeat(31)}"quoted,field",end`,
       // Quote at position 63 (WG=64 boundary)
-      "a".repeat(63) + '"quoted,field",end',
+      `${"a".repeat(63)}"quoted,field",end`,
       // Quote at position 127 (WG=128 boundary)
-      "a".repeat(127) + '"quoted,field",end',
+      `${"a".repeat(127)}"quoted,field",end`,
       // Quote at position 255 (WG=256 boundary)
-      "a".repeat(255) + '"quoted,field",end',
+      `${"a".repeat(255)}"quoted,field",end`,
       // Long quoted field spanning multiple workgroups
-      '"' + "x".repeat(300) + '",end',
+      `"${"x".repeat(300)}",end`,
       // Multiple quotes across boundaries
-      "a".repeat(30) + '"q1",' + "b".repeat(30) + '"q2",end',
+      `${"a".repeat(30)}"q1",${"b".repeat(30)}"q2",end`,
       // PBT counterexample: escaped quotes
       '""\n"","  "\n"""D8?\'",aaa,"Y",dahyoaa',
     ];

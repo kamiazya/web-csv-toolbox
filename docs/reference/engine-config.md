@@ -511,48 +511,49 @@ import { ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 
 const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   workerPool: pool
 });
 ```
 
 **Why:**
 - ✅ Resource protection with WorkerPool
-- ✅ Broad encoding support (no WASM limitation)
+- ✅ WASM acceleration when available
+- ✅ Non-blocking UI with Worker
 - ✅ Automatic fallback on Safari
 
-### Maximum Performance (UTF-8)
+### Maximum Performance
 
 ```typescript
-import { EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { EnginePresets } from 'web-csv-toolbox';
 
-await loadWASM();
-
-const config = EnginePresets.responsiveFast();
+const config = EnginePresets.turbo({
+  onFallback: (info) => console.warn(`Fallback: ${info.reason}`)
+});
 ```
 
 **Why:**
-- ✅ WASM acceleration (improves parsing speed)
-- ✅ Zero-copy streams
-- ✅ Non-blocking UI
+- ✅ GPU acceleration when available
+- ✅ WASM fallback for fast parsing
+- ✅ Maximum throughput
 
 ### Maximum Compatibility
 
 ```typescript
-const config = EnginePresets.responsive();
+const config = EnginePresets.stable();
 ```
 
 **Why:**
-- ✅ Works on all browsers
+- ✅ Works everywhere (browser, Node.js, Deno)
 - ✅ All encodings supported
-- ✅ Reliable message-streaming
+- ✅ No external dependencies
 
 ### Advanced Performance Tuning 🧪
 
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB threshold
   backpressureCheckInterval: {
     lexer: 50,      // Check every 50 tokens (more responsive)
@@ -580,7 +581,7 @@ const config = EnginePresets.balanced({
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   arrayBufferThreshold: 0,  // Always use streaming
   backpressureCheckInterval: {
     lexer: 10,      // Check every 10 tokens (frequent checks)

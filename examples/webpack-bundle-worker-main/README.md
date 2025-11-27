@@ -37,19 +37,25 @@ The example uses `ReusableWorkerPool` to manage Workers:
 ```typescript
 import workerUrl from "web-csv-toolbox/worker";
 
-using pool = new ReusableWorkerPool({
+// TODO: When Node.js 24 becomes the minimum supported version, use:
+// using pool = new ReusableWorkerPool({ maxWorkers: 2, workerURL: workerUrl });
+const pool = new ReusableWorkerPool({
   maxWorkers: 2,
   workerURL: workerUrl,
 });
 
-for await (const record of parseString(csv, {
-  engine: {
-    worker: true,
-    wasm: true,
-    workerPool: pool,
+try {
+  for await (const record of parseString(csv, {
+    engine: {
+      worker: true,
+      wasm: true,
+      workerPool: pool,
+    }
+  })) {
+    // Process record
   }
-})) {
-  // Process record
+} finally {
+  pool.terminate();
 }
 ```
 
@@ -66,4 +72,4 @@ The example includes a Webpack configuration that:
 - Workers are automatically detected and imported via `web-csv-toolbox/worker`
 - **Larger bundle**: Main worker bundle includes embedded WASM
 - **Trade-off**: Faster initialization but larger bundle size compared to slim entry
-- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.recommended()` / `responsiveFast()` are also available.

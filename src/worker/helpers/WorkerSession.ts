@@ -23,32 +23,44 @@ export interface WorkerSessionOptions {
  * - If workerPool is provided: Use pool's worker (reusable, manual pool cleanup)
  * - If workerPool is NOT provided: Create disposable worker (auto-cleanup on dispose)
  *
- * Use `using` syntax for automatic cleanup:
+ * @example Node.js 24+ (using syntax):
  * ```typescript
  * using session = await WorkerSession.create();
  * const records = await sendWorkerMessage(session, { ... });
  * // Worker is automatically terminated when leaving scope (if disposable)
  * ```
  *
- * @example Disposable worker (one-time use)
+ * @example Node.js < 24 (try-finally):
  * ```typescript
- * using session = await WorkerSession.create();
- * const records = await sendWorkerMessage(session.getWorker(), {
- *   id: session.getNextRequestId(),
- *   type: "parseString",
- *   data: csv,
- *   options: serializeOptions(options),
- * });
- * // Worker automatically terminated
+ * const session = await WorkerSession.create();
+ * try {
+ *   const records = await sendWorkerMessage(session.getWorker(), {
+ *     id: session.getNextRequestId(),
+ *     type: "parseString",
+ *     data: csv,
+ *     options: serializeOptions(options),
+ *   });
+ * } finally {
+ *   session.dispose();
+ * }
  * ```
  *
  * @example With WorkerPool (reusable)
  * ```typescript
+ * // Node.js 24+:
  * using pool = new WorkerPool({ maxWorkers: 3 });
  * using session = await WorkerSession.create({ workerPool: pool });
- * const records1 = await sendWorkerMessage(session.getWorker(), { ... });
- * const records2 = await sendWorkerMessage(session.getWorker(), { ... });
- * // Worker returned to pool, pool cleanup happens when pool disposes
+ *
+ * // Node.js < 24:
+ * const pool = new WorkerPool({ maxWorkers: 3 });
+ * const session = await WorkerSession.create({ workerPool: pool });
+ * try {
+ *   const records1 = await sendWorkerMessage(session.getWorker(), { ... });
+ *   const records2 = await sendWorkerMessage(session.getWorker(), { ... });
+ * } finally {
+ *   session.dispose();
+ *   pool.dispose();
+ * }
  * ```
  */
 export class WorkerSession implements Disposable {
@@ -102,12 +114,23 @@ export class WorkerSession implements Disposable {
    * Dispose the session.
    * - If using a pool: Releases the worker back to the pool (behavior depends on pool type)
    * - If disposable: Terminates the worker
+   *
+   * Call this method manually in try-finally blocks for Node.js < 24 compatibility.
+   * When Node.js 24 becomes the minimum supported version, use `using` syntax instead.
    */
-  [Symbol.dispose](): void {
+  dispose(): void {
     if (this.workerPool) {
       this.workerPool.releaseWorker(this.worker);
     } else {
       this.worker.terminate();
     }
+  }
+
+  /**
+   * Symbol.dispose implementation for explicit resource management.
+   * @see https://github.com/tc39/proposal-explicit-resource-management
+   */
+  [Symbol.dispose](): void {
+    this.dispose();
   }
 }

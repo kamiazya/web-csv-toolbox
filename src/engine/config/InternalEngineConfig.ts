@@ -4,6 +4,7 @@ import type {
   WorkerCommunicationStrategy,
   WorkerPool,
 } from "@/core/types.ts";
+import type { OptimizationHint } from "@/execution/OptimizationHint.ts";
 
 /**
  * Engine flags bitmask (internal use).
@@ -30,11 +31,15 @@ export class InternalEngineConfig {
   readonly workerURL?: string | URL | undefined;
   readonly workerPool?: WorkerPool | undefined;
   readonly onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+  readonly optimizationHint?: OptimizationHint | undefined;
 
   constructor(config?: EngineConfig) {
     if (config) {
       // onFallback is always stored (works for both worker and main thread fallbacks)
       this.onFallback = config.onFallback;
+
+      // Store optimization hint
+      this.optimizationHint = config.optimizationHint;
 
       // Extract worker-specific properties only if worker is enabled
       if (config.worker) {
@@ -56,6 +61,7 @@ export class InternalEngineConfig {
     workerURL?: string | URL,
     workerPool?: WorkerPool,
     onFallback?: (info: EngineFallbackInfo) => void,
+    optimizationHint?: OptimizationHint,
   ): InternalEngineConfig {
     const instance = Object.create(InternalEngineConfig.prototype);
     instance.bitmask = bitmask;
@@ -68,6 +74,11 @@ export class InternalEngineConfig {
         onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
       }
     ).onFallback = onFallback;
+    (
+      instance as {
+        optimizationHint?: OptimizationHint | undefined;
+      }
+    ).optimizationHint = optimizationHint;
     return instance;
   }
 
@@ -231,6 +242,7 @@ export class InternalEngineConfig {
       this.workerURL,
       this.workerPool,
       this.onFallback,
+      this.optimizationHint,
     );
   }
 
@@ -252,6 +264,7 @@ export class InternalEngineConfig {
       this.workerURL,
       this.workerPool,
       this.onFallback,
+      this.optimizationHint,
     );
   }
 
@@ -274,6 +287,7 @@ export class InternalEngineConfig {
       this.workerURL,
       this.workerPool,
       this.onFallback,
+      this.optimizationHint,
     );
   }
 
@@ -295,6 +309,7 @@ export class InternalEngineConfig {
         workerStrategy: this.getWorkerStrategy(),
         strict: this.hasStrict(),
         onFallback: this.onFallback,
+        optimizationHint: this.optimizationHint,
       };
     }
 
@@ -303,6 +318,7 @@ export class InternalEngineConfig {
       wasm: hasWasm,
       gpu: hasGpu,
       onFallback: this.onFallback,
+      optimizationHint: this.optimizationHint,
     };
   }
 

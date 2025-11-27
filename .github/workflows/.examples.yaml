@@ -31,6 +31,9 @@ jobs:
             type: webpack
           - name: webpack-bundle-worker-main
             type: webpack
+          # Browser engine test
+          - name: browser-engine-test
+            type: vite
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -128,6 +131,7 @@ jobs:
           - vite-bundle-worker-slim
           - webpack-bundle-worker-main
           - webpack-bundle-worker-slim
+          - browser-engine-test
     steps:
       - name: Checkout Repo
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -163,6 +167,14 @@ jobs:
           pnpm test
         env:
           CI: true
+
+      - name: Upload Playwright report - ${{ matrix.example }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-${{ matrix.example }}
+          path: examples/${{ matrix.example }}/playwright-report/
+          retention-days: 7
 
   test_deno_examples:
     name: Test Deno Examples

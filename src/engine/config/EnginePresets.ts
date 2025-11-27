@@ -5,11 +5,12 @@ import type {
   QueuingStrategyConfig,
   WorkerPool,
 } from "@/core/types.ts";
+import type { OptimizationHint } from "@/execution/OptimizationHint.ts";
 
 /**
- * Base options shared by all engine presets.
+ * Common options shared by all engine presets.
  */
-interface BasePresetOptions {
+export interface PresetOptions {
   /**
    * Blob reading strategy threshold (in bytes).
    * See {@link EngineConfig.arrayBufferThreshold} for details.
@@ -34,29 +35,33 @@ interface BasePresetOptions {
    * @experimental
    */
   queuingStrategy?: QueuingStrategyConfig;
-}
 
-/**
- * Options for main thread engine presets.
- * Used by presets that do not use web workers.
- */
-export interface MainThreadPresetOptions extends BasePresetOptions {
+  /**
+   * Override the optimization hint for the preset.
+   * If not specified, uses the preset's default optimization hint.
+   */
+  optimizationHint?: OptimizationHint;
+
   /**
    * Callback for fallback notifications.
    * Called when the engine falls back to a less optimal strategy.
    *
-   * @remarks
-   * Applicable when GPU is enabled but unavailable.
-   * Called when GPU initialization fails and parser falls back to WASM or JavaScript.
+   * @example
+   * ```ts
+   * engine: EnginePresets.turbo({
+   *   onFallback: (info) => {
+   *     console.warn(`Fallback: ${info.reason}`);
+   *   }
+   * })
+   * ```
    */
   onFallback?: (info: EngineFallbackInfo) => void;
 }
 
 /**
  * Options for worker-based engine presets.
- * Used by presets that utilize web workers.
  */
-export interface WorkerPresetOptions extends BasePresetOptions {
+export interface WorkerPresetOptions extends PresetOptions {
   /**
    * Worker pool for managing worker lifecycle.
    * Reuse workers across multiple parse operations.
@@ -68,44 +73,34 @@ export interface WorkerPresetOptions extends BasePresetOptions {
    * Use a custom worker script instead of the bundled worker.
    */
   workerURL?: string | URL;
-
-  /**
-   * Callback for fallback notifications.
-   * Called when the engine falls back to a less optimal strategy.
-   */
-  onFallback?: (info: EngineFallbackInfo) => void;
 }
 
 /**
- * Predefined engine configuration presets optimized for specific performance characteristics.
+ * Predefined engine configuration presets.
  *
- * All presets are functions that optionally accept configuration options.
- * Each preset is optimized for specific performance aspects:
- * - Parse speed (execution time)
- * - UI responsiveness (non-blocking)
- * - Memory efficiency
- * - Stability
+ * Three simple presets optimized for different priorities:
+ * - `stable()`: Maximum compatibility
+ * - `recommended()`: UI responsiveness + good performance (default choice)
+ * - `turbo()`: Maximum speed
  *
  * @example Basic usage
  * ```ts
  * import { parseString, EnginePresets } from 'web-csv-toolbox';
  *
- * // Use balanced preset for general-purpose CSV processing
+ * // Recommended for most use cases
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.balanced()
+ *   engine: EnginePresets.recommended()
  * })) {
  *   console.log(record);
  * }
  * ```
  *
- * @example With WorkerPool
+ * @example With fallback tracking
  * ```ts
- * import { parseString, EnginePresets, WorkerPool } from 'web-csv-toolbox';
- *
- * const pool = new WorkerPool({ maxWorkers: 4 });
- *
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.balanced({ workerPool: pool })
+ *   engine: EnginePresets.turbo({
+ *     onFallback: (info) => console.warn(info.reason)
+ *   })
  * })) {
  *   console.log(record);
  * }
@@ -113,333 +108,138 @@ export interface WorkerPresetOptions extends BasePresetOptions {
  */
 export const EnginePresets = Object.freeze({
   /**
-   * Most stable configuration.
+   * Maximum compatibility configuration.
    *
-   * **Optimization target:** Stability
+   * Uses only standard JavaScript APIs for maximum compatibility.
+   * Runs on main thread (blocking).
    *
-   * **Performance characteristics:**
-   * - Parse speed: Standard (JavaScript execution)
-   * - UI responsiveness: ❌ Blocks main thread
-   * - Memory efficiency: Standard
-   * - Stability: ⭐ Most stable (standard JavaScript APIs only)
-   *
-   * **Trade-offs:**
-   * - ✅ Most stable: Uses only standard JavaScript APIs
-   * - ✅ No worker initialization overhead
-   * - ✅ No worker communication overhead
-   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-   * - ✅ Supports all quotation characters
-   * - ✅ Works everywhere without configuration
-   * - ❌ Blocks main thread during parsing
+   * **Backend:** 🥇 JS
+   * **Context:** 🖥️ Main thread
    *
    * **Use when:**
-   * - Stability is the highest priority
-   * - UI blocking is acceptable
-   * - Server-side parsing
+   * - Server-side parsing (Node.js, Deno)
    * - Maximum compatibility required
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  stable: (options?: MainThreadPresetOptions): EngineConfig => ({
-    worker: false,
-    wasm: false,
-    ...options,
-  }),
-
-  /**
-   * UI responsiveness optimized configuration.
-   *
-   * **Optimization target:** UI responsiveness (non-blocking)
-   *
-   * **Performance characteristics:**
-   * - Parse speed: Slower (worker communication overhead)
-   * - UI responsiveness: ✅ Non-blocking (worker execution)
-   * - Memory efficiency: Standard
-   * - Stability: ✅ Stable (Web Workers API)
-   *
-   * **Trade-offs:**
-   * - ✅ Non-blocking UI: Parsing runs in worker thread
-   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-   * - ✅ Supports all quotation characters
-   * - ✅ Works on all browsers including Safari
-   * - ⚠️ Worker communication overhead: Data transfer between threads
-   * - ⚠️ Requires bundler configuration for worker URL
-   *
-   * **Use when:**
-   * - UI responsiveness is critical
-   * - Browser applications with interactive UI
-   * - Broad encoding support required
-   * - Safari compatibility needed
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  responsive: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
-    wasm: false,
-    workerStrategy: "message-streaming",
-    ...options,
-  }),
-
-  /**
-   * Memory efficiency optimized configuration.
-   *
-   * **Optimization target:** Memory efficiency
-   *
-   * **Performance characteristics:**
-   * - Parse speed: Slower (worker communication overhead)
-   * - UI responsiveness: ✅ Non-blocking (worker execution)
-   * - Memory efficiency: ✅ Optimized (zero-copy stream transfer)
-   * - Stability: ⚠️ Experimental (Transferable Streams API)
-   *
-   * **Trade-offs:**
-   * - ✅ Memory efficient: Zero-copy stream transfer when supported
-   * - ✅ Non-blocking UI: Parsing runs in worker thread
-   * - ✅ Constant memory usage for streaming workloads
-   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-   * - ✅ Supports all quotation characters
-   * - ✅ Automatic fallback to message-streaming on Safari
-   * - ⚠️ Experimental API: Transferable Streams may change
-   * - ⚠️ Worker communication overhead: Data transfer between threads
-   *
-   * **Use when:**
-   * - Memory efficiency is important
-   * - Streaming large CSV files
-   * - Chrome/Firefox/Edge browsers (auto-fallback on Safari)
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  memoryEfficient: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
-    wasm: false,
-    workerStrategy: "stream-transfer",
-    ...options,
-  }),
-
-  /**
-   * Parse speed optimized configuration.
-   *
-   * **Optimization target:** Parse speed (execution time)
-   *
-   * **Performance characteristics:**
-   * - Parse speed: ✅ Fast (compiled WASM code, no worker overhead)
-   * - UI responsiveness: ❌ Blocks main thread
-   * - Memory efficiency: Standard
-   * - Stability: ✅ Stable (WebAssembly standard)
-   *
-   * **Trade-offs:**
-   * - ✅ Fast parse speed: Compiled WASM code
-   * - ✅ No worker initialization overhead
-   * - ✅ No worker communication overhead
-   * - ⚠️ WASM implementation may change in future versions
-   * - ❌ Blocks main thread during parsing
-   * - ❌ UTF-8 encoding only
-   * - ❌ Double-quote (") only
-   * - ❌ Requires loadWASM() initialization
-   *
-   * **Use when:**
-   * - Parse speed is the highest priority
    * - UI blocking is acceptable
-   * - UTF-8 CSV files with double-quote
-   * - Server-side parsing
    *
    * @param options - Configuration options
    * @returns Engine configuration
    */
-  fast: (options?: MainThreadPresetOptions): EngineConfig => ({
+  stable: (options?: PresetOptions): EngineConfig => ({
     worker: false,
-    wasm: true,
-    ...options,
-  }),
-
-  /**
-   * UI responsiveness + parse speed optimized configuration.
-   *
-   * **Optimization target:** UI responsiveness + parse speed
-   *
-   * **Performance characteristics:**
-   * - Parse speed: Fast (compiled WASM code) but slower than fast() due to worker overhead
-   * - UI responsiveness: ✅ Non-blocking (worker execution)
-   * - Memory efficiency: Standard
-   * - Stability: ✅ Stable (Web Workers + WebAssembly)
-   *
-   * **Trade-offs:**
-   * - ✅ Non-blocking UI: Parsing runs in worker thread
-   * - ✅ Fast parse speed: Compiled WASM code
-   * - ⚠️ Worker communication overhead: Slower than fast() on main thread
-   * - ⚠️ Requires bundler configuration for worker URL
-   * - ⚠️ WASM implementation may change in future versions
-   * - ❌ UTF-8 encoding only
-   * - ❌ Double-quote (") only
-   * - ❌ Requires loadWASM() initialization
-   *
-   * **Use when:**
-   * - Both UI responsiveness and parse speed are important
-   * - UTF-8 CSV files with double-quote
-   * - Browser applications requiring non-blocking parsing
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  responsiveFast: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
-    wasm: true,
-    workerStrategy: "message-streaming",
-    ...options,
-  }),
-
-  /**
-   * Balanced configuration.
-   *
-   * **Optimization target:** Balanced (UI responsiveness + memory efficiency + broad compatibility)
-   *
-   * **Performance characteristics:**
-   * - Parse speed: Slower (worker communication overhead)
-   * - UI responsiveness: ✅ Non-blocking (worker execution)
-   * - Memory efficiency: ✅ Optimized (zero-copy stream transfer when supported)
-   * - Stability: ⚠️ Experimental (Transferable Streams) with stable fallback
-   *
-   * **Trade-offs:**
-   * - ✅ Non-blocking UI: Parsing runs in worker thread
-   * - ✅ Memory efficient: Zero-copy stream transfer when supported
-   * - ✅ Supports WHATWG Encoding Standard encodings (via TextDecoder)
-   * - ✅ Supports all quotation characters
-   * - ✅ Automatic fallback to message-streaming on Safari
-   * - ✅ Broad compatibility: Handles user uploads with various encodings
-   * - ⚠️ Experimental API: Transferable Streams may change
-   * - ⚠️ Worker communication overhead: Data transfer between threads
-   *
-   * **Use when:**
-   * - General-purpose CSV processing
-   * - Broad encoding support required
-   * - Safari compatibility needed (auto-fallback)
-   * - User-uploaded files with various encodings
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   */
-  balanced: (options?: WorkerPresetOptions): EngineConfig => ({
-    worker: true,
     wasm: false,
-    workerStrategy: "stream-transfer",
+    gpu: false,
+    optimizationHint: options?.optimizationHint ?? "responsive",
     ...options,
   }),
 
   /**
-   * GPU-accelerated configuration.
+   * Recommended default configuration.
    *
-   * **Optimization target:** Maximum throughput for large files
+   * Balances UI responsiveness and performance.
+   * Uses WASM for speed, Worker for non-blocking UI.
+   * Automatically falls back when features are unavailable.
    *
-   * **Performance characteristics:**
-   * - Parse speed: ✅ Extremely fast for large files (GPU parallel processing)
-   * - UI responsiveness: ✅ Non-blocking (GPU execution)
-   * - Memory efficiency: ✅ Optimized (index-only output)
-   * - Stability: ⚠️ Experimental (WebGPU API)
+   * **Backend:** 🥇 WASM → 🥈 JS
+   * **Context:** 👷 Worker → 🖥️ Main (fallback)
    *
-   * **Trade-offs:**
-   * - ✅ Extremely fast: GPU parallel index construction (GB/s throughput)
-   * - ✅ Low CPU usage: ~10x reduction vs traditional parsers
-   * - ✅ Memory efficient: 1/10th memory usage (index-only)
-   * - ✅ Non-blocking: Runs on GPU, doesn't block main thread
-   * - ✅ Automatic fallback: Falls back to JavaScript if WebGPU unavailable
-   * - ✅ Automatic chunk splitting: Large chunks are split to fit GPU limits
-   * - ⚠️ GPU initialization overhead: ~50-100ms startup cost
-   * - ⚠️ Limited browser support: Chrome 113+, Firefox 121+ (flag), Safari TP
-   * - ❌ May be slower than WASM for small files (<1MB)
+   * **Use when:**
+   * - Browser applications (recommended default)
+   * - UI responsiveness is important
+   * - Good performance without blocking
+   *
+   * @param options - Configuration options
+   * @returns Engine configuration
+   */
+  recommended: (options?: WorkerPresetOptions): EngineConfig => ({
+    worker: true,
+    wasm: true,
+    gpu: false,
+    workerStrategy: "stream-transfer",
+    optimizationHint: options?.optimizationHint ?? "balanced",
+    ...options,
+  }),
+
+  /**
+   * Maximum speed configuration.
+   *
+   * Uses GPU acceleration when available, with WASM and JS fallbacks.
+   * Runs on main thread for maximum throughput.
+   *
+   * **Backend:** 🥇 GPU → 🥈 WASM → 🥉 JS
+   * **Context:** 🖥️ Main thread
    *
    * **Use when:**
    * - Processing large CSV files (>10MB)
    * - Maximum throughput is critical
-   * - Chrome/Edge browsers (auto-fallback on others)
-   * - UI responsiveness and low CPU usage are important
+   * - UI blocking is acceptable
    *
    * @param options - Configuration options
    * @returns Engine configuration
-   *
-   * @example Basic GPU parsing
-   * ```ts
-   * import { parseString, EnginePresets } from 'web-csv-toolbox';
-   *
-   * for await (const record of parseString(csv, {
-   *   engine: EnginePresets.gpuAccelerated()
-   * })) {
-   *   console.log(record);
-   * }
-   * ```
-   *
-   * @example With fallback tracking
-   * ```ts
-   * for await (const record of parseString(csv, {
-   *   engine: EnginePresets.gpuAccelerated({
-   *     onFallback: (info) => {
-   *       console.warn(`GPU unavailable: ${info.reason}`);
-   *     }
-   *   })
-   * })) {
-   *   console.log(record);
-   * }
-   * ```
    */
-  gpuAccelerated: (options?: MainThreadPresetOptions): EngineConfig => ({
-    worker: false,
-    wasm: false,
-    gpu: true,
-    ...options,
-  }),
-
-  /**
-   * GPU + WASM hybrid configuration.
-   *
-   * **Optimization target:** Maximum performance with graceful fallback
-   *
-   * **Performance characteristics:**
-   * - Parse speed: ✅ GPU-fast when available, WASM-fast otherwise
-   * - UI responsiveness: ✅ Non-blocking (GPU) or ❌ Blocking (WASM fallback)
-   * - Memory efficiency: ✅ Optimized (GPU) or Standard (WASM fallback)
-   * - Stability: ⚠️ Experimental (WebGPU) with stable fallback (WASM)
-   *
-   * **Trade-offs:**
-   * - ✅ Best performance: GPU first, then WASM, then JavaScript
-   * - ✅ Graceful degradation: Optimal performance on each browser
-   * - ✅ Automatic fallback: No manual browser detection needed
-   * - ⚠️ Requires loadWASM() initialization for full performance
-   * - ⚠️ GPU initialization overhead when available
-   * - ❌ Blocks main thread when using WASM fallback
-   * - ❌ UTF-8 only when using WASM fallback
-   *
-   * **Use when:**
-   * - Maximum performance is critical across all browsers
-   * - Large files on modern browsers, acceptable performance elsewhere
-   * - Willing to accept WASM limitations as fallback
-   *
-   * @param options - Configuration options
-   * @returns Engine configuration
-   *
-   * @example GPU with WASM fallback
-   * ```ts
-   * import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox';
-   *
-   * // Initialize WASM for fallback
-   * await loadWASM();
-   *
-   * for await (const record of parseString(csv, {
-   *   engine: EnginePresets.ultraFast()
-   * })) {
-   *   console.log(record);
-   * }
-   * ```
-   */
-  ultraFast: (options?: MainThreadPresetOptions): EngineConfig => ({
+  turbo: (options?: PresetOptions): EngineConfig => ({
     worker: false,
     wasm: true,
     gpu: true,
+    optimizationHint: options?.optimizationHint ?? "speed",
     ...options,
   }),
+
+  // ============================================
+  // Deprecated aliases (for backward compatibility)
+  // ============================================
+
+  /**
+   * @deprecated Use `recommended()` instead.
+   */
+  balanced: (options?: WorkerPresetOptions): EngineConfig =>
+    EnginePresets.recommended(options),
+
+  /**
+   * @deprecated Use `recommended()` instead.
+   */
+  responsive: (options?: WorkerPresetOptions): EngineConfig =>
+    EnginePresets.recommended(options),
+
+  /**
+   * @deprecated Use `recommended()` instead.
+   */
+  memoryEfficient: (options?: WorkerPresetOptions): EngineConfig =>
+    EnginePresets.recommended(options),
+
+  /**
+   * @deprecated Use `turbo()` instead.
+   */
+  fast: (options?: PresetOptions): EngineConfig => EnginePresets.turbo(options),
+
+  /**
+   * @deprecated Use `turbo()` instead.
+   */
+  responsiveFast: (options?: WorkerPresetOptions): EngineConfig =>
+    EnginePresets.turbo(options),
+
+  /**
+   * @deprecated Use `turbo()` instead.
+   */
+  gpuAccelerated: (options?: PresetOptions): EngineConfig =>
+    EnginePresets.turbo(options),
+
+  /**
+   * @deprecated Use `turbo()` instead.
+   */
+  ultraFast: (options?: PresetOptions): EngineConfig =>
+    EnginePresets.turbo(options),
 } as const);
 
 /**
  * Type for engine preset names.
  */
 export type EnginePresetName = keyof typeof EnginePresets;
+
+/**
+ * Type for main preset names (excluding deprecated aliases).
+ */
+export type MainPresetName = "stable" | "recommended" | "turbo";
+
+// Re-export option types for backward compatibility
+/** @deprecated Use PresetOptions instead */
+export type MainThreadPresetOptions = PresetOptions;

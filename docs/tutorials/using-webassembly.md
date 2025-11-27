@@ -162,48 +162,48 @@ import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
 
 await loadWASM();
 
-// Use 'fast' preset (main thread WASM)
+// Use 'turbo' preset for maximum speed (main thread)
 for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
 ```
 
-### Available WASM Presets
+### WASM-Enabled Presets
 
-| Preset | Optimization Target | Worker | WASM | Stability |
-|--------|---------------------|--------|------|-----------|
-| `fast` | Parse speed | ❌ | ✅ | ✅ Stable |
-| `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | ✅ Stable |
+| Preset | Backend Priority | Context | Use Case |
+|--------|------------------|---------|----------|
+| `recommended()` | WASM > JS | Worker | UI responsiveness + performance |
+| `turbo()` | GPU > WASM > JS | Main thread | Maximum speed |
 
-**Note:** For fastest execution time, use `fast()` on main thread. `responsiveFast()` prioritizes UI responsiveness with some worker communication overhead.
+**Note:** For fastest execution time, use `turbo()` on main thread. `recommended()` prioritizes UI responsiveness with Worker execution.
 
 ---
 
 ## Step 4: Combine WASM with Worker Threads
 
-Combine WASM with Worker Threads for non-blocking UI with fast parsing:
+Use the `recommended()` preset for non-blocking UI with WASM acceleration:
 
 ```typescript
 import { parse, loadWASM, EnginePresets } from 'web-csv-toolbox';
 
 await loadWASM();
 
-// Use 'responsiveFast' preset (Worker + WASM)
+// Use 'recommended' preset (Worker + WASM)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
 ```
 
 **Benefits:**
-- ✅ Non-blocking UI (Worker Thread)
-- ✅ Fast parsing (compiled WASM code)
-- ⚠️ Worker communication adds overhead (data transfer between threads)
+- Non-blocking UI (Worker Thread)
+- Fast parsing (WASM acceleration when UTF-8)
+- Automatic fallback to JS when WASM unavailable
 
-**Note:** This approach prioritizes UI responsiveness. Execution time may be slower than `fast()` on main thread due to worker communication cost, but UI remains responsive.
+**Note:** This approach prioritizes UI responsiveness. Execution time may be slower than `turbo()` on main thread due to worker communication cost, but UI remains responsive.
 
 ---
 
@@ -220,7 +220,7 @@ async function fetchAndParseCSV(url: string) {
   const response = await fetch(url);
 
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.responsiveFast()
+    engine: EnginePresets.turbo()
   })) {
     console.log(record);
   }
@@ -341,15 +341,18 @@ for await (const record of parse(csv, {
 
 ## Error Handling
 
-### WASM Not Loaded
+### WASM Not Loaded (Slim Entry Only)
 
-If you forget to call `loadWASM()`, an error occurs:
+> **Note:** This error only occurs when using `web-csv-toolbox/slim`. The main entry point (`web-csv-toolbox`) automatically initializes WASM on first use.
+
+If you use the Slim entry and forget to call `loadWASM()`, an error occurs:
 
 ```typescript
-import { parse } from 'web-csv-toolbox';
+// ❌ Slim entry requires explicit initialization
+import { parse } from 'web-csv-toolbox/slim';
 
 try {
-  // ❌ Forgot to call loadWASM()
+  // Error: WASM not initialized
   for await (const record of parse(csv, {
     engine: { wasm: true }
   })) {
@@ -360,17 +363,43 @@ try {
 }
 ```
 
-**Fix:** Always call `loadWASM()` before parsing:
+**Fix for Slim:** Always call `loadWASM()` before parsing:
 
 ```typescript
-import { parse, loadWASM } from 'web-csv-toolbox';
+import { parse, loadWASM } from 'web-csv-toolbox/slim';
 
-await loadWASM(); // ✅ Load WASM first
+await loadWASM(); // ✅ Required for Slim entry
 
 for await (const record of parse(csv, {
   engine: { wasm: true }
 })) {
   console.log(record);
+}
+```
+
+**Main entry (no explicit initialization needed):**
+
+```typescript
+import { parse, loadWASM } from 'web-csv-toolbox';
+
+// Optional: preload to reduce first-parse latency
+await loadWASM();
+
+// Or just use directly - auto-initializes on first use
+for await (const record of parse(csv, {
+  engine: { wasm: true }
+})) {
+  console.log(record);
+}
+```
+
+**Check WASM readiness:**
+
+```typescript
+import { isWASMReady, loadWASM } from 'web-csv-toolbox';
+
+if (!isWASMReady()) {
+  await loadWASM();
 }
 ```
 
@@ -421,7 +450,7 @@ async function handleFileUpload(file: File) {
   const csv = await file.text();
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.responsiveFast()
+    engine: EnginePresets.turbo()
   })) {
     console.log(record);
   }
@@ -546,7 +575,7 @@ You've learned how to:
 **Solution:**
 - WASM has initialization overhead - benchmark your specific use case
 - Worker + WASM adds worker communication overhead - may be slower than main thread WASM
-- For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI)
+- For fastest execution time, use `EnginePresets.turbo()` on the main thread (blocks UI)
 - For non-blocking UI, accept the worker communication overhead trade-off
 - Optionally call `loadWASM()` once at startup to avoid repeated initialization overhead (auto-initialization works but adds latency on first use)
 

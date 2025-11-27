@@ -22,7 +22,9 @@ export async function* parseBinaryInWorkerWASM<
   binary: BufferSource,
   options?: ParseBinaryOptions<Header, Delimiter, Quotation>,
 ): AsyncIterableIterator<CSVRecord<Header>> {
-  using session = await WorkerSession.create(
+  // TODO: When Node.js 24 becomes the minimum supported version, use:
+  // using session = await WorkerSession.create(...)
+  const session = await WorkerSession.create(
     options?.engine?.worker === true
       ? {
           workerURL: options.engine.workerURL,
@@ -31,15 +33,19 @@ export async function* parseBinaryInWorkerWASM<
       : undefined,
   );
 
-  yield* sendWorkerMessage<CSVRecord<Header>>(
-    session.getWorker(),
-    {
-      id: session.getNextRequestId(),
-      type: "parseBinary",
-      data: binary,
-      options: serializeOptions(options),
-      useWASM: true,
-    },
-    options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
-  );
+  try {
+    yield* sendWorkerMessage<CSVRecord<Header>>(
+      session.getWorker(),
+      {
+        id: session.getNextRequestId(),
+        type: "parseBinary",
+        data: binary,
+        options: serializeOptions(options),
+        useWASM: true,
+      },
+      options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
+    );
+  } finally {
+    session.dispose();
+  }
 }

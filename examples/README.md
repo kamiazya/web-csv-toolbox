@@ -17,6 +17,14 @@ This directory contains example projects demonstrating different usage patterns 
   - Zod schema validation
   - [View on GitHub](https://github.com/kamiazya/web-csv-toolbox/tree/main/examples/hono-secure-api) | [Documentation](https://kamiazya.github.io/web-csv-toolbox/how-to-guides/secure-csv-processing.html)
 
+### Engine Test Examples
+- **[browser-engine-test](./browser-engine-test)**: Interactive test suite for comparing parsing engines
+  - Tests JavaScript, WASM, Worker, and GPU engines
+  - Playwright-based automated testing
+  - **Headless WebGPU support** with Chrome flags
+  - Performance benchmarks
+  - See [browser-engine-test/README.md](./browser-engine-test/README.md) for headless GPU configuration
+
 ### Vite Examples
 - **vite-bundle-slim**: Browser bundle with slim entry
 - **vite-bundle-main**: Browser bundle with main version
@@ -37,7 +45,7 @@ pnpm run build  # Builds the library used by examples
 ```
 
 - Requires pnpm (use `corepack enable` on Node 18+)
-- Recommended Node.js: 20.6+
+- **Required Node.js: 24.0+** (uses `using` syntax for explicit resource management)
 
 ### Node.js Examples
 ```bash
@@ -60,6 +68,25 @@ pnpm test:coverage # Run tests with coverage
 - `POST /validate-csv` - CSV validation with SSE streaming
 
 See the [README](./hono-secure-api/README.md) for detailed usage and examples.
+
+### Engine Test Examples
+```bash
+cd examples/browser-engine-test
+pnpm install
+pnpm dev          # Interactive browser testing (http://localhost:5173)
+pnpm test         # Automated Playwright tests
+pnpm test:gpu     # GPU-specific tests with WebGPU flags
+pnpm test:headed  # Tests with visible browser
+```
+
+**Headless WebGPU Testing:**
+
+For GPU tests in CI/CD environments, the example includes Chrome flags for headless WebGPU:
+```bash
+--headless=new --use-angle=vulkan --enable-features=Vulkan --disable-vulkan-surface --enable-unsafe-webgpu
+```
+
+See [Chrome WebGPU Testing Guide](https://developer.chrome.com/blog/supercharge-web-ai-testing) for details.
 
 ### Browser Examples (Vite)
 ```bash

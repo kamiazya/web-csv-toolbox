@@ -12,13 +12,13 @@ import type {
   ParseBinaryOptions,
   ParseOptions,
 } from "@/core/types.ts";
+import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
+import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 import { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
 import {
   GPUBinaryCSVLexer,
   type GPUBinaryCSVLexerConfig,
 } from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
-import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
-import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 
 /**
  * Parse CSV binary stream using WebGPU
@@ -89,8 +89,12 @@ export async function* parseBinaryStreamInGPU<
 
     const assembler: AssemblerType =
       outputFormat === "array"
-        ? new FlexibleCSVArrayRecordAssembler<Header>({ header: assemblerHeader })
-        : new FlexibleCSVObjectRecordAssembler<Header>({ header: assemblerHeader });
+        ? new FlexibleCSVArrayRecordAssembler<Header>({
+            header: assemblerHeader,
+          })
+        : new FlexibleCSVObjectRecordAssembler<Header>({
+            header: assemblerHeader,
+          });
 
     // Process stream
     const reader = stream.getReader();

@@ -17,6 +17,7 @@ export interface WorkerMessage {
   data: string | CSVBinary | ReadableStream<string>;
   options?: Record<string, unknown> | undefined;
   useWASM?: boolean | undefined;
+  useGPU?: boolean | undefined;
 }
 
 /**

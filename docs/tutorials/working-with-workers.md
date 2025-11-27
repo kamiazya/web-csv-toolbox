@@ -83,9 +83,9 @@ const csv = `name,age,city
 Alice,30,New York
 Bob,25,San Francisco`;
 
-// Use the 'balanced' preset (recommended for production)
+// Use the 'recommended' preset (recommended for production)
 for await (const record of parse(csv, {
-  engine: EnginePresets.balanced()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
@@ -93,16 +93,15 @@ for await (const record of parse(csv, {
 
 ### Available Presets
 
-| Preset | Optimization Target | Worker | WASM | Stability |
-|--------|---------------------|--------|------|-----------|
-| `stable` | Stability | ❌ | ❌ | ⭐ Most Stable |
-| `responsive` | UI responsiveness | ✅ | ❌ | ✅ Stable |
-| `memoryEfficient` | Memory efficiency | ✅ | ❌ | ⚠️ Experimental |
-| `fast` | Parse speed | ❌ | ✅ | ✅ Stable |
-| `responsiveFast` | UI responsiveness + parse speed | ✅ | ✅ | ✅ Stable |
-| `balanced` | Balanced (general-purpose) | ✅ | ❌ | ✅ Stable |
+| Preset | Backend Priority | Context | Use Case |
+|--------|------------------|---------|----------|
+| `stable()` | JS | Main thread | Maximum compatibility, server-side |
+| `recommended()` | WASM > JS | Worker | UI responsiveness + performance (default) |
+| `turbo()` | GPU > WASM > JS | Main thread | Maximum speed (>10MB files) |
 
-**Recommendation:** Use `EnginePresets.balanced()` for general-purpose CSV processing. It provides non-blocking execution with WHATWG Encoding Standard encodings support and has automatic stable fallback on Safari.
+> **Note**: Previous presets (`balanced`, `responsive`, `memoryEfficient`, `fast`, `responsiveFast`) are deprecated but still available as aliases for backward compatibility.
+
+**Recommendation:** Use `EnginePresets.recommended()` for browser applications. It provides non-blocking execution with WASM acceleration and automatic fallback on Safari.
 
 ## Step 3: Parsing Network Responses with Workers
 
@@ -116,7 +115,7 @@ async function fetchAndParseCSV(url: string) {
 
   // Parse response using worker
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.balanced()
+    engine: EnginePresets.recommended()
   })) {
     console.log(record);
   }
@@ -183,7 +182,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 async function parseWithErrorHandling(csv: string) {
   try {
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced()
+      engine: EnginePresets.recommended()
     })) {
       console.log(record);
     }
@@ -209,7 +208,7 @@ import { parse, EnginePresets } from 'web-csv-toolbox';
 
 // Customize a preset with additional options
 for await (const record of parse(csv, {
-  engine: EnginePresets.balanced({
+  engine: EnginePresets.recommended({
     workerPool: myPool,
     onFallback: (info) => console.log('Fallback occurred:', info)
   })
@@ -240,7 +239,7 @@ async function handleFileUpload(file: File) {
 
     // Parse in worker - UI stays responsive
     for await (const record of parse(csv, {
-      engine: EnginePresets.balanced()
+      engine: EnginePresets.recommended()
     })) {
       count++;
 
@@ -381,7 +380,7 @@ You've learned how to:
 - Workers prioritize UI responsiveness over raw execution speed
 - For fastest execution time, use main thread (but UI will block)
 - For non-blocking UI, accept the worker communication overhead trade-off
-- Use `EnginePresets.balanced()` instead of manual configuration
+- Use `EnginePresets.recommended()` instead of manual configuration
 
 ### Safari-specific issues
 

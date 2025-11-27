@@ -32,16 +32,22 @@ pnpm run preview
 The example uses `ReusableWorkerPool` to manage Workers:
 
 ```typescript
-using pool = new ReusableWorkerPool({ maxWorkers: 2 });
+// TODO: When Node.js 24 becomes the minimum supported version, use:
+// using pool = new ReusableWorkerPool({ maxWorkers: 2 });
+const pool = new ReusableWorkerPool({ maxWorkers: 2 });
 
-for await (const record of parseString(csv, {
-  engine: {
-    worker: true,
-    wasm: true,
-    workerPool: pool,
+try {
+  for await (const record of parseString(csv, {
+    engine: {
+      worker: true,
+      wasm: true,
+      workerPool: pool,
+    }
+  })) {
+    // Process record
   }
-})) {
-  // Process record
+} finally {
+  pool.terminate();
 }
 ```
 
@@ -56,4 +62,4 @@ The example includes a simple Vite configuration that:
 
 - Workers are automatically detected and imported by `web-csv-toolbox/worker`
 - WASM files are loaded dynamically from the same directory as the bundle
-- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.recommended()` / `responsiveFast()` are also available.

@@ -6,6 +6,7 @@ import type {
   Newline,
   RecordDelimiter,
 } from "@/core/constants.ts";
+import type { OptimizationHint } from "@/execution/OptimizationHint.ts";
 
 /**
  * Position object.
@@ -1073,6 +1074,32 @@ interface BaseEngineConfig {
    * @experimental
    */
   queuingStrategy?: QueuingStrategyConfig | undefined;
+
+  /**
+   * Optimization hint for execution path selection.
+   *
+   * @remarks
+   * This hint affects how the execution path is selected:
+   * - `'speed'`: Maximize throughput (GPU > WASM > JS)
+   * - `'memory'`: Minimize memory usage (JS > WASM > GPU)
+   * - `'balanced'`: Balance speed and compatibility (WASM > GPU > JS)
+   * - `'responsive'`: Minimize initial response time (JS > WASM > GPU)
+   *
+   * The hint also affects GPU configuration (workgroup size, device preference)
+   * and worker strategy selection when applicable.
+   *
+   * @default 'balanced'
+   *
+   * @example
+   * ```ts
+   * // Optimize for maximum speed
+   * parse(csv, { engine: { gpu: true, optimizationHint: 'speed' } });
+   *
+   * // Optimize for memory efficiency
+   * parse(csv, { engine: { worker: true, optimizationHint: 'memory' } });
+   * ```
+   */
+  optimizationHint?: OptimizationHint | undefined;
 }
 
 /**
@@ -1846,7 +1873,7 @@ export type CSVArrayRecord<
  * ```
  */
 export type CSVRecord<
-  Header extends ReadonlyArray<string>,
+  Header extends ReadonlyArray<string> = readonly string[],
   Format extends "object" | "array" = "object",
   Strategy extends ColumnCountStrategy = "keep",
 > = Format extends "array"

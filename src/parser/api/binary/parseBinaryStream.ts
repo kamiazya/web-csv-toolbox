@@ -8,9 +8,16 @@ import type {
   ParseOptions,
 } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
-import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import {
+  executeWithWorkerStrategy,
+  type StrategyExecutionOptions,
+} from "@/engine/strategies/WorkerStrategySelector.ts";
+import { EnvironmentCapabilities } from "@/execution/EnvironmentCapabilities.ts";
+import {
+  ExecutionPathResolver,
+  type ResolverContext,
+} from "@/execution/ExecutionPathResolver.ts";
 import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
-import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
 import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -64,90 +71,211 @@ export async function* parseBinaryStream<
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
 
-  // Note: Worker execution with ReadableStream requires TransferableStream support
-  // which is not available in Safari. For now, always use main thread execution.
-  // TODO: Implement stream-transfer strategy for browsers that support it
-  if (engineConfig.hasWorker() && engineConfig.hasStreamTransfer()) {
-    // Worker execution with stream-transfer strategy
-    const session = engineConfig.workerPool
-      ? await WorkerSession.create({
-          workerPool: engineConfig.workerPool,
-          workerURL: engineConfig.workerURL,
-        })
-      : null;
+  // Get environment capabilities (async to properly detect GPU via requestAdapter)
+  const capabilities = await EnvironmentCapabilities.getInstance();
 
-    try {
-      yield* executeWithWorkerStrategy<CSVRecord<Header>>(
-        stream,
-        options as
-          | ParseOptions<Header>
-          | ParseBinaryOptions<Header>
-          | undefined,
-        session,
-        engineConfig,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } finally {
-      session?.[Symbol.dispose]();
-    }
-  } else if (engineConfig.hasGpu() && isGPUAvailable()) {
-    // GPU execution
-    yield* parseBinaryStreamInGPU(stream, options) as AsyncIterableIterator<
-      InferCSVRecord<Header, Options>
-    >;
-  } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
-    // GPU requested but not available - fallback
-    const fallbackConfig = engineConfig.createGpuFallbackConfig();
-    engineConfig.onFallback?.({
-      requestedConfig: engineConfig.toConfig(),
-      actualConfig: fallbackConfig.toConfig(),
-      reason: "WebGPU not available in this environment",
-    });
+  // Build resolver context
+  const resolverContext: ResolverContext = {
+    inputType: "binary-stream",
+    outputFormat: options?.outputFormat ?? "object",
+    charset: options?.charset,
+    engineConfig,
+    capabilities,
+  };
 
-    // Fallback to CPU stream parsing
-    const recordStream = parseBinaryStreamToStream<
-      Header,
-      Delimiter,
-      Quotation,
-      Options
-    >(stream, options);
-    const iterator = convertStreamToAsyncIterableIterator(recordStream);
+  // Resolve execution plan based on optimizationHint and capabilities
+  const resolver = new ExecutionPathResolver();
+  const plan = resolver.resolve(resolverContext);
 
-    try {
-      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } catch (error) {
+  // Track last error for fallback reporting
+  let lastError: Error | null = null;
+
+  // Iterate through contexts in priority order (per design: contexts × backends)
+  for (const context of plan.contexts) {
+    // For each context, try viable backends in priority order
+    for (const backend of plan.backends) {
       try {
-        await recordStream.cancel().catch(() => {});
-      } catch {
-        // Ignore cancellation errors
-      }
-      throw error;
-    }
-  } else {
-    // Main thread execution (default for streams)
-    const recordStream = parseBinaryStreamToStream<
-      Header,
-      Delimiter,
-      Quotation,
-      Options
-    >(stream, options);
+        // GPU backend - only viable in main context for streams
+        if (backend === "gpu" && context === "main") {
+          if (capabilities.gpu && engineConfig.hasGpu()) {
+            yield* parseBinaryStreamInGPU(
+              stream,
+              options,
+            ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+            return;
+          }
+        }
 
-    // Create iterator from the record stream
-    // Note: convertStreamToAsyncIterableIterator will handle abort signal cleanup
-    const iterator = convertStreamToAsyncIterableIterator(recordStream);
+        // JS backend in worker-stream-transfer context
+        if (backend === "js" && context === "worker-stream-transfer") {
+          if (engineConfig.hasWorker()) {
+            const session = engineConfig.workerPool
+              ? await WorkerSession.create({
+                  workerPool: engineConfig.workerPool,
+                  workerURL: engineConfig.workerURL,
+                })
+              : null;
 
-    try {
-      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } catch (error) {
-      // If an error occurs (including abort), cancel the record stream
-      // to release the lock on the original input stream
-      try {
-        await recordStream.cancel().catch(() => {});
-      } catch {
-        // Ignore cancellation errors
+            const execOptions: StrategyExecutionOptions = {
+              preferredStrategies: ["stream-transfer"],
+            };
+
+            try {
+              yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+                stream,
+                options as
+                  | ParseOptions<Header>
+                  | ParseBinaryOptions<Header>
+                  | undefined,
+                session,
+                engineConfig,
+                execOptions,
+              ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+              return;
+            } finally {
+              session?.[Symbol.dispose]();
+            }
+          }
+        }
+
+        // JS backend in main context
+        if (backend === "js" && context === "main") {
+          const recordStream = parseBinaryStreamToStream<
+            Header,
+            Delimiter,
+            Quotation,
+            Options
+          >(stream, options);
+
+          const iterator = convertStreamToAsyncIterableIterator(recordStream);
+
+          try {
+            yield* iterator as AsyncIterableIterator<
+              InferCSVRecord<Header, Options>
+            >;
+            return;
+          } catch (error) {
+            try {
+              await recordStream.cancel().catch(() => {});
+            } catch {
+              // Ignore cancellation errors
+            }
+            throw error;
+          }
+        }
+
+        // WASM backend is not applicable for stream inputs (requires buffering)
+      } catch (error) {
+        // Track error and notify fallback
+        lastError = error instanceof Error ? error : new Error(String(error));
+        const previousBackend = backend;
+        const previousContext = context;
+
+        // Find next viable combination for fallback notification
+        const nextCombination = findNextViableCombination(
+          plan,
+          context,
+          backend,
+          engineConfig,
+          capabilities,
+        );
+
+        if (nextCombination && engineConfig.onFallback) {
+          engineConfig.onFallback({
+            requestedConfig: engineConfig.toConfig(),
+            actualConfig: engineConfig.toConfig(),
+            reason: `${previousBackend}/${previousContext} failed: ${lastError.message}`,
+          });
+        }
+        // Continue to next backend/context combination
       }
-      throw error;
     }
   }
+
+  // If we reach here, all combinations failed - throw last error or execute fallback
+  if (lastError) {
+    throw lastError;
+  }
+
+  // Final fallback: main thread JS execution
+  const recordStream = parseBinaryStreamToStream<
+    Header,
+    Delimiter,
+    Quotation,
+    Options
+  >(stream, options);
+
+  const iterator = convertStreamToAsyncIterableIterator(recordStream);
+
+  try {
+    yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+  } catch (error) {
+    try {
+      await recordStream.cancel().catch(() => {});
+    } catch {
+      // Ignore cancellation errors
+    }
+    throw error;
+  }
+}
+
+/**
+ * Find the next viable context/backend combination for fallback notification.
+ */
+function findNextViableCombination(
+  plan: { backends: string[]; contexts: string[] },
+  currentContext: string,
+  currentBackend: string,
+  engineConfig: InternalEngineConfig,
+  capabilities: { gpu: boolean; transferableStreams: boolean },
+): { context: string; backend: string } | null {
+  const contextIdx = plan.contexts.indexOf(currentContext);
+  const backendIdx = plan.backends.indexOf(currentBackend);
+
+  // Check remaining backends in current context
+  for (let b = backendIdx + 1; b < plan.backends.length; b++) {
+    const backend = plan.backends[b];
+    if (
+      backend !== undefined &&
+      isViableCombination(currentContext, backend, engineConfig, capabilities)
+    ) {
+      return { context: currentContext, backend };
+    }
+  }
+
+  // Check remaining contexts
+  for (let c = contextIdx + 1; c < plan.contexts.length; c++) {
+    const context = plan.contexts[c];
+    if (context === undefined) continue;
+    for (const backend of plan.backends) {
+      if (isViableCombination(context, backend, engineConfig, capabilities)) {
+        return { context, backend };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if a context/backend combination is viable for stream input.
+ */
+function isViableCombination(
+  context: string,
+  backend: string,
+  engineConfig: InternalEngineConfig,
+  capabilities: { gpu: boolean; transferableStreams: boolean },
+): boolean {
+  if (backend === "gpu" && context === "main") {
+    return capabilities.gpu && engineConfig.hasGpu();
+  }
+  if (backend === "js" && context === "worker-stream-transfer") {
+    return engineConfig.hasWorker() && capabilities.transferableStreams;
+  }
+  if (backend === "js" && context === "main") {
+    return true;
+  }
+  return false;
 }
 
 export declare namespace parseBinaryStream {

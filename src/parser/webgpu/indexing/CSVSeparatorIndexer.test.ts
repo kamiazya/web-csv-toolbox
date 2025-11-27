@@ -5,7 +5,7 @@
  * state management (leftover bytes, quote state) without GPU dependencies.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { packSeparator } from "@/parser/webgpu/utils/separator-utils.ts";
 import {
   CSVSeparatorIndexer,

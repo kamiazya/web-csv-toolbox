@@ -147,3 +147,12 @@ example-*/
 
 # Benchmark generated test data (large CSV files)
 benchmark/data/
+
+# Playwright test artifacts
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Example build outputs
+examples/*/dist/

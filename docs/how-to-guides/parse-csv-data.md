@@ -252,7 +252,7 @@ const textStream = response.body
 if (textStream) {
   // Non-blocking parsing in worker thread
   for await (const record of parseStringStream(textStream, {
-    engine: EnginePresets.balanced()
+    engine: EnginePresets.recommended()
   })) {
     console.log(record);
     // UI stays responsive!
@@ -318,7 +318,7 @@ await loadWASM();
 
 // Fast parsing with WASM
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -342,7 +342,7 @@ const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 app.post('/upload', async (c) => {
   try {
     for await (const record of parseRequest(c.req.raw, {
-      engine: EnginePresets.balanced({ workerPool: pool })
+      engine: EnginePresets.recommended({ workerPool: pool })
     })) {
       // Process record
       console.log(record);
@@ -388,7 +388,7 @@ engine: EnginePresets.stable()
 
 **UI Responsiveness (Non-Blocking):**
 ```typescript
-engine: EnginePresets.responsive()
+engine: EnginePresets.recommended()
 // ✅ Non-blocking worker execution
 // ✅ Supports all encodings and quotation characters
 // ✅ Works on Safari
@@ -397,7 +397,7 @@ engine: EnginePresets.responsive()
 
 **Memory Efficiency:**
 ```typescript
-engine: EnginePresets.memoryEfficient()
+engine: EnginePresets.recommended()
 // ✅ Zero-copy stream transfer (when supported)
 // ✅ Constant memory usage for streaming
 // ⚠️ Experimental (auto-fallback on Safari)
@@ -405,7 +405,7 @@ engine: EnginePresets.memoryEfficient()
 
 **Parse Speed (UTF-8 only):**
 ```typescript
-engine: EnginePresets.fast()
+engine: EnginePresets.turbo()
 // ✅ WASM-accelerated parsing
 // ❌ Blocks main thread
 // ❌ UTF-8 and double-quote only
@@ -413,7 +413,7 @@ engine: EnginePresets.fast()
 
 **Balanced (General-Purpose):**
 ```typescript
-engine: EnginePresets.balanced()
+engine: EnginePresets.recommended()
 // ✅ Non-blocking + memory efficient
 // ✅ Supports all encodings and quotation characters
 // ✅ Auto-fallback on Safari
@@ -422,7 +422,7 @@ engine: EnginePresets.balanced()
 
 **Non-Blocking + Fast (UTF-8 only):**
 ```typescript
-engine: EnginePresets.responsiveFast()
+engine: EnginePresets.turbo()
 // ✅ Worker + WASM
 // ✅ Non-blocking UI
 // ❌ UTF-8 and double-quote only
@@ -523,8 +523,8 @@ try {
 **Symptoms:** Parsing takes too long
 
 **Solutions:**
-1. Use WASM for UTF-8 files: `EnginePresets.fast()`
-2. Use workers for non-blocking: `EnginePresets.balanced()`
+1. Use WASM for UTF-8 files: `EnginePresets.turbo()`
+2. Use workers for non-blocking: `EnginePresets.recommended()`
 3. Pre-load WASM at startup: `await loadWASM()`
 4. Use WorkerPool for multiple files
 
@@ -533,7 +533,7 @@ try {
 **Symptoms:** Browser becomes unresponsive during parsing
 
 **Solutions:**
-1. Use worker-based presets: `EnginePresets.responsive()` or `EnginePresets.balanced()`
+1. Use worker-based presets: `EnginePresets.recommended()` or `EnginePresets.recommended()`
 2. Process in smaller chunks with AbortSignal timeouts
 
 ### Issue: Encoding Errors

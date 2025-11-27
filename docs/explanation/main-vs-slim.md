@@ -77,7 +77,7 @@ import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 await loadWASM(wasmUrl);
 
 for await (const r of parseString(csv, {
-  engine: EnginePresets.responsiveFast({ workerURL: workerUrl })
+  engine: EnginePresets.turbo({ workerURL: workerUrl })
 })) {
   // ...
 }
@@ -85,7 +85,7 @@ for await (const r of parseString(csv, {
 
 ## Bundlers: Worker + WASM
 
-When using **Workers** and **WASM** together (e.g., `EnginePresets.responsiveFast()`):
+When using **Workers** and **WASM** together (e.g., `EnginePresets.recommended()`):
 
 1. Provide `workerURL` to your bundler’s worker asset
 2. For slim, provide `wasmUrl` to `loadWASM()`
@@ -100,7 +100,7 @@ See: [How to Use with Bundlers](../how-to-guides/using-with-bundlers.md)
 
 ## Presets and Cleanup
 
-- Prefer `EnginePresets` for common execution modes (e.g., `balanced()`, `responsiveFast()`)
+- Prefer `EnginePresets` for common execution modes (e.g., `recommended()`, `turbo()`)
 - Use a `ReusableWorkerPool` to bound concurrent workers; prefer `using` if your environment supports Explicit Resource Management, otherwise call `pool.terminate()`
 
 ## Migration

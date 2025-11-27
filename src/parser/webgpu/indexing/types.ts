@@ -112,4 +112,3 @@ export interface GPUBuffers {
   /** Bind group for Pass 2 (detect separators) */
   pass2BindGroup: GPUBindGroup;
 }
-

@@ -33,13 +33,13 @@ import type {
   Token,
 } from "@/core/types.ts";
 import {
+  type SeparatorsToTokensState,
+  separatorsToTokensGenerator,
+} from "@/parser/webgpu/assembly/separatorsToTokens.ts";
+import {
   CSVSeparatorIndexer,
   type CSVSeparatorIndexingBackendInterface,
 } from "@/parser/webgpu/indexing/CSVSeparatorIndexer.ts";
-import {
-  separatorsToTokensGenerator,
-  type SeparatorsToTokensState,
-} from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 import { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
 
 /**

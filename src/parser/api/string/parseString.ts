@@ -9,10 +9,14 @@ import type {
 } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
+import { EnvironmentCapabilities } from "@/execution/EnvironmentCapabilities.ts";
+import {
+  ExecutionPathResolver,
+  type ResolverContext,
+} from "@/execution/ExecutionPathResolver.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
-import { isGPUAvailable } from "@/parser/execution/gpu/isGPUAvailable.ts";
 import { parseStringInGPU } from "@/parser/execution/gpu/parseStringInGPU.ts";
 import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
@@ -45,9 +49,9 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * ```ts
  * import { parseString, EnginePresets } from 'web-csv-toolbox';
  *
- * // Use UI responsiveness + parse speed optimized execution method
+ * // Use recommended preset for browser applications
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.responsiveFast()
+ *   engine: EnginePresets.recommended()
  * })) {
  *   console.log(record);
  * }
@@ -116,7 +120,7 @@ export function parseString<
 export function parseString(
   csv: string,
   options?: ParseOptions,
-): AsyncIterableIterator<CSVRecord<string[]>>;
+): AsyncIterableIterator<CSVRecord>;
 export async function* parseString<
   Header extends ReadonlyArray<string>,
   Options extends ParseOptions<Header> = ParseOptions<Header>,
@@ -128,82 +132,93 @@ export async function* parseString<
     // Parse engine configuration
     const engineConfig = new InternalEngineConfig(options?.engine);
 
-    if (engineConfig.hasWorker()) {
-      // Worker execution
-      const session = engineConfig.workerPool
-        ? await WorkerSession.create({
-            workerPool: engineConfig.workerPool,
-            workerURL: engineConfig.workerURL,
-          })
-        : null;
+    // Get environment capabilities (async to properly detect GPU via requestAdapter)
+    const capabilities = await EnvironmentCapabilities.getInstance();
 
-      try {
-        yield* executeWithWorkerStrategy<CSVRecord<Header>>(
-          csv,
-          options,
-          session,
-          engineConfig,
-        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-      } finally {
-        session?.[Symbol.dispose]();
-      }
-    } else {
-      // Main thread execution
-      if (engineConfig.hasGpu() && isGPUAvailable()) {
+    // Build resolver context
+    const resolverContext: ResolverContext = {
+      inputType: "string",
+      outputFormat: options?.outputFormat ?? "object",
+      engineConfig,
+      capabilities,
+    };
+
+    // Resolve execution plan based on optimizationHint and capabilities
+    const resolver = new ExecutionPathResolver();
+    const plan = resolver.resolve(resolverContext);
+
+    // Determine execution path based on plan
+    const backends = plan.backends;
+
+    // Try backends in priority order
+    for (const backend of backends) {
+      if (backend === "gpu" && capabilities.gpu && engineConfig.hasGpu()) {
         // GPU execution
         yield* parseStringInGPU(csv, options) as AsyncIterableIterator<
           InferCSVRecord<Header, Options>
         >;
-      } else if (engineConfig.hasGpu() && !isGPUAvailable()) {
-        // GPU requested but not available - fallback
-        const fallbackConfig = engineConfig.createGpuFallbackConfig();
-        if (fallbackConfig.hasWasm()) {
-          // Fallback to WASM
-          if (options?.outputFormat === "array") {
-            throw new Error(
-              "Array output format is not supported with WASM execution. " +
-                "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-            );
-          }
-          engineConfig.onFallback?.({
-            requestedConfig: engineConfig.toConfig(),
-            actualConfig: fallbackConfig.toConfig(),
-            reason: "WebGPU not available in this environment",
-          });
-          yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
-            InferCSVRecord<Header, Options>
-          >;
-        } else {
-          // Fallback to JavaScript
-          engineConfig.onFallback?.({
-            requestedConfig: engineConfig.toConfig(),
-            actualConfig: fallbackConfig.toConfig(),
-            reason: "WebGPU not available in this environment",
-          });
-          const iterator = parseStringToIterableIterator(csv, options);
-          yield* convertIterableIteratorToAsync(
-            iterator,
-          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-        }
-      } else if (engineConfig.hasWasm()) {
+        return;
+      }
+
+      if (backend === "wasm" && engineConfig.hasWasm()) {
         // Validate that array output format is not used with WASM
         if (options?.outputFormat === "array") {
-          throw new Error(
-            "Array output format is not supported with WASM execution. " +
-              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-          );
+          continue; // Skip WASM, try next backend
         }
-        // WASM execution with implicit initialization
+        // WASM execution
         yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
           InferCSVRecord<Header, Options>
         >;
-      } else {
+        return;
+      }
+
+      if (backend === "js") {
+        // Check plan.contexts to determine if worker or main thread should be used
+        // For non-stream inputs, worker-message is viable
+        const preferWorker = plan.contexts.some(
+          (ctx) => ctx === "worker-message" || ctx === "worker-stream-transfer",
+        );
+        const mainFirst = plan.contexts[0] === "main";
+
+        // Use worker only if:
+        // 1. Worker is enabled in config
+        // 2. Worker context is available in plan
+        // 3. Main is NOT the first priority (respecting optimizationHint)
+        if (engineConfig.hasWorker() && preferWorker && !mainFirst) {
+          const session = engineConfig.workerPool
+            ? await WorkerSession.create({
+                workerPool: engineConfig.workerPool,
+                workerURL: engineConfig.workerURL,
+              })
+            : null;
+
+          try {
+            yield* executeWithWorkerStrategy<CSVRecord<Header>>(
+              csv,
+              options,
+              session,
+              engineConfig,
+            ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+            return;
+          } finally {
+            session?.[Symbol.dispose]();
+          }
+        }
+
+        // JavaScript main thread execution (preferred or fallback)
         const iterator = parseStringToIterableIterator(csv, options);
         yield* convertIterableIteratorToAsync(
           iterator,
         ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+        return;
       }
     }
+
+    // Fallback to JavaScript if no backend succeeded
+    const iterator = parseStringToIterableIterator(csv, options);
+    yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } catch (error) {
     commonParseErrorHandling(error);
   }

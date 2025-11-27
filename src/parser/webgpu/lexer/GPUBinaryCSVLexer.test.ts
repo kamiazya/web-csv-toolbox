@@ -7,10 +7,10 @@
 import { describe, expect, it } from "vitest";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type { Token } from "@/core/types.ts";
-import type { CSVSeparatorIndexResult } from "@/parser/webgpu/indexing/types.ts";
 import type { CSVSeparatorIndexingBackendInterface } from "@/parser/webgpu/indexing/CSVSeparatorIndexer.ts";
-import { packSeparator } from "@/parser/webgpu/utils/separator-utils.ts";
+import type { CSVSeparatorIndexResult } from "@/parser/webgpu/indexing/types.ts";
 import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "@/parser/webgpu/indexing/types.ts";
+import { packSeparator } from "@/parser/webgpu/utils/separator-utils.ts";
 import { GPUBinaryCSVLexer } from "./GPUBinaryCSVLexer.ts";
 
 /**

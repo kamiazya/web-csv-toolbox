@@ -1,0 +1,25 @@
+{
+  "name": "browser-engine-test",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "playwright test --project=chromium",
+    "test:headed": "playwright test --project=chromium --headed",
+    "test:gpu": "playwright test --project=chromium-gpu",
+    "test:gpu:headed": "playwright test --project=chromium-gpu --headed",
+    "test:all": "playwright test"
+  },
+  "dependencies": {
+    "web-csv-toolbox": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@webgpu/types": "^0.1.57",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

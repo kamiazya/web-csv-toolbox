@@ -6,10 +6,7 @@
  */
 
 import { describe, expect } from "vitest";
-import {
-  skipIfNoWebGPU,
-  test,
-} from "@/__tests__/webgpu/webgpu-fixture.ts";
+import { skipIfNoWebGPU, test } from "@/__tests__/webgpu/webgpu-fixture.ts";
 
 // Helper to generate shader with different workgroup size
 function generatePass1Shader(workgroupSize: number): string {

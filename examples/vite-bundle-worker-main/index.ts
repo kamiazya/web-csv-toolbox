@@ -75,11 +75,14 @@ document.getElementById("test1")?.addEventListener("click", async () => {
   try {
     displayResult("result1", "⏳ Parsing with Worker (JavaScript engine, non-blocking)...", "info");
 
-    using pool = new ReusableWorkerPool({
+    // TODO: When Node.js 24 becomes the minimum supported version, use:
+    // using pool = new ReusableWorkerPool({ maxWorkers: 2, workerURL: workerUrl });
+    const pool = new ReusableWorkerPool({
       maxWorkers: 2,
       workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
 
+    try {
       const records = [];
       for await (const record of parseString(csv, {
         engine: {
@@ -96,6 +99,9 @@ document.getElementById("test1")?.addEventListener("click", async () => {
         "success",
         JSON.stringify(records, null, 2)
       );
+    } finally {
+      pool.terminate();
+    }
   } catch (error) {
     displayResult("result1", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 1 error:", error);
@@ -112,10 +118,14 @@ document.getElementById("test2")?.addEventListener("click", async () => {
   try {
     displayResult("result2", "⏳ Parsing with Worker + WASM (non-blocking)...", "info");
 
-    using pool = new ReusableWorkerPool({
+    // TODO: When Node.js 24 becomes the minimum supported version, use:
+    // using pool = new ReusableWorkerPool({ maxWorkers: 2, workerURL: workerUrl });
+    const pool = new ReusableWorkerPool({
       maxWorkers: 2,
       workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
+
+    try {
       const records = [];
       for await (const record of parseString(csv, {
         engine: {
@@ -133,6 +143,9 @@ document.getElementById("test2")?.addEventListener("click", async () => {
         "success",
         JSON.stringify(records, null, 2)
       );
+    } finally {
+      pool.terminate();
+    }
   } catch (error) {
     displayResult("result2", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 2 error:", error);
@@ -149,10 +162,14 @@ document.getElementById("test3")?.addEventListener("click", async () => {
   try {
     displayResult("result3", "⏳ Parallel processing: multiple CSV files with multiple Workers...", "info");
 
-    using pool = new ReusableWorkerPool({
+    // TODO: When Node.js 24 becomes the minimum supported version, use:
+    // using pool = new ReusableWorkerPool({ maxWorkers: 3, workerURL: workerUrl });
+    const pool = new ReusableWorkerPool({
       maxWorkers: 3,
       workerURL: workerUrl,  // Imported from web-csv-toolbox/worker
     });
+
+    try {
       const csvFiles = [
         "a,b\n1,2\n3,4",
         "x,y\n10,20\n30,40",
@@ -185,6 +202,9 @@ document.getElementById("test3")?.addEventListener("click", async () => {
         "success",
         resultText
       );
+    } finally {
+      pool.terminate();
+    }
   } catch (error) {
     displayResult("result3", `❌ Error: ${error}`, "error", error instanceof Error ? error.stack : undefined);
     console.error("Test 3 error:", error);

@@ -86,6 +86,7 @@ export class MessageStreamingStrategy implements WorkerStrategy {
           data,
           options: serializeOptions(options),
           useWASM: engineConfig.hasWasm(),
+          useGPU: engineConfig.hasGpu(),
         },
         options as
           | ParseOptions<Header>

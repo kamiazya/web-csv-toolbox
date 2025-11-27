@@ -171,7 +171,7 @@ const records = parseStringToArraySyncWASM(csv);
 
 ## Usage 📘
 
-> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.responsive()`, `EnginePresets.responsiveFast()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/using-with-bundlers.md) for configuration details.
+> **Note for Bundler Users**: When using Worker-based execution strategies (e.g., `EnginePresets.recommended()`) with bundlers like Vite or Webpack, you must explicitly specify the `workerURL` option. See the [Bundler Integration Guide](./docs/how-to-guides/using-with-bundlers.md) for configuration details.
 
 ### Parsing CSV files from strings
 
@@ -800,6 +800,96 @@ const rows = await parse.toArray(csv, {
 | `ignoreBOM`                       | Whether to ignore Byte Order Mark (BOM)           | `false` | See [TextDecoderOptions.ignoreBOM](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/ignoreBOM) for more information about the BOM.      |
 | `fatal`                           | Throw an error on invalid characters              | `false` | See [TextDecoderOptions.fatal](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoderStream/fatal) for more information.                            |
 | `allowExperimentalCompressions`   | Allow experimental/future compression formats     | `false` | When enabled, passes unknown compression formats to runtime. Use cautiously. See example below.                                                           |
+
+### Engine Options ⚙️
+
+The `engine` option controls the execution strategy for parsing. Use `EnginePresets` for common configurations or customize individual settings.
+
+#### Engine Configuration
+
+| Option             | Description                                        | Default      | Notes                                                                                |
+| ------------------ | -------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------ |
+| `worker`           | Enable Web Worker execution                        | `false`      | Non-blocking parsing in worker thread                                                |
+| `wasm`             | Enable WebAssembly execution                       | `false`      | Faster parsing (UTF-8 only, double-quote only)                                       |
+| `gpu`              | Enable WebGPU acceleration                         | `false`      | GB/s throughput for large files (Chrome 113+)                                        |
+| `workerStrategy`   | Worker communication strategy                      | `undefined`  | `'stream-transfer'` (zero-copy) or `'message-streaming'` (Safari compatible). When `undefined`, auto-selects based on browser support. |
+| `optimizationHint` | Optimization priority hint                         | `'balanced'` | `'speed'`, `'memory'`, `'balanced'`, `'responsive'`. See [Optimization Hints](#optimization-hints) below. |
+| `onFallback`       | Callback when fallback occurs                      | `undefined`  | Called when a preferred strategy is unavailable                                      |
+
+#### Optimization Hints
+
+The `optimizationHint` option guides the execution path selection based on your performance priorities:
+
+| Hint          | Backend Priority      | Context Priority                        | Best For                                       |
+| ------------- | --------------------- | --------------------------------------- | ---------------------------------------------- |
+| `'speed'`     | GPU → WASM → JS       | Main thread first                       | Maximum throughput, blocking OK                |
+| `'memory'`    | JS → WASM → GPU       | Main thread first                       | Minimal memory footprint, no worker overhead   |
+| `'balanced'`  | WASM → GPU → JS       | Worker with stream-transfer first       | General purpose (default)                      |
+| `'responsive'`| JS → WASM → GPU       | Worker first                            | UI responsiveness, non-blocking                |
+
+```ts
+import { parseString } from 'web-csv-toolbox';
+
+// Speed-optimized: GPU > WASM > JS, main thread execution
+for await (const record of parseString(csv, {
+  engine: {
+    gpu: true,
+    wasm: true,
+    optimizationHint: 'speed'
+  }
+})) {
+  console.log(record);
+}
+
+// Memory-optimized: JS streaming with worker
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    optimizationHint: 'memory'
+  }
+})) {
+  console.log(record);
+}
+```
+
+#### Engine Presets
+
+`EnginePresets` provides three simple presets optimized for different priorities:
+
+| Preset          | Backend Priority         | Context      | Use Case                                      |
+| --------------- | ------------------------ | ------------ | --------------------------------------------- |
+| `stable()`      | 🥇 JS                    | 🖥️ Main      | Maximum compatibility, server-side (Node/Deno)|
+| `recommended()` | 🥇 WASM 🥈 JS            | 👷 Worker    | UI responsiveness + good performance (default)|
+| `turbo()`       | 🥇 GPU 🥈 WASM 🥉 JS     | 🖥️ Main      | Maximum speed, blocking OK (>10MB files)      |
+
+```ts
+import { parseString, EnginePresets } from 'web-csv-toolbox';
+
+// Recommended for most browser applications
+for await (const record of parseString(csv, {
+  engine: EnginePresets.recommended()
+})) {
+  console.log(record);
+}
+
+// Maximum speed for large files (uses GPU when available)
+for await (const record of parseString(csv, {
+  engine: EnginePresets.turbo({
+    onFallback: (info) => console.warn(`Fallback: ${info.reason}`)
+  })
+})) {
+  console.log(record);
+}
+
+// Server-side / maximum compatibility
+for await (const record of parseString(csv, {
+  engine: EnginePresets.stable()
+})) {
+  console.log(record);
+}
+```
+
+> **Note**: Previous presets (`balanced`, `responsive`, `memoryEfficient`, `fast`, `responsiveFast`, `gpuAccelerated`, `ultraFast`) are deprecated but still available as aliases for backward compatibility.
 
 ## Performance & Best Practices ⚡
 
