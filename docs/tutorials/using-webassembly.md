@@ -100,8 +100,8 @@ WebAssembly (WASM) is a binary instruction format that runs in modern browsers a
 **✅ Use WASM when:**
 - Parsing UTF-8 CSV files
 - Server-side parsing where blocking is acceptable
-- CSV uses standard delimiters (comma, tab, etc.)
-- Using any single-character quotation mark
+- CSV uses ASCII delimiters (comma, tab, semicolon, etc.)
+- Using ASCII quotation marks (`"`, `'`, etc.)
 
 **❌ Skip WASM when:**
 - CSV uses non-UTF-8 encoding (Shift-JIS, EUC-JP, etc.)

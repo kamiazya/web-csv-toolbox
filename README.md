@@ -144,10 +144,21 @@ const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 
 **Best for**: Bundle size-sensitive applications and production optimization
 
+**Browser (bundlers like Vite):**
+```typescript
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url'; // Vite syntax
+
+// Manual initialization required - wasmUrl is REQUIRED in browser
+await loadWASM(wasmUrl);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
+```
+
+**Node.js:**
 ```typescript
 import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
-// Manual initialization required
+// In Node.js, parameter is optional (auto-resolves via package exports)
 await loadWASM();
 const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
@@ -156,16 +167,17 @@ const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 - ✅ Smaller main bundle (WASM not embedded)
 - ✅ External WASM loading for better caching
 - ✅ Explicit control over initialization timing
-- ❌ Requires manual `loadWASM()` call before using WASM features
+- ❌ **Browser**: Requires `loadWASM(wasmUrl)` with explicit WASM URL
+- ❌ **Node.js**: Requires `loadWASM()` call (parameter optional)
 
 **Comparison:**
 
-| Aspect | Main | Slim |
-|--------|------|------|
-| **Initialization** | Automatic | Manual (`loadWASM()` required) |
-| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
-| **Caching** | Single bundle | WASM cached separately |
-| **Use Case** | Convenience, prototyping | Production, bundle optimization |
+| Aspect | Main | Slim (Browser) | Slim (Node.js) |
+|--------|------|----------------|----------------|
+| **Initialization** | Automatic | `loadWASM(wasmUrl)` required | `loadWASM()` required |
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) | Smaller |
+| **Caching** | Single bundle | WASM cached separately | N/A |
+| **Use Case** | Convenience, prototyping | Production, bundle optimization | Production |
 
 > **Note**: Both entry points export the same full API (feature parity). The only difference is WASM initialization strategy and bundle size.
 
@@ -722,6 +734,55 @@ for await (const record of parse(csv, {
 // { name: "Bob", age: "25" }
 ```
 
+#### Worker + WASM (Bundler Setup)
+
+For non-blocking UI with WASM performance in browser applications using bundlers (Vite, Webpack, etc.):
+
+**Vite:**
+
+```ts
+import { parse, loadWASM, ReusableWorkerPool } from "web-csv-toolbox";
+import workerUrl from "web-csv-toolbox/worker?url";
+import wasmUrl from "web-csv-toolbox/csv.wasm?url";
+
+// Initialize WASM with external URL (required for slim entry or bundler optimization)
+await loadWASM(wasmUrl);
+
+// Create worker pool with custom worker URL
+using pool = new ReusableWorkerPool({ workerURL: workerUrl });
+
+const csv = "name,age\nAlice,30\nBob,25";
+
+// Non-blocking parsing with WASM acceleration
+for await (const record of parse(csv, {
+  engine: { worker: true, wasm: true, workerPool: pool }
+})) {
+  console.log(record);
+}
+// Worker is automatically cleaned up when leaving scope
+```
+
+**Webpack:**
+
+```ts
+import { parse, loadWASM, ReusableWorkerPool } from "web-csv-toolbox";
+
+// Webpack worker URL syntax
+const workerUrl = new URL("web-csv-toolbox/worker", import.meta.url);
+
+await loadWASM();
+
+using pool = new ReusableWorkerPool({ workerURL: workerUrl });
+
+for await (const record of parse(csv, {
+  engine: { worker: true, wasm: true, workerPool: pool }
+})) {
+  console.log(record);
+}
+```
+
+> **Why Worker + WASM?** Worker threads keep the UI responsive while WASM provides fast parsing. `ReusableWorkerPool` manages worker lifecycle with automatic cleanup via `using` syntax.
+
 #### Supported Input Types
 
 | Input Type | API | WASM Streaming |
@@ -953,8 +1014,8 @@ const records = parseString.toArraySync(csvString, { engine: { wasm: true } });
 
 ### Known Limitations
 
-- **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
-- **WASM Parser**: UTF-8 encoding only, single-character quotation only
+- **Delimiter/Quotation**: JavaScript parser supports any character; WASM parser requires single-byte ASCII only
+- **WASM Parser**: UTF-8 encoding only, single-byte ASCII delimiter/quotation only (multi-byte UTF-8 characters not supported)
 - **Streaming**: Best performance with chunk sizes > 1KB
 
 ### Security Considerations

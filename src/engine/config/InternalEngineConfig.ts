@@ -248,14 +248,35 @@ export class InternalEngineConfig {
     const hasWasm = this.hasWasm();
 
     if (hasWorker) {
-      return {
-        worker: true,
-        workerURL: this.workerURL,
-        workerPool: this.workerPool,
+      const baseWorkerConfig = {
+        worker: true as const,
         wasm: hasWasm,
         workerStrategy: this.getWorkerStrategy(),
         strict: this.hasStrict(),
         onFallback: this.onFallback,
+      };
+
+      // Return appropriate variant based on what's set
+      // workerPool and workerURL are mutually exclusive
+      if (this.workerPool !== undefined) {
+        return {
+          ...baseWorkerConfig,
+          workerPool: this.workerPool,
+          workerURL: undefined,
+        };
+      }
+      if (this.workerURL !== undefined) {
+        return {
+          ...baseWorkerConfig,
+          workerURL: this.workerURL,
+          workerPool: undefined,
+        };
+      }
+      // Default: neither workerPool nor workerURL
+      return {
+        ...baseWorkerConfig,
+        workerURL: undefined,
+        workerPool: undefined,
       };
     }
 

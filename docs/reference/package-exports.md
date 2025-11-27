@@ -55,22 +55,34 @@ import { parseString, loadWASM } from 'web-csv-toolbox/slim';
 - Low-level APIs (same as main)
 - Worker management (same as main)
 - WASM utilities with **manual initialization required**:
-  - `loadWASM()` - **Must be called before using WASM functions**
+  - `loadWASM(input)` - **Browser/Edge runtimes must pass a WASM URL/Response/Buffer (see example below).** Node.js can omit the argument because the loader resolves the packaged WASM file automatically.
   - `isWASMReady()` - Check WASM initialization status
 
 **Characteristics**:
 - ✅ Smaller main bundle (WASM not embedded in JavaScript)
 - ✅ External WASM loading for better caching
-- ❌ Requires manual `loadWASM()` call before using WASM features
+- ❌ Requires manual `loadWASM()` call before using WASM features (with explicit WASM URL in browsers)
 
 **Usage pattern**:
+
+**Browser (e.g., Vite):**
+```typescript
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
+
+// Must initialize WASM before use (wasmUrl is REQUIRED in browser contexts)
+await loadWASM(wasmUrl);
+
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
+```
+
+**Node.js (auto-resolves WASM file):**
 ```typescript
 import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
-// Must initialize WASM before use
+// Parameter is optional on Node.js (import.meta.resolve locates the bundled WASM)
 await loadWASM();
 
-// Now can use WASM functions via engine option
 const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
@@ -313,7 +325,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
 **For maximum parsing performance.** Uses WebAssembly-based parser with Rust `csv-core` implementation.
 
-> ⚠️ **Limitations**: WASM parsers only support UTF-8 encoding and double-quote (`"`) as quotation character. Custom delimiters (comma, tab, etc.) are supported.
+> ⚠️ **Limitations**: WASM parsers only support UTF-8 encoding and single-byte ASCII delimiter/quotation (multi-byte UTF-8 characters not supported).
 
 - **String Parsing**:
   - **`WASMStringObjectCSVParser`** - WASM-accelerated string parser outputting object records

@@ -29,16 +29,34 @@ export interface ValidatedWASMOptions {
 }
 
 /**
+ * Checks if a character is a single-byte ASCII character.
+ *
+ * WASM parser uses single-byte (u8) for delimiter and quotation characters.
+ * Multi-byte UTF-8 characters (like "、" or "「") are not supported.
+ *
+ * @param char - Character to check
+ * @returns true if the character is a single-byte ASCII character
+ *
+ * @internal
+ */
+function isSingleByteASCII(char: string): boolean {
+  return char.length === 1 && char.charCodeAt(0) < 128;
+}
+
+/**
  * Validates and normalizes options for WASM parsing.
  *
  * WASM parser has limitations:
- * - Only supports single-character delimiters
- * - Only supports single-character quotation (typically double quote)
+ * - Only supports single-byte ASCII delimiters (code point < 128)
+ * - Only supports single-byte ASCII quotation (code point < 128)
  * - Only supports UTF-8 encoding (for binary input)
+ *
+ * Multi-byte UTF-8 characters (like Japanese "、" or "「") are NOT supported
+ * as delimiter or quotation, even though they are single characters in JavaScript.
  *
  * @param options - Raw options from user
  * @returns Validated and normalized options
- * @throws {RangeError} If delimiter or quotation is not a single character
+ * @throws {RangeError} If delimiter or quotation is not a single-byte ASCII character
  *
  * @example
  * ```ts
@@ -64,19 +82,31 @@ export function validateWASMOptions<
     maxFieldCount = DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   } = options;
 
-  // WASM only supports single-character delimiter
-  if (typeof delimiter !== "string" || delimiter.length !== 1) {
+  // WASM only supports single-byte ASCII delimiter
+  if (typeof delimiter !== "string" || !isSingleByteASCII(delimiter)) {
+    const charCode =
+      typeof delimiter === "string" && delimiter.length > 0
+        ? delimiter.charCodeAt(0)
+        : "N/A";
     throw new RangeError(
-      `Delimiter must be a single character for WASM execution. Got: "${delimiter}" (length: ${delimiter.length}). ` +
-        `Use the JavaScript parser with engine: { wasm: false } for multi-character delimiters.`,
+      `Delimiter must be a single-byte ASCII character (code point < 128) for WASM execution. ` +
+        `Got: "${delimiter}" (length: ${delimiter.length}, charCode: ${charCode}). ` +
+        `Multi-byte UTF-8 characters are not supported. ` +
+        `Use the JavaScript parser with engine: { wasm: false } for non-ASCII delimiters.`,
     );
   }
 
-  // WASM only supports single-character quotation
-  if (typeof quotation !== "string" || quotation.length !== 1) {
+  // WASM only supports single-byte ASCII quotation
+  if (typeof quotation !== "string" || !isSingleByteASCII(quotation)) {
+    const charCode =
+      typeof quotation === "string" && quotation.length > 0
+        ? quotation.charCodeAt(0)
+        : "N/A";
     throw new RangeError(
-      `Quotation must be a single character for WASM execution. Got: "${quotation}" (length: ${quotation.length}). ` +
-        `Use the JavaScript parser with engine: { wasm: false } for multi-character quotation.`,
+      `Quotation must be a single-byte ASCII character (code point < 128) for WASM execution. ` +
+        `Got: "${quotation}" (length: ${quotation.length}, charCode: ${charCode}). ` +
+        `Multi-byte UTF-8 characters are not supported. ` +
+        `Use the JavaScript parser with engine: { wasm: false } for non-ASCII quotation.`,
     );
   }
 

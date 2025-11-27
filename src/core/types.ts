@@ -925,75 +925,15 @@ export interface MainThreadEngineConfig extends BaseEngineConfig {
 }
 
 /**
- * Engine configuration for worker thread execution.
+ * Base interface for worker engine configuration with common worker options.
  *
- * @category Types
+ * @internal
  */
-export interface WorkerEngineConfig extends BaseEngineConfig {
+interface WorkerEngineConfigBase extends BaseEngineConfig {
   /**
    * Execute in Worker thread.
    */
   worker: true;
-
-  /**
-   * Custom Worker URL.
-   *
-   * If not provided, uses the bundled worker.
-   *
-   * @remarks
-   * The custom worker must implement the same message protocol as the bundled worker.
-   *
-   * @example Custom worker
-   * ```ts
-   * parse(csv, {
-   *   engine: {
-   *     worker: true,
-   *     workerURL: new URL('./custom-worker.js', import.meta.url)
-   *   }
-   * })
-   * ```
-   */
-  workerURL?: string | URL | undefined;
-
-  /**
-   * Worker pool for managing worker lifecycle.
-   *
-   * When provided, the parsing function will use this pool's worker instance
-   * instead of creating/reusing a module-level singleton worker.
-   *
-   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup.
-   *
-   * @example Using ReusableWorkerPool with automatic cleanup
-   * ```ts
-   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
-   *
-   * async function processCSV(csv: string) {
-   *   using pool = new ReusableWorkerPool();
-   *
-   *   const records = [];
-   *   for await (const record of parseString(csv, {
-   *     engine: { worker: true, workerPool: pool }
-   *   })) {
-   *     records.push(record);
-   *   }
-   *
-   *   return records;
-   *   // Worker is automatically terminated when leaving this scope
-   * }
-   * ```
-   *
-   * @example Multiple operations with same pool
-   * ```ts
-   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
-   *
-   * using pool = new ReusableWorkerPool();
-   *
-   * await parseString(csv1, { engine: { worker: true, workerPool: pool } });
-   * await parseString(csv2, { engine: { worker: true, workerPool: pool } });
-   * // Worker is reused for both operations
-   * ```
-   */
-  workerPool?: WorkerPool | undefined;
 
   /**
    * Worker communication strategy.
@@ -1095,6 +1035,132 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
    */
   onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
 }
+
+/**
+ * Worker engine configuration with a custom worker URL.
+ *
+ * Use this when you want to specify a custom worker script URL.
+ * Cannot be combined with `workerPool` (mutually exclusive).
+ *
+ * @category Types
+ */
+export interface WorkerEngineConfigWithURL extends WorkerEngineConfigBase {
+  /**
+   * Custom Worker URL.
+   *
+   * If not provided, uses the bundled worker.
+   *
+   * @remarks
+   * The custom worker must implement the same message protocol as the bundled worker.
+   *
+   * @example Custom worker
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     worker: true,
+   *     workerURL: new URL('./custom-worker.js', import.meta.url)
+   *   }
+   * })
+   * ```
+   */
+  workerURL: string | URL;
+
+  /**
+   * Worker pool is not allowed when workerURL is specified.
+   * Use `ReusableWorkerPool({ workerURL })` instead to configure worker URL via pool.
+   */
+  workerPool?: never;
+}
+
+/**
+ * Worker engine configuration with a worker pool.
+ *
+ * Use this when you want to manage worker lifecycle with a pool.
+ * Cannot be combined with `workerURL` (mutually exclusive) - configure workerURL in the pool instead.
+ *
+ * @category Types
+ */
+export interface WorkerEngineConfigWithPool extends WorkerEngineConfigBase {
+  /**
+   * Worker pool for managing worker lifecycle.
+   *
+   * When provided, the parsing function will use this pool's worker instance
+   * instead of creating/reusing a module-level singleton worker.
+   *
+   * Use {@link WorkerPool} with the `using` syntax for automatic cleanup.
+   *
+   * @example Using ReusableWorkerPool with automatic cleanup
+   * ```ts
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * async function processCSV(csv: string) {
+   *   using pool = new ReusableWorkerPool({ workerURL });
+   *
+   *   const records = [];
+   *   for await (const record of parseString(csv, {
+   *     engine: { worker: true, wasm: true, workerPool: pool }
+   *   })) {
+   *     records.push(record);
+   *   }
+   *
+   *   return records;
+   *   // Worker is automatically terminated when leaving this scope
+   * }
+   * ```
+   *
+   * @example Multiple operations with same pool
+   * ```ts
+   * import { ReusableWorkerPool, parseString } from 'web-csv-toolbox';
+   *
+   * using pool = new ReusableWorkerPool();
+   *
+   * await parseString(csv1, { engine: { worker: true, workerPool: pool } });
+   * await parseString(csv2, { engine: { worker: true, workerPool: pool } });
+   * // Worker is reused for both operations
+   * ```
+   */
+  workerPool: WorkerPool;
+
+  /**
+   * Worker URL is not allowed when workerPool is specified.
+   * Configure workerURL in the pool constructor instead: `new ReusableWorkerPool({ workerURL })`.
+   */
+  workerURL?: never;
+}
+
+/**
+ * Worker engine configuration with default worker (no pool, no custom URL).
+ *
+ * Uses the bundled worker with automatic lifecycle management.
+ *
+ * @category Types
+ */
+export interface WorkerEngineConfigDefault extends WorkerEngineConfigBase {
+  /**
+   * No custom worker URL - uses bundled worker.
+   */
+  workerURL?: undefined;
+
+  /**
+   * No worker pool - uses default lifecycle management.
+   */
+  workerPool?: undefined;
+}
+
+/**
+ * Engine configuration for worker thread execution.
+ *
+ * Worker execution options are mutually exclusive:
+ * - Use `workerURL` for custom worker scripts
+ * - Use `workerPool` for managed worker lifecycle (configure workerURL in pool)
+ * - Use neither for default bundled worker
+ *
+ * @category Types
+ */
+export type WorkerEngineConfig =
+  | WorkerEngineConfigWithURL
+  | WorkerEngineConfigWithPool
+  | WorkerEngineConfigDefault;
 
 /**
  * Common interface for worker pools.
@@ -1201,6 +1267,54 @@ export interface EngineOptions {
    * ```
    */
   engine?: EngineConfig;
+}
+
+/**
+ * Engine configuration for factory functions.
+ *
+ * Factory functions only support main-thread execution modes.
+ * Worker execution is handled at the parse function level, not at the factory level.
+ *
+ * @category Configuration
+ *
+ * @remarks
+ * This type excludes worker-related options that are only meaningful for parse functions.
+ */
+export interface FactoryEngineConfig {
+  /**
+   * Use WASM implementation.
+   *
+   * WASM module is automatically initialized on first use.
+   * However, it is recommended to call {@link loadWASM} beforehand for better performance.
+   *
+   * @default false
+   */
+  wasm?: boolean | undefined;
+}
+
+/**
+ * Options for factory functions that accept engine configuration.
+ *
+ * @category Options
+ *
+ * @remarks
+ * Factory functions only support `wasm` option.
+ * Worker execution is not applicable for factory-created instances.
+ * Use parse functions (parseString, parseBinary, etc.) for worker support.
+ *
+ * @example WASM mode
+ * ```ts
+ * import { loadWASM, createStringCSVParser } from 'web-csv-toolbox';
+ *
+ * await loadWASM();
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   engine: { wasm: true }
+ * });
+ * ```
+ */
+export interface FactoryEngineOptions {
+  engine?: FactoryEngineConfig;
 }
 
 /**

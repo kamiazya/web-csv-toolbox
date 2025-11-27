@@ -398,7 +398,7 @@ function parseCSV(text) {
 
 **Disadvantages:**
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter and quotation only (multi-byte UTF-8 characters not supported)
 - ❌ Still occupies main thread/event loop
 - ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
 
@@ -417,16 +417,42 @@ parse(shiftJISCSV, {
 });
 ```
 
-#### Double-Quote Only
+#### Single-Byte ASCII Delimiter and Quotation Only
+
+The WASM parser only supports single-byte ASCII characters (code point < 128) for delimiter and quotation.
+Multi-byte UTF-8 characters (like Japanese "、" or "「") are NOT supported, even though they appear as single characters in JavaScript.
 
 ```typescript
-// ✅ Works
+// ✅ Works - default comma delimiter and double-quote
 parse('a,"b,c",d', { engine: { wasm: true } });
 
-// ❌ Won't work
+// ✅ Works - custom single-character ASCII quotation
 parse("a,'b,c',d", {
   quotation: "'",
   engine: { wasm: true }
+});
+
+// ✅ Works - tab delimiter (ASCII)
+parse('a\tb\tc', {
+  delimiter: '\t',
+  engine: { wasm: true }
+});
+
+// ❌ Won't work (both JS and WASM) - multi-character delimiter not supported
+parse("a::b::c", {
+  delimiter: '::'
+});
+
+// ❌ Won't work (WASM only) - multi-byte UTF-8 delimiter
+parse("名前、年齢", {
+  delimiter: '、',  // 3 bytes in UTF-8
+  engine: { wasm: true }
+});
+
+// ✅ Works (JS only) - multi-byte UTF-8 delimiter with JavaScript parser
+parse("名前、年齢", {
+  delimiter: '、',
+  engine: { wasm: false }
 });
 ```
 
@@ -434,14 +460,14 @@ parse("a,'b,c',d", {
 
 ✅ **Use WASM when:**
 - Files are UTF-8 encoded
-- Using standard CSV format (double-quotes)
+- Using single-byte ASCII delimiters and quotation (e.g., `,`, `\t`, `"`, `'`)
 - Performance is critical
 - **Browser**: CPU usage matters (battery-powered devices, mobile)
 - **Server**: High-throughput parsing with lower CPU overhead
 
 ❌ **Skip WASM when:**
 - Non-UTF-8 encoding (e.g., Shift-JIS, EUC-JP)
-- Custom quotation characters
+- Non-ASCII delimiter or quotation needed (e.g., Japanese `、`)
 - Broad format support needed
 - First-time initialization latency is critical (unless you pre-load with `loadWASM()`)
 
@@ -535,7 +561,7 @@ Combines the benefits of both strategies:
 
 **Disadvantages:**
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter and quotation only
 - ❌ Worker + WASM initialization overhead
 - ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
 
@@ -545,10 +571,11 @@ Combines the benefits of both strategies:
 - Large UTF-8 files (> 10MB)
 - **Browser**: UI responsiveness + performance both critical
 - **Server**: High-throughput processing with concurrent requests
-- Standard CSV format (UTF-8, double-quotes)
+- CSV format uses single-byte ASCII delimiter/quotation
 
 ❌ **Skip combined when:**
 - Non-UTF-8 encoding required
+- Non-ASCII delimiter/quotation needed (e.g., Japanese `、`, `「」`)
 - File size < 1MB (overhead not worth it)
 - Maximum compatibility needed
 - Simple single-file processing

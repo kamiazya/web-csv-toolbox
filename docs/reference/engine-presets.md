@@ -17,7 +17,13 @@ Engine presets provide convenient configurations that combine worker execution, 
 - **Stable**: `responsive`, `fast`, `responsiveFast` - Use stable Web Workers and/or WebAssembly APIs but may require bundler configuration
 - **Experimental**: `memoryEfficient`, `balanced` - Use Transferable Streams API which is still evolving and may change (both have automatic stable fallback)
 
-**All presets are functions** that optionally accept configuration options like `workerPool`, `workerURL`, `arrayBufferThreshold`, `backpressureCheckInterval`, `queuingStrategy`, and `onFallback`.
+**All presets are functions** that optionally accept configuration options including `arrayBufferThreshold`, `backpressureCheckInterval`, `queuingStrategy`, and `onFallback`.
+
+**Worker-based presets** (`responsive`, `memoryEfficient`, `responsiveFast`, `balanced`) also accept **one of**:
+- `workerPool` - Use a managed worker pool (recommended for production)
+- `workerURL` - Use a custom worker URL directly
+
+> **Note:** `workerPool` and `workerURL` are **mutually exclusive**. When using a worker pool, configure the worker URL in the pool constructor: `new ReusableWorkerPool({ workerURL })`.
 
 **Each preset is optimized for specific performance characteristics:**
 - Parse speed (execution time)
@@ -30,11 +36,20 @@ Engine presets provide convenient configurations that combine worker execution, 
 engine: EnginePresets.balanced()
 ```
 
-**With WorkerPool:**
+**With WorkerPool (recommended for production):**
 ```typescript
 import { ReusableWorkerPool } from 'web-csv-toolbox';
-const pool = new ReusableWorkerPool({ maxWorkers: 4 });
+import workerUrl from 'web-csv-toolbox/worker?url'; // Vite syntax
+
+// Configure workerURL in pool constructor
+const pool = new ReusableWorkerPool({ maxWorkers: 4, workerURL: workerUrl });
 engine: EnginePresets.balanced({ workerPool: pool })
+```
+
+**With workerURL directly (simple use cases):**
+```typescript
+import workerUrl from 'web-csv-toolbox/worker?url';
+engine: EnginePresets.balanced({ workerURL: workerUrl })
 ```
 
 ## Quick Reference
@@ -222,18 +237,18 @@ for await (const record of parse(response, {
 - ⚠️ WASM implementation may change in future versions
 - ❌ Blocks main thread during parsing
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter/quotation only
 - ❌ Requires loadWASM() initialization
 
 **Use when:**
 - Parse speed is the highest priority
 - UI blocking is acceptable
-- UTF-8 CSV files with double-quote
+- UTF-8 CSV files with single-byte ASCII delimiter/quotation
 - Server-side parsing
 
 **Limitations:**
 - Only supports UTF-8 encoding
-- Only supports double-quote (`"`) as quotation character
+- Only supports single-byte ASCII delimiter and quotation (multi-byte UTF-8 characters not supported)
 - Must call `loadWASM()` before use
 
 **Example:**
@@ -278,12 +293,12 @@ for await (const record of parseString(csv, {
 - ⚠️ Requires bundler configuration for worker URL
 - ⚠️ WASM implementation may change in future versions
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter/quotation only
 - ❌ Requires loadWASM() initialization
 
 **Use when:**
 - Both UI responsiveness and parse speed are important
-- UTF-8 CSV files with double-quote
+- UTF-8 CSV files with single-byte ASCII delimiter/quotation
 - Browser applications requiring non-blocking parsing
 
 **Example:**

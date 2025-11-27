@@ -2,36 +2,42 @@ import type {
   BinaryArrayCSVParser,
   BinaryCSVProcessingOptions,
   BinaryObjectCSVParser,
+  FactoryEngineOptions,
 } from "@/core/types.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
+import { WASMBinaryCSVArrayParser } from "@/parser/models/WASMBinaryCSVArrayParser.ts";
+import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
+import {
+  validateWASMCharset,
+  validateWASMOptions,
+} from "@/parser/utils/wasmValidation.ts";
 
 /**
  * Factory function to create the appropriate Binary CSV parser based on options.
  *
  * @template Header - The type of the header row
  * @template Options - BinaryCSVProcessingOptions type (inferred from arguments)
- * @param options - Binary CSV processing specification (excludes execution strategy)
- * @returns A parser instance configured for the specified output format
+ * @param options - Binary CSV processing specification including optional engine configuration
+ * @returns A parser instance configured for the specified output format and engine
  *
  * @remarks
- * This is a low-level factory function that accepts {@link BinaryCSVProcessingOptions}.
- * It does NOT accept execution strategy options (engine).
- * For high-level APIs with execution strategy support, use parseBinary() and related functions.
+ * This factory function supports both JavaScript and WASM implementations.
+ * Use `engine: { wasm: true }` to use the WASM implementation for better performance.
  *
- * This function provides both compile-time and runtime type safety.
+ * **WASM Constraints:**
+ * - Charset must be UTF-8 (or undefined, which defaults to UTF-8)
+ * - Delimiter must be a single character
+ * - Quotation must be a single character
+ *
  * The return type is determined by the outputFormat option:
- * - `outputFormat: 'object'` (default) → BinaryObjectCSVParser (FlexibleBinaryObjectCSVParser)
- * - `outputFormat: 'array'` → BinaryArrayCSVParser (FlexibleBinaryArrayCSVParser)
+ * - `outputFormat: 'object'` (default) → BinaryObjectCSVParser
+ * - `outputFormat: 'array'` → BinaryArrayCSVParser
  *
- * @example Object format (default)
+ * @example JavaScript implementation (default)
  * ```ts
  * const parser = createBinaryCSVParser({
  *   header: ['name', 'age'] as const,
- *   charset: 'utf-8',
- *   decompression: 'gzip',
- *   signal: abortController.signal,
- *   // engine is NOT available (low-level API)
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -39,13 +45,27 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * }
  * ```
  *
- * @example Array format
+ * @example WASM implementation
+ * ```ts
+ * import { loadWASM, createBinaryCSVParser } from 'web-csv-toolbox';
+ *
+ * await loadWASM();
+ * const parser = createBinaryCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   engine: { wasm: true }
+ * });
+ * const encoder = new TextEncoder();
+ * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
+ *   console.log(record); // { name: 'Alice', age: '30' }
+ * }
+ * ```
+ *
+ * @example Array format with WASM
  * ```ts
  * const parser = createBinaryCSVParser({
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array',
- *   charset: 'utf-8',
- *   // engine is NOT available (low-level API)
+ *   engine: { wasm: true }
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -56,35 +76,40 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
-    outputFormat: "array";
-  },
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> &
+    FactoryEngineOptions & {
+      outputFormat: "array";
+    },
 ): BinaryArrayCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
-    outputFormat: "object";
-  },
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> &
+    FactoryEngineOptions & {
+      outputFormat: "object";
+    },
 ): BinaryObjectCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
-    outputFormat: "object" | "array";
-  },
+  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> &
+    FactoryEngineOptions & {
+      outputFormat: "object" | "array";
+    },
 ): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
->(options?: BinaryCSVProcessingOptions<Header>): BinaryObjectCSVParser<Header>;
+>(
+  options?: BinaryCSVProcessingOptions<Header> & FactoryEngineOptions,
+): BinaryObjectCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options?: BinaryCSVProcessingOptions<Header>,
+  options?: BinaryCSVProcessingOptions<Header> & FactoryEngineOptions,
 ): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
@@ -98,8 +123,31 @@ export function createBinaryCSVParser<
     throw new Error("includeHeader option is only valid for array format");
   }
 
-  // Instantiate the appropriate class based on outputFormat
-  // Each class explicitly implements its respective interface
+  // Check if WASM engine is requested
+  if (options?.engine?.wasm) {
+    // Validate WASM constraints
+    validateWASMCharset(options?.charset); // UTF-8 only
+    validateWASMOptions(options); // single-char delimiter/quotation
+
+    // Instantiate WASM parser based on outputFormat
+    if (format === "array") {
+      return new WASMBinaryCSVArrayParser<Header>({
+        delimiter: options?.delimiter ?? ",",
+        quotation: options?.quotation ?? '"',
+        maxFieldCount: options?.maxFieldCount,
+        header: options?.header,
+      }) as BinaryArrayCSVParser<Header>;
+    } else {
+      return new WASMBinaryObjectCSVParser<Header>({
+        delimiter: options?.delimiter ?? ",",
+        quotation: options?.quotation ?? '"',
+        maxFieldCount: options?.maxFieldCount,
+        header: options?.header,
+      }) as BinaryObjectCSVParser<Header>;
+    }
+  }
+
+  // Default: JavaScript implementation
   if (format === "array") {
     return new FlexibleBinaryArrayCSVParser<Header>(options ?? {}) as any;
   } else {

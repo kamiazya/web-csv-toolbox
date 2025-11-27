@@ -16,7 +16,7 @@ import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVPa
  *
  * WASM parser has limitations:
  * - Only supports UTF-8 encoding
- * - Only supports double-quote (") as quotation character
+ * - Only supports single-character delimiter and quotation
  * - Synchronous operation (no streaming)
  */
 export async function* parseStringInWASM<Header extends ReadonlyArray<string>>(

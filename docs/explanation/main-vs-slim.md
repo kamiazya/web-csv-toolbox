@@ -31,7 +31,7 @@ This guide helps you choose between the two distribution entry points:
 
 Notes:
 - Both entries expose the same APIs. The primary difference is **WASM initialization strategy** and **bundle size/caching**.
-- The WASM parser has limitations (UTF-8 only, `"` as quotation). The JavaScript parser supports broader options.
+- The WASM parser has limitations (UTF-8 only, single-byte ASCII delimiter/quotation). The JavaScript parser supports broader options.
 
 ## When to Use Main
 
@@ -70,14 +70,16 @@ const rows = parseString.toArraySync(csv, { engine: { wasm: true } });
 Example (Vite):
 
 ```ts
-import { loadWASM, parseString, EnginePresets } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString, ReusableWorkerPool } from 'web-csv-toolbox/slim';
 import workerUrl from 'web-csv-toolbox/worker?url';
 import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 
 await loadWASM(wasmUrl);
 
+using pool = new ReusableWorkerPool({ workerURL: workerUrl });
+
 for await (const r of parseString(csv, {
-  engine: EnginePresets.responsiveFast({ workerURL: workerUrl })
+  engine: { worker: true, wasm: true, workerPool: pool }
 })) {
   // ...
 }

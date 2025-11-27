@@ -26,7 +26,7 @@ import { validateWASMCharset } from "@/parser/utils/wasmValidation.ts";
  * Uses optimized WASM binary parser with direct byte processing.
  * WASM parser has limitations:
  * - Only supports UTF-8 encoding
- * - Only supports double-quote (") as quotation character
+ * - Only supports single-character delimiter and quotation
  */
 export async function* parseBinaryInWASM<Header extends ReadonlyArray<string>>(
   binary: BufferSource,

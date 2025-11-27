@@ -166,7 +166,7 @@ interface FlatParseResult {
 **Key implementation details:**
 - WASM returns `FlatParseResult` (flat arrays, not nested objects)
 - JavaScript-side converts flat data to objects via `flatToObjects()` utility
-- Single-character delimiter passed as char code (u8 in Rust)
+- Single-byte ASCII delimiter passed as char code (u8 in Rust)
 - Supports both streaming (`processChunk`/`finish`) and one-shot (`parseAll`) modes
 
 ---
@@ -394,23 +394,30 @@ for await (const record of parse(csv, {
 
 ---
 
-### Double-Quote Only
+### Single-Byte ASCII Delimiter and Quotation
 
 **Limitation:**
-WASM parser only supports double-quote (`"`) as quotation character.
+WASM parser only supports single-byte ASCII delimiters and quotation characters (code point < 128).
 
-**Why:**
-- Simplifies state machine
-- Double-quote is CSV standard (RFC 4180)
-- Smaller WASM binary size
+**Supported:**
+- ASCII delimiters (`,`, `\t`, `;`, `|`, etc.)
+- ASCII quotation marks (`"`, `'`, etc.)
+- Default is comma (`,`) for delimiter and double-quote (`"`) for quotation (RFC 4180 standard)
 
-**Workaround:**
-For single-quote CSVs, use JavaScript parser:
+**Not Supported (WASM only):**
+- Multi-byte UTF-8 characters (e.g., Japanese comma `、`, Japanese brackets `「」`)
+
+**Not Supported (both JS and WASM):**
+- Multi-character delimiters (e.g., `::`, `||`)
+- Multi-character quotation marks
+
+**Workaround for non-ASCII characters:**
+For multi-byte UTF-8 characters as delimiter/quotation, use the JavaScript parser:
 
 ```typescript
 for await (const record of parse(csv, {
   engine: { wasm: false },
-  quotation: "'"
+  delimiter: '、' // Multi-byte UTF-8 delimiter requires JavaScript parser
 })) {
   console.log(record);
 }
@@ -517,7 +524,7 @@ The execution router automatically falls back to JavaScript when WASM is unavail
                                           ↓ No         ↓ Yes
                                   ┌──────────────┐  ┌──────────────┐
                                   │ Fallback     │  │ Check:       │
-                                  │ to JS        │  │ Double-quote?│
+                                  │ to JS        │  │ Single-char? │
                                   └──────────────┘  └──────────────┘
                                                           ↓ No      ↓ Yes
                                                     ┌──────────┐  ┌──────────┐
@@ -529,7 +536,7 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 **Fallback scenarios:**
 1. WASM initialization failed or module could not be loaded
 2. Non-UTF-8 encoding specified
-3. Single-quote quotation character specified
+3. Non-ASCII delimiter or quotation specified (e.g., Japanese `、`)
 4. WASM not supported in runtime (rare)
 
 ---
@@ -629,7 +636,7 @@ web-csv-toolbox's WebAssembly implementation provides:
 - Evaluate performance for your specific use case
 - Consider WASM when:
   - Working with UTF-8 CSV files
-  - Using standard double-quote quotation
+  - Using single-byte ASCII delimiter and quotation
   - Processing complete CSV strings
 - Benchmark your actual data to make informed decisions
 

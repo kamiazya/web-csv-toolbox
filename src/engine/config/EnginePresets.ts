@@ -45,28 +45,90 @@ export interface MainThreadPresetOptions extends BasePresetOptions {
 }
 
 /**
- * Options for worker-based engine presets.
- * Used by presets that utilize web workers.
+ * Base options for worker-based engine presets.
+ * @internal
  */
-export interface WorkerPresetOptions extends BasePresetOptions {
-  /**
-   * Worker pool for managing worker lifecycle.
-   * Reuse workers across multiple parse operations.
-   */
-  workerPool?: WorkerPool;
-
-  /**
-   * Custom worker URL.
-   * Use a custom worker script instead of the bundled worker.
-   */
-  workerURL?: string | URL;
-
+interface WorkerPresetOptionsBase extends BasePresetOptions {
   /**
    * Callback for fallback notifications.
    * Called when the engine falls back to a less optimal strategy.
    */
   onFallback?: (info: EngineFallbackInfo) => void;
 }
+
+/**
+ * Worker preset options with a worker pool.
+ *
+ * Use this when you want to manage worker lifecycle with a pool.
+ * Configure workerURL in the pool constructor instead of here.
+ */
+export interface WorkerPresetOptionsWithPool extends WorkerPresetOptionsBase {
+  /**
+   * Worker pool for managing worker lifecycle.
+   * Reuse workers across multiple parse operations.
+   *
+   * @example
+   * ```ts
+   * const pool = new ReusableWorkerPool({ workerURL });
+   * EnginePresets.responsive({ workerPool: pool })
+   * ```
+   */
+  workerPool: WorkerPool;
+
+  /**
+   * Worker URL is not allowed when workerPool is specified.
+   * Configure workerURL in the pool constructor instead.
+   */
+  workerURL?: never;
+}
+
+/**
+ * Worker preset options with a custom worker URL.
+ *
+ * Use this when you want to specify a custom worker script URL.
+ */
+export interface WorkerPresetOptionsWithURL extends WorkerPresetOptionsBase {
+  /**
+   * Custom worker URL.
+   * Use a custom worker script instead of the bundled worker.
+   */
+  workerURL: string | URL;
+
+  /**
+   * Worker pool is not allowed when workerURL is specified.
+   * Use `ReusableWorkerPool({ workerURL })` instead.
+   */
+  workerPool?: never;
+}
+
+/**
+ * Worker preset options with default worker (no pool, no custom URL).
+ */
+export interface WorkerPresetOptionsDefault extends WorkerPresetOptionsBase {
+  /**
+   * No custom worker URL - uses bundled worker.
+   */
+  workerURL?: undefined;
+
+  /**
+   * No worker pool - uses default lifecycle management.
+   */
+  workerPool?: undefined;
+}
+
+/**
+ * Options for worker-based engine presets.
+ * Used by presets that utilize web workers.
+ *
+ * Worker options are mutually exclusive:
+ * - Use `workerPool` for managed worker lifecycle (configure workerURL in pool)
+ * - Use `workerURL` for custom worker scripts
+ * - Use neither for default bundled worker
+ */
+export type WorkerPresetOptions =
+  | WorkerPresetOptionsWithPool
+  | WorkerPresetOptionsWithURL
+  | WorkerPresetOptionsDefault;
 
 /**
  * Options for customizing engine presets.
@@ -234,13 +296,13 @@ export const EnginePresets = Object.freeze({
    * - ⚠️ WASM implementation may change in future versions
    * - ❌ Blocks main thread during parsing
    * - ❌ UTF-8 encoding only
-   * - ❌ Double-quote (") only
+   * - ❌ Single-character delimiter/quotation only
    * - ❌ Requires loadWASM() initialization
    *
    * **Use when:**
    * - Parse speed is the highest priority
    * - UI blocking is acceptable
-   * - UTF-8 CSV files with double-quote
+   * - UTF-8 CSV files with single-character delimiter/quotation
    * - Server-side parsing
    *
    * @param options - Configuration options
@@ -270,12 +332,12 @@ export const EnginePresets = Object.freeze({
    * - ⚠️ Requires bundler configuration for worker URL
    * - ⚠️ WASM implementation may change in future versions
    * - ❌ UTF-8 encoding only
-   * - ❌ Double-quote (") only
+   * - ❌ Single-character delimiter/quotation only
    * - ❌ Requires loadWASM() initialization
    *
    * **Use when:**
    * - Both UI responsiveness and parse speed are important
-   * - UTF-8 CSV files with double-quote
+   * - UTF-8 CSV files with single-character delimiter/quotation
    * - Browser applications requiring non-blocking parsing
    *
    * @param options - Configuration options

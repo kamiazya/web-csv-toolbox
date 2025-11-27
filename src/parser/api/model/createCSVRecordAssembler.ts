@@ -1,17 +1,24 @@
-import type { CSVRecordAssemblerCommonOptions } from "@/core/types.ts";
+import type {
+  CSVRecordAssemblerCommonOptions,
+  FactoryEngineOptions,
+} from "@/core/types.ts";
 import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 
 /**
  * Factory function to create the appropriate CSV record assembler based on options.
  *
- * @param options - Assembler options including outputFormat
+ * @param options - Assembler options including outputFormat and engine config
  * @returns An assembler instance configured for the specified output format
  *
  * @remarks
  * This function accepts {@link CSVRecordAssemblerCommonOptions} for flexibility,
  * but runtime validation ensures type safety. For compile-time type safety,
  * use {@link CSVRecordAssemblerOptions} type directly.
+ *
+ * The `engine` option is accepted for API consistency and future extensibility,
+ * but currently only the JavaScript implementation is available.
+ * WASM assembler is not yet implemented.
  *
  * @example
  * ```ts
@@ -26,17 +33,25 @@ import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObj
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array'
  * });
+ *
+ * // Create an assembler with engine option (accepted but currently uses JS implementation)
+ * const assembler = createCSVRecordAssembler({
+ *   header: ['name', 'age'] as const,
+ *   engine: { wasm: true } // Accepted for future extensibility
+ * });
  * ```
  */
 export function createCSVRecordAssembler<
   Header extends ReadonlyArray<string>,
-  Options extends
-    CSVRecordAssemblerCommonOptions<Header> = CSVRecordAssemblerCommonOptions<Header>,
+  Options extends CSVRecordAssemblerCommonOptions<Header> &
+    FactoryEngineOptions = CSVRecordAssemblerCommonOptions<Header> &
+    FactoryEngineOptions,
 >(
   options?: Options,
 ): Options extends { outputFormat: "array" }
   ? FlexibleCSVArrayRecordAssembler<Header>
   : FlexibleCSVObjectRecordAssembler<Header> {
+  // Note: engine option is accepted but currently ignored (no WASM assembler implementation)
   const format = options?.outputFormat ?? "object";
 
   // Validate headerless mode (header: [])

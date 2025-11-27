@@ -91,12 +91,11 @@ describe("EnginePresets", () => {
       });
     });
 
-    it("should accept all options", () => {
+    it("should accept workerPool option", () => {
       const pool = new WorkerPool({ maxWorkers: 4 });
       const onFallback = vi.fn();
       const config = EnginePresets.memoryEfficient({
         workerPool: pool,
-        workerURL: "/worker.js",
         onFallback,
       });
       expect(config).toEqual({
@@ -104,6 +103,20 @@ describe("EnginePresets", () => {
         wasm: false,
         workerStrategy: "stream-transfer",
         workerPool: pool,
+        onFallback,
+      });
+    });
+
+    it("should accept workerURL option", () => {
+      const onFallback = vi.fn();
+      const config = EnginePresets.memoryEfficient({
+        workerURL: "/worker.js",
+        onFallback,
+      });
+      expect(config).toEqual({
+        worker: true,
+        wasm: false,
+        workerStrategy: "stream-transfer",
         workerURL: "/worker.js",
         onFallback,
       });

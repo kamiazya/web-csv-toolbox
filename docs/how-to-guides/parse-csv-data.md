@@ -308,7 +308,7 @@ try {
 
 ### Scenario 9: Parse with WASM Acceleration
 
-**For UTF-8 files with double-quotes:**
+**For UTF-8 files with single-byte ASCII delimiter/quotation:**
 
 ```typescript
 import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
@@ -326,7 +326,7 @@ for await (const record of parseString(csv, {
 
 **Limitations:**
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter and quotation only
 
 ### Scenario 10: Parse Server-Side Requests
 

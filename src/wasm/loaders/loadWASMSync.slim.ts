@@ -17,7 +17,7 @@
  * - This loader checks if async `loadWASM()` was called and throws if not
  */
 
-import { isWasmInitialized, isInitialized, resetInit } from "./wasmState.js";
+import { isInitialized, isWasmInitialized, resetInit } from "./wasmState.js";
 
 /**
  * Re-export all WASM functions from the WASM package.
