@@ -1,4 +1,4 @@
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 // Import WASM file URL from the package
 import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 
@@ -20,7 +20,8 @@ try {
   resultElement.textContent += '✅ WASM loaded successfully!\n\n';
 
   const csv = 'name,age\nAlice,30\nBob,25';
-  const result = parseStringToArraySyncWASM(csv);
+  // Use the unified API with engine.wasm option
+  const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 
   console.log('Slim bundle result:', result);
   resultElement.textContent += 'CSV Input:\n' + csv + '\n\n';

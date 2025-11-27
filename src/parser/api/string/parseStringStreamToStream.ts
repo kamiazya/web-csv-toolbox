@@ -4,10 +4,12 @@ import type {
   ParseOptions,
   PickCSVHeader,
 } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
 
 export function parseStringStreamToStream<
   const CSVSource extends ReadableStream<string>,
@@ -49,6 +51,27 @@ export function parseStringStreamToStream<
   stream: ReadableStream<string>,
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
+  // Check engine configuration for WASM
+  const engineConfig = new InternalEngineConfig(options?.engine);
+
+  if (engineConfig.hasWasm()) {
+    // WASM path - convert string to binary then use WASM transformer
+    const transformer = new WASMBinaryCSVStreamTransformer({
+      delimiter: options?.delimiter,
+      quotation: options?.quotation,
+      header: options?.header as readonly string[] | undefined,
+      maxFieldCount: options?.maxFieldCount,
+      outputFormat: options?.outputFormat,
+    });
+
+    return stream
+      .pipeThrough(new TextEncoderStream())
+      .pipeThrough(transformer) as ReadableStream<
+      InferCSVRecord<Header, Options>
+    >;
+  }
+
+  // JavaScript path
   const lexer = createStringCSVLexer(options);
   const assembler = createCSVRecordAssembler<Header>(options);
 

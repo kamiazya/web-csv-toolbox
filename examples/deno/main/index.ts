@@ -1,7 +1,10 @@
-import { parseString, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox';
+import { parseString, loadWASMSync } from 'npm:web-csv-toolbox';
 
 console.log('🦕 Deno Main Version Test');
-console.log('Features: Auto WASM initialization via npm: prefix\n');
+console.log('Features: WASM with synchronous initialization via npm: prefix\n');
+
+// Initialize WASM before using WASM features
+loadWASMSync();
 
 const csv = 'name,age\nAlice,30\nBob,25\nCharlie,35';
 
@@ -27,7 +30,8 @@ async function testWASM() {
   console.log('Test 2: WASM (auto-initialized)');
   console.log('----------------------------------------');
 
-  const result = parseStringToArraySyncWASM(csv);
+  // Use the unified API with engine.wasm option
+  const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 
   console.log('✅ Parsed Result:');
   console.log(JSON.stringify(result, null, 2));

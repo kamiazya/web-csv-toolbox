@@ -51,7 +51,6 @@ export * from "./utils/file/getOptionsFromFile.ts";
 **Examples:**
 - `main.shared.ts` - Shared exports for the main variant
 - `slim.shared.ts` - Shared exports for the slim variant
-- `parseStringToArraySyncWASM.shared.ts` - Shared WASM parsing utilities
 - `ReusableWorkerPool.shared.ts` - Shared worker pool implementation
 - `worker.shared.ts` - Shared worker message handling
 
@@ -214,7 +213,6 @@ main.node.ts / main.web.ts
   ├── main.shared.ts
   │   ├── common.ts (all core APIs)
   │   ├── WorkerSession
-  │   ├── parseStringToArraySyncWASM.main
   │   └── WasmInstance.main
   └── ReusableWorkerPool.{node,web}.ts (environment-specific)
 ```
@@ -231,8 +229,7 @@ main.node.ts / main.web.ts
 slim.node.ts / slim.web.ts
   ├── slim.shared.ts
   │   ├── common.ts (all core APIs)
-  │   ├── WorkerSession
-  │   └── parseStringToArraySyncWASM.slim
+  │   └── WorkerSession
   ├── WasmInstance.slim.{node,ts} (environment-specific)
   └── ReusableWorkerPool.{node,web}.ts (environment-specific)
 ```

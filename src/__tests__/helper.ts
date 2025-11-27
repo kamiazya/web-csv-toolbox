@@ -307,3 +307,84 @@ export function autoChunk(
   }
   return chunks;
 }
+
+/**
+ * Convert string to Uint8Array using TextEncoder.
+ * Returns Uint8Array<ArrayBuffer> to satisfy BufferSource type requirements.
+ */
+export function toUint8Array(str: string): Uint8Array<ArrayBuffer> {
+  return new TextEncoder().encode(str) as Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * Convert CSV data (headers and rows) to CSV string format.
+ *
+ * @param headers - Array of header field names
+ * @param rows - Array of data rows (each row is an array of field values)
+ * @param eol - End-of-line character(s) to use (default: LF)
+ * @returns CSV string
+ */
+export function toCSVString(
+  headers: string[],
+  rows: string[][],
+  eol: string = LF,
+): string {
+  const lines = [headers.join(",")];
+  for (const row of rows) {
+    lines.push(row.join(","));
+  }
+  return lines.join(eol);
+}
+
+/**
+ * Generate a safe CSV field value (no special characters that require quoting).
+ * Useful for simple tests where quoting complexity isn't needed.
+ */
+export function sanitizeCSVField(value: string): string {
+  return value.replace(/[,"\n\r]/g, "") || "x";
+}
+
+/**
+ * Namespace for WASM-specific test utilities.
+ */
+export namespace WASM {
+  /**
+   * Generate unique header names from an array of values.
+   * Ensures no duplicate headers by appending index.
+   */
+  export function uniqueHeaders(values: string[]): string[] {
+    return values.map((h, i) => {
+      const base = h.replace(/[,"\n\r\s]/g, "") || "field";
+      return `${base}_${i}`;
+    });
+  }
+
+  /**
+   * Generate a CSV dataset arbitrary that produces clean test data.
+   */
+  export function csvDataset() {
+    return fc
+      .tuple(
+        fc.array(fc.string({ minLength: 1, maxLength: 10 }), {
+          minLength: 2,
+          maxLength: 5,
+        }),
+        fc.nat({ max: 5 }),
+      )
+      .chain(([headerBase, numRows]) => {
+        const headers = uniqueHeaders(headerBase);
+        return fc.record({
+          headers: fc.constant(headers),
+          rows: fc.array(
+            fc.array(
+              fc
+                .string({ minLength: 0, maxLength: 20 })
+                .map((v) => sanitizeCSVField(v)),
+              { minLength: headers.length, maxLength: headers.length },
+            ),
+            { minLength: numRows, maxLength: numRows },
+          ),
+        });
+      });
+  }
+}

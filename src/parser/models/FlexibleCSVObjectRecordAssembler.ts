@@ -12,6 +12,8 @@ import type {
   CSVRecordAssemblerCommonOptions,
   Token,
 } from "@/core/types.ts";
+import { validateColumnCountStrategyForObject } from "@/parser/utils/validateColumnCountStrategyForObject.ts";
+import { validateMaxFieldCount } from "@/parser/utils/validateMaxFieldCount.ts";
 
 /**
  * Flexible CSV Object Record Assembler implementation.
@@ -41,16 +43,10 @@ export class FlexibleCSVObjectRecordAssembler<
   #columnCountStrategy: ColumnCountStrategy;
 
   constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
-    // Validate and set columnCountStrategy
-    this.#columnCountStrategy = options.columnCountStrategy ?? "pad";
-    if (this.#columnCountStrategy === "keep") {
-      console.warn(
-        "columnCountStrategy 'keep' has no effect in object format. " +
-          "Object format always maps to header keys. " +
-          "Falling back to 'pad' strategy.",
-      );
-      this.#columnCountStrategy = "pad";
-    }
+    // Validate columnCountStrategy for object format
+    const columnCountStrategy = options.columnCountStrategy ?? "pad";
+    validateColumnCountStrategyForObject(columnCountStrategy);
+    this.#columnCountStrategy = columnCountStrategy;
     if (this.#columnCountStrategy !== "pad" && options.header === undefined) {
       throw new Error(
         `columnCountStrategy '${this.#columnCountStrategy}' requires header option. ` +
@@ -60,14 +56,7 @@ export class FlexibleCSVObjectRecordAssembler<
 
     const mfc = options.maxFieldCount ?? DEFAULT_ASSEMBLER_MAX_FIELD_COUNT;
     // Validate maxFieldCount
-    if (
-      !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||
-      (Number.isFinite(mfc) && (mfc < 1 || !Number.isInteger(mfc)))
-    ) {
-      throw new RangeError(
-        "maxFieldCount must be a positive integer or Number.POSITIVE_INFINITY",
-      );
-    }
+    validateMaxFieldCount(mfc);
     this.#maxFieldCount = mfc;
     this.#skipEmptyLines = options.skipEmptyLines ?? false;
     this.#source = options.source;

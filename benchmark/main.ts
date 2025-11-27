@@ -11,7 +11,6 @@ import {
   parseBinary,
   parseString,
   parseStringStream,
-  parseStringToArraySyncWASM,
   parseBinaryStream
 } from 'web-csv-toolbox';
 
@@ -233,8 +232,8 @@ let bench = withCodSpeed(new Bench({
 
 // Conditionally add WASM benchmark
 if (wasmAvailable) {
-  bench = bench.add('parseStringToArraySyncWASM(50 rows)', () => {
-    parseStringToArraySyncWASM(stringCSV);
+  bench = bench.add('parseString.toArraySync(wasm, 50 rows)', () => {
+    parseString.toArraySync(stringCSV, { engine: { wasm: true } });
   });
 }
 

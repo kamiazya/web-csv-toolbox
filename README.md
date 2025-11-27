@@ -126,11 +126,11 @@ For a deeper comparison and migration guidance, see:
 **Best for**: Most users who want automatic WASM initialization and all features
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { loadWASM, parseString } from 'web-csv-toolbox';
 
 // Optional but recommended: preload to reduce first‑parse latency
 await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 **Characteristics:**
@@ -144,28 +144,40 @@ const records = parseStringToArraySyncWASM(csv);
 
 **Best for**: Bundle size-sensitive applications and production optimization
 
+**Browser (bundlers like Vite):**
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
+import wasmUrl from 'web-csv-toolbox/csv.wasm?url'; // Vite syntax
 
-// Manual initialization required
+// Manual initialization required - wasmUrl is REQUIRED in browser
+await loadWASM(wasmUrl);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
+```
+
+**Node.js:**
+```typescript
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
+
+// In Node.js, parameter is optional (auto-resolves via package exports)
 await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 **Characteristics:**
 - ✅ Smaller main bundle (WASM not embedded)
 - ✅ External WASM loading for better caching
 - ✅ Explicit control over initialization timing
-- ❌ Requires manual `loadWASM()` call before using WASM features
+- ❌ **Browser**: Requires `loadWASM(wasmUrl)` with explicit WASM URL
+- ❌ **Node.js**: Requires `loadWASM()` call (parameter optional)
 
 **Comparison:**
 
-| Aspect | Main | Slim |
-|--------|------|------|
-| **Initialization** | Automatic | Manual (`loadWASM()` required) |
-| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
-| **Caching** | Single bundle | WASM cached separately |
-| **Use Case** | Convenience, prototyping | Production, bundle optimization |
+| Aspect | Main | Slim (Browser) | Slim (Node.js) |
+|--------|------|----------------|----------------|
+| **Initialization** | Automatic | `loadWASM(wasmUrl)` required | `loadWASM()` required |
+| **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) | Smaller |
+| **Caching** | Single bundle | WASM cached separately | N/A |
+| **Use Case** | Convenience, prototyping | Production, bundle optimization | Production |
 
 > **Note**: Both entry points export the same full API (feature parity). The only difference is WASM initialization strategy and bundle size.
 
@@ -698,46 +710,136 @@ pnpm --filter web-csv-toolbox-benchmark queuing-strategy
 
 See `benchmark/queuing-strategy.bench.ts` for implementation details.
 
-### Experimental APIs 🧪
+### WebAssembly Acceleration 🚀
 
-These APIs are experimental and may change in the future.
+Enable WebAssembly for high-performance CSV parsing with `engine: { wasm: true }` or use `EnginePresets.fast()` / `EnginePresets.responsiveFast()`.
 
-#### Parsing using WebAssembly for high performance.
-
-You can use WebAssembly to parse CSV data for high performance.
-
-⚠️ **Experimental Notice**:
-- WASM automatic initialization is experimental and may change in future versions
-- Currently embeds WASM as base64 in the main bundle
-- Future versions may change the loading strategy for better bundle size optimization
-
-**WASM Limitations:**
-- Parsing with WebAssembly is faster than parsing with JavaScript,
-but it takes time to load the WebAssembly module.
-- Supports only UTF-8 encoding csv data.
-- Quotation characters are only `"`. (Double quotation mark)
-  - If you pass a different character, it will throw an error.
-- Record output is always object-shaped; `outputFormat: 'array'` requires the JavaScript engine (`engine: { wasm: false }`).
+#### Quick Start
 
 ```ts
-import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
+import { parse, loadWASM, EnginePresets } from "web-csv-toolbox";
 
-// load WebAssembly module
+// Optional: Pre-load WASM to reduce first-parse latency
 await loadWASM();
 
-const csv = "a,b,c\n1,2,3";
+const csv = "name,age\nAlice,30\nBob,25";
 
-// parse CSV string
-const result = parseStringToArraySyncWASM(csv);
-console.log(result);
-// Prints:
+// Use WASM with streaming API
+for await (const record of parse(csv, {
+  engine: EnginePresets.fast()  // or { wasm: true }
+})) {
+  console.log(record);
+}
+// { name: "Alice", age: "30" }
+// { name: "Bob", age: "25" }
+```
+
+#### Worker + WASM (Bundler Setup)
+
+For non-blocking UI with WASM performance in browser applications using bundlers (Vite, Webpack, etc.):
+
+**Vite:**
+
+```ts
+import { parse, loadWASM, ReusableWorkerPool } from "web-csv-toolbox";
+import workerUrl from "web-csv-toolbox/worker?url";
+import wasmUrl from "web-csv-toolbox/csv.wasm?url";
+
+// Initialize WASM with external URL (required for slim entry or bundler optimization)
+await loadWASM(wasmUrl);
+
+// Create worker pool with custom worker URL
+using pool = new ReusableWorkerPool({ workerURL: workerUrl });
+
+const csv = "name,age\nAlice,30\nBob,25";
+
+// Non-blocking parsing with WASM acceleration
+for await (const record of parse(csv, {
+  engine: { worker: true, wasm: true, workerPool: pool }
+})) {
+  console.log(record);
+}
+// Worker is automatically cleaned up when leaving scope
+```
+
+**Webpack:**
+
+```ts
+import { parse, loadWASM, ReusableWorkerPool } from "web-csv-toolbox";
+
+// Webpack worker URL syntax
+const workerUrl = new URL("web-csv-toolbox/worker", import.meta.url);
+
+await loadWASM();
+
+using pool = new ReusableWorkerPool({ workerURL: workerUrl });
+
+for await (const record of parse(csv, {
+  engine: { worker: true, wasm: true, workerPool: pool }
+})) {
+  console.log(record);
+}
+```
+
+> **Why Worker + WASM?** Worker threads keep the UI responsive while WASM provides fast parsing. `ReusableWorkerPool` manages worker lifecycle with automatic cleanup via `using` syntax.
+
+#### Supported Input Types
+
+| Input Type | API | WASM Streaming |
+|------------|-----|----------------|
+| `string` | `parseString`, `parse` | ❌ Full buffer (yields after complete parse) |
+| `Uint8Array` / `ArrayBuffer` | `parseBinary` | ❌ Full buffer |
+| `Response` | `parseResponse` | ✅ True streaming |
+| `ReadableStream<Uint8Array>` | `parseBinaryStream` | ✅ True streaming |
+
+#### Entry Points
+
+| Entry | Bundle Size | Initialization | Use Case |
+|-------|-------------|----------------|----------|
+| `web-csv-toolbox` (Main) | Larger (WASM embedded) | Automatic | Convenience |
+| `web-csv-toolbox/slim` | Smaller (WASM external) | Manual `loadWASM()` required | Bundle optimization |
+
+#### WASM Limitations
+
+- **UTF-8 only**: Non-UTF-8 encodings (Shift-JIS, EUC-JP) require JavaScript engine
+- Custom delimiters and quotation characters are fully supported
+
+#### Low-level WASM APIs
+
+For advanced use cases, direct access to WASM parser models and stream transformers:
+
+```ts
+import {
+  WASMStringObjectCSVParser,
+  WASMBinaryObjectCSVParser,
+  WASMBinaryCSVStreamTransformer,
+  loadWASM
+} from "web-csv-toolbox";
+
+await loadWASM();
+
+// String parsing
+const stringParser = new WASMStringObjectCSVParser();
+const records = stringParser.parse("name,age\nAlice,30");
+
+// Binary streaming
+const transformer = new WASMBinaryCSVStreamTransformer();
+await fetch("large.csv")
+  .then(res => res.body)
+  .pipeThrough(transformer)
+  .pipeTo(new WritableStream({ write: console.log }));
+```
+
+#### Synchronous Parsing
+
+```ts
+import { parseString } from "web-csv-toolbox";
+
+const result = parseString.toArraySync("a,b,c\n1,2,3", { engine: { wasm: true } });
 // [{ a: "1", b: "2", c: "3" }]
 ```
 
-- **`function loadWASM(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)
-  - Loads the WebAssembly module.
-- **`function parseStringToArraySyncWASM(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)
-  - Parses CSV strings into an array of records.
+See [Using WebAssembly Tutorial](https://kamiazya.github.io/web-csv-toolbox/tutorials/using-webassembly.html) for detailed usage.
 
 ## Options Configuration 🛠️
 
@@ -750,7 +852,7 @@ console.log(result);
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
 | `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
-| `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples; not available when running through WASM today |
+| `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples |
 | `includeHeader`  | Emit header row when using array output | `false` | Only valid with `outputFormat: 'array'` — the header becomes the first emitted record |
 | `columnCountStrategy` | Handle column-count mismatches when a header is provided | `'keep'` for array format / `'pad'` for object format | Choose between `keep`, `pad`, `strict`, or `truncate` to control how rows align with the header |
 | `signal`         | AbortSignal to cancel processing      | `undefined`  | Allows aborting of long-running operations                                         |
@@ -773,7 +875,6 @@ const rows = await parse.toArray(csv, {
   outputFormat: "array",
   includeHeader: true,
   columnCountStrategy: "pad",
-  engine: { wasm: false }, // Array output currently runs on the JS engine only
 });
 // rows[0] === ['name', 'age'] (header row)
 // rows[1] has type readonly [name: string, age: string]
@@ -787,8 +888,6 @@ const rows = await parse.toArray(csv, {
   - `pad`: fill short rows with `undefined` and truncate long rows (default for object output)
   - `strict`: throw if the row length differs from the header
   - `truncate`: discard columns beyond the header length without padding short rows
-
-> ⚠️ Array output is not yet available inside the WebAssembly execution path. If you request `outputFormat: 'array'`, force the JavaScript engine with `engine: { wasm: false }` (or run in an environment where WASM is disabled).
 
 ### Advanced Options (Binary-Specific) 🧬
 
@@ -906,17 +1005,17 @@ try {
 #### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
 
 ```js
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseString } from 'web-csv-toolbox';
 
 // Compiled WASM code for improved performance (UTF-8 only)
 // See CodSpeed benchmarks for actual performance metrics
-const records = parseStringToArraySyncWASM(csvString);
+const records = parseString.toArraySync(csvString, { engine: { wasm: true } });
 ```
 
 ### Known Limitations
 
-- **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
-- **WASM Parser**: UTF-8 encoding only, double-quote (`"`) only
+- **Delimiter/Quotation**: JavaScript parser supports any character; WASM parser requires single-byte ASCII only
+- **WASM Parser**: UTF-8 encoding only, single-byte ASCII delimiter/quotation only (multi-byte UTF-8 characters not supported)
 - **Streaming**: Best performance with chunk sizes > 1KB
 
 ### Security Considerations

@@ -61,7 +61,7 @@ describe("serializeOptions", () => {
 
     it("should remove engine field", () => {
       const options = {
-        engine: { worker: true, wasm: true },
+        engine: { worker: true as const, wasm: true },
         delimiter: ",",
       };
       const result = serializeOptions(options);
@@ -75,7 +75,7 @@ describe("serializeOptions", () => {
         signal: controller.signal,
         workerPool: { maxWorkers: 4 } as any,
         workerURL: "/worker.js",
-        engine: { worker: true },
+        engine: { worker: true as const },
         delimiter: ",",
         quotation: '"',
       };

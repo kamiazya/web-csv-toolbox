@@ -4,8 +4,11 @@ import type {
   ParseOptions,
   PickCSVHeader,
 } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
+import { WASMStringCSVArrayParser } from "@/parser/models/WASMStringCSVArrayParser.ts";
+import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -57,6 +60,32 @@ export function parseStringToArraySync<
   const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(csv: string, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
+    // Parse engine configuration
+    const engineConfig = new InternalEngineConfig(options?.engine);
+
+    if (engineConfig.hasWasm()) {
+      // WASM execution
+      const outputFormat = options?.outputFormat ?? "object";
+
+      if (outputFormat === "array") {
+        const parser = new WASMStringCSVArrayParser<Header>({
+          delimiter: options?.delimiter ?? ",",
+          quotation: options?.quotation ?? '"',
+          maxFieldCount: options?.maxFieldCount,
+          header: options?.header,
+        });
+        return [...parser.parse(csv)] as InferCSVRecord<Header, Options>[];
+      }
+      const parser = new WASMStringObjectCSVParser<Header>({
+        delimiter: options?.delimiter ?? ",",
+        quotation: options?.quotation ?? '"',
+        maxFieldCount: options?.maxFieldCount,
+        header: options?.header,
+      });
+      return [...parser.parse(csv)] as InferCSVRecord<Header, Options>[];
+    }
+
+    // Main thread JavaScript execution (default)
     const lexer = createStringCSVLexer(options);
     const assembler = createCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);

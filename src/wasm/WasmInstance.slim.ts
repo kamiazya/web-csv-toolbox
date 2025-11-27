@@ -24,8 +24,8 @@ export { isInitialized, resetInit } from "#/wasm/loaders/loadWASM.js";
 /**
  * Load and initialize the WebAssembly module using streaming (slim entry).
  *
- * You MUST call this function with a WASM URL before using WASM-based synchronous APIs
- * like `parseStringToArraySyncWASM`.
+ * You MUST call this function with a WASM URL before using WASM-based APIs
+ * with `{ engine: { wasm: true } }` option.
  *
  * @param input - WASM module URL (required for slim entry)
  */

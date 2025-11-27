@@ -42,6 +42,19 @@ import { ReusableWorkerPool } from 'web-csv-toolbox';
 export const csvWorkerPool = new ReusableWorkerPool({
   maxWorkers: 4  // Adjust based on your CPU cores
 });
+```
+
+**Browser with Bundlers (Vite/Webpack):**
+
+```typescript
+import { ReusableWorkerPool } from 'web-csv-toolbox';
+import workerUrl from 'web-csv-toolbox/worker?url'; // Vite syntax
+
+// Configure workerURL in the pool constructor
+export const csvWorkerPool = new ReusableWorkerPool({
+  maxWorkers: 2,
+  workerURL: workerUrl  // Custom worker URL goes here, NOT in EnginePresets
+});
 
 // Cleanup on shutdown
 process.on('SIGTERM', () => {
@@ -559,6 +572,7 @@ class AdaptiveWorkerPool {
 - **Use `using` syntax** for automatic cleanup in scoped contexts
 - **Check `isFull()` before accepting requests** to prevent queue buildup
 - **Set appropriate `maxWorkers`** based on your CPU cores and memory
+- **Configure `workerURL` in pool constructor** when using bundlers (not in EnginePresets)
 - **Monitor pool metrics** to detect saturation
 - **Implement retry logic** on the client side for 503 errors
 - **Handle worker errors gracefully** with proper error boundaries
@@ -574,6 +588,7 @@ class AdaptiveWorkerPool {
 - **Don't queue unlimited requests** - implement queue size limits
 - **Don't use blocking operations** inside CSV processing
 - **Don't parse very large files in memory** - use streaming instead
+- **Don't pass both `workerPool` and `workerURL` to EnginePresets** - they are mutually exclusive (configure URL in pool constructor)
 
 ## Troubleshooting
 

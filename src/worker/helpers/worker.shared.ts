@@ -1,5 +1,7 @@
+import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
+  CSVArrayRecord,
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
@@ -10,11 +12,6 @@ import type {
  * @internal
  */
 declare const __VARIANT__: "main" | "slim";
-
-const parseStringToArrayWasmPath =
-  typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
-    ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-    : "../../parser/api/string/parseStringToArraySyncWASM.main.node.ts";
 
 /**
  * Base interface for Worker requests
@@ -102,7 +99,9 @@ export interface ParseResponse<
   Header extends ReadonlyArray<string> = readonly string[],
 > {
   id: number;
-  result?: CSVRecord<Header>[] | ReadableStream<CSVRecord<Header>>;
+  result?:
+    | (CSVRecord<Header> | CSVArrayRecord<Header>)[]
+    | ReadableStream<CSVRecord<Header> | CSVArrayRecord<Header>>;
   error?: string;
 }
 
@@ -111,7 +110,7 @@ export interface ParseStreamResponse<
 > {
   id: number;
   type: "record" | "done" | "error";
-  record?: CSVRecord<Header>;
+  record?: CSVRecord<Header> | CSVArrayRecord<Header>;
   error?: string;
 }
 
@@ -135,8 +134,8 @@ export const streamRecordsToMain = async <
   workerContext: WorkerContext<Header>,
   id: number,
   records:
-    | AsyncIterableIterator<CSVRecord<Header>>
-    | Iterable<CSVRecord<Header>>,
+    | AsyncIterableIterator<CSVRecord<Header> | CSVArrayRecord<Header>>
+    | Iterable<CSVRecord<Header> | CSVArrayRecord<Header>>,
 ): Promise<void> => {
   try {
     for await (const record of records) {
@@ -169,8 +168,8 @@ export const streamRecordsToPort = async <
 >(
   port: MessagePort,
   records:
-    | AsyncIterableIterator<CSVRecord<Header>>
-    | Iterable<CSVRecord<Header>>,
+    | AsyncIterableIterator<CSVRecord<Header> | CSVArrayRecord<Header>>
+    | Iterable<CSVRecord<Header> | CSVArrayRecord<Header>>,
 ): Promise<void> => {
   try {
     for await (const record of records) {
@@ -214,7 +213,41 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 Object.keys(req).join(", "),
             );
           }
-          // Process string stream with TransferableStream strategy
+
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          if (useWASM) {
+            // WASM path: convert string to binary then use WASM transformer
+            const { WASMBinaryCSVStreamTransformer } = await import(
+              "../../parser/stream/WASMBinaryCSVStreamTransformer.ts"
+            );
+            const { loadWASM } = await import(
+              "../../wasm/WasmInstance.main.web.ts"
+            );
+            await loadWASM();
+
+            const transformer = new WASMBinaryCSVStreamTransformer({
+              delimiter: req.options?.delimiter,
+              quotation: req.options?.quotation,
+              header: req.options?.header as readonly string[] | undefined,
+              maxFieldCount: req.options?.maxFieldCount,
+              outputFormat: req.options?.outputFormat,
+            });
+
+            const resultStream = stream
+              .pipeThrough(new TextEncoderStream())
+              .pipeThrough(transformer);
+
+            await streamRecordsToPort(
+              resultPort,
+              convertStreamToAsyncIterableIterator(resultStream),
+            );
+            return;
+          }
+
+          // JavaScript path
           const { createStringCSVLexer } = await import(
             "../../parser/api/model/createStringCSVLexer.ts"
           );
@@ -226,9 +259,6 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
           const lexer = createStringCSVLexer(req.options);
@@ -257,7 +287,57 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 Object.keys(req).join(", "),
             );
           }
-          // Process binary stream with TransferableStream strategy
+
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          const { charset, decompression } = req.options ?? {};
+
+          if (useWASM) {
+            // WASM path: use WASM stream transformer directly
+            // Validate charset - WASM only supports UTF-8
+            if (charset && charset.toLowerCase() !== "utf-8") {
+              throw new Error(
+                `Charset '${charset}' is not supported with WASM execution. ` +
+                  "WASM only supports UTF-8 encoding.",
+              );
+            }
+
+            const { WASMBinaryCSVStreamTransformer } = await import(
+              "../../parser/stream/WASMBinaryCSVStreamTransformer.ts"
+            );
+            const { loadWASM } = await import(
+              "../../wasm/WasmInstance.main.web.ts"
+            );
+            await loadWASM();
+
+            const transformer = new WASMBinaryCSVStreamTransformer({
+              delimiter: req.options?.delimiter,
+              quotation: req.options?.quotation,
+              header: req.options?.header as readonly string[] | undefined,
+              maxFieldCount: req.options?.maxFieldCount,
+              outputFormat: req.options?.outputFormat,
+            });
+
+            const resultStream = decompression
+              ? stream
+                  .pipeThrough(
+                    new DecompressionStream(
+                      decompression,
+                    ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+                  )
+                  .pipeThrough(transformer)
+              : stream.pipeThrough(transformer);
+
+            await streamRecordsToPort(
+              resultPort,
+              convertStreamToAsyncIterableIterator(resultStream),
+            );
+            return;
+          }
+
+          // JavaScript path
           const { createStringCSVLexer } = await import(
             "../../parser/api/model/createStringCSVLexer.ts"
           );
@@ -271,8 +351,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
           );
 
-          const { charset, fatal, ignoreBOM, decompression } =
-            req.options ?? {};
+          const { fatal, ignoreBOM } = req.options ?? {};
 
           const decoderOptions: TextDecoderOptions = {};
           if (fatal !== undefined) decoderOptions.fatal = fatal;
@@ -299,10 +378,6 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 ) as unknown as TransformStream<Uint8Array, string>,
               );
 
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
           const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
@@ -324,16 +399,45 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseStringRequest;
         if (typeof req.data === "string") {
           if (useWASM) {
-            // Dynamic import WASM implementation
+            // WASM path: use WASM parser models directly
             try {
-              const { parseStringToArraySyncWASM } = await import(
-                /* @vite-ignore */ parseStringToArrayWasmPath
+              const { loadWASM } = await import(
+                "../../wasm/WasmInstance.main.web.ts"
               );
-              await streamRecordsToMain(
-                workerContext,
-                id,
-                parseStringToArraySyncWASM(req.data, req.options),
-              );
+              await loadWASM();
+
+              const outputFormat = req.options?.outputFormat ?? "object";
+              if (outputFormat === "array") {
+                const { WASMStringCSVArrayParser } = await import(
+                  "../../parser/models/WASMStringCSVArrayParser.ts"
+                );
+                const parser = new WASMStringCSVArrayParser({
+                  delimiter: req.options?.delimiter,
+                  quotation: req.options?.quotation,
+                  header: req.options?.header as readonly string[] | undefined,
+                  maxFieldCount: req.options?.maxFieldCount,
+                });
+                await streamRecordsToMain(
+                  workerContext,
+                  id,
+                  parser.parse(req.data),
+                );
+              } else {
+                const { WASMStringObjectCSVParser } = await import(
+                  "../../parser/models/WASMStringObjectCSVParser.ts"
+                );
+                const parser = new WASMStringObjectCSVParser({
+                  delimiter: req.options?.delimiter,
+                  quotation: req.options?.quotation,
+                  header: req.options?.header as readonly string[] | undefined,
+                  maxFieldCount: req.options?.maxFieldCount,
+                });
+                await streamRecordsToMain(
+                  workerContext,
+                  id,
+                  parser.parse(req.data),
+                );
+              }
               return;
             } catch (_error) {
               // Fall back to regular parser if WASM is not available
@@ -364,7 +468,41 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         // Type guard: ParseStringStreamRequest
         const req = request as ParseStringStreamRequest;
         if (req.data instanceof ReadableStream) {
-          // Stream processing (WASM not supported for streams)
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          if (useWASM) {
+            // WASM path: convert string to binary then use WASM transformer
+            const { WASMBinaryCSVStreamTransformer } = await import(
+              "../../parser/stream/WASMBinaryCSVStreamTransformer.ts"
+            );
+            const { loadWASM } = await import(
+              "../../wasm/WasmInstance.main.web.ts"
+            );
+            await loadWASM();
+
+            const transformer = new WASMBinaryCSVStreamTransformer({
+              delimiter: req.options?.delimiter,
+              quotation: req.options?.quotation,
+              header: req.options?.header as readonly string[] | undefined,
+              maxFieldCount: req.options?.maxFieldCount,
+              outputFormat: req.options?.outputFormat,
+            });
+
+            const resultStream = req.data
+              .pipeThrough(new TextEncoderStream())
+              .pipeThrough(transformer);
+
+            await streamRecordsToMain(
+              workerContext,
+              id,
+              convertStreamToAsyncIterableIterator(resultStream),
+            );
+            return;
+          }
+
+          // JavaScript path
           const { createStringCSVLexer } = await import(
             "../../parser/api/model/createStringCSVLexer.ts"
           );
@@ -376,9 +514,6 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
-          );
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
           );
 
           const lexer = createStringCSVLexer(req.options);
@@ -400,7 +535,57 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         // Type guard: ParseUint8ArrayStreamRequest
         const req = request as ParseUint8ArrayStreamRequest;
         if (req.data instanceof ReadableStream) {
-          // Binary stream processing
+          const { convertStreamToAsyncIterableIterator } = await import(
+            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
+          );
+
+          const { charset, decompression } = req.options ?? {};
+
+          if (useWASM) {
+            // WASM path: use WASM stream transformer directly
+            // Validate charset - WASM only supports UTF-8
+            if (charset && charset.toLowerCase() !== "utf-8") {
+              throw new Error(
+                `Charset '${charset}' is not supported with WASM execution. ` +
+                  "WASM only supports UTF-8 encoding.",
+              );
+            }
+
+            const { WASMBinaryCSVStreamTransformer } = await import(
+              "../../parser/stream/WASMBinaryCSVStreamTransformer.ts"
+            );
+            const { loadWASM } = await import(
+              "../../wasm/WasmInstance.main.web.ts"
+            );
+            await loadWASM();
+
+            const transformer = new WASMBinaryCSVStreamTransformer({
+              delimiter: req.options?.delimiter,
+              quotation: req.options?.quotation,
+              header: req.options?.header as readonly string[] | undefined,
+              maxFieldCount: req.options?.maxFieldCount,
+              outputFormat: req.options?.outputFormat,
+            });
+
+            const resultStream = decompression
+              ? req.data
+                  .pipeThrough(
+                    new DecompressionStream(
+                      decompression,
+                    ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+                  )
+                  .pipeThrough(transformer)
+              : req.data.pipeThrough(transformer);
+
+            await streamRecordsToMain(
+              workerContext,
+              id,
+              convertStreamToAsyncIterableIterator(resultStream),
+            );
+            return;
+          }
+
+          // JavaScript path: Binary stream processing
           const { createStringCSVLexer } = await import(
             "../../parser/api/model/createStringCSVLexer.ts"
           );
@@ -414,8 +599,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
           );
 
-          const { charset, fatal, ignoreBOM, decompression } =
-            req.options ?? {};
+          const { fatal, ignoreBOM } = req.options ?? {};
 
           const decoderOptions2: TextDecoderOptions = {};
           if (fatal !== undefined) decoderOptions2.fatal = fatal;
@@ -442,10 +626,6 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 ) as unknown as TransformStream<Uint8Array, string>,
               );
 
-          const { convertStreamToAsyncIterableIterator } = await import(
-            "../../converters/iterators/convertStreamToAsyncIterableIterator.ts"
-          );
-
           const lexer = createStringCSVLexer(req.options);
           const assembler = createCSVRecordAssembler(req.options);
 
@@ -466,7 +646,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
         const req = request as ParseBinaryRequest;
 
         if (useWASM) {
-          // Convert (and optionally decompress) then use WASM
+          // WASM path: use WASM parser models directly
           try {
             const {
               charset = "utf-8",
@@ -475,20 +655,24 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
               decompression,
             } = req.options ?? {};
 
+            // Validate charset - WASM only supports UTF-8
+            if (charset.toLowerCase() !== "utf-8") {
+              throw new Error(
+                `Charset '${charset}' is not supported with WASM execution. ` +
+                  "WASM only supports UTF-8 encoding.",
+              );
+            }
+
+            const { loadWASM } = await import(
+              "../../wasm/WasmInstance.main.web.ts"
+            );
+            await loadWASM();
+
             const decoderOptions3: TextDecoderOptions = {};
             if (fatal !== undefined) decoderOptions3.fatal = fatal;
             if (ignoreBOM !== undefined) decoderOptions3.ignoreBOM = ignoreBOM;
 
-            const asBytes =
-              req.data instanceof Uint8Array
-                ? req.data
-                : req.data instanceof ArrayBuffer
-                  ? new Uint8Array(req.data)
-                  : new Uint8Array(
-                      req.data.buffer,
-                      req.data.byteOffset,
-                      req.data.byteLength,
-                    );
+            const asBytes = convertBinaryToUint8Array(req.data);
             let decoded: string;
             if (decompression) {
               // Check for DecompressionStream support (may not be available in all Worker contexts)
@@ -518,14 +702,39 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 asBytes,
               );
             }
-            const { parseStringToArraySyncWASM } = await import(
-              /* @vite-ignore */ parseStringToArrayWasmPath
-            );
-            await streamRecordsToMain(
-              workerContext,
-              id,
-              parseStringToArraySyncWASM(decoded, req.options),
-            );
+
+            const outputFormat = req.options?.outputFormat ?? "object";
+            if (outputFormat === "array") {
+              const { WASMStringCSVArrayParser } = await import(
+                "../../parser/models/WASMStringCSVArrayParser.ts"
+              );
+              const parser = new WASMStringCSVArrayParser({
+                delimiter: req.options?.delimiter,
+                quotation: req.options?.quotation,
+                header: req.options?.header as readonly string[] | undefined,
+                maxFieldCount: req.options?.maxFieldCount,
+              });
+              await streamRecordsToMain(
+                workerContext,
+                id,
+                parser.parse(decoded),
+              );
+            } else {
+              const { WASMStringObjectCSVParser } = await import(
+                "../../parser/models/WASMStringObjectCSVParser.ts"
+              );
+              const parser = new WASMStringObjectCSVParser({
+                delimiter: req.options?.delimiter,
+                quotation: req.options?.quotation,
+                header: req.options?.header as readonly string[] | undefined,
+                maxFieldCount: req.options?.maxFieldCount,
+              });
+              await streamRecordsToMain(
+                workerContext,
+                id,
+                parser.parse(decoded),
+              );
+            }
             return;
           } catch (_error) {
             // Fall back to regular parser if WASM is not available

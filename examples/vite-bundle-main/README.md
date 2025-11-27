@@ -16,11 +16,11 @@ Actual bundle sizes vary by bundler and configuration. The main entry embeds WAS
 ## Usage
 
 ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseString } from 'web-csv-toolbox';
 
 // No loadWASM() needed - auto-initialized!
 const csv = 'name,age\nAlice,30\nBob,25';
-const result = parseStringToArraySyncWASM(csv);
+const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 console.log(result);
 ```
 

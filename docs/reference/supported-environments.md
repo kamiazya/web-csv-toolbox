@@ -264,7 +264,7 @@ Please [report issues or success stories](https://github.com/kamiazya/web-csv-to
 
 **Limitations:**
 - UTF-8 encoding only
-- Double-quote (`"`) as quotation character only
+- Single-byte ASCII delimiter and quotation only (multi-byte UTF-8 characters not supported)
 
 ### Encoding Support
 

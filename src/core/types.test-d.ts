@@ -4,6 +4,10 @@ import type {
   EngineConfig,
   MainThreadEngineConfig,
   WorkerEngineConfig,
+  WorkerEngineConfigDefault,
+  WorkerEngineConfigWithPool,
+  WorkerEngineConfigWithURL,
+  WorkerPool,
 } from "@/core/types.ts";
 
 describe("EngineConfig", () => {
@@ -42,9 +46,9 @@ describe("EngineConfig", () => {
       expectTypeOf(config2.wasm).toEqualTypeOf<boolean | undefined>();
     });
 
-    it("WorkerEngineConfig: worker is true", () => {
-      // When worker is true, worker-related properties are available
-      const config: WorkerEngineConfig = {
+    it("WorkerEngineConfig with workerURL: worker is true", () => {
+      // When worker is true with workerURL, it's WorkerEngineConfigWithURL
+      const config: WorkerEngineConfigWithURL = {
         worker: true,
         workerURL: new URL("./worker.js", import.meta.url),
         workerStrategy: "stream-transfer",
@@ -59,7 +63,51 @@ describe("EngineConfig", () => {
       expectTypeOf(config.worker).toEqualTypeOf<true>();
 
       // Worker-specific properties are available
-      expectTypeOf(config.workerURL).toEqualTypeOf<string | URL | undefined>();
+      expectTypeOf(config.workerURL).toEqualTypeOf<string | URL>();
+      expectTypeOf(config.strict).toEqualTypeOf<boolean | undefined>();
+
+      // workerPool should be never (mutually exclusive)
+      expectTypeOf(config.workerPool).toEqualTypeOf<undefined>();
+    });
+
+    it("WorkerEngineConfig with workerPool: worker is true", () => {
+      // When worker is true with workerPool, it's WorkerEngineConfigWithPool
+      const pool: WorkerPool = {
+        getWorker: async () => ({}) as Worker,
+        getNextRequestId: () => 0,
+        releaseWorker: () => {},
+        size: 0,
+        isFull: () => false,
+        terminate: () => {},
+        [Symbol.dispose]: () => {},
+      };
+
+      const config: WorkerEngineConfigWithPool = {
+        worker: true,
+        workerPool: pool,
+        workerStrategy: "message-streaming",
+      };
+
+      // config extends EngineConfig
+      expectTypeOf(config).toExtend<EngineConfig>();
+      expectTypeOf(config.worker).toEqualTypeOf<true>();
+
+      // workerPool is required, workerURL should be never
+      expectTypeOf(config.workerPool).toEqualTypeOf<WorkerPool>();
+      expectTypeOf(config.workerURL).toEqualTypeOf<undefined>();
+    });
+
+    it("WorkerEngineConfig default: worker is true without URL or pool", () => {
+      // When worker is true without workerURL or workerPool, it's WorkerEngineConfigDefault
+      const config: WorkerEngineConfigDefault = {
+        worker: true,
+        workerStrategy: "stream-transfer",
+        strict: true,
+      };
+
+      // config extends EngineConfig
+      expectTypeOf(config).toExtend<EngineConfig>();
+      expectTypeOf(config.worker).toEqualTypeOf<true>();
       expectTypeOf(config.strict).toEqualTypeOf<boolean | undefined>();
     });
 

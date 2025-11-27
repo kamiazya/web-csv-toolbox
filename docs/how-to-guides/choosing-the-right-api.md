@@ -847,7 +847,7 @@ for await (const record of parseString(csv, {
 - ✅ Uses compiled WASM code
 - ✅ No worker communication overhead
 - ❌ Blocks main thread during parsing
-- **Limitations:** UTF-8 only, double-quote only
+- **Limitations:** UTF-8 only
 - **Use case:** Server-side parsing with UTF-8 CSV files
 
 ---
@@ -868,7 +868,7 @@ for await (const record of parseString(csv, {
 - ✅ Uses compiled WASM code
 - ⚠️ Worker communication adds overhead (data transfer between threads)
 - **Performance trade-off:** Execution time may increase due to communication cost, but UI remains responsive
-- **Limitations:** UTF-8 only, double-quote only
+- **Limitations:** UTF-8 only
 - **Use case:** Browser applications requiring non-blocking parsing of UTF-8 CSV files
 
 **Note:** This preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI).

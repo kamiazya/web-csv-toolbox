@@ -1,4 +1,4 @@
-import { loadWASM, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'npm:web-csv-toolbox/slim';
 
 console.log('🦕 Deno Slim Entry Test');
 console.log('Features: Manual WASM initialization via npm: prefix, smaller JS bundle\n');
@@ -16,8 +16,8 @@ try {
   await loadWASM(); // No argument needed - will use import.meta.resolve internally
   console.log('✅ WASM initialized\n');
 
-  // Now we can use sync WASM APIs
-  const result = parseStringToArraySyncWASM(csv);
+  // Use the unified API with engine.wasm option
+  const result = parseString.toArraySync(csv, { engine: { wasm: true } });
 
   console.log('✅ Parsed Result:');
   console.log(JSON.stringify(result, null, 2));

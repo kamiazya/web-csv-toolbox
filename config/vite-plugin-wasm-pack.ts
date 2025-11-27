@@ -130,7 +130,15 @@ function vitePluginWasmPack({
             encoding: "utf-8",
           });
 
-          // Patch: Replace default WASM loading with an error
+          // Check for new wasm-bindgen format (direct import with __wbg_set_wasm)
+          // New format: import * as wasm from "./xxx_bg.wasm"; ... __wbg_set_wasm(wasm);
+          if (code.includes('__wbg_set_wasm')) {
+            // New format detected - no patch needed for default URL loading
+            // The new format doesn't have a default URL fallback to patch
+            return code;
+          }
+
+          // Legacy format: patch default WASM loading with an error
           // This library always provides WASM explicitly via ?arraybuffer imports
           // If this code path is reached, it indicates incorrect usage
           const originalCode = code;
@@ -141,7 +149,7 @@ function vitePluginWasmPack({
     }`
           );
 
-          // Verify the patch was applied successfully
+          // Verify the patch was applied successfully for legacy format
           if (code === originalCode) {
             throw new Error(
               `Failed to apply WASM patch to ${modulejs}. ` +

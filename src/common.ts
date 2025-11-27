@@ -65,6 +65,17 @@ export * from "@/parser/stream/StringCSVParserStream.ts";
 export * from "@/utils/file/getOptionsFromFile.ts";
 
 // ============================================================================
+// WASM Parser Models and Stream Transformers
+// ============================================================================
+// Note: These require WASM to be initialized. In main variants, WASM is
+// auto-initialized. In slim variants, call loadWASM() first.
+export * from "@/parser/models/WASMBinaryObjectCSVParser.ts";
+export * from "@/parser/models/WASMBinaryCSVArrayParser.ts";
+export * from "@/parser/models/WASMStringObjectCSVParser.ts";
+export * from "@/parser/models/WASMStringCSVArrayParser.ts";
+export * from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
+
+// ============================================================================
 // Worker helpers
 // ============================================================================
 // Note: ReusableWorkerPool and WorkerSession are exported separately in

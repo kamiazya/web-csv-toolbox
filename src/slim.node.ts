@@ -33,7 +33,7 @@ export * from "@/worker/helpers/ReusableWorkerPool.node.ts";
  * WASM initialization functions (Node.js optimized)
  *
  * The slim version requires manual WASM initialization.
- * Call loadWASM() before using WASM-powered functions like parseStringToArraySyncWASM.
+ * Call loadWASM() before using WASM-powered functions with { engine: { wasm: true } }.
  */
 export {
   ensureWASMInitialized,

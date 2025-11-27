@@ -23,4 +23,4 @@ deno run --allow-read index.ts
 ## What's tested
 
 - Manual WASM initialization with `loadWASM`
-- WASM-based parsing with `parseStringToArraySyncWASM`
+- WASM-based parsing with `parseString.toArraySync`

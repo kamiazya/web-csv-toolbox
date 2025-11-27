@@ -22,7 +22,6 @@ export * from "@/main.shared.ts";
 // ============================================================================
 // Node.js-specific: WASM functions
 // ============================================================================
-export * from "@/parser/api/string/parseStringToArraySyncWASM.main.node.ts";
 export * from "@/wasm/WasmInstance.main.node.ts";
 
 // ============================================================================

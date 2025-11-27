@@ -30,4 +30,7 @@ export * from "@/worker/helpers/WorkerSession.ts";
 // ============================================================================
 // Slim-specific: Manual WASM initialization
 // ============================================================================
-export { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.slim.ts";
+// Note: WASM functions are now accessed through the unified API:
+// parseString.toArraySync(csv, { engine: { wasm: true } })
+// Manual WASM initialization via loadWASM() is exported from
+// environment-specific files (slim.node.ts and slim.web.ts)

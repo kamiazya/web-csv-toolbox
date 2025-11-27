@@ -30,6 +30,6 @@ export * from "@/worker/helpers/WorkerSession.ts";
 // ============================================================================
 // Main-specific: WASM with auto-initialization
 // ============================================================================
-// Note: WasmInstance and parseStringToArraySyncWASM are exported from
-// environment-specific files (main.node.ts and main.web.ts) to ensure
-// correct WASM loader selection based on build target
+// Note: WasmInstance is exported from environment-specific files
+// (main.node.ts and main.web.ts) to ensure correct WASM loader selection
+// based on build target

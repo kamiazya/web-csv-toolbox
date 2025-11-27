@@ -15,16 +15,16 @@ This library provides multiple import paths for different use cases. The appropr
 
 1. **Main library** (`web-csv-toolbox`): Full features with automatic WASM initialization
    ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
-// Auto-initializes on first use; optionally call loadWASM() at startup to reduce first‑parse latency
-const records = parseStringToArraySyncWASM(csv);
+   import { parseString } from 'web-csv-toolbox';
+   // Auto-initializes on first use; optionally call loadWASM() at startup to reduce first‑parse latency
+   const records = parseString.toArraySync(csv, { engine: { wasm: true } });
    ```
 
 2. **Slim library** (`web-csv-toolbox/slim`): Smaller bundle size, manual WASM initialization required
    ```typescript
-   import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+   import { loadWASM, parseString } from 'web-csv-toolbox/slim';
    await loadWASM(); // Must call before using WASM functions
-   const records = parseStringToArraySyncWASM(csv);
+   const records = parseString.toArraySync(csv, { engine: { wasm: true } });
    ```
 
 3. **Worker file** (`web-csv-toolbox/worker`): Only needed when using bundlers with worker-based parsing
@@ -66,10 +66,10 @@ The library provides two entry points with different trade-offs:
 **Best for**: Most users who want automatic WASM initialization and convenience
 
 ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseString } from 'web-csv-toolbox';
 
 // Auto-initialization occurs on first use; optional preloading recommended for faster first parse
-const records = parseStringToArraySyncWASM(csv);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 **Characteristics:**
@@ -89,11 +89,11 @@ const records = parseStringToArraySyncWASM(csv);
 **Best for**: Bundle size-sensitive applications
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWASM, parseString } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
 await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+const records = parseString.toArraySync(csv, { engine: { wasm: true } });
 ```
 
 **Characteristics:**

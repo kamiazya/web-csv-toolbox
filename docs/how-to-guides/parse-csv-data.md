@@ -308,7 +308,7 @@ try {
 
 ### Scenario 9: Parse with WASM Acceleration
 
-**For UTF-8 files with double-quotes:**
+**For UTF-8 files with single-byte ASCII delimiter/quotation:**
 
 ```typescript
 import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
@@ -326,7 +326,7 @@ for await (const record of parseString(csv, {
 
 **Limitations:**
 - ❌ UTF-8 encoding only
-- ❌ Double-quote (`"`) only
+- ❌ Single-byte ASCII delimiter and quotation only
 
 ### Scenario 10: Parse Server-Side Requests
 
@@ -408,14 +408,14 @@ engine: EnginePresets.memoryEfficient()
 engine: EnginePresets.fast()
 // ✅ WASM-accelerated parsing
 // ❌ Blocks main thread
-// ❌ UTF-8 and double-quote only
+// ❌ UTF-8 only
 ```
 
 **Balanced (General-Purpose):**
 ```typescript
 engine: EnginePresets.balanced()
 // ✅ Non-blocking + memory efficient
-// ✅ Supports all encodings and quotation characters
+// ✅ Supports all encodings
 // ✅ Auto-fallback on Safari
 // ⚠️ Experimental (with stable fallback)
 ```
@@ -425,7 +425,7 @@ engine: EnginePresets.balanced()
 engine: EnginePresets.responsiveFast()
 // ✅ Worker + WASM
 // ✅ Non-blocking UI
-// ❌ UTF-8 and double-quote only
+// ❌ UTF-8 only
 ```
 
 For detailed configuration options, see [Engine Presets Reference](../reference/engine-presets.md).

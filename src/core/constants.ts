@@ -100,17 +100,37 @@ export const DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL = 100;
 export const DEFAULT_ASSEMBLER_BACKPRESSURE_CHECK_INTERVAL = 10;
 
 /**
- * FiledDelimiter is a symbol for field delimiter of CSV.
+ * Token type enumeration for CSV lexer.
+ *
+ * Uses numeric values for zero-overhead WASM interoperability.
+ * Values must match the Rust enum in `web-csv-toolbox-wasm/src/lib.rs`.
+ *
  * @category Constants
  */
-export const FieldDelimiter = Symbol.for("web-csv-toolbox.FieldDelimiter");
+export enum TokenType {
+  /** Field token - represents a CSV field value */
+  Field = 0,
+  /** Field delimiter token - represents a comma or custom delimiter */
+  FieldDelimiter = 1,
+  /** Record delimiter token - represents a newline (CR, LF, or CRLF) */
+  RecordDelimiter = 2,
+}
+
 /**
- * RecordDelimiter is a symbol for record delimiter of CSV.
+ * Field token type value.
  * @category Constants
+ * @deprecated Use `TokenType.Field` instead. Will be removed in next major version.
  */
-export const RecordDelimiter = Symbol.for("web-csv-toolbox.RecordDelimiter");
+export const Field = TokenType.Field;
 /**
- * Field is a symbol for field of CSV.
+ * FieldDelimiter token type value.
  * @category Constants
+ * @deprecated Use `TokenType.FieldDelimiter` instead. Will be removed in next major version.
  */
-export const Field = Symbol.for("web-csv-toolbox.Field");
+export const FieldDelimiter = TokenType.FieldDelimiter;
+/**
+ * RecordDelimiter token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.RecordDelimiter` instead. Will be removed in next major version.
+ */
+export const RecordDelimiter = TokenType.RecordDelimiter;

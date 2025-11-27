@@ -108,10 +108,12 @@ for await (const record of parseString(csv, {
 - ✅ Faster than the JavaScript implementation (compiled WASM)
 - ✅ Often lower CPU usage
 
+**Streaming Support:**
+- ✅ Stream inputs (`parseBinaryStream`, `parseResponse`) support true streaming via `WASMBinaryCSVStreamTransformer`
+- ⚠️ Buffer inputs (`parseString`, `parseBinary`) process entire input before yielding records
+
 **Limitations:**
 - ❌ UTF-8 only (no Shift-JIS, EUC-JP, etc.)
-- ❌ Double-quote only (no single-quote support)
-- ❌ No streaming (must have complete string)
 
 ---
 
