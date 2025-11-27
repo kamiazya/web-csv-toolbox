@@ -168,7 +168,7 @@ export function resolveImportsPlugin(): Plugin {
       let targetEnv: TargetEnvironment = "web"; // Default to web
 
       if (buildTarget) {
-        // Use explicit build target if available
+        // Use explicit build target if available - applies to ALL modules including shared
         targetEnv = buildTarget;
       } else if (importer) {
         // Normalize importer and check metadata

@@ -3,15 +3,12 @@ import {
   CSVParser as WASMCSVParserInternal,
 } from "web-csv-toolbox-wasm";
 import {
-  isSyncInitialized,
-  loadWASMSync,
-} from "#/wasm/loaders/loadWASMSync.js";
-import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
 } from "@/core/constants.ts";
 import type { CSVParserOptions, CSVParserParseOptions } from "@/core/types.ts";
+import { isWasmInitialized } from "@/wasm/loaders/wasmState.ts";
 import type {
   FlatParseData,
   WASMParserOptions,
@@ -72,21 +69,18 @@ export abstract class WASMBinaryCSVParserBase<
       header,
     } = options;
 
-    // Auto-initialize WASM if not already initialized
-    if (!isSyncInitialized()) {
-      try {
-        loadWASMSync();
-      } catch (error) {
-        throw new RangeError(
-          "WASM initialization failed. " +
-            `Original error: ${error instanceof Error ? error.message : String(error)}. ` +
-            "Possible causes: " +
-            "(1) Unsupported runtime (WASM not available), " +
-            "(2) WASM binary inaccessible or corrupted, " +
-            "(3) Bundler configuration issues (ensure WASM file is included in bundle). " +
-            "Try: Check browser/runtime supports WebAssembly, verify bundler settings, or use async loadWASM() for better error details.",
-        );
-      }
+    // Check if WASM is initialized - throw clear error if not
+    if (!isWasmInitialized()) {
+      throw new RangeError(
+        "WASM is not initialized. " +
+          "For the main entry, call 'loadWASMSync()' before using WASM parsers, " +
+          "or use 'await loadWASM()' for async initialization. " +
+          "For the slim entry, call 'await loadWASM(wasmUrl)' before using WASM features. " +
+          "Example:\n" +
+          "  import { loadWASMSync, parseString } from 'web-csv-toolbox';\n" +
+          "  loadWASMSync();\n" +
+          "  const result = parseString.toArraySync(csv, { engine: { wasm: true } });",
+      );
     }
 
     // Create parser with options object

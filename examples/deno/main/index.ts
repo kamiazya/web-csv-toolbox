@@ -1,7 +1,10 @@
-import { parseString } from 'npm:web-csv-toolbox';
+import { parseString, loadWASMSync } from 'npm:web-csv-toolbox';
 
 console.log('🦕 Deno Main Version Test');
-console.log('Features: Auto WASM initialization via npm: prefix\n');
+console.log('Features: WASM with synchronous initialization via npm: prefix\n');
+
+// Initialize WASM before using WASM features
+loadWASMSync();
 
 const csv = 'name,age\nAlice,30\nBob,25\nCharlie,35';
 

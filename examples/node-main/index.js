@@ -1,7 +1,10 @@
-import { parseString } from 'web-csv-toolbox';
+import { parseString, loadWASMSync } from 'web-csv-toolbox';
 
 console.log('🚀 Node.js Main Version Test');
-console.log('Features: Auto WASM initialization\n');
+console.log('Features: WASM with synchronous initialization\n');
+
+// Initialize WASM before using WASM features
+loadWASMSync();
 
 const csv = 'name,age\nAlice,30\nBob,25\nCharlie,35';
 
