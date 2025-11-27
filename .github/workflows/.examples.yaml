@@ -196,11 +196,6 @@ jobs:
         with:
           deno-version: lts
 
-      - name: Setup Deno workspace structure
-        run: |
-          cd examples/deno/${{ matrix.example }}
-          deno task setup
-
       - name: Run example - ${{ matrix.example }}
         run: |
           cd examples/deno/${{ matrix.example }}

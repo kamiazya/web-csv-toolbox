@@ -1,4 +1,4 @@
-import { loadWASM, parseStringToArraySyncWASM } from 'npm:web-csv-toolbox/slim';
+import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
 
 console.log('🦕 Deno Slim Entry Test');
 console.log('Features: Manual WASM initialization via npm: prefix, smaller JS bundle\n');
@@ -11,9 +11,10 @@ try {
   console.log();
 
   // Slim entry: Must initialize WASM manually
-  // With npm: prefix, Deno uses Node.js loader which auto-resolves WASM path
+  // For local development, specify the WASM file path explicitly
   console.log('⏳ Initializing WASM...');
-  await loadWASM(); // No argument needed - will use import.meta.resolve internally
+  const wasmPath = new URL('../../../dist/csv.wasm', import.meta.url);
+  await loadWASM(wasmPath);
   console.log('✅ WASM initialized\n');
 
   // Now we can use sync WASM APIs

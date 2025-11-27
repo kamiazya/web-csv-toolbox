@@ -2,7 +2,9 @@
   "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
   "nodeModulesDir": "auto",
   "tasks": {
-    "setup": "deno run --allow-read --allow-write setup.ts",
     "start": "deno run --allow-read index.ts"
+  },
+  "imports": {
+    "web-csv-toolbox/slim": "../../../dist/node/slim.node.js"
   }
 }
