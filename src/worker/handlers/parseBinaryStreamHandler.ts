@@ -106,7 +106,7 @@ async function handleGPUParsing(
     "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts"
   );
   const { GPUBinaryCSVLexer } = await import(
-    "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts"
+    "@/parser/models/GPUBinaryCSVLexer.ts"
   );
   const { createCSVRecordAssembler } = await import(
     "@/parser/api/model/createCSVRecordAssembler.ts"

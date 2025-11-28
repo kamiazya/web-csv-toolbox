@@ -18,7 +18,7 @@ import { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparat
 import {
   GPUBinaryCSVLexer,
   type GPUBinaryCSVLexerConfig,
-} from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
+} from "@/parser/models/GPUBinaryCSVLexer.ts";
 
 /**
  * Parse CSV binary stream using WebGPU

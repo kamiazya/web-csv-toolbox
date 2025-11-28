@@ -69,10 +69,10 @@ export type {
   SeparatorsToTokensState,
 } from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 // GPU Binary CSV Lexer
-export { GPUBinaryCSVLexer } from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
-export type { GPUBinaryCSVLexerConfig } from "@/parser/webgpu/lexer/GPUBinaryCSVLexer.ts";
-export { BinaryCSVLexerTransformer } from "@/parser/webgpu/lexer/BinaryCSVLexerTransformer.ts";
-export type { BinaryCSVLexerTransformerOptions } from "@/parser/webgpu/lexer/BinaryCSVLexerTransformer.ts";
+export { GPUBinaryCSVLexer } from "@/parser/models/GPUBinaryCSVLexer.ts";
+export type { GPUBinaryCSVLexerConfig } from "@/parser/models/GPUBinaryCSVLexer.ts";
+export { BinaryCSVLexerTransformer } from "@/parser/stream/BinaryCSVLexerTransformer.ts";
+export type { BinaryCSVLexerTransformerOptions } from "@/parser/stream/BinaryCSVLexerTransformer.ts";
 // Core types
 export type {
   CSVSeparatorIndexResult,
