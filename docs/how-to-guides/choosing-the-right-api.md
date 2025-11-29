@@ -71,7 +71,10 @@ What type of input do you have?
 - Performance-critical code
 - When input type is known at compile time
 
-**APIs:**
+#### Input-Based Parsing Functions
+
+For most production use cases, choose the appropriate function based on your input type:
+
 - `parseString()` - Parse CSV string
 - `parseStringStream()` - Parse text stream
 - `parseBinary()` - Parse binary data (Uint8Array/ArrayBuffer)
@@ -84,55 +87,91 @@ What type of input do you have?
 **Trade-off:**
 - Optimal performance vs. need to know input type
 
+#### Parser Factory Functions
+
+For creating stateful parsers with streaming support:
+
+**String Parsing:**
+- **`createStringCSVParser(options?)`** - Factory for format-specific string parsers
+  - Returns `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
+  - Accepts `CSVProcessingOptions` only (no `engine` option)
+
+**Binary Parsing:**
+- **`createBinaryCSVParser(options?)`** - Factory for format-specific binary parsers
+  - Returns `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
+  - Accepts `BinaryCSVProcessingOptions` only (no `engine` option)
+
+**When to use:**
+- Need stateful parsing with `{ stream: true }` option
+- Working with binary data (charset encoding, BOM handling)
+- Want to call `.parse()` method multiple times on chunks
+
+---
+
+#### Stream Pipeline Factory Functions
+
+For fine control over stream pipelines or custom processing between stages:
+
+**Parser Streams** - Complete string/binary → records pipeline:
+- **`createStringCSVParserStream(options?)`** - Factory for string parsing TransformStream
+- **`createBinaryCSVParserStream(options?)`** - Factory for binary parsing TransformStream
+
+**Transformer Factory Functions** - For inserting custom processing between stages:
+- **`createStringCSVLexerTransformer(options?)`** - Factory for string → tokens TransformStream
+- **`createCSVRecordAssemblerTransformer(options?)`** - Factory for tokens → records TransformStream
+
+**Lexer/Assembler Factory Functions** - For creating lexer and assembler model instances:
+- **`createStringCSVLexer(options?)`** - Factory for string CSV lexer
+- **`createCSVRecordAssembler(options?)`** - Factory for record assembler
+
+**When to use factory functions:**
+- Need fine control over stream pipelines
+- Want to insert custom processing between lexing and assembly stages
+- Building custom CSV processing pipelines with TransformStream
+
+**Example:**
+```typescript
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// Custom token filtering between stages
+csvStream
+  .pipeThrough(createStringCSVLexerTransformer({ delimiter: '\t' }))
+  .pipeThrough(customTokenFilter)
+  .pipeThrough(createCSVRecordAssemblerTransformer({ header: ['name', 'age'] }))
+  .pipeTo(yourProcessor);
+```
+
 ---
 
 ### Low-Level APIs
 
-The low-level APIs follow a **3-tier architecture** providing progressive complexity:
+**Note**: Low-level APIs are intended for niche requirements such as custom CSV dialects, syntax highlighting, or specialized validation. These APIs may have more frequent changes compared to Mid-level APIs. For most production use cases, prefer Mid-level APIs.
 
-#### Tier 1: Parser Models (Simplified Composition)
+#### Parser Classes (Direct Instantiation)
 
 **When to use:**
-- Need stateful parsing with streaming support
-- Working with binary data (charset encoding, BOM handling)
-- Want composition benefits without manual wiring
-- Building custom CSV processing pipelines
-- Streaming file uploads or fetch responses
+- Need custom parser implementation
+- Want direct control over parser instance lifecycle
+- Building custom TransformStream pipelines with custom parsers
 
 **APIs:**
 
 **String Parsing:**
-- **`createStringCSVParser(options?)`** - Factory function for creating format-specific parsers
-  - Returns `FlexibleStringObjectCSVParser` (default) or `FlexibleStringArrayCSVParser`
-  - Accepts `CSVProcessingOptions` only (no `engine` option - low-level API)
-- **Direct class usage** (format-specific):
-  - `FlexibleStringObjectCSVParser` - Always outputs object records
-  - `FlexibleStringArrayCSVParser` - Always outputs array records
-- **`StringCSVParserStream`** - TransformStream for string parsing
+- `FlexibleStringObjectCSVParser` - Always outputs object records
+- `FlexibleStringArrayCSVParser` - Always outputs array records
+- `StringCSVParserStream` - TransformStream for string parsing (use with custom parser)
 
 **Binary Parsing:**
-- **`createBinaryCSVParser(options?)`** - Factory function for creating format-specific binary parsers
-  - Returns `FlexibleBinaryObjectCSVParser` (default) or `FlexibleBinaryArrayCSVParser`
-  - Accepts `BinaryCSVProcessingOptions` only (no `engine` option - low-level API)
-- **Direct class usage** (format-specific):
-  - `FlexibleBinaryObjectCSVParser` - Always outputs object records
-  - `FlexibleBinaryArrayCSVParser` - Always outputs array records
-- **`BinaryCSVParserStream`** - TransformStream for binary parsing with multi-byte character support
-
-**Benefits:**
-- Simplified API - single factory/class instead of manual Lexer + Assembler composition
-- Format-specific types ensure compile-time safety for object vs array output
-- Stateful streaming support with `{ stream: true }` option
-- Binary data handling with character encoding support (charset, BOM, decompression)
-- Ready for TransformStream integration
-- Low-level API focuses on CSV processing logic only (no execution strategy)
-
-**Trade-off:**
-- Easier than Tier 2 vs. less granular control over tokenization
+- `FlexibleBinaryObjectCSVParser` - Always outputs object records
+- `FlexibleBinaryArrayCSVParser` - Always outputs array records
+- `BinaryCSVParserStream` - TransformStream for binary parsing (use with custom parser)
 
 ---
 
-#### Tier 2: Lexer + Assembler (Advanced Control)
+#### Lexer + Assembler Classes (Maximum Control)
 
 **When to use:**
 - Need access to raw tokens for custom processing
@@ -142,11 +181,43 @@ The low-level APIs follow a **3-tier architecture** providing progressive comple
 - Performance profiling individual stages
 
 **APIs:**
-- `FlexibleStringCSVLexer` / `CSVLexerTransformer` - Tokenization (direct class or streaming Transform)
-- `createCSVRecordAssembler()` (factory), `FlexibleCSVObjectRecordAssembler`, `FlexibleCSVArrayRecordAssembler` / `CSVRecordAssemblerTransformer` - Record assembly with control over record shape
+- **Lexer Classes**: `FlexibleStringCSVLexer`, `StringCSVLexerTransformer` - Tokenization
+- **Assembler Classes**: `FlexibleCSVObjectRecordAssembler`, `FlexibleCSVArrayRecordAssembler`, `CSVRecordAssemblerTransformer` - Record assembly
+- **Types**: `StringCSVLexer`, `CSVRecordAssembler`, `Token` - For custom implementations
+
+**Example:**
+```typescript
+import {
+  StringCSVLexerTransformer,
+  CSVRecordAssemblerTransformer,
+  type StringCSVLexer,
+  type CSVRecordAssembler
+} from 'web-csv-toolbox';
+
+// Custom lexer for non-standard CSV dialect
+class MyCustomLexer implements StringCSVLexer {
+  *lex(chunk?: string, options?: { stream?: boolean }) {
+    // Custom lexing logic
+  }
+}
+
+// Custom assembler for specialized record formats
+class MyCustomAssembler implements CSVRecordAssembler {
+  *assemble(token?: Token, options?: { stream?: boolean }) {
+    // Custom assembly logic
+  }
+}
+
+const customLexer = new MyCustomLexer();
+const customAssembler = new MyCustomAssembler();
+csvStream
+  .pipeThrough(new StringCSVLexerTransformer(customLexer))
+  .pipeThrough(new CSVRecordAssemblerTransformer(customAssembler))
+  .pipeTo(yourProcessor);
+```
 
 **Trade-off:**
-- Maximum flexibility vs. complexity
+- Maximum flexibility vs. complexity and potential API instability
 
 ---
 

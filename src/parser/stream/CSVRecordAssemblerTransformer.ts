@@ -27,6 +27,9 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
 /**
  * A transform stream that converts a stream of tokens into a stream of CSV records.
  *
+ * For most use cases, prefer the factory function {@link createCSVRecordAssemblerTransformer}.
+ * Use this class directly only when you need a custom assembler implementation.
+ *
  * @category Low-level API
  *
  * @template Header The type of the header row.
@@ -36,78 +39,21 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  *
- * @remarks
- * **Recommended: Use the factory function**
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * For simpler usage, use {@link createCSVRecordAssemblerTransformer} which handles assembler creation internally:
+ * @example Custom assembler implementation
  * ```ts
- * import { createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
- * tokenStream.pipeThrough(createCSVRecordAssemblerTransformer({ header: ['name', 'age'] }));
- * ```
+ * import { CSVRecordAssemblerTransformer, type CSVRecordAssembler } from 'web-csv-toolbox';
  *
- * **Direct instantiation (advanced)**
- *
- * If you need direct access to the assembler or want to reuse it, use the constructor directly:
- * ```ts
- * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
- * const assembler = createCSVRecordAssembler({ header: ['name', 'age'] });
- * tokenStream.pipeThrough(new CSVRecordAssemblerTransformer(assembler));
- * ```
- *
- * **Queuing Strategy:**
- * - Writable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
- * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
- *
- * **Backpressure Handling:**
- * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
- * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
- * and allows the downstream consumer to catch up.
- *
- * @example Recommended: Using factory function
- * ```ts
- * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
- *
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("name,age\r\n");
- *     controller.enqueue("Alice,20\r\n");
- *     controller.enqueue("Bob,25\r\n");
- *     controller.close();
+ * // Custom assembler for specialized record formats
+ * class MyCustomAssembler implements CSVRecordAssembler {
+ *   *assemble(tokens: Iterable<Token>, options?: { stream?: boolean }) {
+ *     // Custom assembly logic
  *   }
- * })
- *   .pipeThrough(createCSVLexerTransformer())
- *   .pipeThrough(createCSVRecordAssemblerTransformer())
- *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
- * // { name: "Alice", age: "20" }
- * // { name: "Bob", age: "25" }
- * ```
+ * }
  *
- * @example Direct instantiation with predefined header
- * ```ts
- * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
- *
- * const assembler = createCSVRecordAssembler({ header: ['name', 'age'] as const });
- * const transformer = new CSVRecordAssemblerTransformer(assembler);
- *
- * // CSV data without header row
- * tokenStream.pipeThrough(transformer);
- * ```
- *
- * @example Custom queuing strategies with backpressure tuning
- * ```ts
- * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
- *
- * const assembler = createCSVRecordAssembler({});
- * const transformer = new CSVRecordAssemblerTransformer(
- *   assembler,
- *   { backpressureCheckInterval: 20 },
- *   new CountQueuingStrategy({ highWaterMark: 2048 }),
- *   new CountQueuingStrategy({ highWaterMark: 512 })
- * );
- *
- * await tokenStream
- *   .pipeThrough(transformer)
- *   .pipeTo(yourRecordProcessor);
+ * const customAssembler = new MyCustomAssembler();
+ * tokenStream.pipeThrough(new CSVRecordAssemblerTransformer(customAssembler));
  * ```
  */
 export class CSVRecordAssemblerTransformer<

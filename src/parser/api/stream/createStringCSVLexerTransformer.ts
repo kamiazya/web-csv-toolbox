@@ -3,36 +3,43 @@ import type {
   AbortSignalOptions,
   CommonOptions,
   CSVLexerTransformerStreamOptions,
+  EngineOptions,
   Token,
 } from "@/core/types.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 
 /**
- * Factory function to create a CSVLexerTransformer instance.
+ * Options for creating a StringCSVLexerTransformer via factory function.
  *
- * This function internally creates a StringCSVLexer and wraps it in a CSVLexerTransformer,
+ * @category Types
+ */
+export interface StringCSVLexerOptions<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
+    AbortSignalOptions,
+    EngineOptions {}
+
+/**
+ * Factory function to create a StringCSVLexerTransformer instance.
+ *
+ * This function internally creates a StringCSVLexer and wraps it in a StringCSVLexerTransformer,
  * providing a simpler API for stream-based CSV tokenization.
  *
- * @category Low-level API
+ * @category Mid-level API
  *
- * @param options - CSV lexer options including delimiter, quotation, and abort signal
+ * @param options - CSV lexer options including delimiter, quotation, abort signal, and engine
  * @param streamOptions - Stream-specific options like backpressureCheckInterval
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
- * @returns A CSVLexerTransformer instance configured with the specified options
+ * @returns A StringCSVLexerTransformer instance configured with the specified options
  *
- * @remarks
- * This factory function simplifies the creation of CSVLexerTransformer by handling
- * the lexer instantiation internally. Use this when you don't need direct access
- * to the lexer instance.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * For advanced use cases where you need to reuse a lexer or access it directly,
- * use {@link createStringCSVLexer} and {@link CSVLexerTransformer} separately.
- *
- * @example Basic usage
+ * @example Basic tokenization
  * ```ts
- * import { createCSVLexerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer } from 'web-csv-toolbox';
  *
  * new ReadableStream({
  *   start(controller) {
@@ -41,7 +48,7 @@ import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
  *     controller.close();
  *   }
  * })
- *   .pipeThrough(createCSVLexerTransformer())
+ *   .pipeThrough(createStringCSVLexerTransformer())
  *   .pipeTo(new WritableStream({ write(token) {
  *     console.log(token);
  *   }}));
@@ -52,9 +59,9 @@ import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
  *
  * @example Custom delimiter (TSV)
  * ```ts
- * import { createCSVLexerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer } from 'web-csv-toolbox';
  *
- * const tsvTransformer = createCSVLexerTransformer({
+ * const tsvTransformer = createStringCSVLexerTransformer({
  *   delimiter: '\t'
  * });
  *
@@ -63,9 +70,9 @@ import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
  *
  * @example With backpressure tuning
  * ```ts
- * import { createCSVLexerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer } from 'web-csv-toolbox';
  *
- * const transformer = createCSVLexerTransformer(
+ * const transformer = createStringCSVLexerTransformer(
  *   { delimiter: ',' },
  *   { backpressureCheckInterval: 50 },
  *   { highWaterMark: 131072, size: (chunk) => chunk.length },
@@ -79,17 +86,17 @@ import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
  *   .pipeTo(yourProcessor);
  * ```
  */
-export function createCSVLexerTransformer<
+export function createStringCSVLexerTransformer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 >(
-  options?: CommonOptions<Delimiter, Quotation> & AbortSignalOptions,
+  options?: StringCSVLexerOptions<Delimiter, Quotation>,
   streamOptions?: CSVLexerTransformerStreamOptions,
   writableStrategy?: QueuingStrategy<string>,
   readableStrategy?: QueuingStrategy<Token>,
-): CSVLexerTransformer<Delimiter, Quotation> {
+): StringCSVLexerTransformer<Delimiter, Quotation> {
   const lexer = createStringCSVLexer<Delimiter, Quotation>(options);
-  return new CSVLexerTransformer<Delimiter, Quotation>(
+  return new StringCSVLexerTransformer<Delimiter, Quotation>(
     lexer,
     streamOptions ?? {},
     writableStrategy,

@@ -1,8 +1,8 @@
 import type {
   BinaryCSVParserStreamOptions,
-  BinaryCSVProcessingOptions,
   CSVRecord,
   InferFormat,
+  ParseBinaryOptions,
 } from "@/core/types.ts";
 import { createBinaryCSVParser } from "@/parser/api/model/createBinaryCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
@@ -13,25 +13,19 @@ import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts"
  * This function internally creates a BinaryCSVParser and wraps it in a BinaryCSVParserStream,
  * providing a simpler API for stream-based CSV parsing from binary streams.
  *
- * @category Low-level API
+ * Accepts any BufferSource type (Uint8Array, ArrayBuffer, or other TypedArray views) as input chunks.
+ *
+ * @category Mid-level API
  *
  * @template Header - The type of the header row
  * @template Options - The parser options type
- * @param options - Binary CSV parser options including header, delimiter, charset, outputFormat, etc.
+ * @param options - Binary CSV parser options including header, delimiter, charset, outputFormat, engine, etc.
  * @param streamOptions - Stream-specific options like backpressureCheckInterval
  * @param writableStrategy - Strategy for the writable side (default: `ByteLengthQueuingStrategy({ highWaterMark: 65536 })`)
  * @param readableStrategy - Strategy for the readable side (default: `CountQueuingStrategy({ highWaterMark: 256 })`)
  * @returns A BinaryCSVParserStream instance configured with the specified options
  *
- * @remarks
- * This factory function simplifies the creation of BinaryCSVParserStream by handling
- * the parser instantiation internally. Use this when you don't need direct access
- * to the parser instance.
- *
- * Accepts any BufferSource type (Uint8Array, ArrayBuffer, or other TypedArray views) as input chunks.
- *
- * For advanced use cases where you need to reuse a parser or access it directly,
- * use {@link createBinaryCSVParser} and {@link BinaryCSVParserStream} separately.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
  * @example Basic usage - parse binary stream to records
  * ```ts
@@ -124,11 +118,11 @@ import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts"
  */
 export function createBinaryCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends BinaryCSVProcessingOptions<
+  Options extends ParseBinaryOptions<
     Header,
     string,
     string
-  > = BinaryCSVProcessingOptions<Header>,
+  > = ParseBinaryOptions<Header>,
 >(
   options?: Options,
   streamOptions?: BinaryCSVParserStreamOptions,

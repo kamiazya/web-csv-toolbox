@@ -309,7 +309,7 @@ for (const record of records) {
 Both stages support **streaming** through TransformStream implementations:
 
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
 
 const csvStream = new ReadableStream({
   start(controller) {
@@ -321,8 +321,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new CSVLexerTransformer())
-  .pipeThrough(new CSVRecordAssemblerTransformer())
+  .pipeThrough(createStringCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);
@@ -586,7 +586,7 @@ for (const record of assembler.assemble(tokens)) {
 | BinaryCSVParserStream | O(1) | Stream-based, no accumulation |
 | CSVLexer | O(1) | Constant buffer size (configurable) |
 | CSVRecordAssembler | O(1) | Only stores current record |
-| CSVLexerTransformer | O(1) | Stream-based, no accumulation |
+| StringCSVLexerTransformer | O(1) | Stream-based, no accumulation |
 | CSVRecordAssemblerTransformer | O(1) | Stream-based, no accumulation |
 
 ### Processing Speed
@@ -655,7 +655,7 @@ web-csv-toolbox's 3-tier architecture provides:
 
 3. **Streaming support**: Memory-efficient processing via Web Streams
    - `StringCSVParserStream` and `BinaryCSVParserStream` for Parser models
-   - `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` for low-level pipeline
+   - `StringCSVLexerTransformer` and `CSVRecordAssemblerTransformer` for low-level pipeline
 
 4. **Error precision**: Token location tracking for debugging
 

@@ -15,7 +15,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  * CSVRecordAssemblerTransformer, providing a simpler API for stream-based
  * CSV record assembly.
  *
- * @category Low-level API
+ * @category Mid-level API
  *
  * @template Header - The type of the header row
  * @template Options - The assembler options type
@@ -25,18 +25,11 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  * @returns A CSVRecordAssemblerTransformer instance configured with the specified options
  *
- * @remarks
- * This factory function simplifies the creation of CSVRecordAssemblerTransformer
- * by handling the assembler instantiation internally. Use this when you don't
- * need direct access to the assembler instance.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * For advanced use cases where you need to reuse an assembler or access it
- * directly, use {@link createCSVRecordAssembler} and
- * {@link CSVRecordAssemblerTransformer} separately.
- *
- * @example Basic usage with header from data
+ * @example Custom processing between lexer and assembler
  * ```ts
- * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * new ReadableStream({
  *   start(controller) {
@@ -46,7 +39,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  *     controller.close();
  *   }
  * })
- *   .pipeThrough(createCSVLexerTransformer())
+ *   .pipeThrough(createStringCSVLexerTransformer())
  *   .pipeThrough(createCSVRecordAssemblerTransformer())
  *   .pipeTo(new WritableStream({ write(record) {
  *     console.log(record);
@@ -57,7 +50,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  *
  * @example With predefined header
  * ```ts
- * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * const transformer = createCSVRecordAssemblerTransformer({
  *   header: ['name', 'age'] as const
@@ -65,20 +58,20 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  *
  * // Data without header row
  * csvStream
- *   .pipeThrough(createCSVLexerTransformer())
+ *   .pipeThrough(createStringCSVLexerTransformer())
  *   .pipeThrough(transformer);
  * ```
  *
  * @example Array output format
  * ```ts
- * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * const transformer = createCSVRecordAssemblerTransformer({
  *   outputFormat: 'array'
  * });
  *
  * csvStream
- *   .pipeThrough(createCSVLexerTransformer())
+ *   .pipeThrough(createStringCSVLexerTransformer())
  *   .pipeThrough(transformer)
  *   .pipeTo(new WritableStream({ write(record) {
  *     console.log(record); // ['Alice', '20']
@@ -87,7 +80,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  *
  * @example With backpressure tuning
  * ```ts
- * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * const transformer = createCSVRecordAssemblerTransformer(
  *   { header: ['name', 'age'] as const },

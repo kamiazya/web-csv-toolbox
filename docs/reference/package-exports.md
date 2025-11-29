@@ -28,7 +28,7 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - `EnginePresets.balanced()` - Balanced (general-purpose)
 - Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
   - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
-  - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `CSVLexerTransformer`, `CSVRecordAssemblerTransformer`
+  - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `StringCSVLexerTransformer`, `CSVRecordAssemblerTransformer`
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 
@@ -274,7 +274,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     const tokens = lexer.lex('name\tage\nAlice\t30');
     ```
 
-- **`CSVLexerTransformer`** - TransformStream for CSV tokenization
+- **`StringCSVLexerTransformer`** - TransformStream for CSV tokenization
   - **Use case**: Stream-based tokenization
 
 #### Assembler

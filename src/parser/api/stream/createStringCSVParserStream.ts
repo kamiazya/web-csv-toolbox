@@ -1,7 +1,7 @@
 import type {
-  CSVProcessingOptions,
   CSVRecord,
   InferFormat,
+  ParseOptions,
   StringCSVParserStreamOptions,
 } from "@/core/types.ts";
 import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
@@ -13,23 +13,17 @@ import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts"
  * This function internally creates a StringCSVParser and wraps it in a StringCSVParserStream,
  * providing a simpler API for stream-based CSV parsing from string streams.
  *
- * @category Low-level API
+ * @category Mid-level API
  *
  * @template Header - The type of the header row
  * @template Options - The parser options type
- * @param options - CSV parser options including header, delimiter, outputFormat, etc.
+ * @param options - CSV parser options including header, delimiter, outputFormat, engine, etc.
  * @param streamOptions - Stream-specific options like backpressureCheckInterval
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  * @returns A StringCSVParserStream instance configured with the specified options
  *
- * @remarks
- * This factory function simplifies the creation of StringCSVParserStream by handling
- * the parser instantiation internally. Use this when you don't need direct access
- * to the parser instance.
- *
- * For advanced use cases where you need to reuse a parser or access it directly,
- * use {@link createStringCSVParser} and {@link StringCSVParserStream} separately.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
  * @example Basic usage - parse string stream to records
  * ```ts
@@ -108,11 +102,7 @@ import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts"
  */
 export function createStringCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends CSVProcessingOptions<
-    Header,
-    string,
-    string
-  > = CSVProcessingOptions<Header>,
+  Options extends ParseOptions<Header, string, string> = ParseOptions<Header>,
 >(
   options?: Options,
   streamOptions?: StringCSVParserStreamOptions,

@@ -45,7 +45,7 @@ export * from "@/parser/api/model/createBinaryCSVParser.ts";
 export * from "@/parser/api/model/createCSVRecordAssembler.ts";
 export * from "@/parser/api/model/createStringCSVLexer.ts";
 export * from "@/parser/api/model/createStringCSVParser.ts";
-export * from "@/parser/api/stream/createCSVLexerTransformer.ts";
+export * from "@/parser/api/stream/createStringCSVLexerTransformer.ts";
 export * from "@/parser/api/stream/createCSVRecordAssemblerTransformer.ts";
 export * from "@/parser/api/stream/createStringCSVParserStream.ts";
 export * from "@/parser/api/stream/createBinaryCSVParserStream.ts";
@@ -59,7 +59,7 @@ export * from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 export * from "@/parser/models/FlexibleStringArrayCSVParser.ts";
 export * from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 export * from "@/parser/stream/BinaryCSVParserStream.ts";
-export * from "@/parser/stream/CSVLexerTransformer.ts";
+export * from "@/parser/stream/StringCSVLexerTransformer.ts";
 export * from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 export * from "@/parser/stream/StringCSVParserStream.ts";
 

@@ -30,6 +30,9 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
 /**
  * A transform stream that converts a stream of strings into a stream of tokens.
  *
+ * For most use cases, prefer the factory function {@link createStringCSVLexerTransformer}.
+ * Use this class directly only when you need a custom lexer implementation.
+ *
  * @category Low-level API
  *
  * @param lexer - A StringCSVLexer instance (required). Use {@link createStringCSVLexer} to create one.
@@ -37,83 +40,24 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  *
- * @remarks
- * **Recommended: Use the factory function**
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * For simpler usage, use {@link createCSVLexerTransformer} which handles lexer creation internally:
+ * @example Custom lexer implementation
  * ```ts
- * import { createCSVLexerTransformer } from 'web-csv-toolbox';
- * stream.pipeThrough(createCSVLexerTransformer({ delimiter: ',' }));
- * ```
+ * import { StringCSVLexerTransformer, type StringCSVLexer } from 'web-csv-toolbox';
  *
- * **Direct instantiation (advanced)**
- *
- * If you need direct access to the lexer or want to reuse it, use the constructor directly:
- * ```ts
- * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
- * const lexer = createStringCSVLexer({ delimiter: ',' });
- * stream.pipeThrough(new CSVLexerTransformer(lexer));
- * ```
- *
- * **Queuing Strategy:**
- * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
- * - Readable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
- *
- * **Backpressure Handling:**
- * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
- * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
- * and allows the downstream consumer to catch up.
- *
- * @example Recommended: Using factory function
- * ```ts
- * import { createCSVLexerTransformer } from 'web-csv-toolbox';
- *
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("name,age\r\n");
- *     controller.enqueue("Alice,20\r\n");
- *     controller.close();
+ * // Custom lexer for non-standard CSV dialect
+ * class MyCustomLexer implements StringCSVLexer {
+ *   *lex(chunk?: string, options?: { stream?: boolean }) {
+ *     // Custom lexing logic
  *   }
- * })
- *   .pipeThrough(createCSVLexerTransformer())
- *   .pipeTo(new WritableStream({ write(token) {
- *     console.log(token);
- *   }}));
- * // { type: Field, value: "name", location: {...} }
- * // { type: FieldDelimiter, value: ",", location: {...} }
- * // ...
- * ```
+ * }
  *
- * @example Direct instantiation with lexer
- * ```ts
- * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
- *
- * const lexer = createStringCSVLexer({ delimiter: ',' });
- * const transformer = new CSVLexerTransformer(lexer);
- *
- * stream.pipeThrough(transformer);
- * ```
- *
- * @example Custom queuing strategies with backpressure tuning
- * ```ts
- * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
- *
- * const lexer = createStringCSVLexer({ delimiter: ',' });
- * const transformer = new CSVLexerTransformer(
- *   lexer,
- *   { backpressureCheckInterval: 50 },
- *   { highWaterMark: 131072, size: (chunk) => chunk.length },
- *   new CountQueuingStrategy({ highWaterMark: 2048 })
- * );
- *
- * await fetch('large-file.csv')
- *   .then(res => res.body)
- *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(transformer)
- *   .pipeTo(yourProcessor);
+ * const customLexer = new MyCustomLexer();
+ * stream.pipeThrough(new StringCSVLexerTransformer(customLexer));
  * ```
  */
-export class CSVLexerTransformer<
+export class StringCSVLexerTransformer<
   _Delimiter extends string = DEFAULT_DELIMITER,
   _Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token> {

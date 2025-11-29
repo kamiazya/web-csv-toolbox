@@ -6,8 +6,8 @@ import type {
 } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 
 export function parseStringStreamToStream<
   const CSVSource extends ReadableStream<string>,
@@ -53,7 +53,7 @@ export function parseStringStreamToStream<
   const assembler = createCSVRecordAssembler<Header>(options);
 
   return stream
-    .pipeThrough(new CSVLexerTransformer(lexer))
+    .pipeThrough(new StringCSVLexerTransformer(lexer))
     .pipeThrough(
       new CSVRecordAssemblerTransformer(assembler),
     ) as ReadableStream<InferCSVRecord<Header, Options>>;
