@@ -2,8 +2,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   AbortSignalOptions,
   CommonOptions,
-  CSVLexerTransformerStreamOptions,
   EngineOptions,
+  StringCSVLexerTransformerStreamOptions,
   Token,
 } from "@/core/types.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
@@ -91,7 +91,7 @@ export function createStringCSVLexerTransformer<
   Quotation extends string = DEFAULT_QUOTATION,
 >(
   options?: StringCSVLexerOptions<Delimiter, Quotation>,
-  streamOptions?: CSVLexerTransformerStreamOptions,
+  streamOptions?: StringCSVLexerTransformerStreamOptions,
   writableStrategy?: QueuingStrategy<string>,
   readableStrategy?: QueuingStrategy<Token>,
 ): StringCSVLexerTransformer<Delimiter, Quotation> {

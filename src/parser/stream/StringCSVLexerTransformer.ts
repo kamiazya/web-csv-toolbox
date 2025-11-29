@@ -4,8 +4,8 @@ import {
   DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL,
 } from "@/core/constants.ts";
 import type {
-  CSVLexerTransformerStreamOptions,
   StringCSVLexer,
+  StringCSVLexerTransformerStreamOptions,
   Token,
 } from "@/core/types.ts";
 
@@ -48,8 +48,12 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * // Custom lexer for non-standard CSV dialect
  * class MyCustomLexer implements StringCSVLexer {
- *   *lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
- *     // Custom lexing logic
+ *   lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+ *     // Return an iterator (can use internal generator)
+ *     return this.#tokens();
+ *   }
+ *   *#tokens(): Generator<Token> {
+ *     // Actual token generation logic
  *   }
  * }
  *
@@ -74,7 +78,7 @@ export class StringCSVLexerTransformer<
 
   constructor(
     lexer: StringCSVLexer,
-    options: CSVLexerTransformerStreamOptions = {},
+    options: StringCSVLexerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,
   ) {

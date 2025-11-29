@@ -10,21 +10,32 @@ Add factory functions for stream-based CSV parsing APIs
 - Add `createStringCSVLexerTransformer()` factory function for creating StringCSVLexerTransformer instances
 - Add `createCSVRecordAssemblerTransformer()` factory function for creating CSVRecordAssemblerTransformer instances
 - Add `StringCSVLexerOptions` type for factory function options
+- Add `StringCSVLexerTransformerStreamOptions` type for stream behavior options
 - Update documentation with API level classification (High-level, Mid-level, Low-level)
 
 **Breaking Changes:**
 - Rename `CSVLexerTransformer` class to `StringCSVLexerTransformer` to clarify input type (string)
 - Rename `createCSVLexerTransformer()` to `createStringCSVLexerTransformer()` for consistency
+- Rename `CSVLexerTransformerStreamOptions` type to `StringCSVLexerTransformerStreamOptions` for naming consistency
+- Remove unused `CSVLexerTransformerOptions` type
 
 **Migration:**
 ```typescript
 // Before
-import { CSVLexerTransformer, createCSVLexerTransformer } from 'web-csv-toolbox';
+import {
+  CSVLexerTransformer,
+  createCSVLexerTransformer,
+  type CSVLexerTransformerStreamOptions
+} from 'web-csv-toolbox';
 new CSVLexerTransformer(lexer);
 createCSVLexerTransformer({ delimiter: ',' });
 
 // After
-import { StringCSVLexerTransformer, createStringCSVLexerTransformer } from 'web-csv-toolbox';
+import {
+  StringCSVLexerTransformer,
+  createStringCSVLexerTransformer,
+  type StringCSVLexerTransformerStreamOptions
+} from 'web-csv-toolbox';
 new StringCSVLexerTransformer(lexer);
 createStringCSVLexerTransformer({ delimiter: ',' });
 ```

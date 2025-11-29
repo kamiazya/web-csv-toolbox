@@ -439,21 +439,12 @@ export interface BinaryOptions {
 }
 
 /**
- * CSV Lexer Transformer Options.
+ * String CSV Lexer Transformer Stream Options.
+ * Options for StringCSVLexerTransformer stream behavior.
  * @category Types
  */
-export interface CSVLexerTransformerOptions<
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-> extends CommonOptions<Delimiter, Quotation>,
-    AbortSignalOptions {}
-
-/**
- * CSV Lexer Transformer Stream Options.
- * Options for CSVLexerTransformer stream behavior.
- * @category Types
- */
-export interface CSVLexerTransformerStreamOptions extends BackpressureOptions {
+export interface StringCSVLexerTransformerStreamOptions
+  extends BackpressureOptions {
   /**
    * @default 100
    */

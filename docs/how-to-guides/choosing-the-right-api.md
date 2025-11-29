@@ -197,8 +197,12 @@ import {
 
 // Custom lexer for non-standard CSV dialect
 class MyCustomLexer implements StringCSVLexer {
-  *lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
-    // Custom lexing logic
+  lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+    // Custom lexing logic - return an iterator (can use internal generator)
+    return this.#tokens();
+  }
+  *#tokens(): Generator<Token> {
+    // Actual token generation logic
   }
 }
 
