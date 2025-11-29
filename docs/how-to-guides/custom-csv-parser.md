@@ -933,12 +933,208 @@ analyzeTokens('name,age\r\nAlice,30\r\n');
 
 ---
 
+## CSV Parser Stream Factory Functions
+
+> **New in v0.14.0+**: Factory functions for creating CSV parser streams with simplified API.
+
+### Using Parser Stream Factory Functions (Recommended)
+
+The simplest way to stream CSV parsing - handles all internal component creation:
+
+```typescript
+import {
+  createStringCSVParserStream,
+  createBinaryCSVParserStream
+} from 'web-csv-toolbox';
+
+// String stream → CSV records (use with TextDecoderStream)
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(createStringCSVParserStream())
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record); // { name: 'Alice', age: '30' }
+    }
+  }));
+
+// Binary stream → CSV records (no TextDecoderStream needed!)
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(createBinaryCSVParserStream())
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record); // { name: 'Alice', age: '30' }
+    }
+  }));
+```
+
+### Parser Stream with Options
+
+```typescript
+import {
+  createStringCSVParserStream,
+  createBinaryCSVParserStream
+} from 'web-csv-toolbox';
+
+// With predefined header (data has no header row)
+const stringStream = createStringCSVParserStream({
+  header: ['name', 'age'] as const,
+  delimiter: '\t'  // TSV
+});
+
+// Binary with charset encoding
+const binaryStream = createBinaryCSVParserStream({
+  header: ['name', 'age'] as const,
+  charset: 'shift-jis',
+  ignoreBOM: true
+});
+
+// Array output format
+const arrayStream = createStringCSVParserStream({
+  outputFormat: 'array'
+});
+```
+
+---
+
+## Stream Transformer Factory Functions
+
+### Using Factory Functions (Recommended)
+
+For lower-level control, use transformer factory functions:
+
+```typescript
+import {
+  createCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// Simple streaming pipeline
+const csvStream = new ReadableStream({
+  start(controller) {
+    controller.enqueue('name,age\r\n');
+    controller.enqueue('Alice,30\r\n');
+    controller.enqueue('Bob,25\r\n');
+    controller.close();
+  }
+});
+
+csvStream
+  .pipeThrough(createCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record);
+    }
+  }));
+// { name: 'Alice', age: '30' }
+// { name: 'Bob', age: '25' }
+```
+
+### Factory Function with Custom Options
+
+```typescript
+import {
+  createCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// TSV with predefined header
+const tsvStream = new ReadableStream({
+  start(controller) {
+    controller.enqueue('Alice\t30\r\n');
+    controller.enqueue('Bob\t25\r\n');
+    controller.close();
+  }
+});
+
+tsvStream
+  .pipeThrough(createCSVLexerTransformer({ delimiter: '\t' }))
+  .pipeThrough(createCSVRecordAssemblerTransformer({
+    header: ['name', 'age'] as const
+  }))
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record);
+    }
+  }));
+// { name: 'Alice', age: '30' }
+// { name: 'Bob', age: '25' }
+```
+
+### Factory Functions with Backpressure Tuning
+
+```typescript
+import {
+  createCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// With custom stream options and queuing strategies
+const lexerTransformer = createCSVLexerTransformer(
+  { delimiter: ',' },
+  { backpressureCheckInterval: 50 },
+  { highWaterMark: 131072, size: (chunk) => chunk.length },
+  new CountQueuingStrategy({ highWaterMark: 2048 })
+);
+
+const assemblerTransformer = createCSVRecordAssemblerTransformer(
+  {},
+  { backpressureCheckInterval: 20 },
+  new CountQueuingStrategy({ highWaterMark: 2048 }),
+  new CountQueuingStrategy({ highWaterMark: 512 })
+);
+
+await fetch('large-file.csv')
+  .then(res => res.body)
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(lexerTransformer)
+  .pipeThrough(assemblerTransformer)
+  .pipeTo(yourProcessor);
+```
+
+### Direct Instantiation (Advanced)
+
+For advanced use cases where you need direct access to lexer/assembler instances:
+
+```typescript
+import {
+  createStringCSVLexer,
+  createCSVRecordAssembler,
+  CSVLexerTransformer,
+  CSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// Create components separately for direct access
+const lexer = createStringCSVLexer({ delimiter: ',' });
+const assembler = createCSVRecordAssembler({ header: ['name', 'age'] as const });
+
+// Create transformers with existing components
+const lexerTransformer = new CSVLexerTransformer(lexer);
+const assemblerTransformer = new CSVRecordAssemblerTransformer(assembler);
+
+csvStream
+  .pipeThrough(lexerTransformer)
+  .pipeThrough(assemblerTransformer)
+  .pipeTo(yourProcessor);
+
+// Access the internal lexer/assembler if needed
+console.log(lexerTransformer.lexer);
+console.log(assemblerTransformer.assembler);
+```
+
+---
+
 ## Streaming Parsers
 
 ### Streaming with TransformStream
 
 ```typescript
-import { FlexibleStringCSVLexerTransformer, FlexibleCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import {
+  createCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
 
 // Custom validation transform
 class ValidationTransform extends TransformStream {
@@ -972,8 +1168,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new FlexibleStringCSVLexerTransformer())
-  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
+  .pipeThrough(createCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
   .pipeThrough(new ValidationTransform())
   .pipeTo(new WritableStream({
     write(record) {
@@ -989,7 +1185,10 @@ csvStream
 ### Custom Type Conversion Transform
 
 ```typescript
-import { FlexibleStringCSVLexerTransformer, FlexibleCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import {
+  createCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
 
 class TypeConversionTransform extends TransformStream {
   constructor() {
@@ -1007,8 +1206,8 @@ class TypeConversionTransform extends TransformStream {
 
 // Usage
 csvStream
-  .pipeThrough(new FlexibleStringCSVLexerTransformer())
-  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
+  .pipeThrough(createCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
   .pipeThrough(new TypeConversionTransform())
   .pipeTo(new WritableStream({
     write(record) {

@@ -32,15 +32,30 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @category Low-level API
  *
- * @param options - CSV-specific options (delimiter, quotation, checkInterval, etc.)
+ * @param lexer - A StringCSVLexer instance (required). Use {@link createStringCSVLexer} to create one.
+ * @param options - Stream-specific options (backpressureCheckInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  *
  * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to the standard `TransformStream`.
+ * **Recommended: Use the factory function**
  *
- * **Default Queuing Strategy:**
+ * For simpler usage, use {@link createCSVLexerTransformer} which handles lexer creation internally:
+ * ```ts
+ * import { createCSVLexerTransformer } from 'web-csv-toolbox';
+ * stream.pipeThrough(createCSVLexerTransformer({ delimiter: ',' }));
+ * ```
+ *
+ * **Direct instantiation (advanced)**
+ *
+ * If you need direct access to the lexer or want to reuse it, use the constructor directly:
+ * ```ts
+ * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
+ * const lexer = createStringCSVLexer({ delimiter: ',' });
+ * stream.pipeThrough(new CSVLexerTransformer(lexer));
+ * ```
+ *
+ * **Queuing Strategy:**
  * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
  * - Readable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
  *
@@ -49,11 +64,10 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
  * and allows the downstream consumer to catch up.
  *
- * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
- * Optimal values depend on your runtime environment, data size, and performance requirements.
- *
- * @example Basic usage
+ * @example Recommended: Using factory function
  * ```ts
+ * import { createCSVLexerTransformer } from 'web-csv-toolbox';
+ *
  * new ReadableStream({
  *   start(controller) {
  *     controller.enqueue("name,age\r\n");
@@ -61,32 +75,35 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *     controller.close();
  *   }
  * })
- *   .pipeThrough(new CSVLexerTransformer())
+ *   .pipeThrough(createCSVLexerTransformer())
  *   .pipeTo(new WritableStream({ write(token) {
  *     console.log(token);
  *   }}));
  * // { type: Field, value: "name", location: {...} }
  * // { type: FieldDelimiter, value: ",", location: {...} }
- * // { type: Field, value: "age", location: {...} }
- * // { type: RecordDelimiter, value: "\r\n", location: {...} }
- * // { type: Field, value: "Alice", location: {...} }
- * // { type: FieldDelimiter, value: ",", location: {...} }
- * // { type: Field, value: "20" }
- * // { type: RecordDelimiter, value: "\r\n", location: {...} }
+ * // ...
+ * ```
+ *
+ * @example Direct instantiation with lexer
+ * ```ts
+ * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
+ *
+ * const lexer = createStringCSVLexer({ delimiter: ',' });
+ * const transformer = new CSVLexerTransformer(lexer);
+ *
+ * stream.pipeThrough(transformer);
  * ```
  *
  * @example Custom queuing strategies with backpressure tuning
  * ```ts
+ * import { createStringCSVLexer, CSVLexerTransformer } from 'web-csv-toolbox';
+ *
+ * const lexer = createStringCSVLexer({ delimiter: ',' });
  * const transformer = new CSVLexerTransformer(
- *   {
- *     delimiter: ',',
- *     backpressureCheckInterval: 50  // Check backpressure every 50 tokens
- *   },
- *   {
- *     highWaterMark: 131072,         // 128KB of characters
- *     size: (chunk) => chunk.length, // Count by character length
- *   },
- *   new CountQueuingStrategy({ highWaterMark: 2048 })  // 2048 tokens
+ *   lexer,
+ *   { backpressureCheckInterval: 50 },
+ *   { highWaterMark: 131072, size: (chunk) => chunk.length },
+ *   new CountQueuingStrategy({ highWaterMark: 2048 })
  * );
  *
  * await fetch('large-file.csv')

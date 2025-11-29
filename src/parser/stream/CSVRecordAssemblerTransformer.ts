@@ -27,19 +27,34 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
 /**
  * A transform stream that converts a stream of tokens into a stream of CSV records.
  *
+ * @category Low-level API
+ *
  * @template Header The type of the header row.
  * @template Format The output format ('object' or 'array').
- * @param options - CSV-specific options (header, maxFieldCount, checkInterval, etc.)
+ * @param assembler - A CSVRecordAssembler instance (required). Use {@link createCSVRecordAssembler} to create one.
+ * @param options - Stream-specific options (backpressureCheckInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  *
- * @category Low-level API
- *
  * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to the standard `TransformStream`.
+ * **Recommended: Use the factory function**
  *
- * **Default Queuing Strategy:**
+ * For simpler usage, use {@link createCSVRecordAssemblerTransformer} which handles assembler creation internally:
+ * ```ts
+ * import { createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * tokenStream.pipeThrough(createCSVRecordAssemblerTransformer({ header: ['name', 'age'] }));
+ * ```
+ *
+ * **Direct instantiation (advanced)**
+ *
+ * If you need direct access to the assembler or want to reuse it, use the constructor directly:
+ * ```ts
+ * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ * const assembler = createCSVRecordAssembler({ header: ['name', 'age'] });
+ * tokenStream.pipeThrough(new CSVRecordAssemblerTransformer(assembler));
+ * ```
+ *
+ * **Queuing Strategy:**
  * - Writable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
  * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
  *
@@ -48,53 +63,46 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
  * and allows the downstream consumer to catch up.
  *
- * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
- * Optimal values depend on your runtime environment, data size, and performance requirements.
+ * @example Recommended: Using factory function
+ * ```ts
+ * import { createCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
- * @example Parse a CSV with headers by data
- *  ```ts
  * new ReadableStream({
  *   start(controller) {
  *     controller.enqueue("name,age\r\n");
  *     controller.enqueue("Alice,20\r\n");
  *     controller.enqueue("Bob,25\r\n");
- *     controller.enqueue("Charlie,30\r\n");
- *     controller.close();
- *   })
- *   .pipeThrough(new CSVLexerTransformer())
- *   .pipeThrough(new CSVRecordAssemblerTransformer())
- *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
- * // { name: "Alice", age: "20" }
- * // { name: "Bob", age: "25" }
- * // { name: "Charlie", age: "30" }
- * ```
- *
- * @example Parse a CSV with headers by options
- * ```ts
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("Alice,20\r\n");
- *     controller.enqueue("Bob,25\r\n");
- *     controller.enqueue("Charlie,30\r\n");
  *     controller.close();
  *   }
  * })
- * .pipeThrough(new CSVLexerTransformer())
- * .pipeThrough(new CSVRecordAssemblerTransformer({ header: ["name", "age"] }))
- * .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
+ *   .pipeThrough(createCSVLexerTransformer())
+ *   .pipeThrough(createCSVRecordAssemblerTransformer())
+ *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
  * // { name: "Alice", age: "20" }
  * // { name: "Bob", age: "25" }
- * // { name: "Charlie", age: "30" }
+ * ```
+ *
+ * @example Direct instantiation with predefined header
+ * ```ts
+ * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ *
+ * const assembler = createCSVRecordAssembler({ header: ['name', 'age'] as const });
+ * const transformer = new CSVRecordAssemblerTransformer(assembler);
+ *
+ * // CSV data without header row
+ * tokenStream.pipeThrough(transformer);
  * ```
  *
  * @example Custom queuing strategies with backpressure tuning
  * ```ts
+ * import { createCSVRecordAssembler, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+ *
+ * const assembler = createCSVRecordAssembler({});
  * const transformer = new CSVRecordAssemblerTransformer(
- *   {
- *     backpressureCheckInterval: 20  // Check backpressure every 20 records
- *   },
- *   new CountQueuingStrategy({ highWaterMark: 2048 }),  // 2048 tokens
- *   new CountQueuingStrategy({ highWaterMark: 512 })    // 512 records
+ *   assembler,
+ *   { backpressureCheckInterval: 20 },
+ *   new CountQueuingStrategy({ highWaterMark: 2048 }),
+ *   new CountQueuingStrategy({ highWaterMark: 512 })
  * );
  *
  * await tokenStream
