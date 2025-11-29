@@ -119,7 +119,7 @@ describe("createBinaryCSVParserStream", () => {
   it("should handle quoted fields with newlines", async () => {
     const stream = createBinaryCSVParserStream();
     const chunks = [
-      encoder.encode('name,description\r\n'),
+      encoder.encode("name,description\r\n"),
       encoder.encode('"Alice","Hello\r\nWorld"\r\n'),
     ];
 
@@ -130,14 +130,12 @@ describe("createBinaryCSVParserStream", () => {
   it("should handle escaped quotes", async () => {
     const stream = createBinaryCSVParserStream();
     const chunks = [
-      encoder.encode('name,quote\r\n'),
+      encoder.encode("name,quote\r\n"),
       encoder.encode('"Alice","She said ""Hello"""\r\n'),
     ];
 
     const records = await transform(stream, chunks);
-    expect(records).toEqual([
-      { name: "Alice", quote: 'She said "Hello"' },
-    ]);
+    expect(records).toEqual([{ name: "Alice", quote: 'She said "Hello"' }]);
   });
 
   it("should accept ArrayBuffer as input", async () => {

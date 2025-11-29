@@ -102,7 +102,7 @@ describe("createStringCSVParserStream", () => {
 
   it("should handle quoted fields with newlines", async () => {
     const stream = createStringCSVParserStream();
-    const chunks = ['name,description\r\n', '"Alice","Hello\r\nWorld"\r\n'];
+    const chunks = ["name,description\r\n", '"Alice","Hello\r\nWorld"\r\n'];
 
     const records = await transform(stream, chunks);
     expect(records).toEqual([{ name: "Alice", description: "Hello\r\nWorld" }]);
@@ -110,11 +110,9 @@ describe("createStringCSVParserStream", () => {
 
   it("should handle escaped quotes", async () => {
     const stream = createStringCSVParserStream();
-    const chunks = ['name,quote\r\n', '"Alice","She said ""Hello"""\r\n'];
+    const chunks = ["name,quote\r\n", '"Alice","She said ""Hello"""\r\n'];
 
     const records = await transform(stream, chunks);
-    expect(records).toEqual([
-      { name: "Alice", quote: 'She said "Hello"' },
-    ]);
+    expect(records).toEqual([{ name: "Alice", quote: 'She said "Hello"' }]);
   });
 });

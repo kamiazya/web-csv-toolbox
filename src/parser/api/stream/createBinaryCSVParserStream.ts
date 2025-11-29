@@ -127,8 +127,11 @@ type InferFormat<Options> = Options extends { outputFormat: "array" }
  */
 export function createBinaryCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends
-    BinaryCSVProcessingOptions<Header, string, string> = BinaryCSVProcessingOptions<Header>,
+  Options extends BinaryCSVProcessingOptions<
+    Header,
+    string,
+    string
+  > = BinaryCSVProcessingOptions<Header>,
 >(
   options?: Options,
   streamOptions?: BinaryCSVParserStreamOptions,

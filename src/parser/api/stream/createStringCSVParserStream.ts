@@ -111,7 +111,11 @@ type InferFormat<Options> = Options extends { outputFormat: "array" }
  */
 export function createStringCSVParserStream<
   Header extends ReadonlyArray<string> = readonly string[],
-  Options extends CSVProcessingOptions<Header, string, string> = CSVProcessingOptions<Header>,
+  Options extends CSVProcessingOptions<
+    Header,
+    string,
+    string
+  > = CSVProcessingOptions<Header>,
 >(
   options?: Options,
   streamOptions?: StringCSVParserStreamOptions,
