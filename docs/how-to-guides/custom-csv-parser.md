@@ -1068,6 +1068,8 @@ csvStream
 
 For specialized requirements, create custom Lexer or Assembler implementations and use them with TransformStream classes.
 
+The factory functions (`createStringCSVLexerTransformer`, `createCSVRecordAssemblerTransformer`) are the default design choice for most use cases—they handle internal lexer/assembler creation and insulate your code from implementation changes. Drop down to direct class instantiation (`new StringCSVLexerTransformer(customLexer)`) only when you need to inject a custom lexer or assembler implementation with non-standard behavior.
+
 **Note**: Low-level APIs are intended for niche requirements such as custom CSV dialects, syntax highlighting, or specialized validation. These APIs may have more frequent changes compared to Mid-level APIs. For most production use cases, prefer Mid-level APIs.
 
 ```typescript

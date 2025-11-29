@@ -28,7 +28,8 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - `EnginePresets.balanced()` - Balanced (general-purpose)
 - Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
   - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
-  - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `StringCSVLexerTransformer`, `CSVRecordAssemblerTransformer`
+  - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `StringCSVLexerTransformer` *(advanced: custom lexer injection)*, `CSVRecordAssemblerTransformer` *(advanced: custom assembler injection)*
+  > **Note**: For `StringCSVLexerTransformer` and `CSVRecordAssemblerTransformer`, prefer factory functions (`createStringCSVLexerTransformer`, `createCSVRecordAssemblerTransformer`) unless injecting custom lexer/assembler implementations.
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
 

@@ -594,6 +594,8 @@ Web Streams API integration for all processing tiers.
 - **`createCSVRecordAssemblerTransformer()`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/createCSVRecordAssemblerTransformer.html)
   - Factory function to create a CSVRecordAssemblerTransformer with cooperative backpressure support.
 
+These factory functions are the recommended way to create transformer instances. They encapsulate internal lexer/assembler initialization and provide sensible defaults, insulating your code from internal implementation changes. Direct class instantiation (`new StringCSVLexerTransformer(customLexer)`) is only needed when injecting a custom lexer implementation—see [Custom Lexer/Assembler](./docs/how-to-guides/custom-csv-parser.md#low-level-custom-lexerassembler) for advanced use cases.
+
 #### Customizing Queuing Strategies
 
 Both `createStringCSVLexerTransformer()` and `createCSVRecordAssemblerTransformer()` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as function arguments with **data-type-aware size counting** and **configurable backpressure handling**.
