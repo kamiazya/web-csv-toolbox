@@ -452,6 +452,18 @@ export interface StringCSVLexerTransformerStreamOptions
 }
 
 /**
+ * Options for creating a StringCSVLexer.
+ *
+ * @category Types
+ */
+export interface StringCSVLexerOptions<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CommonOptions<Delimiter, Quotation>,
+    AbortSignalOptions,
+    EngineOptions {}
+
+/**
  * Base options shared by all CSV Record Assembler configurations.
  * @category Types
  */
@@ -489,6 +501,16 @@ export interface CSVRecordAssemblerCommonOptions<
   maxFieldCount?: number;
   skipEmptyLines?: boolean;
 }
+
+/**
+ * Options for creating a CSV record assembler via factory function.
+ *
+ * @category Types
+ */
+export interface CSVRecordAssemblerFactoryOptions<
+  Header extends ReadonlyArray<string>,
+> extends CSVRecordAssemblerCommonOptions<Header>,
+    EngineOptions {}
 
 /**
  * CSV Record Assembler Options with type-level constraints.
@@ -1312,6 +1334,18 @@ export interface ParseOptions<
     EngineOptions {}
 
 /**
+ * Options for creating a String CSV Parser via factory function.
+ *
+ * @category Types
+ */
+export interface StringCSVParserFactoryOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
+
+/**
  * CSV processing specification options for binary data.
  *
  * @category Types
@@ -1340,6 +1374,18 @@ export interface BinaryCSVProcessingOptions<
   Quotation extends string = DEFAULT_QUOTATION,
 > extends CSVProcessingOptions<Header, Delimiter, Quotation>,
     BinaryOptions {}
+
+/**
+ * Options for creating a Binary CSV Parser via factory function.
+ *
+ * @category Types
+ */
+export interface BinaryCSVParserFactoryOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends BinaryCSVProcessingOptions<Header, Delimiter, Quotation>,
+    EngineOptions {}
 
 /**
  * Parse options for CSV binary (high-level API).

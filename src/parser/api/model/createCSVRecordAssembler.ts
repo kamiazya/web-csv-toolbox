@@ -1,17 +1,22 @@
-import type { CSVRecordAssemblerCommonOptions } from "@/core/types.ts";
+import type { CSVRecordAssemblerFactoryOptions } from "@/core/types.ts";
 import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 
 /**
  * Factory function to create the appropriate CSV record assembler based on options.
  *
- * @param options - Assembler options including outputFormat
+ * @param options - Assembler options including outputFormat and engine
  * @returns An assembler instance configured for the specified output format
  *
  * @remarks
- * This function accepts {@link CSVRecordAssemblerCommonOptions} for flexibility,
+ * This function accepts {@link CSVRecordAssemblerFactoryOptions} for flexibility,
  * but runtime validation ensures type safety. For compile-time type safety,
  * use {@link CSVRecordAssemblerOptions} type directly.
+ *
+ * **Design Intent**: This factory function accepts options including engine configuration
+ * to enable future execution path optimization. The function may select the optimal internal
+ * assembler implementation based on the provided options. Currently, this optimization
+ * is not implemented, but the API is designed to support it without breaking changes.
  *
  * @example
  * ```ts
@@ -31,7 +36,7 @@ import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObj
 export function createCSVRecordAssembler<
   Header extends ReadonlyArray<string>,
   Options extends
-    CSVRecordAssemblerCommonOptions<Header> = CSVRecordAssemblerCommonOptions<Header>,
+    CSVRecordAssemblerFactoryOptions<Header> = CSVRecordAssemblerFactoryOptions<Header>,
 >(
   options?: Options,
 ): Options extends { outputFormat: "array" }

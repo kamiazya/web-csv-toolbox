@@ -1,25 +1,11 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
-  AbortSignalOptions,
-  CommonOptions,
-  EngineOptions,
+  StringCSVLexerOptions,
   StringCSVLexerTransformerStreamOptions,
   Token,
 } from "@/core/types.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
-
-/**
- * Options for creating a StringCSVLexerTransformer via factory function.
- *
- * @category Types
- */
-export interface StringCSVLexerOptions<
-  Delimiter extends string = DEFAULT_DELIMITER,
-  Quotation extends string = DEFAULT_QUOTATION,
-> extends CommonOptions<Delimiter, Quotation>,
-    AbortSignalOptions,
-    EngineOptions {}
 
 /**
  * Factory function to create a StringCSVLexerTransformer instance.

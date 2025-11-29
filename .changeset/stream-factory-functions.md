@@ -9,8 +9,12 @@ Add factory functions for stream-based CSV parsing APIs
 - Add `createBinaryCSVParserStream()` factory function for Mid-level binary stream parsing
 - Add `createStringCSVLexerTransformer()` factory function for creating StringCSVLexerTransformer instances
 - Add `createCSVRecordAssemblerTransformer()` factory function for creating CSVRecordAssemblerTransformer instances
-- Add `StringCSVLexerOptions` type for factory function options
+- Add `StringCSVLexerOptions` type for lexer factory function options
 - Add `StringCSVLexerTransformerStreamOptions` type for stream behavior options
+- Add `CSVRecordAssemblerFactoryOptions` type for assembler factory function options
+- Add `StringCSVParserFactoryOptions` type for string parser factory function options
+- Add `BinaryCSVParserFactoryOptions` type for binary parser factory function options
+- Update model factory functions (`createStringCSVLexer`, `createCSVRecordAssembler`, `createStringCSVParser`, `createBinaryCSVParser`) to accept engine options for future optimization support
 - Update documentation with API level classification (High-level, Mid-level, Low-level)
 
 **Breaking Changes:**

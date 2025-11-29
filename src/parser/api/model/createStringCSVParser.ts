@@ -1,6 +1,6 @@
 import type {
-  CSVProcessingOptions,
   StringArrayCSVParser,
+  StringCSVParserFactoryOptions,
   StringObjectCSVParser,
 } from "@/core/types.ts";
 import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
@@ -10,19 +10,19 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * Factory function to create the appropriate String CSV parser based on options.
  *
  * @template Header - The type of the header row
- * @template Options - CSVProcessingOptions type (inferred from arguments)
- * @param options - CSV processing specification (excludes execution strategy)
+ * @param options - Parser options including CSV processing specification and engine
  * @returns A parser instance configured for the specified output format
  *
  * @remarks
- * This is a low-level factory function that accepts {@link CSVProcessingOptions}.
- * It does NOT accept execution strategy options (engine).
- * For high-level APIs with execution strategy support, use parseString() and related functions.
- *
  * This function provides both compile-time and runtime type safety.
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → StringObjectCSVParser (FlexibleStringObjectCSVParser)
  * - `outputFormat: 'array'` → StringArrayCSVParser (FlexibleStringArrayCSVParser)
+ *
+ * **Design Intent**: This factory function accepts options including engine configuration
+ * to enable future execution path optimization. The function may select the optimal internal
+ * parser implementation based on the provided options. Currently, this optimization
+ * is not implemented, but the API is designed to support it without breaking changes.
  *
  * @example Object format (default)
  * ```ts
@@ -30,7 +30,6 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  *   header: ['name', 'age'] as const,
  *   delimiter: ',',
  *   signal: abortController.signal,
- *   // engine is NOT available (low-level API)
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // { name: 'Alice', age: '30' }
@@ -42,7 +41,6 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * const parser = createStringCSVParser({
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array',
- *   // engine is NOT available (low-level API)
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // ['Alice', '30']
@@ -52,7 +50,7 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "array";
   },
 ): StringArrayCSVParser<Header>;
@@ -60,7 +58,7 @@ export function createStringCSVParser<
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "object";
   },
 ): StringObjectCSVParser<Header>;
@@ -68,19 +66,21 @@ export function createStringCSVParser<
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "object" | "array";
   },
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
->(options?: CSVProcessingOptions<Header>): StringObjectCSVParser<Header>;
+>(
+  options?: StringCSVParserFactoryOptions<Header>,
+): StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options?: CSVProcessingOptions<Header>,
+  options?: StringCSVParserFactoryOptions<Header>,
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
