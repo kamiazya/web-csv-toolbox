@@ -183,7 +183,7 @@ csvStream
 **APIs:**
 - **Lexer Classes**: `FlexibleStringCSVLexer`, `StringCSVLexerTransformer` - Tokenization
 - **Assembler Classes**: `FlexibleCSVObjectRecordAssembler`, `FlexibleCSVArrayRecordAssembler`, `CSVRecordAssemblerTransformer` - Record assembly
-- **Types**: `StringCSVLexer`, `CSVRecordAssembler`, `Token` - For custom implementations
+- **Types**: `StringCSVLexer`, `CSVObjectRecordAssembler`, `CSVArrayRecordAssembler`, `Token` - For custom implementations
 
 **Example:**
 ```typescript
@@ -191,19 +191,23 @@ import {
   StringCSVLexerTransformer,
   CSVRecordAssemblerTransformer,
   type StringCSVLexer,
-  type CSVRecordAssembler
+  type CSVObjectRecordAssembler,
+  type Token
 } from 'web-csv-toolbox';
 
 // Custom lexer for non-standard CSV dialect
 class MyCustomLexer implements StringCSVLexer {
-  *lex(chunk?: string, options?: { stream?: boolean }) {
+  *lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
     // Custom lexing logic
   }
 }
 
 // Custom assembler for specialized record formats
-class MyCustomAssembler implements CSVRecordAssembler {
-  *assemble(token?: Token, options?: { stream?: boolean }) {
+class MyCustomAssembler implements CSVObjectRecordAssembler<readonly string[]> {
+  *assemble(
+    input?: Token | Iterable<Token>,
+    options?: { stream?: boolean }
+  ): IterableIterator<Record<string, string>> {
     // Custom assembly logic
   }
 }

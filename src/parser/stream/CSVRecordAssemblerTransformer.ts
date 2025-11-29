@@ -43,11 +43,14 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example Custom assembler implementation
  * ```ts
- * import { CSVRecordAssemblerTransformer, type CSVRecordAssembler } from 'web-csv-toolbox';
+ * import { CSVRecordAssemblerTransformer, type CSVObjectRecordAssembler, type Token } from 'web-csv-toolbox';
  *
  * // Custom assembler for specialized record formats
- * class MyCustomAssembler implements CSVRecordAssembler {
- *   *assemble(tokens: Iterable<Token>, options?: { stream?: boolean }) {
+ * class MyCustomAssembler implements CSVObjectRecordAssembler<readonly string[]> {
+ *   *assemble(
+ *     input?: Token | Iterable<Token>,
+ *     options?: { stream?: boolean }
+ *   ): IterableIterator<Record<string, string>> {
  *     // Custom assembly logic
  *   }
  * }

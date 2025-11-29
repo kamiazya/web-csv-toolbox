@@ -44,11 +44,11 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @example Custom lexer implementation
  * ```ts
- * import { StringCSVLexerTransformer, type StringCSVLexer } from 'web-csv-toolbox';
+ * import { StringCSVLexerTransformer, type StringCSVLexer, type Token } from 'web-csv-toolbox';
  *
  * // Custom lexer for non-standard CSV dialect
  * class MyCustomLexer implements StringCSVLexer {
- *   *lex(chunk?: string, options?: { stream?: boolean }) {
+ *   *lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
  *     // Custom lexing logic
  *   }
  * }
