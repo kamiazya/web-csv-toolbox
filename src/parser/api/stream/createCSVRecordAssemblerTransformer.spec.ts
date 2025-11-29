@@ -138,19 +138,17 @@ describe("createCSVRecordAssemblerTransformer", () => {
             ...rows.flatMap((row) =>
               row.flatMap<Token>((field, j) => [
                 { type: Field, value: field, location: LOCATION_SHAPE },
-                {
-                  type: FieldDelimiter,
-                  value: ",",
-                  location: LOCATION_SHAPE,
-                },
-                ...((j === row.length - 1
-                  ? [
-                      {
-                        type: RecordDelimiter,
-                        value: "\n",
-                      },
-                    ]
-                  : []) as Token[]),
+                j === row.length - 1
+                  ? {
+                      type: RecordDelimiter,
+                      value: "\n",
+                      location: LOCATION_SHAPE,
+                    }
+                  : {
+                      type: FieldDelimiter,
+                      value: ",",
+                      location: LOCATION_SHAPE,
+                    },
               ]),
             ),
           ];
