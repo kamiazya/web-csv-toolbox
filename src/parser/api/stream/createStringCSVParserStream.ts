@@ -1,14 +1,11 @@
 import type {
   CSVProcessingOptions,
   CSVRecord,
+  InferFormat,
   StringCSVParserStreamOptions,
 } from "@/core/types.ts";
 import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
-
-type InferFormat<Options> = Options extends { outputFormat: "array" }
-  ? "array"
-  : "object";
 
 /**
  * Factory function to create a StringCSVParserStream instance.

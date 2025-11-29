@@ -2,14 +2,11 @@ import type {
   CSVRecord,
   CSVRecordAssemblerCommonOptions,
   CSVRecordAssemblerTransformerStreamOptions,
+  InferFormat,
   Token,
 } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
-
-type InferFormat<Options> = Options extends { outputFormat: "array" }
-  ? "array"
-  : "object";
 
 /**
  * Factory function to create a CSVRecordAssemblerTransformer instance.

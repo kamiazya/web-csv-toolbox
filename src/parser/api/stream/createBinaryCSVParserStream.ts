@@ -2,13 +2,10 @@ import type {
   BinaryCSVParserStreamOptions,
   BinaryCSVProcessingOptions,
   CSVRecord,
+  InferFormat,
 } from "@/core/types.ts";
 import { createBinaryCSVParser } from "@/parser/api/model/createBinaryCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
-
-type InferFormat<Options> = Options extends { outputFormat: "array" }
-  ? "array"
-  : "object";
 
 /**
  * Factory function to create a BinaryCSVParserStream instance.
