@@ -10,8 +10,8 @@ import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts
 import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
 import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
 import { WASMStringUtf16ObjectCSVParser } from "@/parser/models/WASMStringUtf16ObjectCSVParser.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
 import {
   isInitialized as isWASMInitialized,
@@ -103,7 +103,7 @@ export function parseStringStreamToStream<
   const assembler = createCSVRecordAssembler<Header>(options);
 
   return stream
-    .pipeThrough(new CSVLexerTransformer(lexer))
+    .pipeThrough(new StringCSVLexerTransformer(lexer))
     .pipeThrough(
       new CSVRecordAssemblerTransformer(assembler),
     ) as ReadableStream<InferCSVRecord<Header, Options>>;

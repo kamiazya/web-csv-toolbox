@@ -2,8 +2,8 @@ import { beforeEach, describe as describe_, expect, test } from "vitest";
 import { waitAbort } from "@/__tests__/helper.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 
 const describe = describe_.concurrent;
 
@@ -19,7 +19,7 @@ async function processCSV(csv: string, signal?: AbortSignal) {
   const lexer = new FlexibleStringCSVLexer({ signal });
   const assembler = createCSVRecordAssembler({ signal });
   await stream
-    .pipeThrough(new CSVLexerTransformer(lexer))
+    .pipeThrough(new StringCSVLexerTransformer(lexer))
     .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
     .pipeTo(
       new WritableStream({
@@ -71,7 +71,7 @@ describe("CSVRecordAssemblerTransformer", () => {
           signal: controller.signal,
         });
         await stream
-          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new StringCSVLexerTransformer(lexer))
           .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
           .pipeTo(new WritableStream());
         expect.fail("Should have thrown AbortError");
@@ -117,7 +117,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       const lexer = new FlexibleStringCSVLexer({});
       const assembler = createCSVRecordAssembler({});
       await stream
-        .pipeThrough(new CSVLexerTransformer(lexer))
+        .pipeThrough(new StringCSVLexerTransformer(lexer))
         .pipeThrough(
           new CSVRecordAssemblerTransformer(assembler, {}, customStrategy),
         )
@@ -145,7 +145,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       const lexer = new FlexibleStringCSVLexer({});
       const assembler = createCSVRecordAssembler({});
       await stream
-        .pipeThrough(new CSVLexerTransformer(lexer))
+        .pipeThrough(new StringCSVLexerTransformer(lexer))
         .pipeThrough(
           new CSVRecordAssemblerTransformer(
             assembler,
@@ -176,7 +176,7 @@ describe("CSVRecordAssemblerTransformer", () => {
       const lexer = new FlexibleStringCSVLexer({});
       const assembler = createCSVRecordAssembler({});
       await stream
-        .pipeThrough(new CSVLexerTransformer(lexer))
+        .pipeThrough(new StringCSVLexerTransformer(lexer))
         .pipeThrough(
           new CSVRecordAssemblerTransformer(
             assembler,

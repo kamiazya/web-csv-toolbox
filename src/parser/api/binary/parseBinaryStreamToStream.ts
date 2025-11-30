@@ -6,8 +6,8 @@ import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts
 import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
 import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import {
   isInitialized as isWASMInitialized,
   loadWASMSync,
@@ -118,7 +118,7 @@ export function parseBinaryStreamToStream<
               decoderOptions,
             ) as unknown as TransformStream<Uint8Array, string>,
           )
-          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new StringCSVLexerTransformer(lexer))
           .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
       : stream
           .pipeThrough(
@@ -127,7 +127,7 @@ export function parseBinaryStreamToStream<
               decoderOptions,
             ) as unknown as TransformStream<Uint8Array, string>,
           )
-          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new StringCSVLexerTransformer(lexer))
           .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
   ) as ReadableStream<InferCSVRecord<Header, Options>>;
 }

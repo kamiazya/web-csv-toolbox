@@ -1,8 +1,13 @@
 import type {
+<<<<<<< HEAD
   FactoryEngineOptions,
   StringArrayCSVParser,
   StringCharset,
   StringCSVProcessingOptions,
+=======
+  StringArrayCSVParser,
+  StringCSVParserFactoryOptions,
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
   StringObjectCSVParser,
 } from "@/core/types.ts";
 import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
@@ -31,19 +36,41 @@ function prefersUtf16(
  * Factory function to create the appropriate String CSV parser based on options.
  *
  * @template Header - The type of the header row
+<<<<<<< HEAD
  * @template Options - CSVProcessingOptions type (inferred from arguments)
  * @param options - CSV processing specification including optional engine configuration
  * @returns A parser instance configured for the specified output format
  *
  * @remarks
+=======
+ * @param options - Parser options including CSV processing specification and engine
+ * @returns A parser instance configured for the specified output format
+ *
+ * @remarks
+ * This function provides both compile-time and runtime type safety.
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → StringObjectCSVParser
  * - `outputFormat: 'array'` → StringArrayCSVParser
  *
+<<<<<<< HEAD
  * @example Default usage
  * ```ts
  * const parser = createStringCSVParser({
  *   header: ['name', 'age'] as const,
+=======
+ * **Design Intent**: This factory function accepts options including engine configuration
+ * to enable future execution path optimization. The function may select the optimal internal
+ * parser implementation based on the provided options. Currently, this optimization
+ * is not implemented, but the API is designed to support it without breaking changes.
+ *
+ * @example Object format (default)
+ * ```ts
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   delimiter: ',',
+ *   signal: abortController.signal,
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // { name: 'Alice', age: '30' }
@@ -64,40 +91,66 @@ function prefersUtf16(
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
+<<<<<<< HEAD
   options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "array";
     },
+=======
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
+    outputFormat: "array";
+  },
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
 ): StringArrayCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
+<<<<<<< HEAD
   options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "object";
     },
+=======
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
+    outputFormat: "object";
+  },
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
 ): StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
+<<<<<<< HEAD
   options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "object" | "array";
     },
+=======
+  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
+    outputFormat: "object" | "array";
+  },
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
+<<<<<<< HEAD
   options?: StringCSVProcessingOptions<Header> & FactoryEngineOptions,
+=======
+  options?: StringCSVParserFactoryOptions<Header>,
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
 ): StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
+<<<<<<< HEAD
   options?: StringCSVProcessingOptions<Header> & FactoryEngineOptions,
+=======
+  options?: StringCSVParserFactoryOptions<Header>,
+>>>>>>> 2a7b22e (feat: add factory functions for stream-based CSV parsing APIs (#613))
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 

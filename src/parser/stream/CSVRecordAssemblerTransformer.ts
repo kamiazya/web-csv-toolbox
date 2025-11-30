@@ -27,79 +27,36 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
 /**
  * A transform stream that converts a stream of tokens into a stream of CSV records.
  *
- * @template Header The type of the header row.
- * @template Format The output format ('object' or 'array').
- * @param options - CSV-specific options (header, maxFieldCount, checkInterval, etc.)
- * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
- * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
+ * For most use cases, prefer the factory function {@link createCSVRecordAssemblerTransformer}.
+ * Use this class directly only when you need a custom assembler implementation.
  *
  * @category Low-level API
  *
- * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to the standard `TransformStream`.
+ * @template Header The type of the header row.
+ * @template Format The output format ('object' or 'array').
+ * @param assembler - A CSVRecordAssembler instance (required). Use {@link createCSVRecordAssembler} to create one.
+ * @param options - Stream-specific options (backpressureCheckInterval, etc.)
+ * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
+ * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256, size: () => 1 }`)
  *
- * **Default Queuing Strategy:**
- * - Writable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
- * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * **Backpressure Handling:**
- * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
- * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
- * and allows the downstream consumer to catch up.
- *
- * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
- * Optimal values depend on your runtime environment, data size, and performance requirements.
- *
- * @example Parse a CSV with headers by data
- *  ```ts
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("name,age\r\n");
- *     controller.enqueue("Alice,20\r\n");
- *     controller.enqueue("Bob,25\r\n");
- *     controller.enqueue("Charlie,30\r\n");
- *     controller.close();
- *   })
- *   .pipeThrough(new CSVLexerTransformer())
- *   .pipeThrough(new CSVRecordAssemblerTransformer())
- *   .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
- * // { name: "Alice", age: "20" }
- * // { name: "Bob", age: "25" }
- * // { name: "Charlie", age: "30" }
- * ```
- *
- * @example Parse a CSV with headers by options
+ * @example Custom assembler implementation
  * ```ts
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("Alice,20\r\n");
- *     controller.enqueue("Bob,25\r\n");
- *     controller.enqueue("Charlie,30\r\n");
- *     controller.close();
+ * import { CSVRecordAssemblerTransformer, type CSVObjectRecordAssembler, type Token } from 'web-csv-toolbox';
+ *
+ * // Custom assembler for specialized record formats
+ * class MyCustomAssembler implements CSVObjectRecordAssembler<readonly string[]> {
+ *   *assemble(
+ *     input?: Token | Iterable<Token>,
+ *     options?: { stream?: boolean }
+ *   ): IterableIterator<Record<string, string>> {
+ *     // Custom assembly logic
  *   }
- * })
- * .pipeThrough(new CSVLexerTransformer())
- * .pipeThrough(new CSVRecordAssemblerTransformer({ header: ["name", "age"] }))
- * .pipeTo(new WritableStream({ write(row) { console.log(row); }}));
- * // { name: "Alice", age: "20" }
- * // { name: "Bob", age: "25" }
- * // { name: "Charlie", age: "30" }
- * ```
+ * }
  *
- * @example Custom queuing strategies with backpressure tuning
- * ```ts
- * const transformer = new CSVRecordAssemblerTransformer(
- *   {
- *     backpressureCheckInterval: 20  // Check backpressure every 20 records
- *   },
- *   new CountQueuingStrategy({ highWaterMark: 2048 }),  // 2048 tokens
- *   new CountQueuingStrategy({ highWaterMark: 512 })    // 512 records
- * );
- *
- * await tokenStream
- *   .pipeThrough(transformer)
- *   .pipeTo(yourRecordProcessor);
+ * const customAssembler = new MyCustomAssembler();
+ * tokenStream.pipeThrough(new CSVRecordAssemblerTransformer(customAssembler));
  * ```
  */
 export class CSVRecordAssemblerTransformer<

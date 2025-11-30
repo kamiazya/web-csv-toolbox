@@ -1,9 +1,5 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type {
-  AbortSignalOptions,
-  CommonOptions,
-  FactoryEngineOptions,
-} from "@/core/types.ts";
+import type { StringCSVLexerOptions } from "@/core/types.ts";
 import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 
 // Re-export the lexer class
@@ -12,13 +8,14 @@ export { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.t
 /**
  * Factory function to create a string CSV lexer instance.
  *
- * @param options - Lexer options including delimiter, quotation, abort signal, and engine config
+ * @param options - Lexer options including delimiter, quotation, abort signal, and engine
  * @returns A FlexibleStringCSVLexer instance configured with the specified options
  *
  * @remarks
- * The `engine` option is accepted for API consistency and future extensibility,
- * but currently only the JavaScript implementation is available.
- * WASM lexer is not yet implemented.
+ * **Design Intent**: This factory function accepts options including engine configuration
+ * to enable future execution path optimization. The function may select the optimal internal
+ * lexer implementation based on the provided options. Currently, this optimization
+ * is not implemented, but the API is designed to support it without breaking changes.
  *
  * @example
  * ```ts
@@ -46,9 +43,7 @@ export function createStringCSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
 >(
-  options?: CommonOptions<Delimiter, Quotation> &
-    AbortSignalOptions &
-    FactoryEngineOptions,
+  options?: StringCSVLexerOptions<Delimiter, Quotation>,
 ): FlexibleStringCSVLexer<Delimiter, Quotation> {
   // Note: engine option is accepted but currently ignored (no WASM lexer implementation)
   return new FlexibleStringCSVLexer<Delimiter, Quotation>(options ?? {});

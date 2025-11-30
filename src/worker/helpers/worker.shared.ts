@@ -224,8 +224,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const { createCSVRecordAssembler } = await import(
             "../../parser/api/model/createCSVRecordAssembler.ts"
           );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
+          const { StringCSVLexerTransformer } = await import(
+            "../../parser/stream/StringCSVLexerTransformer.ts"
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
@@ -235,7 +235,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = stream
-            .pipeThrough(new CSVLexerTransformer(lexer))
+            .pipeThrough(new StringCSVLexerTransformer(lexer))
             .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
 
           await streamRecordsToPort(
@@ -271,8 +271,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const { createCSVRecordAssembler } = await import(
             "../../parser/api/model/createCSVRecordAssembler.ts"
           );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
+          const { StringCSVLexerTransformer } = await import(
+            "../../parser/stream/StringCSVLexerTransformer.ts"
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
@@ -309,7 +309,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = textStream
-            .pipeThrough(new CSVLexerTransformer(lexer))
+            .pipeThrough(new StringCSVLexerTransformer(lexer))
             .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
 
           await streamRecordsToPort(
@@ -351,8 +351,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const { createCSVRecordAssembler } = await import(
             "../../parser/api/model/createCSVRecordAssembler.ts"
           );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
+          const { StringCSVLexerTransformer } = await import(
+            "../../parser/stream/StringCSVLexerTransformer.ts"
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
@@ -362,7 +362,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = req.data
-            .pipeThrough(new CSVLexerTransformer(lexer))
+            .pipeThrough(new StringCSVLexerTransformer(lexer))
             .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
 
           // Convert stream to async iterable and stream records incrementally
@@ -390,8 +390,8 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const { createCSVRecordAssembler } = await import(
             "../../parser/api/model/createCSVRecordAssembler.ts"
           );
-          const { CSVLexerTransformer } = await import(
-            "../../parser/stream/CSVLexerTransformer.ts"
+          const { StringCSVLexerTransformer } = await import(
+            "../../parser/stream/StringCSVLexerTransformer.ts"
           );
           const { CSVRecordAssemblerTransformer } = await import(
             "../../parser/stream/CSVRecordAssemblerTransformer.ts"
@@ -428,7 +428,7 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           const assembler = createCSVRecordAssembler(req.options);
 
           const resultStream = textStream
-            .pipeThrough(new CSVLexerTransformer(lexer))
+            .pipeThrough(new StringCSVLexerTransformer(lexer))
             .pipeThrough(new CSVRecordAssemblerTransformer(assembler));
 
           // Convert stream to async iterable and stream records incrementally

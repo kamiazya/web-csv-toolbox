@@ -28,16 +28,35 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @category Low-level API
  *
- * @param parser - StringCSVParser instance to use for parsing
+ * @param parser - StringCSVParser instance to use for parsing (required). Use {@link createStringCSVParser} to create one.
  * @param options - Stream-specific options (backpressureCheckInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 256 }`)
  *
  * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to CSVLexerTransformer and CSVRecordAssemblerTransformer.
+ * **Recommended: Use the factory function**
  *
- * **Default Queuing Strategy:**
+ * For simpler usage, use {@link createStringCSVParserStream} which handles parser creation internally:
+ * ```ts
+ * import { createStringCSVParserStream } from 'web-csv-toolbox';
+ *
+ * await fetch('data.csv')
+ *   .then(res => res.body)
+ *   .pipeThrough(new TextDecoderStream())
+ *   .pipeThrough(createStringCSVParserStream({ header: ['name', 'age'] }))
+ *   .pipeTo(yourProcessor);
+ * ```
+ *
+ * **Direct instantiation (advanced)**
+ *
+ * If you need direct access to the parser or want to reuse it, use the constructor directly:
+ * ```ts
+ * import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+ * const parser = createStringCSVParser({ header: ['name', 'age'] });
+ * stringStream.pipeThrough(new StringCSVParserStream(parser));
+ * ```
+ *
+ * **Queuing Strategy:**
  * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
  * - Readable side: Counts each record as 1. Default highWaterMark is 256 records.
  *
@@ -46,34 +65,36 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
  * and allows the downstream consumer to catch up.
  *
- * @example Basic usage
+ * @example Recommended: Using factory function
  * ```ts
- * import { FlexibleStringObjectCSVParser } from './models/FlexibleStringObjectCSVParser.js';
- * import { StringCSVParserStream } from './stream/StringCSVParserStream.js';
+ * import { createStringCSVParserStream } from 'web-csv-toolbox';
  *
- * const parser = new FlexibleStringObjectCSVParser({ header: ['name', 'age'] });
- * const stream = new StringCSVParserStream(parser);
- *
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("Alice,30\r\n");
- *     controller.enqueue("Bob,25\r\n");
- *     controller.close();
- *   }
- * })
- *   .pipeThrough(stream)
+ * await fetch('data.csv')
+ *   .then(res => res.body)
+ *   .pipeThrough(new TextDecoderStream())
+ *   .pipeThrough(createStringCSVParserStream())
  *   .pipeTo(new WritableStream({
  *     write(record) {
- *       console.log(record);
+ *       console.log(record); // { name: 'Alice', age: '30' }
  *     }
  *   }));
- * // { name: 'Alice', age: '30' }
- * // { name: 'Bob', age: '25' }
+ * ```
+ *
+ * @example Direct instantiation with parser
+ * ```ts
+ * import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+ *
+ * const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+ * const stream = new StringCSVParserStream(parser);
+ *
+ * stringStream.pipeThrough(stream);
  * ```
  *
  * @example With custom queuing strategies
  * ```ts
- * const parser = new FlexibleStringObjectCSVParser({ header: ['name', 'age'] });
+ * import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
+ *
+ * const parser = createStringCSVParser({ header: ['name', 'age'] as const });
  * const stream = new StringCSVParserStream(
  *   parser,
  *   { backpressureCheckInterval: 50 },

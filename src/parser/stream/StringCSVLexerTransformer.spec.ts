@@ -3,7 +3,7 @@ import { describe as describe_, expect, it as it_ } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 const describe = describe_.concurrent;
@@ -23,10 +23,12 @@ const LOCATION_SHAPE = {
   rowNumber: expect.any(Number),
 };
 
-describe("CSVLexerTransformer", () => {
+describe("StringCSVLexerTransformer", () => {
   it("should be a TransformStream", () => {
     const lexer = new FlexibleStringCSVLexer({});
-    expect(new CSVLexerTransformer(lexer)).toBeInstanceOf(TransformStream);
+    expect(new StringCSVLexerTransformer(lexer)).toBeInstanceOf(
+      TransformStream,
+    );
   });
 
   it("should separate fields by commas by default", async () => {
@@ -61,7 +63,7 @@ describe("CSVLexerTransformer", () => {
         }),
         async ({ chunks, expected }) => {
           const lexer = new FlexibleStringCSVLexer({});
-          const transformer = new CSVLexerTransformer(lexer);
+          const transformer = new StringCSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
@@ -96,7 +98,7 @@ describe("CSVLexerTransformer", () => {
         }),
         async ({ expected, chunks }) => {
           const lexer = new FlexibleStringCSVLexer({});
-          const transformer = new CSVLexerTransformer(lexer);
+          const transformer = new StringCSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
@@ -159,7 +161,7 @@ describe("CSVLexerTransformer", () => {
         }),
         async ({ options, chunks, expected }) => {
           const lexer = new FlexibleStringCSVLexer(options);
-          const transformer = new CSVLexerTransformer(lexer);
+          const transformer = new StringCSVLexerTransformer(lexer);
           const actual = (await transform(transformer, chunks)).flat();
           expect(actual).toMatchObject(expected);
         },
