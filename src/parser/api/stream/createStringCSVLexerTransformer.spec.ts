@@ -1,27 +1,13 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import { Delimiter } from "@/core/constants.ts";
 import { createStringCSVLexerTransformer } from "@/parser/api/stream/createStringCSVLexerTransformer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
 const describe = describe_.concurrent;
 const it = it_.concurrent;
-
-const LOCATION_SHAPE = {
-  start: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  end: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  rowNumber: expect.any(Number),
-};
 
 describe("createStringCSVLexerTransformer", () => {
   it("should return a StringCSVLexerTransformer instance", () => {
@@ -37,10 +23,11 @@ describe("createStringCSVLexerTransformer", () => {
     const tokens = await transform(transformer, chunks);
     const flat = tokens.flat();
 
-    // Should have fields and delimiters
-    expect(flat.some((t) => t.type === Field)).toBe(true);
-    expect(flat.some((t) => t.type === FieldDelimiter)).toBe(true);
-    expect(flat.some((t) => t.type === RecordDelimiter)).toBe(true);
+    // New unified token format: tokens have 'delimiter' property
+    // Field delimiter tokens have delimiter: Delimiter.Field
+    // Record delimiter tokens have delimiter: Delimiter.Record
+    expect(flat.some((t) => t.delimiter === Delimiter.Field)).toBe(true);
+    expect(flat.some((t) => t.delimiter === Delimiter.Record)).toBe(true);
   });
 
   it("should create transformer with custom delimiter", async () => {
@@ -50,10 +37,13 @@ describe("createStringCSVLexerTransformer", () => {
     const tokens = await transform(transformer, chunks);
     const flat = tokens.flat();
 
-    // Field delimiter should be tab
-    const fieldDelimiters = flat.filter((t) => t.type === FieldDelimiter);
-    expect(fieldDelimiters.length).toBeGreaterThan(0);
-    expect(fieldDelimiters[0]?.value).toBe("\t");
+    // Field tokens followed by field delimiter should have delimiter: Delimiter.Field
+    const fieldDelimiterTokens = flat.filter(
+      (t) => t.delimiter === Delimiter.Field,
+    );
+    expect(fieldDelimiterTokens.length).toBeGreaterThan(0);
+    // The delimiterLength should be 1 for tab
+    expect(fieldDelimiterTokens[0]?.delimiterLength).toBe(1);
   });
 
   it("should create transformer with custom quotation", async () => {
@@ -63,10 +53,10 @@ describe("createStringCSVLexerTransformer", () => {
     const tokens = await transform(transformer, chunks);
     const flat = tokens.flat();
 
-    // Fields should be extracted correctly
-    const fields = flat.filter((t) => t.type === Field);
-    expect(fields.map((f) => f.value)).toContain("name");
-    expect(fields.map((f) => f.value)).toContain("age");
+    // Fields should be extracted correctly (value property)
+    const values = flat.map((f) => f.value);
+    expect(values).toContain("name");
+    expect(values).toContain("age");
   });
 
   it("should separate fields by commas by default", async () => {
@@ -79,22 +69,13 @@ describe("createStringCSVLexerTransformer", () => {
             g,
             row.map((v) => escapeField(v, { quote })).join(","),
           );
-          const expected = [
-            ...row.flatMap((value, index) => [
-              ...(quote || value
-                ? [{ type: Field, value, location: LOCATION_SHAPE }]
-                : []),
-              ...(index === row.length - 1
-                ? []
-                : [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                      location: LOCATION_SHAPE,
-                    },
-                  ]),
-            ]),
-          ];
+          // New unified format: each field token includes delimiter info
+          const expected = row.map((value, index) => ({
+            value,
+            delimiter:
+              index === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+            delimiterLength: index === row.length - 1 ? 0 : 1,
+          }));
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
@@ -128,31 +109,30 @@ describe("createStringCSVLexerTransformer", () => {
               )
               .join(eol) + (EOF ? eol : "");
           const chunks = autoChunk(g, csv);
-          const expected = [
-            ...data.flatMap((row, i) => [
-              ...row.flatMap((value, j) => [
-                ...(quote || value !== "" ? [{ type: Field, value }] : []),
-                ...(row.length - 1 !== j
-                  ? [
-                      {
-                        type: FieldDelimiter,
-                        value: options.delimiter,
-                        location: LOCATION_SHAPE,
-                      },
-                    ]
-                  : []),
-              ]),
-              ...(data.length - 1 !== i
-                ? [
-                    {
-                      type: RecordDelimiter,
-                      value: eol,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // New unified format
+          const expected = data.flatMap((row, i) =>
+            row.map((value, j) => {
+              const isLastField = j === row.length - 1;
+              const isLastRow = i === data.length - 1;
+              let delimiter: typeof Delimiter.Field | typeof Delimiter.Record | typeof Delimiter.EOF;
+              let delimiterLength: number;
+
+              if (isLastField) {
+                if (isLastRow && !EOF) {
+                  delimiter = Delimiter.EOF;
+                  delimiterLength = 0;
+                } else {
+                  delimiter = Delimiter.Record;
+                  delimiterLength = eol.length;
+                }
+              } else {
+                delimiter = Delimiter.Field;
+                delimiterLength = options.delimiter.length;
+              }
+
+              return { value, delimiter, delimiterLength };
+            }),
+          );
           return { options, chunks, expected };
         }),
         async ({ options, chunks, expected }) => {
