@@ -1,4 +1,4 @@
-import { CR, LF } from "@/core/constants.ts";
+import { CR, LF, MAX_FIELD_SIZE_LIMIT } from "@/core/constants.ts";
 import type { CommonOptions } from "@/core/types.ts";
 
 /**
@@ -74,6 +74,20 @@ export function assertCommonOptions<
   ) {
     throw new RangeError(
       "maxBufferSize must be a positive integer (in characters) or Number.POSITIVE_INFINITY",
+    );
+  }
+
+  // Validate maxFieldSize
+  const mfs = options.maxFieldSize;
+  if (
+    !Number.isFinite(mfs) ||
+    mfs < 1 ||
+    !Number.isInteger(mfs) ||
+    mfs > MAX_FIELD_SIZE_LIMIT
+  ) {
+    throw new RangeError(
+      `maxFieldSize must be a positive integer not exceeding ${MAX_FIELD_SIZE_LIMIT} bytes (1GB). ` +
+        `This limit is enforced due to internal offset representation constraints.`,
     );
   }
 }

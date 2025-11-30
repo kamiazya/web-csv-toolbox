@@ -12,7 +12,6 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
-import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -146,18 +145,11 @@ export async function* parseString<
         session?.[Symbol.dispose]();
       }
     } else {
-      // Main thread execution
-      if (engineConfig.hasWasm()) {
-        // WASM execution with implicit initialization
-        yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
-          InferCSVRecord<Header, Options>
-        >;
-      } else {
-        const iterator = parseStringToIterableIterator(csv, options);
-        yield* convertIterableIteratorToAsync(
-          iterator,
-        ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-      }
+      // Main thread execution (JavaScript iterator)
+      const iterator = parseStringToIterableIterator(csv, options);
+      yield* convertIterableIteratorToAsync(
+        iterator,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     }
   } catch (error) {
     commonParseErrorHandling(error);

@@ -10,8 +10,6 @@ import type {
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySelector.ts";
 import { parseStringStreamToStream } from "@/parser/api/string/parseStringStreamToStream.ts";
-import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
-import { loadWASM } from "@/wasm/WasmInstance.main.web.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -156,37 +154,6 @@ export async function* parseStringStream<
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
-    }
-  } else if (engineConfig.hasWasm()) {
-    // WASM execution for string streams
-    // Initialize WASM
-    await loadWASM();
-
-    // Create WASM stream transformer with options
-    const transformer = new WASMBinaryCSVStreamTransformer({
-      delimiter: options?.delimiter,
-      quotation: options?.quotation,
-      header: options?.header as readonly string[] | undefined,
-      maxFieldCount: options?.maxFieldCount,
-      outputFormat: options?.outputFormat,
-    });
-
-    // Convert string stream to binary stream, then process with WASM
-    const recordStream = stream
-      .pipeThrough(new TextEncoderStream())
-      .pipeThrough(transformer);
-
-    const iterator = convertStreamToAsyncIterableIterator(recordStream);
-
-    try {
-      yield* iterator as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } catch (error) {
-      try {
-        await recordStream.cancel().catch(() => {});
-      } catch {
-        // Ignore cancellation errors
-      }
-      throw error;
     }
   } else {
     // Main thread execution (default for streams)

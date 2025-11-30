@@ -11,7 +11,6 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
-import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -70,18 +69,11 @@ export async function* parseBinary<
       session?.[Symbol.dispose]();
     }
   } else {
-    // Main thread execution
-    if (engineConfig.hasWasm()) {
-      yield* parseBinaryInWASM(
-        bytes,
-        options as ParseBinaryOptions<Header> | undefined,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } else {
-      const iterator = parseBinaryToIterableIterator(bytes, options);
-      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
-        InferCSVRecord<Header, Options>
-      >;
-    }
+    // Main thread execution (JavaScript iterator)
+    const iterator = parseBinaryToIterableIterator(bytes, options);
+    yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   }
 }
 

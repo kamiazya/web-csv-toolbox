@@ -2,6 +2,7 @@ import {
   CRLF,
   DEFAULT_DELIMITER,
   DEFAULT_LEXER_MAX_BUFFER_SIZE,
+  DEFAULT_MAX_FIELD_SIZE,
   DEFAULT_QUOTATION,
   Field,
   FieldDelimiter,
@@ -45,6 +46,7 @@ export class FlexibleStringCSVLexer<
   #matcher: RegExp;
   #fieldDelimiterLength: number;
   #maxBufferSize: number;
+  #maxFieldSize: number;
 
   #cursor: Position = {
     line: 1,
@@ -67,14 +69,16 @@ export class FlexibleStringCSVLexer<
       delimiter = DEFAULT_DELIMITER,
       quotation = DEFAULT_QUOTATION,
       maxBufferSize = DEFAULT_LEXER_MAX_BUFFER_SIZE,
+      maxFieldSize = DEFAULT_MAX_FIELD_SIZE,
       signal,
       source,
     } = options;
-    assertCommonOptions({ delimiter, quotation, maxBufferSize });
+    assertCommonOptions({ delimiter, quotation, maxBufferSize, maxFieldSize });
     this.#delimiter = delimiter;
     this.#quotation = quotation;
     this.#fieldDelimiterLength = delimiter.length;
     this.#maxBufferSize = maxBufferSize;
+    this.#maxFieldSize = maxFieldSize;
     this.#source = source;
     this.#signal = signal;
     const d = escapeRegExp(delimiter);
@@ -134,6 +138,19 @@ export class FlexibleStringCSVLexer<
     if (this.#buffer.length > this.#maxBufferSize) {
       throw new RangeError(
         `Buffer size (${this.#buffer.length} characters) exceeded maximum allowed size of ${this.#maxBufferSize} characters`,
+      );
+    }
+  }
+
+  /**
+   * Checks if the field size exceeds the maximum allowed size.
+   * @param fieldValue - The field value to check.
+   * @throws {RangeError} If the field size exceeds the maximum.
+   */
+  #checkFieldSize(fieldValue: string): void {
+    if (fieldValue.length > this.#maxFieldSize) {
+      throw new RangeError(
+        `Field size (${fieldValue.length} characters) exceeded maximum allowed size of ${this.#maxFieldSize} characters`,
       );
     }
   }
@@ -274,6 +291,8 @@ export class FlexibleStringCSVLexer<
           }
 
           // Otherwise, return the quoted string.
+          // Check field size before returning
+          this.#checkFieldSize(value);
           // Update the buffer and return the token
           offset++;
           this.#buffer = this.#buffer.slice(offset);
@@ -333,6 +352,8 @@ export class FlexibleStringCSVLexer<
       if (value === undefined) {
         return null;
       }
+      // Check field size before returning
+      this.#checkFieldSize(value);
       this.#buffer = this.#buffer.slice(value.length);
       const start: Position = { ...this.#cursor };
       this.#cursor.column += value.length;

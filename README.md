@@ -60,6 +60,8 @@ A CSV Toolbox utilizing Web Standard APIs.
     - ⚠️ Throws `RangeError` when field count exceeds the limit.
   - 💾 Configurable maximum binary size (default: 100MB bytes) for BufferSource inputs.
     - 🛑 Throws `RangeError` when binary size exceeds the limit.
+  - 📏 Configurable maximum field size (default: 10MB) to prevent memory exhaustion from oversized fields.
+    - 🛑 Throws `RangeError` when a single field exceeds the limit.
 - 🎨 **Flexible Source Support**
   - 🧩 Parse CSVs directly from `string`s, `ReadableStream`s, `Response` objects, `Blob`/`File` objects, or `Request` objects.
 - ⚙️ **Advanced Parsing Options**: Customize your experience with various delimiters and quotation marks.
@@ -851,6 +853,7 @@ See [Using WebAssembly Tutorial](https://kamiazya.github.io/web-csv-toolbox/tuto
 | `quotation`      | Character used for quoting fields     | `"`          |                                                                                    |
 | `maxBufferSize`  | Maximum internal buffer size (characters)  | `10 * 1024 * 1024`   | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input). Measured in UTF-16 code units. |
 | `maxFieldCount`  | Maximum fields allowed per record     | `100000`     | Set to `Number.POSITIVE_INFINITY` to disable (not recommended for untrusted input) |
+| `maxFieldSize`   | Maximum size of a single field (bytes) | `10485760` (10MB) | Prevents memory exhaustion from oversized fields. Can be increased up to 1GB. Note: [Runtime string limits vary](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String/length) (V8: ~512MB, Firefox: ~1GB, Safari: ~2GB). |
 | `header`         | Custom headers for the parsed records | First row    | If not provided, the first row is used as headers                                  |
 | `outputFormat`   | Record shape (`'object'` or `'array'`) | `'object'`   | `'array'` returns type-safe tuples |
 | `includeHeader`  | Emit header row when using array output | `false` | Only valid with `outputFormat: 'array'` — the header becomes the first emitted record |
@@ -1025,6 +1028,7 @@ For production use with untrusted input, consider:
 - Using `maxBinarySize` option to limit BufferSource inputs (default: 100MB bytes)
 - Using `maxBufferSize` option to limit internal buffer size (default: 10M characters)
 - Using `maxFieldCount` option to limit fields per record (default: 100,000)
+- Using `maxFieldSize` option to limit individual field size (default: 10MB)
 - Implementing additional file size limits at the application level
 - Validating parsed data before use
 

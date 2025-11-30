@@ -1,4 +1,7 @@
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
+import type {
+  DEFAULT_DELIMITER,
+  DEFAULT_QUOTATION,
+} from "@/core/constants.ts";
 import type {
   InferCSVRecord,
   ParseOptions,
@@ -7,8 +10,7 @@ import type {
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { WASMStringCSVArrayParser } from "@/parser/models/WASMStringCSVArrayParser.ts";
-import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
+import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -24,10 +26,23 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * For CSV data with a large number of records, consider using `parseStringToIterableIterator()`
  * to iterate over records without loading them all into memory at once.
  *
+ * When `engine.wasm` is enabled, this function uses WASM SIMD for separator detection,
+ * providing ~4.7x faster performance for large files (>1MB).
+ *
  * @example
  * ```ts
  * const csv = "name,age\nAlice,30\nBob,25";
  * const records = parseStringToArraySync(csv);
+ * // [{ name: "Alice", age: "30" }, { name: "Bob", age: "25" }]
+ * ```
+ *
+ * @example With WASM SIMD acceleration
+ * ```ts
+ * import { loadWASMSync } from 'web-csv-toolbox';
+ *
+ * loadWASMSync();
+ * const csv = "name,age\nAlice,30\nBob,25";
+ * const records = parseStringToArraySync(csv, { engine: { wasm: true } });
  * // [{ name: "Alice", age: "30" }, { name: "Bob", age: "25" }]
  * ```
  */
@@ -60,32 +75,25 @@ export function parseStringToArraySync<
   const Options extends ParseOptions<Header> = ParseOptions<Header>,
 >(csv: string, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
-    // Parse engine configuration
+    // Check if WASM engine is requested
     const engineConfig = new InternalEngineConfig(options?.engine);
 
     if (engineConfig.hasWasm()) {
-      // WASM execution
-      const outputFormat = options?.outputFormat ?? "object";
-
-      if (outputFormat === "array") {
-        const parser = new WASMStringCSVArrayParser<Header>({
-          delimiter: options?.delimiter ?? ",",
-          quotation: options?.quotation ?? '"',
-          maxFieldCount: options?.maxFieldCount,
-          header: options?.header,
-        });
-        return [...parser.parse(csv)] as InferCSVRecord<Header, Options>[];
-      }
-      const parser = new WASMStringObjectCSVParser<Header>({
-        delimiter: options?.delimiter ?? ",",
-        quotation: options?.quotation ?? '"',
-        maxFieldCount: options?.maxFieldCount,
-        header: options?.header,
+      // WASM SIMD path: Use optimized string parser with direct separator detection
+      const parser = createStringCSVParser<Header>({
+        ...options,
+        engine: { wasm: true },
       });
-      return [...parser.parse(csv)] as InferCSVRecord<Header, Options>[];
+
+      // Collect all records from parser
+      const records: InferCSVRecord<Header, Options>[] = [];
+      for (const record of parser.parse(csv)) {
+        records.push(record as InferCSVRecord<Header, Options>);
+      }
+      return records;
     }
 
-    // Main thread JavaScript execution (default)
+    // JavaScript execution
     const lexer = createStringCSVLexer(options);
     const assembler = createCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);

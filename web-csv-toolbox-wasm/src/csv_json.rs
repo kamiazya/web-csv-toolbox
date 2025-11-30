@@ -1,9 +1,5 @@
-// Imports for test-only functions
-#[cfg(test)]
 use crate::error::format_error;
-#[cfg(test)]
 use csv::ReaderBuilder;
-#[cfg(test)]
 use serde_json::json;
 
 /// Default maximum field count per record (matches TypeScript DEFAULT_ASSEMBLER_MAX_FIELD_COUNT)
@@ -11,11 +7,28 @@ use serde_json::json;
 #[allow(dead_code)]
 pub const DEFAULT_MAX_FIELD_COUNT: usize = 100_000;
 
-#[cfg(test)]
-/// Parse CSV string to JSON string using rust-csv (for legacy tests)
+/// Parse CSV string to JSON string using rust-csv
 ///
-/// This is the legacy JSON-based implementation used by basic.rs tests.
-pub(crate) fn parse_csv_to_json(
+/// This implementation leverages V8's highly optimized JSON.parse() for object construction.
+/// By returning a JSON string and letting JavaScript parse it, we avoid the overhead of
+/// WASM↔JS boundary crossing for individual objects/arrays.
+///
+/// **Performance Rationale:**
+/// - V8's JSON.parse() is implemented in C++ with highly optimized object construction
+/// - Single WASM→JS boundary crossing (one string) vs N×M crossings for flat format
+/// - JSON.parse() benefits from V8's hidden class optimizations
+///
+/// # Arguments
+///
+/// * `input` - CSV string to parse
+/// * `delimiter` - Delimiter character (e.g., b',' for comma)
+/// * `max_buffer_size` - Maximum allowed input size in bytes
+/// * `source` - Optional source identifier for error reporting
+///
+/// # Returns
+///
+/// Result containing JSON string representing array of objects
+pub fn parse_csv_to_json(
     input: &str,
     delimiter: u8,
     max_buffer_size: usize,

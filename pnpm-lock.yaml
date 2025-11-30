@@ -114,6 +114,9 @@ importers:
       terser:
         specifier: ^5.42.0
         version: 5.44.1
+      tsx:
+        specifier: ^4.20.6
+        version: 4.20.6
       typedoc:
         specifier: ^0.28.14
         version: 0.28.14(typescript@5.9.3)
@@ -131,7 +134,7 @@ importers:
         version: 4.5.4(@types/node@24.10.1)(rollup@4.53.1)(typescript@5.9.3)(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))
       vitest:
         specifier: 4.0.3
-        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       wasm-pack:
         specifier: ^0.13.1
         version: 0.13.1
@@ -177,7 +180,7 @@ importers:
         version: 4.20.6
       vitest:
         specifier: 'catalog:'
-        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+        version: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
 
   examples/node-main:
     dependencies:
@@ -5512,7 +5515,7 @@ snapshots:
   '@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0)':
     dependencies:
       '@vitest/browser': 4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       webdriverio: 9.20.0
     transitivePeerDependencies:
       - bufferutil
@@ -5529,7 +5532,7 @@ snapshots:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
       ws: 8.18.3
     transitivePeerDependencies:
       - bufferutil
@@ -5548,7 +5551,7 @@ snapshots:
       istanbul-reports: 3.2.0
       magicast: 0.3.5
       tinyrainbow: 3.0.3
-      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
+      vitest: 4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -8685,7 +8688,7 @@ snapshots:
       tsx: 4.20.6
       yaml: 2.8.1
 
-  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))(vitest@4.0.3)(webdriverio@9.20.0))(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
+  vitest@4.0.3(@types/node@24.10.1)(@vitest/browser-webdriverio@4.0.8)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1):
     dependencies:
       '@vitest/expect': 4.0.3
       '@vitest/mocker': 4.0.3(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(terser@5.44.1)(tsx@4.20.6)(yaml@2.8.1))

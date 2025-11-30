@@ -134,6 +134,106 @@ if (buffer.byteLength > maxBinarySize) {
 - Prevents memory issues from huge files
 - Forces streaming for larger files
 
+#### `maxFieldSize`
+
+**Default:** 10MB (10,485,760 bytes)
+
+**Maximum:** 1GB (1,073,741,823 bytes)
+
+**Purpose:** Prevents memory exhaustion from individual oversized fields.
+
+**How It Works:**
+```typescript
+// Field size check during parsing
+if (fieldSize > maxFieldSize) {
+  throw new RangeError('Field size exceeded maximum limit');
+}
+```
+
+**Why 10MB Default:**
+- Covers 99.9% of legitimate CSV use cases
+- Provides meaningful DoS protection out of the box
+- Well under V8's string limit (~512MB), ensuring consistent behavior across all runtimes
+- Can be increased up to 1GB if needed, or decreased for stricter security (e.g., 1MB)
+
+**Runtime-Specific String Length Limits:**
+
+Different JavaScript engines have different maximum string length limits. Your `maxFieldSize` should account for these constraints:
+
+| Runtime | Max String Length | Approximate Size |
+|---------|-------------------|------------------|
+| V8 64-bit (Chrome, Node.js, Deno) | 2²⁹ - 24 | ~512MB |
+| V8 32-bit | 2²⁸ - 16 | ~256MB |
+| Firefox | 2³⁰ - 2 | ~1GB |
+| Safari | 2³¹ - 1 | ~2GB |
+
+> **Reference:** [MDN String.length](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String/length)
+
+**Tuning Recommendations:**
+
+For production applications, we recommend setting `maxFieldSize` based on your target environment and expected data:
+
+```typescript
+// Node.js / Chrome environments (V8)
+maxFieldSize: 256 * 1024 * 1024,  // 256MB (conservative for V8)
+
+// Firefox-only environments
+maxFieldSize: 512 * 1024 * 1024,  // 512MB
+
+// Typical web applications (recommended)
+maxFieldSize: 1024 * 1024,        // 1MB - sufficient for most CSV data
+
+// Strict security (untrusted input)
+maxFieldSize: 64 * 1024,          // 64KB
+```
+
+**Attack Scenario:**
+An attacker could craft a CSV with a single quoted field containing gigabytes of data:
+```csv
+name,description
+"Alice","AAAA....(billions of As)....AAAA"
+```
+
+This would cause memory exhaustion as the parser tries to store the entire field in memory.
+
+#### Interaction Between Size Limits
+
+The three size limits operate at different levels and can interact:
+
+| Limit | Scope | Unit | When Checked |
+|-------|-------|------|--------------|
+| `maxBinarySize` | Total input size | Bytes | Before parsing starts |
+| `maxBufferSize` | Internal lexer buffer | Characters (UTF-16) | During tokenization |
+| `maxFieldSize` | Individual field value | Characters (UTF-16) | When field token is emitted |
+
+**Key Interactions:**
+
+1. **`maxBufferSize` vs `maxFieldSize`**:
+   - The buffer accumulates incomplete tokens during streaming
+   - A quoted field spanning multiple chunks accumulates in the buffer
+   - If `maxBufferSize < maxFieldSize`, unclosed quoted fields will hit the buffer limit first
+   - If `maxFieldSize < maxBufferSize`, individual fields are rejected before consuming the full buffer
+
+2. **`maxBinarySize` vs `maxBufferSize`**:
+   - `maxBinarySize` applies only to `BufferSource` inputs (ArrayBuffer, Uint8Array)
+   - For streaming inputs, only `maxBufferSize` and `maxFieldSize` apply
+   - `maxBinarySize` prevents processing of excessively large files upfront
+
+3. **Recommended Configuration:**
+   ```typescript
+   // Typical secure configuration
+   {
+     maxBinarySize: 50 * 1024 * 1024,   // 50MB total file size
+     maxBufferSize: 10 * 1024 * 1024,   // 10M characters buffer
+     maxFieldSize: 1 * 1024 * 1024,     // 1MB per field
+   }
+   ```
+
+4. **Which Error Triggers First:**
+   - Large file: `maxBinarySize` → RangeError before parsing
+   - Streaming with unclosed quote: `maxBufferSize` → RangeError during tokenization
+   - Large but complete field: `maxFieldSize` → RangeError when field is emitted
+
 ---
 
 ### Layer 2: WorkerPool Resource Management
@@ -535,6 +635,7 @@ Putting it all together:
 │ - AbortSignal enforces timeout (30s)                    │
 │ - maxBufferSize limits memory (10M chars)               │
 │ - maxFieldCount limits fields (100k)                    │
+│ - maxFieldSize limits individual field size (10MB)      │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐

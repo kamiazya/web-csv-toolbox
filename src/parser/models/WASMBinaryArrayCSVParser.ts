@@ -1,25 +1,25 @@
 import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
 import type {
+  BinaryArrayCSVParser,
   BinaryCSVProcessingOptions,
-  BinaryObjectCSVParser,
   CSVParserParseOptions,
   CSVRecord,
 } from "@/core/types.ts";
 import {
-  type CSVIndexerBackendSync,
   CSVSeparatorIndexer,
+  type CSVIndexerBackendSync,
 } from "@/parser/indexer/CSVSeparatorIndexer.ts";
 import {
-  createAssemblerState,
   type DirectAssemblerConfig,
   type DirectAssemblerState,
-  flushObjectRecord,
-  separatorsToObjectRecords,
+  createAssemblerState,
+  flushArrayRecord,
+  separatorsToArrayRecords,
 } from "@/parser/utils/directRecordAssembler.ts";
 import { hasBOM } from "@/utils/binary/bom.ts";
 
 /**
- * WASM-accelerated Binary CSV Parser for object output format.
+ * WASM-accelerated Binary CSV Parser for array output format.
  *
  * Uses direct separator-to-record conversion for high performance,
  * bypassing Token object creation entirely.
@@ -27,7 +27,7 @@ import { hasBOM } from "@/utils/binary/bom.ts";
  * @template Header - The type of the header row
  *
  * @remarks
- * This class implements BinaryObjectCSVParser interface using WASM SIMD
+ * This class implements BinaryArrayCSVParser interface using WASM SIMD
  * for CSV scanning and direct record assembly. The backend must be
  * initialized before creating this parser.
  *
@@ -41,19 +41,19 @@ import { hasBOM } from "@/utils/binary/bom.ts";
  * const backend = new WASMIndexerBackend(44);
  * await backend.initialize();
  *
- * const parser = new WASMBinaryObjectCSVParser({
+ * const parser = new WASMBinaryArrayCSVParser({
  *   header: ['name', 'age'] as const,
  * }, backend);
  *
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\\nBob,25'))) {
- *   console.log(record); // { name: 'Alice', age: '30' }
+ *   console.log(record); // ['Alice', '30']
  * }
  * ```
  */
-export class WASMBinaryObjectCSVParser<
+export class WASMBinaryArrayCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-> implements BinaryObjectCSVParser<Header>
+> implements BinaryArrayCSVParser<Header>
 {
   private readonly indexer: CSVSeparatorIndexer;
   private readonly decoder: TextDecoder;
@@ -80,8 +80,9 @@ export class WASMBinaryObjectCSVParser<
     this.config = {
       header: options.header,
       quotation: options.quotation,
-      columnCountStrategy: options.columnCountStrategy ?? "pad",
+      columnCountStrategy: options.columnCountStrategy ?? "keep",
       skipEmptyLines: options.skipEmptyLines,
+      includeHeader: options.includeHeader,
       maxFieldCount: options.maxFieldCount,
       source: options.source,
     };
@@ -95,12 +96,12 @@ export class WASMBinaryObjectCSVParser<
    *
    * @param chunk - CSV binary chunk (BufferSource) to parse (optional for flush)
    * @param options - Parse options including stream mode
-   * @returns Iterable iterator of parsed CSV records as objects
+   * @returns Iterable iterator of parsed CSV records as arrays
    */
   *parse(
     chunk?: BufferSource,
     options?: CSVParserParseOptions,
-  ): IterableIterator<CSVRecord<Header, "object">> {
+  ): IterableIterator<CSVRecord<Header, "array">> {
     const stream = options?.stream ?? false;
 
     if (chunk === undefined) {
@@ -135,13 +136,12 @@ export class WASMBinaryObjectCSVParser<
 
     // Decode processed bytes to string
     // Optimization: use subarray (zero-copy view) instead of slice
-    const csvString =
-      indexResult.processedBytes === data.length
-        ? this.decoder.decode(data)
-        : this.decoder.decode(data.subarray(0, indexResult.processedBytes));
+    const csvString = indexResult.processedBytes === data.length
+      ? this.decoder.decode(data)
+      : this.decoder.decode(data.subarray(0, indexResult.processedBytes));
 
     // Direct conversion to records (with extended format if available)
-    yield* separatorsToObjectRecords(
+    yield* separatorsToArrayRecords(
       indexResult.separators,
       indexResult.sepCount,
       csvString,
@@ -157,7 +157,7 @@ export class WASMBinaryObjectCSVParser<
   /**
    * Flush remaining data and yield final records.
    */
-  private *flush(): Generator<CSVRecord<Header, "object">, void, void> {
+  private *flush(): Generator<CSVRecord<Header, "array">, void, void> {
     // Flush indexer to get remaining separators
     const indexResult = this.indexer.index();
 
@@ -168,7 +168,7 @@ export class WASMBinaryObjectCSVParser<
       );
 
       if (csvString.length > 0) {
-        yield* separatorsToObjectRecords(
+        yield* separatorsToArrayRecords(
           indexResult.separators,
           indexResult.sepCount,
           csvString,
@@ -180,7 +180,7 @@ export class WASMBinaryObjectCSVParser<
     }
 
     // Flush any remaining partial record
-    yield* flushObjectRecord(this.config, this.state);
+    yield* flushArrayRecord(this.config, this.state);
 
     // Reset state for potential reuse
     this.state = createAssemblerState(this.config);

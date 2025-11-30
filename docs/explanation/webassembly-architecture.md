@@ -173,7 +173,7 @@ interface FlatParseResult {
 
 ### JavaScript WASM Wrapper Classes
 
-The library provides JavaScript wrapper classes that integrate the WASM `CSVParser` with the standard API:
+The library provides JavaScript wrapper classes that integrate the WASM module with the standard API:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -185,10 +185,11 @@ The library provides JavaScript wrapper classes that integrate the WASM `CSVPars
 │                                                              │
 │ String Input:                Binary Input:                   │
 │ - WASMStringObjectCSVParser  - WASMBinaryObjectCSVParser     │
-│ - WASMStringCSVArrayParser   - WASMBinaryCSVArrayParser      │
+│ - WASMStringArrayCSVParser   - WASMBinaryArrayCSVParser      │
 │                                                              │
-│ Streaming:                                                   │
-│ - WASMBinaryCSVStreamTransformer (TransformStream)           │
+│ Streaming (via engine option):                               │
+│ - BinaryCSVParserStream with { engine: { wasm: true } }      │
+│ - StringCSVParserStream with { engine: { wasm: true } }      │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -201,12 +202,13 @@ The library provides JavaScript wrapper classes that integrate the WASM `CSVPars
 
 **Parser Models:**
 - `WASMStringObjectCSVParser`: Parses string input, outputs object records
-- `WASMStringCSVArrayParser`: Parses string input, outputs array records
+- `WASMStringArrayCSVParser`: Parses string input, outputs array records
 - `WASMBinaryObjectCSVParser`: Parses `Uint8Array` input, outputs object records
-- `WASMBinaryCSVArrayParser`: Parses `Uint8Array` input, outputs array records
+- `WASMBinaryArrayCSVParser`: Parses `Uint8Array` input, outputs array records
 
-**Stream Transformer:**
-- `WASMBinaryCSVStreamTransformer`: `TransformStream` that converts `ReadableStream<Uint8Array>` to records using WASM
+**Stream Parsers:**
+- `BinaryCSVParserStream`: `TransformStream` for binary streams, supports `{ engine: { wasm: true } }`
+- `StringCSVParserStream`: `TransformStream` for string streams, supports `{ engine: { wasm: true } }`
 
 ---
 
@@ -447,12 +449,12 @@ const arrays = await parse.toArray(csv, {
 Low-level WASM parsers are also available for direct access:
 
 ```typescript
-import { WASMStringCSVArrayParser, WASMStringObjectCSVParser, loadWASM } from 'web-csv-toolbox';
+import { WASMStringArrayCSVParser, WASMStringObjectCSVParser, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
 // Array parser
-const arrayParser = new WASMStringCSVArrayParser();
+const arrayParser = new WASMStringArrayCSVParser();
 const arrays = [...arrayParser.parse("name,age\nAlice,30")];
 // [['Alice', '30'], ...]
 
@@ -478,18 +480,18 @@ WASM string parsing (`parseString`, `parse` with string input) processes the ent
 - Not suitable for unbounded string streams
 
 **Binary Streaming Available:**
-For streaming use cases, use binary input with `WASMBinaryCSVStreamTransformer`:
+For streaming use cases, use `BinaryCSVParserStream` with the `engine` option:
 
 ```typescript
-import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
+import { BinaryCSVParserStream, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
-const transformer = new WASMBinaryCSVStreamTransformer();
+const parser = new BinaryCSVParserStream({ engine: { wasm: true } });
 
 await fetch('large.csv')
   .then(res => res.body)
-  .pipeThrough(transformer)
+  .pipeThrough(parser)
   .pipeTo(new WritableStream({
     write(record) { console.log(record); }
   }));
@@ -498,7 +500,7 @@ await fetch('large.csv')
 Or via high-level APIs with binary/Response input:
 
 ```typescript
-// These support WASM streaming via WASMBinaryCSVStreamTransformer
+// These support WASM streaming via BinaryCSVParserStream with engine option
 for await (const record of parseBinaryStream(stream, { engine: { wasm: true } })) { ... }
 for await (const record of parseResponse(response, { engine: { wasm: true } })) { ... }
 ```

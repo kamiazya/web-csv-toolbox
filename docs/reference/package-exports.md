@@ -31,8 +31,8 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
   - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `CSVLexerTransformer`, `CSVRecordAssemblerTransformer`
 - Worker management (`WorkerPool`, `WorkerSession`)
 - WASM utilities (`loadWASM`, `loadWASMSync`, `isWASMReady`, `ensureWASMInitialized`)
-- WASM Parser Models: `WASMStringObjectCSVParser`, `WASMStringCSVArrayParser`, `WASMBinaryObjectCSVParser`, `WASMBinaryCSVArrayParser`
-- WASM Stream Transformer: `WASMBinaryCSVStreamTransformer`
+- WASM Parser Models: `WASMStringObjectCSVParser`, `WASMStringArrayCSVParser`, `WASMBinaryObjectCSVParser`, `WASMBinaryArrayCSVParser`
+- WASM Streaming: Use `BinaryCSVParserStream` or `StringCSVParserStream` with `{ engine: { wasm: true } }`
 
 **Characteristics**:
 - ✅ Automatic WASM initialization on first use (not at import time)
@@ -329,7 +329,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
 - **String Parsing**:
   - **`WASMStringObjectCSVParser`** - WASM-accelerated string parser outputting object records
-  - **`WASMStringCSVArrayParser`** - WASM-accelerated string parser outputting array records
+  - **`WASMStringArrayCSVParser`** - WASM-accelerated string parser outputting array records
   - **Example**:
     ```typescript
     import { WASMStringObjectCSVParser, loadWASM } from 'web-csv-toolbox';
@@ -343,7 +343,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
 - **Binary Parsing**:
   - **`WASMBinaryObjectCSVParser`** - WASM-accelerated binary parser outputting object records
-  - **`WASMBinaryCSVArrayParser`** - WASM-accelerated binary parser outputting array records
+  - **`WASMBinaryArrayCSVParser`** - WASM-accelerated binary parser outputting array records
   - **Example**:
     ```typescript
     import { WASMBinaryObjectCSVParser, loadWASM } from 'web-csv-toolbox';
@@ -356,19 +356,19 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
     ```
 
-- **`WASMBinaryCSVStreamTransformer`** - TransformStream for WASM-accelerated binary CSV parsing
+- **WASM Streaming** - Use `BinaryCSVParserStream` or `StringCSVParserStream` with `{ engine: { wasm: true } }`
   - **Use case**: High-performance streaming with chunk-based processing
   - **Example**:
     ```typescript
-    import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
+    import { BinaryCSVParserStream, loadWASM } from 'web-csv-toolbox';
 
     await loadWASM();
 
-    const transformer = new WASMBinaryCSVStreamTransformer();
+    const stream = new BinaryCSVParserStream({ engine: { wasm: true } });
 
     await fetch('large.csv')
       .then(res => res.body)
-      .pipeThrough(transformer)
+      .pipeThrough(stream)
       .pipeTo(new WritableStream({
         write(record) { console.log(record); }
       }));

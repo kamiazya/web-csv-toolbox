@@ -3,9 +3,17 @@ import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
+import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
+import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
+import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
-import { WASMBinaryCSVStreamTransformer } from "@/parser/stream/WASMBinaryCSVStreamTransformer.ts";
+import {
+  isInitialized as isWASMInitialized,
+  loadWASMSync,
+  scanCsvBytesStreaming,
+  scanCsvBytesZeroCopy,
+} from "@/wasm/WasmInstance.main.web.ts";
 
 export function parseBinaryStreamToStream<
   Header extends readonly string[],
@@ -20,51 +28,71 @@ export function parseBinaryStreamToStream<
   stream: ReadableStream<Uint8Array>,
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
-  // Check engine configuration for WASM
+  const { charset, fatal, ignoreBOM, decompression } = options ?? {};
+
+  // Check if WASM engine is requested
   const engineConfig = new InternalEngineConfig(options?.engine);
 
   if (engineConfig.hasWasm()) {
-    // Validate charset - WASM only supports UTF-8
-    const { charset, decompression } = options ?? {};
-    if (charset && charset.toLowerCase() !== "utf-8") {
-      throw new Error(
-        `Charset '${charset}' is not supported with WASM execution. ` +
-          "WASM only supports UTF-8 encoding. " +
-          "Use charset: 'utf-8' (default) or disable WASM (engine: { wasm: false }).",
-      );
+    // WASM SIMD path: Use optimized binary parser with direct separator detection
+    // Ensure WASM is initialized
+    if (!isWASMInitialized()) {
+      loadWASMSync();
     }
 
-    // WASM path - use WASMBinaryCSVStreamTransformer
-    // Create WASM transformer with options
-    const transformer = new WASMBinaryCSVStreamTransformer({
-      delimiter: options?.delimiter,
-      quotation: options?.quotation,
-      header: options?.header as readonly string[] | undefined,
-      maxFieldCount: options?.maxFieldCount,
-      outputFormat: options?.outputFormat,
+    // Get delimiter character code
+    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+
+    // Create and initialize WASM backend
+    const backend = new WASMIndexerBackend(delimiterCode);
+    backend.initializeWithModule({
+      scanCsvBytesStreaming,
+      scanCsvBytesZeroCopy,
+      isInitialized: isWASMInitialized,
+      loadWASMSync,
     });
 
+    // Create WASM-accelerated parser
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parserOptions: any = {
+      header: options?.header,
+      delimiter: options?.delimiter ?? ",",
+      quotation: options?.quotation ?? '"',
+      columnCountStrategy: options?.columnCountStrategy,
+      skipEmptyLines: options?.skipEmptyLines,
+      maxFieldCount: options?.maxFieldCount,
+      source: options?.source,
+    };
+    const parser = new WASMBinaryObjectCSVParser<Header>(parserOptions, backend);
+
+    // Create WASM-accelerated stream transformer
+    const parserStream = new BinaryCSVParserStream<Header, "object">(parser);
+
+    // Handle decompression if needed
     if (decompression) {
       return stream
         .pipeThrough(
-          new DecompressionStream(decompression) as unknown as TransformStream<
-            Uint8Array,
-            Uint8Array
-          >,
+          new DecompressionStream(
+            decompression,
+          ) as unknown as TransformStream<Uint8Array, Uint8Array>,
         )
-        .pipeThrough(transformer) as ReadableStream<
-        InferCSVRecord<Header, Options>
-      >;
+        .pipeThrough(
+          parserStream as unknown as TransformStream<
+            Uint8Array,
+            InferCSVRecord<Header, Options>
+          >,
+        );
     }
 
-    return stream.pipeThrough(transformer) as ReadableStream<
-      InferCSVRecord<Header, Options>
-    >;
+    return stream.pipeThrough(
+      parserStream as unknown as TransformStream<
+        Uint8Array,
+        InferCSVRecord<Header, Options>
+      >,
+    );
   }
 
   // JavaScript path
-  const { charset, fatal, ignoreBOM, decompression } = options ?? {};
-
   const decoderOptions: TextDecoderOptions = {};
   if (fatal !== undefined) decoderOptions.fatal = fatal;
   if (ignoreBOM !== undefined) decoderOptions.ignoreBOM = ignoreBOM;

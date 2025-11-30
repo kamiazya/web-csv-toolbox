@@ -100,48 +100,6 @@ describe("createStringCSVParser", () => {
       const results = [...parser.parse("'Alice',30\n")];
       expect(results).toEqual([{ name: "Alice", age: "30" }]);
     });
-
-    test("should throw for multi-character delimiter in WASM mode", () => {
-      expect(() =>
-        createStringCSVParser({
-          header: ["name", "age"] as const,
-          delimiter: "::",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-character quotation in WASM mode", () => {
-      expect(() =>
-        createStringCSVParser({
-          header: ["name", "age"] as const,
-          quotation: "''",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-byte UTF-8 delimiter in WASM mode", () => {
-      // Japanese comma "、" is 1 character in JS but 3 bytes in UTF-8
-      expect(() =>
-        createStringCSVParser({
-          header: ["name", "age"] as const,
-          delimiter: "、",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-byte UTF-8 quotation in WASM mode", () => {
-      // Japanese bracket "「" is 1 character in JS but 3 bytes in UTF-8
-      expect(() =>
-        createStringCSVParser({
-          header: ["name", "age"] as const,
-          quotation: "「",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
   });
 
   describe("Validation", () => {

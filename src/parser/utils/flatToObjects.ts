@@ -55,10 +55,17 @@ export interface FlatDataInput {
  *
  * **Security:**
  *
- * Uses `Object.fromEntries()` for safe object construction, which is inherently
- * immune to prototype pollution attacks. Unlike direct property assignment
- * (e.g., `obj[key] = value`), `Object.fromEntries()` treats all keys as data
- * properties, including `__proto__`, `constructor`, and `prototype`.
+ * Uses `Object.create(null)` for safe object construction, which creates
+ * objects without a prototype chain. This is immune to prototype pollution
+ * attacks because keys like `__proto__`, `constructor`, and `prototype`
+ * become regular data properties, not prototype accessors.
+ *
+ * **Performance Optimizations:**
+ *
+ * 1. Pre-allocates result array to avoid dynamic resizing
+ * 2. Pre-computes row offset to avoid repeated multiplication
+ * 3. Uses direct property assignment instead of Object.fromEntries()
+ * 4. Fast path for non-sparse records (skips actualFieldCounts checks)
  *
  * @template Header - Array of header field names
  * @param data - Flat parse data from WASM or internal processing
@@ -90,28 +97,47 @@ export function flatToObjects<
     return [];
   }
 
-  const records: CSVObjectRecord<Header>[] = [];
+  // Pre-allocate result array for better memory efficiency
+  const records: CSVObjectRecord<Header>[] = new Array(recordCount);
 
-  for (let r = 0; r < recordCount; r++) {
-    // Get actual field count for this record.
-    // Fields beyond actualCount are undefined (sparse record handling).
-    // If actualFieldCounts is not provided, assume all fields are present.
-    const actualCount = actualFieldCounts?.[r] ?? fieldCount;
+  // Determine if we have sparse records (records with fewer fields than header)
+  // Fast path: if no actualFieldCounts or all counts equal fieldCount, skip per-field checks
+  const hasSparseRecords =
+    actualFieldCounts != null &&
+    actualFieldCounts.some((count) => count !== fieldCount);
 
-    // Build entries array for Object.fromEntries
-    // This is inherently safe from prototype pollution
-    const entries: [string, string | undefined][] = [];
-    for (let f = 0; f < fieldCount; f++) {
-      const headerKey = headers[f];
-      if (headerKey !== undefined) {
-        // Determine field value: present fields get their value, missing fields are undefined
-        const value =
-          f < actualCount ? fieldData[r * fieldCount + f] : undefined;
-        entries.push([headerKey, value]);
+  if (!hasSparseRecords) {
+    // Fast path: all records have complete fields
+    for (let r = 0; r < recordCount; r++) {
+      const rowOffset = r * fieldCount;
+      // Object.create(null) creates prototype-less object (safe from prototype pollution)
+      const record: Record<string, string> = Object.create(null);
+      for (let f = 0; f < fieldCount; f++) {
+        const headerKey = headers[f];
+        if (headerKey !== undefined) {
+          // Type assertion: we're iterating within valid bounds (f < fieldCount)
+          record[headerKey] = fieldData[rowOffset + f] as string;
+        }
       }
+      records[r] = record as CSVObjectRecord<Header>;
     }
-
-    records.push(Object.fromEntries(entries) as CSVObjectRecord<Header>);
+  } else {
+    // Slow path: handle sparse records with per-field actualCount checks
+    for (let r = 0; r < recordCount; r++) {
+      const rowOffset = r * fieldCount;
+      // actualFieldCounts is guaranteed non-null in this branch, fallback is defensive
+      const actualCount = actualFieldCounts[r] ?? fieldCount;
+      // Object.create(null) creates prototype-less object (safe from prototype pollution)
+      const record: Record<string, string | undefined> = Object.create(null);
+      for (let f = 0; f < fieldCount; f++) {
+        const headerKey = headers[f];
+        if (headerKey !== undefined) {
+          // Fields beyond actualCount are undefined (sparse record)
+          record[headerKey] = f < actualCount ? fieldData[rowOffset + f] : undefined;
+        }
+      }
+      records[r] = record as CSVObjectRecord<Header>;
+    }
   }
 
   return records;

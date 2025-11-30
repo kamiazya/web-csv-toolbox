@@ -4,11 +4,17 @@ import type {
   StringArrayCSVParser,
   StringObjectCSVParser,
 } from "@/core/types.ts";
+import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
 import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
-import { WASMStringCSVArrayParser } from "@/parser/models/WASMStringCSVArrayParser.ts";
+import { WASMStringArrayCSVParser } from "@/parser/models/WASMStringArrayCSVParser.ts";
 import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
-import { validateWASMOptions } from "@/parser/utils/wasmValidation.ts";
+import {
+  isInitialized as isWASMInitialized,
+  loadWASMSync,
+  scanCsvBytesStreaming,
+  scanCsvBytesZeroCopy,
+} from "@/wasm/WasmInstance.main.web.ts";
 
 /**
  * Factory function to create the appropriate String CSV parser based on options.
@@ -16,21 +22,14 @@ import { validateWASMOptions } from "@/parser/utils/wasmValidation.ts";
  * @template Header - The type of the header row
  * @template Options - CSVProcessingOptions type (inferred from arguments)
  * @param options - CSV processing specification including optional engine configuration
- * @returns A parser instance configured for the specified output format and engine
+ * @returns A parser instance configured for the specified output format
  *
  * @remarks
- * This factory function supports both JavaScript and WASM implementations.
- * Use `engine: { wasm: true }` to use the WASM implementation for better performance.
- *
- * **WASM Constraints:**
- * - Delimiter must be a single character
- * - Quotation must be a single character
- *
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → StringObjectCSVParser
  * - `outputFormat: 'array'` → StringArrayCSVParser
  *
- * @example JavaScript implementation (default)
+ * @example Default usage
  * ```ts
  * const parser = createStringCSVParser({
  *   header: ['name', 'age'] as const,
@@ -40,26 +39,11 @@ import { validateWASMOptions } from "@/parser/utils/wasmValidation.ts";
  * }
  * ```
  *
- * @example WASM implementation
- * ```ts
- * import { loadWASM, createStringCSVParser } from 'web-csv-toolbox';
- *
- * await loadWASM();
- * const parser = createStringCSVParser({
- *   header: ['name', 'age'] as const,
- *   engine: { wasm: true }
- * });
- * for (const record of parser.parse('Alice,30\nBob,25')) {
- *   console.log(record); // { name: 'Alice', age: '30' }
- * }
- * ```
- *
- * @example Array format with WASM
+ * @example Array format
  * ```ts
  * const parser = createStringCSVParser({
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array',
- *   engine: { wasm: true }
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
  *   console.log(record); // ['Alice', '30']
@@ -117,29 +101,41 @@ export function createStringCSVParser<
   }
 
   // Check if WASM engine is requested
-  if (options?.engine?.wasm) {
-    // Validate WASM constraints (single-char delimiter/quotation)
-    validateWASMOptions(options);
+  const useWASM = options?.engine?.wasm === true;
 
-    // Instantiate WASM parser based on outputFormat
+  if (useWASM) {
+    // WASM implementation
+    // Ensure WASM is initialized
+    if (!isWASMInitialized()) {
+      loadWASMSync();
+    }
+
+    // Get delimiter character code
+    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+
+    // Create and initialize WASM backend
+    const backend = new WASMIndexerBackend(delimiterCode);
+    backend.initializeWithModule({
+      scanCsvBytesStreaming,
+      scanCsvBytesZeroCopy,
+      isInitialized: isWASMInitialized,
+      loadWASMSync,
+    });
+
     if (format === "array") {
-      return new WASMStringCSVArrayParser<Header>({
-        delimiter: options?.delimiter ?? ",",
-        quotation: options?.quotation ?? '"',
-        maxFieldCount: options?.maxFieldCount,
-        header: options?.header,
-      }) as StringArrayCSVParser<Header>;
+      return new WASMStringArrayCSVParser<Header>(
+        options ?? {},
+        backend,
+      ) as any;
     } else {
-      return new WASMStringObjectCSVParser<Header>({
-        delimiter: options?.delimiter ?? ",",
-        quotation: options?.quotation ?? '"',
-        maxFieldCount: options?.maxFieldCount,
-        header: options?.header,
-      }) as StringObjectCSVParser<Header>;
+      return new WASMStringObjectCSVParser<Header>(
+        options ?? {},
+        backend,
+      ) as any;
     }
   }
 
-  // Default: JavaScript implementation
+  // JavaScript implementation
   if (format === "array") {
     return new FlexibleStringArrayCSVParser<Header>(options ?? {}) as any;
   } else {

@@ -15,12 +15,12 @@ wasm-bindgen = "0.2.105"
 web-sys = { version = "0.3.82", features = ["console"] }
 js-sys = "0.3"
 csv-core = { version = "0.1", default-features = false }
-
-[dev-dependencies]
-# For benchmarking and comparison tests only (not included in WASM binary)
+# For JSON output path (batch operations)
 csv = "1.4"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0"
+
+[dev-dependencies]
 criterion = "0.5"
 wasm-bindgen-test = "0.3"
 proptest = "1.5"
@@ -31,3 +31,8 @@ harness = false
 
 [profile.bench]
 debug = true
+
+[profile.release]
+opt-level = 3
+lto = true
+# SIMD is enabled via RUSTFLAGS="-C target-feature=+simd128" at build time

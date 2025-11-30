@@ -268,6 +268,34 @@ export interface CommonOptions<
    * @default 10 * 1024 * 1024 (approximately 10MB for ASCII, but may vary for non-ASCII)
    */
   maxBufferSize?: number;
+  /**
+   * Maximum allowed field size in bytes.
+   *
+   * @remarks
+   * This option limits the maximum size of a single CSV field to prevent
+   * memory exhaustion attacks from malformed or malicious CSV data.
+   * When a field exceeds this limit, a `RangeError` will be thrown.
+   *
+   * **Important**: This value cannot exceed 1GB (2^30 - 1 bytes) due to internal
+   * offset representation limits. Any value greater than 1GB will be rejected
+   * with a `RangeError`, including `Number.POSITIVE_INFINITY`.
+   *
+   * The default of 10MB covers 99.9% of legitimate use cases while providing
+   * meaningful DoS protection. You can increase this up to 1GB if needed,
+   * or decrease it for stricter security (e.g., 1MB for typical CSV data).
+   *
+   * @throws {RangeError} If set to a value greater than 1GB or negative.
+   *
+   * @default 10MB (10,485,760 bytes)
+   *
+   * @example Limit field size for untrusted input
+   * ```ts
+   * parseString(csv, {
+   *   maxFieldSize: 1 * 1024 * 1024 // 1MB limit
+   * });
+   * ```
+   */
+  maxFieldSize?: number;
 }
 
 /**

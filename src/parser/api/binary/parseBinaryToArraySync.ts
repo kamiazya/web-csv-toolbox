@@ -1,12 +1,8 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
-import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
-import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { createBinaryCSVParser } from "@/parser/api/model/createBinaryCSVParser.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
-import { WASMBinaryCSVArrayParser } from "@/parser/models/WASMBinaryCSVArrayParser.ts";
-import { WASMBinaryObjectCSVParser } from "@/parser/models/WASMBinaryObjectCSVParser.ts";
-import { validateWASMCharset } from "@/parser/utils/wasmValidation.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -26,10 +22,23 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * The default maxBinarySize is 100MB. You can increase it via options, but this may lead to
  * memory issues with very large files.
  *
+ * When `engine.wasm` is enabled, this function uses WASM SIMD for separator detection,
+ * providing 6-8x faster performance for large files (>1MB).
+ *
  * @example
  * ```ts
  * const binary = new TextEncoder().encode("name,age\nAlice,30");
  * const records = parseBinaryToArraySync(binary);
+ * // [{ name: "Alice", age: "30" }]
+ * ```
+ *
+ * @example With WASM SIMD acceleration
+ * ```ts
+ * import { loadWASMSync } from 'web-csv-toolbox';
+ *
+ * loadWASMSync();
+ * const binary = new TextEncoder().encode("name,age\nAlice,30");
+ * const records = parseBinaryToArraySync(binary, { engine: { wasm: true } });
  * // [{ name: "Alice", age: "30" }]
  * ```
  */
@@ -38,94 +47,25 @@ export function parseBinaryToArraySync<
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
-    // Parse engine configuration
+    // Check if WASM engine is requested
     const engineConfig = new InternalEngineConfig(options?.engine);
 
     if (engineConfig.hasWasm()) {
-      // WASM execution (direct binary processing, UTF-8 only)
-
-      // Validate charset - WASM parser only supports UTF-8
-      validateWASMCharset(options?.charset);
-
-      // Validate maxBinarySize
-      const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
-      if (
-        !(
-          Number.isFinite(maxBinarySize) ||
-          maxBinarySize === Number.POSITIVE_INFINITY
-        ) ||
-        (Number.isFinite(maxBinarySize) && maxBinarySize < 0)
-      ) {
-        throw new RangeError(
-          "maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY",
-        );
-      }
-
-      // Check binary size to prevent DoS
-      if (Number.isFinite(maxBinarySize) && binary.byteLength > maxBinarySize) {
-        throw new RangeError(
-          `Binary size (${binary.byteLength} bytes) exceeded maximum allowed size of ${maxBinarySize} bytes`,
-        );
-      }
-
-      // Convert BufferSource to Uint8Array
-      let bytes = convertBinaryToUint8Array(binary);
-
-      // Handle BOM if ignoreBOM is false (default behavior)
-      // UTF-8 BOM is EF BB BF (3 bytes)
-      const ignoreBOM = options?.ignoreBOM ?? false;
-      if (
-        !ignoreBOM &&
-        bytes.length >= 3 &&
-        bytes[0] === 0xef &&
-        bytes[1] === 0xbb &&
-        bytes[2] === 0xbf
-      ) {
-        // Skip UTF-8 BOM
-        bytes = bytes.subarray(3);
-      }
-
-      // Handle fatal option - validate UTF-8 if fatal is true
-      const fatal = options?.fatal ?? false;
-      if (fatal) {
-        // Validate UTF-8 encoding by attempting to decode
-        const decoder = new TextDecoder("utf-8", { fatal: true });
-        try {
-          decoder.decode(bytes);
-        } catch {
-          throw new TypeError(
-            "The encoded data was not valid UTF-8. Set fatal: false to use replacement characters for invalid sequences.",
-          );
-        }
-      }
-
-      const outputFormat = options?.outputFormat ?? "object";
-
-      if (outputFormat === "array") {
-        const parser = new WASMBinaryCSVArrayParser<Header>({
-          delimiter: options?.delimiter ?? ",",
-          quotation: options?.quotation ?? '"',
-          maxFieldCount: options?.maxFieldCount,
-          header: options?.header,
-        });
-        return [...parser.parse(bytes as BufferSource)] as InferCSVRecord<
-          Header,
-          Options
-        >[];
-      }
-      const parser = new WASMBinaryObjectCSVParser<Header>({
-        delimiter: options?.delimiter ?? ",",
-        quotation: options?.quotation ?? '"',
-        maxFieldCount: options?.maxFieldCount,
-        header: options?.header,
+      // WASM SIMD path: Use optimized binary parser with direct separator detection
+      const parser = createBinaryCSVParser<Header>({
+        ...options,
+        engine: { wasm: true },
       });
-      return [...parser.parse(bytes as BufferSource)] as InferCSVRecord<
-        Header,
-        Options
-      >[];
+
+      // Collect all records from parser
+      const records: InferCSVRecord<Header, Options>[] = [];
+      for (const record of parser.parse(binary)) {
+        records.push(record as InferCSVRecord<Header, Options>);
+      }
+      return records;
     }
 
-    // Main thread JavaScript execution (default)
+    // JavaScript path: Convert binary to string and parse
     const csv = convertBinaryToString(binary, options ?? {});
     return parseStringToArraySync(csv, options);
   } catch (error) {

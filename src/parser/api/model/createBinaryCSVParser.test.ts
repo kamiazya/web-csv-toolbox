@@ -102,68 +102,6 @@ describe("createBinaryCSVParser", () => {
       const results = [...parser.parse(encoder.encode("'Alice',30\n"))];
       expect(results).toEqual([{ name: "Alice", age: "30" }]);
     });
-
-    test("should allow UTF-8 charset with WASM parser", () => {
-      const parser = createBinaryCSVParser({
-        header: ["name", "age"] as const,
-        charset: "utf-8",
-        engine: { wasm: true },
-      });
-      const results = [...parser.parse(encoder.encode("Alice,30\n"))];
-      expect(results).toEqual([{ name: "Alice", age: "30" }]);
-    });
-
-    test("should throw for non-UTF-8 charset in WASM mode", () => {
-      expect(() =>
-        createBinaryCSVParser({
-          header: ["name", "age"] as const,
-          charset: "shift_jis",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/UTF-8/i);
-    });
-
-    test("should throw for multi-character delimiter in WASM mode", () => {
-      expect(() =>
-        createBinaryCSVParser({
-          header: ["name", "age"] as const,
-          delimiter: "::",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-character quotation in WASM mode", () => {
-      expect(() =>
-        createBinaryCSVParser({
-          header: ["name", "age"] as const,
-          quotation: "''",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-byte UTF-8 delimiter in WASM mode", () => {
-      // Japanese comma "、" is 1 character in JS but 3 bytes in UTF-8
-      expect(() =>
-        createBinaryCSVParser({
-          header: ["name", "age"] as const,
-          delimiter: "、",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
-
-    test("should throw for multi-byte UTF-8 quotation in WASM mode", () => {
-      // Japanese bracket "「" is 1 character in JS but 3 bytes in UTF-8
-      expect(() =>
-        createBinaryCSVParser({
-          header: ["name", "age"] as const,
-          quotation: "「",
-          engine: { wasm: true },
-        } as any),
-      ).toThrow(/single-byte ASCII/i);
-    });
   });
 
   describe("Validation", () => {

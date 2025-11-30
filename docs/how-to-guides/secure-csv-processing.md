@@ -164,6 +164,7 @@ const SECURITY_CONFIG = {
   parseTimeout: 30000,                    // 30 seconds
   maxBufferSize: 5 * 1024 * 1024,        // 5M characters
   maxFieldCount: 10000,                   // 10k fields/record
+  maxFieldSize: 1024 * 1024,              // 1MB per field (stricter than default 10MB)
   maxRecordCount: 100000,                 // 100k records max
   maxErrorCount: 1000,                    // Stop after 1000 validation errors
 };
@@ -247,6 +248,7 @@ app.post('/validate-csv', async (c) => {
           engine: EnginePresets.balanced({ workerPool: pool }),
           maxBufferSize: SECURITY_CONFIG.maxBufferSize,
           maxFieldCount: SECURITY_CONFIG.maxFieldCount,
+          maxFieldSize: SECURITY_CONFIG.maxFieldSize,
         })) {
           recordCount++;
 
@@ -537,7 +539,7 @@ Before deploying to production, verify:
 - [ ] Content-Length header check (early rejection only)
 - [ ] **Actual byte counting with TransformStream** (prevents Content-Length bypass)
 - [ ] Timeout protection with AbortSignal
-- [ ] maxBufferSize and maxFieldCount configured
+- [ ] maxBufferSize, maxFieldCount, and maxFieldSize configured
 - [ ] **maxRecordCount limit** (prevents unlimited record processing)
 - [ ] **maxErrorCount limit** (prevents unlimited error streaming)
 - [ ] Schema validation with Zod (or similar)

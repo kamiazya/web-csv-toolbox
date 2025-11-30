@@ -4,8 +4,10 @@ import type {
   ParseOptions,
   PickCSVHeader,
 } from "@/core/types.ts";
+import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
+import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 export function parseStringToIterableIterator<
@@ -49,6 +51,23 @@ export function parseStringToIterableIterator<
   options?: Options,
 ): IterableIterator<InferCSVRecord<Header, Options>> {
   try {
+    // Check if WASM engine is requested
+    const engineConfig = new InternalEngineConfig(options?.engine);
+
+    if (engineConfig.hasWasm()) {
+      // WASM SIMD path: Use optimized string parser with direct separator detection
+      const parser = createStringCSVParser<Header>({
+        ...options,
+        engine: { wasm: true },
+      });
+
+      // Return generator that yields from parser
+      return parser.parse(csv) as IterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
+    }
+
+    // JavaScript execution
     const lexer = createStringCSVLexer(options);
     const assembler = createCSVRecordAssembler(options);
     const tokens = lexer.lex(csv);

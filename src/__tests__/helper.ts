@@ -1,5 +1,5 @@
 import fc from "fast-check";
-import { CRLF, DEFAULT_LEXER_MAX_BUFFER_SIZE, LF } from "@/core/constants.ts";
+import { CRLF, DEFAULT_LEXER_MAX_BUFFER_SIZE, DEFAULT_MAX_FIELD_SIZE, LF } from "@/core/constants.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 export async function transform<I, O>(
@@ -224,10 +224,11 @@ export namespace FC {
         delimiter: FC.delimiter(delimiter),
         quotation: FC.quotation(quotation),
         maxBufferSize: fc.constant(DEFAULT_LEXER_MAX_BUFFER_SIZE),
+        maxFieldSize: fc.constant(DEFAULT_MAX_FIELD_SIZE),
       })
-      .filter(({ delimiter, quotation, maxBufferSize }) => {
+      .filter(({ delimiter, quotation, maxBufferSize, maxFieldSize }) => {
         try {
-          assertCommonOptions({ delimiter, quotation, maxBufferSize });
+          assertCommonOptions({ delimiter, quotation, maxBufferSize, maxFieldSize });
           return true;
         } catch {
           return false;

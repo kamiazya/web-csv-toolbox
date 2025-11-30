@@ -258,18 +258,18 @@ for await (const record of parseBinary(buffer, {
 
 ## Step 5.6: Stream Processing with WASM
 
-For large files, use `WASMBinaryCSVStreamTransformer` for memory-efficient streaming:
+For large files, use `BinaryCSVParserStream` with `{ engine: { wasm: true } }` for memory-efficient streaming:
 
 ```typescript
-import { WASMBinaryCSVStreamTransformer, loadWASM } from 'web-csv-toolbox';
+import { BinaryCSVParserStream, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
-const transformer = new WASMBinaryCSVStreamTransformer();
+const stream = new BinaryCSVParserStream({ engine: { wasm: true } });
 
 await fetch('large-file.csv')
   .then(res => res.body)
-  .pipeThrough(transformer)
+  .pipeThrough(stream)
   .pipeTo(new WritableStream({
     write(record) {
       console.log(record);

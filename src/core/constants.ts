@@ -72,6 +72,44 @@ export const DEFAULT_ASSEMBLER_MAX_FIELD_COUNT = 100_000;
 export const DEFAULT_BINARY_MAX_SIZE = 100 * 1024 * 1024;
 
 /**
+ * Maximum allowed field size limit in bytes.
+ *
+ * @remarks
+ * This constant defines the absolute maximum field size that can be processed.
+ * This limit is determined by the internal 30-bit offset representation used
+ * in the Extended Scan format (bits 0-29 for offset, bit 30 for isQuoted, bit 31 for type).
+ *
+ * The value is 2^30 - 1 = 1,073,741,823 bytes ≈ 1GB.
+ *
+ * This limit cannot be exceeded even if the user requests a larger value via maxFieldSize.
+ *
+ * @category Constants
+ */
+export const MAX_FIELD_SIZE_LIMIT = 0x3fffffff; // 2^30 - 1 = 1,073,741,823 bytes ≈ 1GB
+
+/**
+ * Default maximum field size in bytes.
+ *
+ * @remarks
+ * This constant defines the default maximum size for a single CSV field
+ * to prevent memory exhaustion attacks from malformed or malicious CSV data.
+ *
+ * The default is set to 10MB, which covers 99.9% of legitimate use cases
+ * while providing meaningful DoS protection. This value is also well under
+ * the V8 string length limit (~512MB), ensuring consistent behavior across
+ * all JavaScript runtimes.
+ *
+ * Users can increase this value up to MAX_FIELD_SIZE_LIMIT (1GB) if needed,
+ * or decrease it for stricter security (e.g., 1MB for typical CSV data).
+ *
+ * @see {@link MAX_FIELD_SIZE_LIMIT} for the maximum allowed value
+ * @see {@link https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String/length | MDN String.length} for runtime-specific string limits
+ *
+ * @category Constants
+ */
+export const DEFAULT_MAX_FIELD_SIZE = 10 * 1024 * 1024; // 10MB
+
+/**
  * Default backpressure check interval for stream transformers.
  *
  * @remarks
