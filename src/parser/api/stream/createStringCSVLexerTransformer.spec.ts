@@ -114,7 +114,10 @@ describe("createStringCSVLexerTransformer", () => {
             row.map((value, j) => {
               const isLastField = j === row.length - 1;
               const isLastRow = i === data.length - 1;
-              let delimiter: typeof Delimiter.Field | typeof Delimiter.Record | typeof Delimiter.EOF;
+              let delimiter:
+                | typeof Delimiter.Field
+                | typeof Delimiter.Record
+                | typeof Delimiter.EOF;
               let delimiterLength: number;
 
               if (isLastField) {
