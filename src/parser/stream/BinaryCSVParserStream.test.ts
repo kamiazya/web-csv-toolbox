@@ -74,7 +74,7 @@ describe("BinaryCSVParserStream", () => {
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Incomplete record leaves missing field undefined
+        { name: "Bob", age: "" }, // Incomplete record leaves missing field as empty string
       ]);
     });
 
@@ -92,7 +92,7 @@ describe("BinaryCSVParserStream", () => {
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Missing field remains undefined
+        { name: "Bob", age: "" }, // Missing field returns empty string
       ]);
     });
   });

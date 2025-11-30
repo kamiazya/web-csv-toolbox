@@ -142,7 +142,7 @@ describe("Integration with FlexibleBinaryObjectCSVParser", () => {
 
     expect(results).toEqual([
       { name: "Alice", age: "30" },
-      { name: "Bob", age: undefined }, // Missing field remains undefined
+      { name: "Bob", age: "" }, // Missing field returns empty string
     ]);
   });
 });
