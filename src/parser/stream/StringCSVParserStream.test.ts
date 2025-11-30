@@ -1,8 +1,8 @@
 import {
   beforeEach,
-  describe as describe_,
+  describe,
   expect,
-  it as it_,
+  it,
   test,
   vi,
 } from "vitest";
@@ -10,9 +10,6 @@ import { transform } from "@/__tests__/helper.ts";
 import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
-
-const describe = describe_;
-const it = it_;
 
 describe("StringCSVParserStream", () => {
   beforeEach(() => {
