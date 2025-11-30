@@ -3,7 +3,7 @@ import { withCodSpeed } from "@codspeed/tinybench-plugin";
 import { Bench } from 'tinybench';
 import {
   FlexibleStringCSVLexer,
-  CSVLexerTransformer,
+  StringCSVLexerTransformer,
   createCSVRecordAssembler,
   CSVRecordAssemblerTransformer,
   EnginePresets,
@@ -547,7 +547,7 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
+      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
       .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {
@@ -564,7 +564,7 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
+      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
       .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {
@@ -581,7 +581,7 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new CSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
+      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
       .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
       .pipeTo(new WritableStream({
         write() {

@@ -589,25 +589,28 @@ Web Streams API integration for all processing tiers.
   - Handles UTF-8 multi-byte characters across chunk boundaries.
   - Integration-ready for fetch API and file streaming.
   - Backpressure management with configurable check intervals.
-- **`class CSVLexerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)
-  - A TransformStream wrapper around the lexer with customizable queuing strategies.
-- **`class CSVRecordAssemblerTransformer`**: [📑](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)
-  - Converts token streams into records with cooperative backpressure support.
+- **`createStringCSVLexerTransformer()`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/createStringCSVLexerTransformer.html)
+  - Factory function to create a StringCSVLexerTransformer with customizable queuing strategies.
+- **`createCSVRecordAssemblerTransformer()`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/createCSVRecordAssemblerTransformer.html)
+  - Factory function to create a CSVRecordAssemblerTransformer with cooperative backpressure support.
+
+These factory functions are the recommended way to create transformer instances. They encapsulate internal lexer/assembler initialization and provide sensible defaults, insulating your code from internal implementation changes. Direct class instantiation (`new StringCSVLexerTransformer(customLexer)`) is only needed when injecting a custom lexer implementation—see [Custom Lexer/Assembler](./docs/how-to-guides/custom-csv-parser.md#low-level-custom-lexerassembler) for advanced use cases.
 
 #### Customizing Queuing Strategies
 
-Both `CSVLexerTransformer` and `CSVRecordAssemblerTransformer` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as constructor arguments with **data-type-aware size counting** and **configurable backpressure handling**.
+Both `createStringCSVLexerTransformer()` and `createCSVRecordAssemblerTransformer()` support custom queuing strategies following the Web Streams API pattern. Strategies are passed as function arguments with **data-type-aware size counting** and **configurable backpressure handling**.
 
-**Constructor signature:**
+**Function signature:**
 ```typescript
-new CSVLexerTransformer(options?, writableStrategy?, readableStrategy?)
-new CSVRecordAssemblerTransformer(options?, writableStrategy?, readableStrategy?)
+createStringCSVLexerTransformer(options?, streamOptions?, writableStrategy?, readableStrategy?)
+createCSVRecordAssemblerTransformer(options?, streamOptions?, writableStrategy?, readableStrategy?)
 ```
 
 **Default queuing strategies (starting points, not benchmarked):**
 ```typescript
-// CSVLexerTransformer defaults
-new CSVLexerTransformer(
+// StringCSVLexerTransformer defaults
+createStringCSVLexerTransformer(
+  { delimiter: ',' },                  // CSV options
   { backpressureCheckInterval: 100 },  // Check every 100 tokens
   {
     highWaterMark: 65536,              // 64KB of characters
@@ -617,8 +620,9 @@ new CSVLexerTransformer(
 )
 
 // CSVRecordAssemblerTransformer defaults
-new CSVRecordAssemblerTransformer(
-  { backpressureCheckInterval: 10 },  // Check every 10 records
+createCSVRecordAssemblerTransformer(
+  { header: ['name', 'age'] },         // Assembler options
+  { backpressureCheckInterval: 10 },   // Check every 10 records
   new CountQueuingStrategy({ highWaterMark: 1024 }),  // 1024 tokens
   new CountQueuingStrategy({ highWaterMark: 256 })    // 256 records
 )
@@ -653,12 +657,16 @@ new CSVRecordAssemblerTransformer(
 
 **Example - High-throughput server:**
 ```typescript
-import { CSVLexerTransformer, CSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
 
 const response = await fetch('large-dataset.csv');
 await response.body
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new CSVLexerTransformer(
+  .pipeThrough(createStringCSVLexerTransformer(
+    { delimiter: ',' },
     { backpressureCheckInterval: 200 },  // Less frequent checks
     {
       highWaterMark: 131072,             // 128KB
@@ -666,8 +674,9 @@ await response.body
     },
     new CountQueuingStrategy({ highWaterMark: 2048 })  // 2048 tokens
   ))
-  .pipeThrough(new CSVRecordAssemblerTransformer(
-    { backpressureCheckInterval: 20 },  // Less frequent checks
+  .pipeThrough(createCSVRecordAssemblerTransformer(
+    {},                                  // Use default assembler options
+    { backpressureCheckInterval: 20 },   // Less frequent checks
     new CountQueuingStrategy({ highWaterMark: 2048 }),  // 2048 tokens
     new CountQueuingStrategy({ highWaterMark: 512 })    // 512 records
   ))
@@ -676,10 +685,16 @@ await response.body
 
 **Example - Slow consumer (API writes):**
 ```typescript
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
 await csvStream
-  .pipeThrough(new CSVLexerTransformer())  // Use defaults
-  .pipeThrough(new CSVRecordAssemblerTransformer(
-    { backpressureCheckInterval: 2 },  // Very responsive
+  .pipeThrough(createStringCSVLexerTransformer())  // Use defaults
+  .pipeThrough(createCSVRecordAssemblerTransformer(
+    {},                                  // Use default assembler options
+    { backpressureCheckInterval: 2 },    // Very responsive
     new CountQueuingStrategy({ highWaterMark: 512 }),
     new CountQueuingStrategy({ highWaterMark: 64 })
   ))

@@ -4,8 +4,8 @@ import {
   DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL,
 } from "@/core/constants.ts";
 import type {
-  CSVLexerTransformerStreamOptions,
   StringCSVLexer,
+  StringCSVLexerTransformerStreamOptions,
   Token,
 } from "@/core/types.ts";
 
@@ -30,73 +30,38 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
 /**
  * A transform stream that converts a stream of strings into a stream of tokens.
  *
+ * For most use cases, prefer the factory function {@link createStringCSVLexerTransformer}.
+ * Use this class directly only when you need a custom lexer implementation.
+ *
  * @category Low-level API
  *
- * @param options - CSV-specific options (delimiter, quotation, checkInterval, etc.)
+ * @param lexer - A StringCSVLexer instance (required). Use {@link createStringCSVLexer} to create one.
+ * @param options - Stream-specific options (backpressureCheckInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `{ highWaterMark: 65536, size: chunk => chunk.length }`)
  * @param readableStrategy - Strategy for the readable side (default: `{ highWaterMark: 1024, size: () => 1 }`)
  *
- * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to the standard `TransformStream`.
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/docs/how-to-guides/choosing-the-right-api.md | Choosing the Right API} for guidance on selecting the appropriate API level.
  *
- * **Default Queuing Strategy:**
- * - Writable side: Counts by string length (characters). Default highWaterMark is 65536 characters (≈64KB).
- * - Readable side: Counts each token as 1. Default highWaterMark is 1024 tokens.
- *
- * **Backpressure Handling:**
- * The transformer monitors `controller.desiredSize` and yields to the event loop when backpressure
- * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
- * and allows the downstream consumer to catch up.
- *
- * These defaults are starting points based on data flow characteristics, not empirical benchmarks.
- * Optimal values depend on your runtime environment, data size, and performance requirements.
- *
- * @example Basic usage
+ * @example Custom lexer implementation
  * ```ts
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue("name,age\r\n");
- *     controller.enqueue("Alice,20\r\n");
- *     controller.close();
+ * import { StringCSVLexerTransformer, type StringCSVLexer, type Token } from 'web-csv-toolbox';
+ *
+ * // Custom lexer for non-standard CSV dialect
+ * class MyCustomLexer implements StringCSVLexer {
+ *   lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+ *     // Return an iterator (can use internal generator)
+ *     return this.#tokens();
  *   }
- * })
- *   .pipeThrough(new CSVLexerTransformer())
- *   .pipeTo(new WritableStream({ write(token) {
- *     console.log(token);
- *   }}));
- * // { type: Field, value: "name", location: {...} }
- * // { type: FieldDelimiter, value: ",", location: {...} }
- * // { type: Field, value: "age", location: {...} }
- * // { type: RecordDelimiter, value: "\r\n", location: {...} }
- * // { type: Field, value: "Alice", location: {...} }
- * // { type: FieldDelimiter, value: ",", location: {...} }
- * // { type: Field, value: "20" }
- * // { type: RecordDelimiter, value: "\r\n", location: {...} }
- * ```
+ *   *#tokens(): Generator<Token> {
+ *     // Actual token generation logic
+ *   }
+ * }
  *
- * @example Custom queuing strategies with backpressure tuning
- * ```ts
- * const transformer = new CSVLexerTransformer(
- *   {
- *     delimiter: ',',
- *     backpressureCheckInterval: 50  // Check backpressure every 50 tokens
- *   },
- *   {
- *     highWaterMark: 131072,         // 128KB of characters
- *     size: (chunk) => chunk.length, // Count by character length
- *   },
- *   new CountQueuingStrategy({ highWaterMark: 2048 })  // 2048 tokens
- * );
- *
- * await fetch('large-file.csv')
- *   .then(res => res.body)
- *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(transformer)
- *   .pipeTo(yourProcessor);
+ * const customLexer = new MyCustomLexer();
+ * stream.pipeThrough(new StringCSVLexerTransformer(customLexer));
  * ```
  */
-export class CSVLexerTransformer<
+export class StringCSVLexerTransformer<
   _Delimiter extends string = DEFAULT_DELIMITER,
   _Quotation extends string = DEFAULT_QUOTATION,
 > extends TransformStream<string, Token> {
@@ -113,7 +78,7 @@ export class CSVLexerTransformer<
 
   constructor(
     lexer: StringCSVLexer,
-    options: CSVLexerTransformerStreamOptions = {},
+    options: StringCSVLexerTransformerStreamOptions = {},
     writableStrategy: QueuingStrategy<string> = DEFAULT_WRITABLE_STRATEGY,
     readableStrategy: QueuingStrategy<Token> = DEFAULT_READABLE_STRATEGY,
   ) {

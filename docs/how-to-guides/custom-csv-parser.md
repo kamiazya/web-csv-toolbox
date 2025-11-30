@@ -933,12 +933,238 @@ analyzeTokens('name,age\r\nAlice,30\r\n');
 
 ---
 
-## Streaming Parsers
+## Streaming with Custom Control
+
+When you need fine-grained control over stream processing, web-csv-toolbox provides a layered approach:
+
+1. **High-level** - Use `parse()` for learning and prototyping
+2. **Mid-level (Production)** - Use specialized APIs (`parseStringStream()`, `createStringCSVParserStream()`, `createStringCSVLexerTransformer()`, etc.)
+3. **Low-level** - Use Transformer classes directly with custom Lexer/Assembler implementations
+
+### High-level: parse() (Learning/Prototyping)
+
+For learning and quick prototyping, use the universal `parse()` function:
+
+```typescript
+import { parse } from 'web-csv-toolbox';
+
+// Automatic input detection
+for await (const record of parse(csvString)) {
+  console.log(record);
+}
+```
+
+### Mid-level: Specialized APIs (Production)
+
+For production use, choose the appropriate specialized API based on your needs:
+
+#### parseStringStream / parseBinaryStream
+
+For most streaming use cases:
+
+```typescript
+import { parseStringStream, parseBinaryStream } from 'web-csv-toolbox';
+
+// String stream
+const stream = await fetch('data.csv')
+  .then(res => res.body)
+  .then(body => body.pipeThrough(new TextDecoderStream()));
+
+for await (const record of parseStringStream(stream, { header: ['name', 'age'] as const })) {
+  console.log(record); // { name: 'Alice', age: '30' }
+}
+
+// Binary stream (handles encoding internally)
+const binaryStream = await fetch('data.csv').then(res => res.body);
+for await (const record of parseBinaryStream(binaryStream, { charset: 'shift-jis' })) {
+  console.log(record);
+}
+```
+
+#### createStringCSVParserStream / createBinaryCSVParserStream
+
+When you need fine control over stream pipelines:
+
+```typescript
+import {
+  createStringCSVParserStream,
+  createBinaryCSVParserStream
+} from 'web-csv-toolbox';
+
+// String stream → CSV records
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(createStringCSVParserStream({
+    header: ['name', 'age'] as const,
+    delimiter: '\t',  // TSV support
+  }))
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record); // { name: 'Alice', age: '30' }
+    }
+  }));
+
+// Binary stream → CSV records (handles encoding internally)
+await fetch('data.csv')
+  .then(res => res.body)
+  .pipeThrough(createBinaryCSVParserStream({
+    charset: 'shift-jis',
+    ignoreBOM: true
+  }))
+  .pipeTo(new WritableStream({
+    write(record) {
+      console.log(record);
+    }
+  }));
+```
+
+**Benefits:**
+- Single factory function handles the entire pipeline
+- Supports custom delimiters, quotation, headers, and output formats
+- Configurable backpressure and queuing strategies
+
+#### createStringCSVLexerTransformer + createCSVRecordAssemblerTransformer
+
+When you need to insert custom processing between lexing and assembly stages:
+
+```typescript
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// Custom validation transform between stages
+class TokenFilterTransform extends TransformStream {
+  constructor() {
+    super({
+      transform(token, controller) {
+        // Filter or modify tokens before assembly
+        if (token.type === 'Field' && token.value !== '') {
+          controller.enqueue(token);
+        } else if (token.type !== 'Field') {
+          controller.enqueue(token);
+        }
+      }
+    });
+  }
+}
+
+csvStream
+  .pipeThrough(createStringCSVLexerTransformer({ delimiter: '\t' }))
+  .pipeThrough(new TokenFilterTransform())  // Custom processing
+  .pipeThrough(createCSVRecordAssemblerTransformer({
+    header: ['name', 'age'] as const
+  }))
+  .pipeTo(yourProcessor);
+```
+
+**Use when:**
+- Need to inspect or modify tokens between stages
+- Building syntax highlighters or validators
+- Custom token transformation logic
+
+### Low-level: Custom Lexer/Assembler
+
+For specialized requirements, create custom Lexer or Assembler implementations and use them with TransformStream classes.
+
+The factory functions (`createStringCSVLexerTransformer`, `createCSVRecordAssemblerTransformer`) are the default design choice for most use cases—they handle internal lexer/assembler creation and insulate your code from implementation changes. Drop down to direct class instantiation (`new StringCSVLexerTransformer(customLexer)`) only when you need to inject a custom lexer or assembler implementation with non-standard behavior.
+
+**Note**: Low-level APIs are intended for niche requirements such as custom CSV dialects, syntax highlighting, or specialized validation. These APIs may have more frequent changes compared to Mid-level APIs. For most production use cases, prefer Mid-level APIs.
+
+```typescript
+import {
+  StringCSVLexerTransformer,
+  CSVRecordAssemblerTransformer,
+  type StringCSVLexer,
+  type CSVRecordAssembler
+} from 'web-csv-toolbox';
+
+// Custom lexer implementing StringCSVLexer interface
+class MyCustomLexer implements StringCSVLexer {
+  *lex(chunk?: string, options?: { stream?: boolean }): IterableIterator<Token> {
+    // Your custom lexing logic
+    // Handle special CSV dialects, custom escape sequences, etc.
+  }
+}
+
+// Custom assembler implementing CSVRecordAssembler interface
+class MyCustomAssembler implements CSVRecordAssembler {
+  *assemble(tokens: Iterable<Token>, options?: { stream?: boolean }): IterableIterator<Record> {
+    // Your custom assembly logic
+    // Handle special record formats, validation, etc.
+  }
+}
+
+// Use custom components with built-in TransformStream classes
+const customLexer = new MyCustomLexer();
+const customAssembler = new MyCustomAssembler();
+
+csvStream
+  .pipeThrough(new StringCSVLexerTransformer(customLexer))
+  .pipeThrough(new CSVRecordAssemblerTransformer(customAssembler))
+  .pipeTo(yourProcessor);
+```
+
+**Use when:**
+- Non-standard CSV dialects that built-in lexer doesn't support
+- Custom escape sequences or field formats
+- Special validation or transformation during lexing/assembly
+- Performance optimization for specific use cases
+
+### Backpressure and Queuing Strategies
+
+All factory functions support custom queuing strategies for fine-tuned backpressure control:
+
+```typescript
+import {
+  createStringCSVParserStream,
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
+
+// Parser stream with custom strategies
+const parserStream = createStringCSVParserStream(
+  { delimiter: ',' },
+  { backpressureCheckInterval: 50 },
+  { highWaterMark: 131072, size: (chunk) => chunk.length },  // writable
+  new CountQueuingStrategy({ highWaterMark: 512 })           // readable
+);
+
+// Or configure each transformer separately
+const lexerTransformer = createStringCSVLexerTransformer(
+  { delimiter: ',' },
+  { backpressureCheckInterval: 50 },
+  { highWaterMark: 131072, size: (chunk) => chunk.length },
+  new CountQueuingStrategy({ highWaterMark: 2048 })
+);
+
+const assemblerTransformer = createCSVRecordAssemblerTransformer(
+  {},
+  { backpressureCheckInterval: 20 },
+  new CountQueuingStrategy({ highWaterMark: 2048 }),
+  new CountQueuingStrategy({ highWaterMark: 512 })
+);
+
+await fetch('large-file.csv')
+  .then(res => res.body)
+  .pipeThrough(new TextDecoderStream())
+  .pipeThrough(lexerTransformer)
+  .pipeThrough(assemblerTransformer)
+  .pipeTo(yourProcessor);
+```
+
+---
+
+## Custom Stream Processing Examples
 
 ### Streaming with TransformStream
 
 ```typescript
-import { FlexibleStringCSVLexerTransformer, FlexibleCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
 
 // Custom validation transform
 class ValidationTransform extends TransformStream {
@@ -972,8 +1198,8 @@ const csvStream = new ReadableStream({
 });
 
 csvStream
-  .pipeThrough(new FlexibleStringCSVLexerTransformer())
-  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
+  .pipeThrough(createStringCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
   .pipeThrough(new ValidationTransform())
   .pipeTo(new WritableStream({
     write(record) {
@@ -989,7 +1215,10 @@ csvStream
 ### Custom Type Conversion Transform
 
 ```typescript
-import { FlexibleStringCSVLexerTransformer, FlexibleCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
+import {
+  createStringCSVLexerTransformer,
+  createCSVRecordAssemblerTransformer
+} from 'web-csv-toolbox';
 
 class TypeConversionTransform extends TransformStream {
   constructor() {
@@ -1007,8 +1236,8 @@ class TypeConversionTransform extends TransformStream {
 
 // Usage
 csvStream
-  .pipeThrough(new FlexibleStringCSVLexerTransformer())
-  .pipeThrough(new FlexibleCSVRecordAssemblerTransformer())
+  .pipeThrough(createStringCSVLexerTransformer())
+  .pipeThrough(createCSVRecordAssemblerTransformer())
   .pipeThrough(new TypeConversionTransform())
   .pipeTo(new WritableStream({
     write(record) {
@@ -1232,7 +1461,7 @@ console.log(result);
 
 - **[CSVLexer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexer.html)** - Detailed CSVLexer documentation
 - **[CSVRecordAssembler API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssembler.html)** - Detailed CSVRecordAssembler documentation
-- **[CSVLexerTransformer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVLexerTransformer.html)** - Streaming lexer
+- **[StringCSVLexerTransformer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/StringCSVLexerTransformer.html)** - Streaming lexer
 - **[CSVRecordAssemblerTransformer API Reference](https://kamiazya.github.io/web-csv-toolbox/classes/CSVRecordAssemblerTransformer.html)** - Streaming assembler
 - **[Parsing Architecture](../explanation/parsing-architecture.md)** - Understanding the pipeline
 - **[Getting Started](../tutorials/getting-started.md)** - High-level API tutorial

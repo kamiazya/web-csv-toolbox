@@ -28,18 +28,36 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  *
  * @category Low-level API
  *
- * @param parser - BinaryCSVParser instance to use for parsing
+ * @param parser - BinaryCSVParser instance to use for parsing (required). Use {@link createBinaryCSVParser} to create one.
  * @param options - Stream-specific options (backpressureCheckInterval, etc.)
  * @param writableStrategy - Strategy for the writable side (default: `ByteLengthQueuingStrategy({ highWaterMark: 65536 })`)
  * @param readableStrategy - Strategy for the readable side (default: `CountQueuingStrategy({ highWaterMark: 256 })`)
  *
  * @remarks
- * Follows the Web Streams API pattern where queuing strategies are passed as
- * constructor arguments, similar to CSVLexerTransformer and CSVRecordAssemblerTransformer.
+ * **Recommended: Use the factory function**
+ *
+ * For simpler usage, use {@link createBinaryCSVParserStream} which handles parser creation internally:
+ * ```ts
+ * import { createBinaryCSVParserStream } from 'web-csv-toolbox';
+ *
+ * await fetch('data.csv')
+ *   .then(res => res.body)
+ *   .pipeThrough(createBinaryCSVParserStream({ header: ['name', 'age'] }))
+ *   .pipeTo(yourProcessor);
+ * ```
+ *
+ * **Direct instantiation (advanced)**
+ *
+ * If you need direct access to the parser or want to reuse it, use the constructor directly:
+ * ```ts
+ * import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+ * const parser = createBinaryCSVParser({ header: ['name', 'age'] });
+ * binaryStream.pipeThrough(new BinaryCSVParserStream(parser));
+ * ```
  *
  * Accepts any BufferSource type (Uint8Array, ArrayBuffer, or other TypedArray views) as input chunks.
  *
- * **Default Queuing Strategy:**
+ * **Queuing Strategy:**
  * - Writable side: `ByteLengthQueuingStrategy` with highWaterMark of 65536 bytes (64KB).
  * - Readable side: `CountQueuingStrategy` with highWaterMark of 256 records.
  *
@@ -48,35 +66,39 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * is detected (desiredSize ≤ 0). This prevents blocking the main thread during heavy processing
  * and allows the downstream consumer to catch up.
  *
- * @example Basic usage
+ * @example Recommended: Using factory function
  * ```ts
- * import { FlexibleBinaryObjectCSVParser } from './models/FlexibleBinaryObjectCSVParser.js';
- * import { BinaryCSVParserStream } from './stream/BinaryCSVParserStream.js';
+ * import { createBinaryCSVParserStream } from 'web-csv-toolbox';
  *
- * const parser = new FlexibleBinaryObjectCSVParser({ header: ['name', 'age'], charset: 'utf-8' });
- * const stream = new BinaryCSVParserStream(parser);
- *
- * const encoder = new TextEncoder();
- * new ReadableStream({
- *   start(controller) {
- *     controller.enqueue(encoder.encode("Alice,30\r\n"));
- *     controller.enqueue(encoder.encode("Bob,25\r\n"));
- *     controller.close();
- *   }
- * })
- *   .pipeThrough(stream)
+ * // Directly pipe fetch response body (no TextDecoderStream needed)
+ * await fetch('data.csv')
+ *   .then(res => res.body)
+ *   .pipeThrough(createBinaryCSVParserStream())
  *   .pipeTo(new WritableStream({
  *     write(record) {
- *       console.log(record);
+ *       console.log(record); // { name: 'Alice', age: '30' }
  *     }
  *   }));
- * // { name: 'Alice', age: '30' }
- * // { name: 'Bob', age: '25' }
+ * ```
+ *
+ * @example Direct instantiation with parser
+ * ```ts
+ * import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+ *
+ * const parser = createBinaryCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   charset: 'utf-8'
+ * });
+ * const stream = new BinaryCSVParserStream(parser);
+ *
+ * binaryStream.pipeThrough(stream);
  * ```
  *
  * @example With fetch API
  * ```ts
- * const parser = new FlexibleBinaryObjectCSVParser({ header: ['name', 'age'] });
+ * import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
+ *
+ * const parser = createBinaryCSVParser({ header: ['name', 'age'] as const });
  * const stream = new BinaryCSVParserStream(parser);
  *
  * await fetch('large-file.csv')

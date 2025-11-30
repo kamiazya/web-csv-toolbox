@@ -1,6 +1,6 @@
 import type {
   BinaryArrayCSVParser,
-  BinaryCSVProcessingOptions,
+  BinaryCSVParserFactoryOptions,
   BinaryObjectCSVParser,
 } from "@/core/types.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
@@ -10,19 +10,19 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * Factory function to create the appropriate Binary CSV parser based on options.
  *
  * @template Header - The type of the header row
- * @template Options - BinaryCSVProcessingOptions type (inferred from arguments)
- * @param options - Binary CSV processing specification (excludes execution strategy)
+ * @param options - Parser options including binary CSV processing specification and engine
  * @returns A parser instance configured for the specified output format
  *
  * @remarks
- * This is a low-level factory function that accepts {@link BinaryCSVProcessingOptions}.
- * It does NOT accept execution strategy options (engine).
- * For high-level APIs with execution strategy support, use parseBinary() and related functions.
- *
  * This function provides both compile-time and runtime type safety.
  * The return type is determined by the outputFormat option:
  * - `outputFormat: 'object'` (default) → BinaryObjectCSVParser (FlexibleBinaryObjectCSVParser)
  * - `outputFormat: 'array'` → BinaryArrayCSVParser (FlexibleBinaryArrayCSVParser)
+ *
+ * **Design Intent**: This factory function accepts options including engine configuration
+ * to enable future execution path optimization. The function may select the optimal internal
+ * parser implementation based on the provided options. Currently, this optimization
+ * is not implemented, but the API is designed to support it without breaking changes.
  *
  * @example Object format (default)
  * ```ts
@@ -31,7 +31,6 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  *   charset: 'utf-8',
  *   decompression: 'gzip',
  *   signal: abortController.signal,
- *   // engine is NOT available (low-level API)
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -45,7 +44,6 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  *   header: ['name', 'age'] as const,
  *   outputFormat: 'array',
  *   charset: 'utf-8',
- *   // engine is NOT available (low-level API)
  * });
  * const encoder = new TextEncoder();
  * for (const record of parser.parse(encoder.encode('Alice,30\nBob,25'))) {
@@ -56,7 +54,7 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "array";
   },
 ): BinaryArrayCSVParser<Header>;
@@ -64,7 +62,7 @@ export function createBinaryCSVParser<
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "object";
   },
 ): BinaryObjectCSVParser<Header>;
@@ -72,19 +70,21 @@ export function createBinaryCSVParser<
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<BinaryCSVProcessingOptions<Header>, "outputFormat"> & {
+  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
     outputFormat: "object" | "array";
   },
 ): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
->(options?: BinaryCSVProcessingOptions<Header>): BinaryObjectCSVParser<Header>;
+>(
+  options?: BinaryCSVParserFactoryOptions<Header>,
+): BinaryObjectCSVParser<Header>;
 
 export function createBinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options?: BinaryCSVProcessingOptions<Header>,
+  options?: BinaryCSVParserFactoryOptions<Header>,
 ): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 

@@ -2,8 +2,8 @@ import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 
 export function parseBinaryStreamToStream<
   Header extends readonly string[],
@@ -41,7 +41,7 @@ export function parseBinaryStreamToStream<
               decoderOptions,
             ) as unknown as TransformStream<Uint8Array, string>,
           )
-          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new StringCSVLexerTransformer(lexer))
           .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
       : stream
           .pipeThrough(
@@ -50,7 +50,7 @@ export function parseBinaryStreamToStream<
               decoderOptions,
             ) as unknown as TransformStream<Uint8Array, string>,
           )
-          .pipeThrough(new CSVLexerTransformer(lexer))
+          .pipeThrough(new StringCSVLexerTransformer(lexer))
           .pipeThrough(new CSVRecordAssemblerTransformer(assembler))
   ) as ReadableStream<InferCSVRecord<Header, Options>>;
 }

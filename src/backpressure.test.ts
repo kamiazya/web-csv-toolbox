@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
-import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
+import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 
 describe("Backpressure handling", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe("CSVLexerTransformer", () => {
+  describe("StringCSVLexerTransformer", () => {
     it("should execute yieldToEventLoop during transform when backpressure occurs", async () => {
       const csv = "a,b,c\n1,2,3\n4,5,6\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(
+      const lexer = new StringCSVLexerTransformer(
         lexerInstance,
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
@@ -43,7 +43,7 @@ describe("Backpressure handling", () => {
     it("should call yieldToEventLoop when backpressure is detected with checkInterval=1", async () => {
       const csv = "a,b,c\n1,2,3\n4,5,6\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(
+      const lexer = new StringCSVLexerTransformer(
         lexerInstance,
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
@@ -79,7 +79,7 @@ describe("Backpressure handling", () => {
     it("should use default checkInterval when not specified", async () => {
       const csv = "a,b\n1,2\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
 
       const stream = new ReadableStream({
         start(controller) {
@@ -103,7 +103,7 @@ describe("Backpressure handling", () => {
     it("should fallback to readableStrategy checkInterval", async () => {
       const csv = "a,b\n1,2\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(
+      const lexer = new StringCSVLexerTransformer(
         lexerInstance,
         {},
         { highWaterMark: 1000 },
@@ -131,7 +131,7 @@ describe("Backpressure handling", () => {
 
     it("should verify yieldToEventLoop method exists and is callable", () => {
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
 
       // Verify the method exists
       expect(typeof (lexer as any).yieldToEventLoop).toBe("function");
@@ -146,7 +146,7 @@ describe("Backpressure handling", () => {
     it("should execute yieldToEventLoop during flush when backpressure occurs", async () => {
       const csv = "a,b,";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(
+      const lexer = new StringCSVLexerTransformer(
         lexerInstance,
         {},
         { highWaterMark: 1, size: (chunk) => chunk.length },
@@ -178,7 +178,7 @@ describe("Backpressure handling", () => {
     it("should execute yieldToEventLoop during transform when backpressure occurs", async () => {
       const csv = "a,b\n1,2\n3,4\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
       const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
@@ -215,7 +215,7 @@ describe("Backpressure handling", () => {
     it("should call yieldToEventLoop when backpressure is detected with checkInterval=1", async () => {
       const csv = "a,b\n1,2\n3,4\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
       const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
@@ -256,7 +256,7 @@ describe("Backpressure handling", () => {
     it("should use default checkInterval when not specified", async () => {
       const csv = "a\n1\n2\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
       const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(assemblerInstance);
 
@@ -285,7 +285,7 @@ describe("Backpressure handling", () => {
     it("should fallback to readableStrategy checkInterval", async () => {
       const csv = "1\n2\n3\n";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
       const assemblerInstance = createCSVRecordAssembler({
         header: ["a"],
       });
@@ -335,7 +335,7 @@ describe("Backpressure handling", () => {
     it("should execute yieldToEventLoop during flush when backpressure occurs", async () => {
       const csv = "a,b\n1,";
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(lexerInstance);
+      const lexer = new StringCSVLexerTransformer(lexerInstance);
       const assemblerInstance = createCSVRecordAssembler({});
       const assembler = new CSVRecordAssemblerTransformer(
         assemblerInstance,
@@ -378,7 +378,7 @@ describe("Backpressure handling", () => {
       const csv = `id,value,data\n${rows.join("\n")}\n`;
 
       const lexerInstance = new FlexibleStringCSVLexer({});
-      const lexer = new CSVLexerTransformer(
+      const lexer = new StringCSVLexerTransformer(
         lexerInstance,
         {},
         { highWaterMark: 65536 },
@@ -424,7 +424,7 @@ describe("Backpressure handling", () => {
     it("should handle checkInterval configuration correctly", () => {
       // Test that checkInterval is properly configured
       const lexerInstance1 = new FlexibleStringCSVLexer({});
-      const lexerWithWritableInterval = new CSVLexerTransformer(
+      const lexerWithWritableInterval = new StringCSVLexerTransformer(
         lexerInstance1,
         {},
         { highWaterMark: 100 },
@@ -432,7 +432,7 @@ describe("Backpressure handling", () => {
       );
 
       const lexerInstance2 = new FlexibleStringCSVLexer({});
-      const lexerWithReadableInterval = new CSVLexerTransformer(
+      const lexerWithReadableInterval = new StringCSVLexerTransformer(
         lexerInstance2,
         {},
         { highWaterMark: 100 },
