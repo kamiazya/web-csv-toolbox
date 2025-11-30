@@ -1,29 +1,12 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { autoChunk, FC } from "@/__tests__/helper.ts";
-import {
-  COMMA,
-  DOUBLE_QUOTE,
-  Field,
-  FieldDelimiter,
-  RecordDelimiter,
-} from "@/core/constants.ts";
+import { COMMA, Delimiter, DOUBLE_QUOTE } from "@/core/constants.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
-const LOCATION_SHAPE = {
-  start: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  end: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  rowNumber: expect.any(Number),
-};
+// Note: We don't use trackLocation in spec tests for performance
+// The unit tests verify location tracking works correctly
 
 describe("class Lexer", () => {
   it("should lex with comma as a default field delimiter", () => {
@@ -32,24 +15,23 @@ describe("class Lexer", () => {
         fc.gen().map((g) => {
           const row = g(FC.row);
           const csv = row.map((field) => escapeField(field)).join(",");
-          const expected = [
-            ...row.flatMap((field, i) => [
-              // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
-                : []),
-              // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: COMMA,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected = row
+            .map((field, i) => ({
+              value: field,
+              delimiter: i === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+              delimiterLength: expect.any(Number),
+            }))
+            // Filter out empty fields at the end with no following content
+            .filter(
+              (token) =>
+                !(
+                  token.value === "" &&
+                  token.delimiter === Delimiter.EOF &&
+                  row.length === 1 &&
+                  !row[0]
+                ),
+            );
           return { csv, expected };
         }),
         ({ csv, expected }) => {
@@ -70,23 +52,12 @@ describe("class Lexer", () => {
             // field should be escaped with double quote
             .map((field) => escapeField(field, { quote: true, quotation: '"' }))
             .join(",");
-          const expected = [
-            ...row.flatMap((field, i) => [
-              // field should be escaped with double quote, so empty field should be
-              // escaped with double quote
-              { type: Field, value: field, location: LOCATION_SHAPE },
-              // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: COMMA,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected = row.map((field, i) => ({
+            value: field,
+            next: i === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+            length: expect.any(Number),
+          }));
           return { csv, expected };
         }),
         ({ csv, expected }) => {
@@ -110,24 +81,21 @@ describe("class Lexer", () => {
           const csv = row
             .map((field) => escapeField(field, { delimiter }))
             .join(delimiter);
-          const expected = [
-            ...row.flatMap((field, i) => [
-              // if field is empty, it should be ignored
-              ...(field !== "" || escapeField(field, { delimiter }) !== field
-                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
-                : []),
-              // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: delimiter,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected = row
+            .map((field, i) => ({
+              value: field,
+              delimiter: i === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+              delimiterLength: expect.any(Number),
+            }))
+            .filter(
+              (token, i) =>
+                !(
+                  token.value === "" &&
+                  i === row.length - 1 &&
+                  escapeField(row[i]!, { delimiter }) === row[i]
+                ),
+            );
           return { delimiter, csv, expected };
         }),
         ({ delimiter, csv, expected }) => {
@@ -148,24 +116,22 @@ describe("class Lexer", () => {
           const csv = row
             .map((field) => escapeField(field, { quotation }))
             .join(",");
-          const expected = [
-            ...row.flatMap((field, i) => [
-              // if field is empty, it should be ignored
-              ...(field !== ""
-                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
-                : []),
-              // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: COMMA,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected = row
+            .map((field, i) => ({
+              value: field,
+              delimiter: i === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+              delimiterLength: expect.any(Number),
+            }))
+            .filter(
+              (token) =>
+                !(
+                  token.value === "" &&
+                  token.delimiter === Delimiter.EOF &&
+                  row.length === 1 &&
+                  !row[0]
+                ),
+            );
           return { quotation, csv, expected };
         }),
         ({ quotation, csv, expected }) => {
@@ -186,24 +152,21 @@ describe("class Lexer", () => {
           const csv = row
             .map((field) => escapeField(field, options))
             .join(options.delimiter);
-          const expected = [
-            ...row.flatMap((field, i) => [
-              // if field is empty or field is escaped, it should be escaped.
-              ...(field !== "" || escapeField(field, options) !== field
-                ? [{ type: Field, value: field, location: LOCATION_SHAPE }]
-                : []),
-              // if field is not last field, it should be followed by a field delimiter
-              ...(row.length - 1 !== i
-                ? [
-                    {
-                      type: FieldDelimiter,
-                      value: options.delimiter,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected = row
+            .map((field, i) => ({
+              value: field,
+              delimiter: i === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
+              delimiterLength: expect.any(Number),
+            }))
+            .filter(
+              (token, i) =>
+                !(
+                  token.value === "" &&
+                  i === row.length - 1 &&
+                  escapeField(row[i]!, options) === row[i]
+                ),
+            );
           return { options, row, csv, expected };
         }),
         ({ options, csv, expected }) => {
@@ -236,36 +199,28 @@ describe("class Lexer", () => {
                   .join(options.delimiter),
               )
               .join(eol) + (EOF ? eol : "");
-          const expected = [
-            ...data.flatMap((row, i) => [
-              ...row.flatMap((field, j) => [
-                // if quote is false and field is empty, it should be ignored
-                ...(quote || field !== ""
-                  ? [{ type: Field, value: field }]
-                  : []),
-                // if field is not last field, it should be followed by a field delimiter
-                ...(row.length - 1 !== j
-                  ? [
-                      {
-                        type: FieldDelimiter,
-                        value: options.delimiter,
-                        location: LOCATION_SHAPE,
-                      },
-                    ]
-                  : []),
-              ]),
-              // if row is not last row, it should be followed by a record delimiter.
-              ...(data.length - 1 !== i
-                ? [
-                    {
-                      type: RecordDelimiter,
-                      value: eol,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected: { value: string; delimiter?: Delimiter }[] = [];
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i]!;
+            for (let j = 0; j < row.length; j++) {
+              const field = row[j]!;
+              const isLastFieldInRow = j === row.length - 1;
+              const isLastRow = i === data.length - 1;
+
+              // Only add token if field is non-empty or quoted
+              if (quote || field !== "") {
+                expected.push({
+                  value: field,
+                  delimiter: isLastFieldInRow
+                    ? isLastRow && !EOF
+                      ? Delimiter.EOF
+                      : Delimiter.Record
+                    : Delimiter.Field,
+                });
+              }
+            }
+          }
           return { csv, data, options, expected };
         }),
         ({ options, csv, expected }) => {

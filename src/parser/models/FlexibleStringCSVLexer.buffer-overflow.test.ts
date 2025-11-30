@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Field } from "@/core/constants.ts";
-import type { StringCSVLexer } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
 describe("CSVLexer - Buffer Overflow Protection", () => {
   describe("with default buffer size (10M characters)", () => {
-    let lexer: StringCSVLexer;
+    let lexer: FlexibleStringCSVLexer;
     beforeEach(() => {
       lexer = new FlexibleStringCSVLexer();
     });
@@ -160,7 +159,7 @@ describe("CSVLexer - Buffer Overflow Protection", () => {
 
       const tokens = [...lexer.lex(validData)];
       expect(tokens).toHaveLength(1);
-      expect(tokens[0]?.type).toBe(Field);
+      expect(tokens[0]?.delimiter).toBe(Delimiter.EOF);
       expect(tokens[0]?.value).toBe('"'.repeat(1000));
     });
   });

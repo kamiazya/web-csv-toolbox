@@ -137,8 +137,8 @@ Charlie,35,SF,Extra`;
       });
     });
 
-    describe("pad strategy", () => {
-      test("should pad short rows with undefined", () => {
+    describe("fill strategy (default)", () => {
+      test("should fill short rows with empty string", () => {
         const csv = `Alice,30
 Bob,25,LA`;
 
@@ -148,17 +148,17 @@ Bob,25,LA`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "array",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(2);
-        expect(records[0]).toEqual(["Alice", "30", undefined]); // Padded
+        expect(records[0]).toEqual(["Alice", "30", ""]); // Filled with empty string
         expect(records[1]).toEqual(["Bob", "25", "LA"]); // Exact match
       });
 
-      test("should pad second row with undefined (regression test)", () => {
+      test("should fill second row with empty string (regression test)", () => {
         const csv = `Alice,30,NY
 Bob,25`;
 
@@ -168,14 +168,14 @@ Bob,25`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "array",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(2);
         expect(records[0]).toEqual(["Alice", "30", "NY"]); // Exact match
-        expect(records[1]).toEqual(["Bob", "25", undefined]); // Padded
+        expect(records[1]).toEqual(["Bob", "25", ""]); // Filled with empty string
       });
 
       test("should truncate long rows to match header length", () => {
@@ -187,7 +187,67 @@ Bob,25`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "array",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(1);
+        expect(records[0]).toEqual(["Alice", "30", "NY"]); // Truncated
+      });
+    });
+
+    describe("sparse strategy", () => {
+      test("should fill short rows with undefined", () => {
+        const csv = `Alice,30
+Bob,25,LA`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: ["name", "age", "city"] as const,
+          outputFormat: "array",
+          columnCountStrategy: "sparse",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(2);
+        expect(records[0]).toEqual(["Alice", "30", undefined]); // Sparse - undefined
+        expect(records[1]).toEqual(["Bob", "25", "LA"]); // Exact match
+      });
+
+      test("should fill second row with undefined (regression test)", () => {
+        const csv = `Alice,30,NY
+Bob,25`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: ["name", "age", "city"] as const,
+          outputFormat: "array",
+          columnCountStrategy: "sparse",
+        });
+
+        const records = [...assembler.assemble(tokens)];
+
+        expect(records).toHaveLength(2);
+        expect(records[0]).toEqual(["Alice", "30", "NY"]); // Exact match
+        expect(records[1]).toEqual(["Bob", "25", undefined]); // Sparse - undefined
+      });
+
+      test("should truncate long rows to match header length", () => {
+        const csv = `Alice,30,NY,Extra1,Extra2`;
+
+        const lexer = new FlexibleStringCSVLexer();
+        const tokens = lexer.lex(csv);
+
+        const assembler = createCSVRecordAssembler({
+          header: ["name", "age", "city"] as const,
+          outputFormat: "array",
+          columnCountStrategy: "sparse",
         });
 
         const records = [...assembler.assemble(tokens)];
@@ -297,14 +357,14 @@ Bob,25,LA`;
       expect(() => {
         createCSVRecordAssembler({
           outputFormat: "array",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "sparse",
         });
-      }).toThrow("columnCountStrategy 'pad' requires header option");
+      }).toThrow("columnCountStrategy 'sparse' requires header option");
     });
   });
 
-  describe("variable-length CSV (headerless)", () => {
-    test("should handle variable-length rows without header", () => {
+  describe("variable-length CSV (with keep strategy)", () => {
+    test("should handle variable-length rows with keep strategy", () => {
       const csv = `Alice,30
 Bob,25,LA
 Charlie,35,SF,Extra`;
@@ -314,11 +374,12 @@ Charlie,35,SF,Extra`;
 
       const assembler = createCSVRecordAssembler({
         outputFormat: "array",
+        columnCountStrategy: "keep", // Required for variable-length output
       });
 
       const records = [...assembler.assemble(tokens)];
 
-      // First row becomes header
+      // First row becomes header, subsequent rows keep their variable length
       expect(records).toHaveLength(2);
       expect(records[0]).toEqual(["Bob", "25", "LA"]);
       expect(records[1]).toEqual(["Charlie", "35", "SF", "Extra"]);
@@ -406,12 +467,24 @@ Charlie,35,SF,Extra`;
     });
 
     describe("Runtime validation errors", () => {
-      test("should throw error when header: [] with columnCountStrategy: 'pad'", () => {
+      test("should throw error when header: [] with columnCountStrategy: 'fill'", () => {
         expect(() =>
           createCSVRecordAssembler({
             header: [] as const,
             outputFormat: "array",
-            columnCountStrategy: "pad",
+            columnCountStrategy: "fill",
+          }),
+        ).toThrow(
+          /Headerless mode \(header: \[\]\) only supports columnCountStrategy: 'keep'/,
+        );
+      });
+
+      test("should throw error when header: [] with columnCountStrategy: 'sparse'", () => {
+        expect(() =>
+          createCSVRecordAssembler({
+            header: [] as const,
+            outputFormat: "array",
+            columnCountStrategy: "sparse",
           }),
         ).toThrow(
           /Headerless mode \(header: \[\]\) only supports columnCountStrategy: 'keep'/,

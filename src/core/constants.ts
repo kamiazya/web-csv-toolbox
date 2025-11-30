@@ -100,17 +100,18 @@ export const DEFAULT_STREAM_BACKPRESSURE_CHECK_INTERVAL = 100;
 export const DEFAULT_ASSEMBLER_BACKPRESSURE_CHECK_INTERVAL = 10;
 
 /**
- * FiledDelimiter is a symbol for field delimiter of CSV.
+ * Delimiter type enumeration for unified token format.
+ *
+ * Used in the new FieldToken format to indicate what follows the field value.
+ * This enables a more efficient token format where only field tokens are emitted.
+ *
  * @category Constants
  */
-export const FieldDelimiter = Symbol.for("web-csv-toolbox.FieldDelimiter");
-/**
- * RecordDelimiter is a symbol for record delimiter of CSV.
- * @category Constants
- */
-export const RecordDelimiter = Symbol.for("web-csv-toolbox.RecordDelimiter");
-/**
- * Field is a symbol for field of CSV.
- * @category Constants
- */
-export const Field = Symbol.for("web-csv-toolbox.Field");
+export enum Delimiter {
+  /** Next token is a field (followed by field delimiter like comma) */
+  Field = 0,
+  /** Next token is a record delimiter (newline) */
+  Record = 1,
+  /** End of file/stream */
+  EOF = 2,
+}

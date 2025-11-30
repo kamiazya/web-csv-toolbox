@@ -83,6 +83,15 @@ export function createCSVRecordAssembler<
     throw new Error("includeHeader option is only valid for array format");
   }
 
+  // Validate that 'sparse' strategy is not used with object format
+  if (format === "object" && options?.columnCountStrategy === "sparse") {
+    throw new Error(
+      "columnCountStrategy 'sparse' is not allowed for object format. " +
+        "'sparse' fills missing fields with undefined, which is not compatible with object format. " +
+        "Use 'fill' (fills with empty string) or outputFormat: 'array' for sparse data.",
+    );
+  }
+
   if (format === "array") {
     return new FlexibleCSVArrayRecordAssembler<Header>(options ?? {}) as any;
   } else {

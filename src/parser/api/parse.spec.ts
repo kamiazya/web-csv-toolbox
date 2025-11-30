@@ -62,7 +62,8 @@ describe("parse function", () => {
             {
               csv: "a,b,c\n\n1,2,3",
               data: [
-                { a: "", b: "", c: "" },
+                // Empty line only has 1 empty field, so b and c are missing (undefined)
+                { a: "", b: undefined, c: undefined },
                 { a: "1", b: "2", c: "3" },
               ],
             },

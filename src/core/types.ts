@@ -1,10 +1,8 @@
 import type {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
-  Field,
-  FieldDelimiter,
+  Delimiter,
   Newline,
-  RecordDelimiter,
 } from "@/core/constants.ts";
 
 /**
@@ -89,41 +87,82 @@ export interface TokenLocation {
 }
 
 /**
- * Field token type.
+ * Base token properties shared by all token types.
+ *
+ * This is the common structure for unified field tokens.
+ * The `delimiter` property indicates what delimiter follows this field.
+ *
  * @category Types
  */
-export interface FieldToken {
-  type: typeof Field;
+export interface BaseToken {
+  /** The field value */
   value: string;
+  /** What delimiter follows this field */
+  delimiter: Delimiter;
+  /** Length of the delimiter in characters (1 for comma/LF/CR, 2 for CRLF, 0 for EOF) */
+  delimiterLength: number;
+}
+
+/**
+ * Token without location tracking.
+ *
+ * This is the optimized token format where only field tokens are emitted.
+ * The `next` property indicates what delimiter follows this field.
+ *
+ * @category Types
+ */
+export interface TokenNoLocation extends BaseToken {}
+
+/**
+ * Token with location tracking.
+ *
+ * This is the optimized token format where only field tokens are emitted,
+ * with location information included.
+ *
+ * @category Types
+ */
+export interface TokenWithLocation extends BaseToken {
+  /** Location information for error reporting */
   location: TokenLocation;
 }
 
 /**
- * Field delimiter token type.
+ * Token type.
+ *
+ * This is the optimized token format that reduces token count by 50%.
+ * Instead of emitting separate Field, FieldDelimiter, and RecordDelimiter tokens,
+ * only unified field tokens are emitted with the `delimiter` property indicating
+ * what delimiter follows.
+ *
  * @category Types
+ * @template TrackLocation - Whether to include location information (default: false)
+ *
+ * @example Without location tracking (default, fastest)
+ * ```ts
+ * // CSV: "a,b,c\n"
+ * // Tokens:
+ * // { value: "a", delimiter: Delimiter.Field, delimiterLength: 1 }
+ * // { value: "b", delimiter: Delimiter.Field, delimiterLength: 1 }
+ * // { value: "c", delimiter: Delimiter.Record, delimiterLength: 1 }
+ * ```
+ *
+ * @example With CRLF
+ * ```ts
+ * // CSV: "a,b\r\n"
+ * // Tokens:
+ * // { value: "a", delimiter: Delimiter.Field, delimiterLength: 1 }
+ * // { value: "b", delimiter: Delimiter.Record, delimiterLength: 2 }  // CRLF = 2
+ * ```
  */
-export interface FieldDelimiterToken {
-  type: typeof FieldDelimiter;
-  value: string;
-  location: TokenLocation;
-}
+export type Token<TrackLocation extends boolean = false> =
+  TrackLocation extends true ? TokenWithLocation : TokenNoLocation;
 
 /**
- * Record delimiter token type.
+ * Any token type (with or without location).
+ * Used for APIs that accept tokens regardless of location tracking.
  * @category Types
  */
-export interface RecordDelimiterToken {
-  type: typeof RecordDelimiter;
-  value: string;
-  location: TokenLocation;
-}
-
-/**
- * Token is a atomic unit of a CSV file.
- * It can be a field, field delimiter, or record delimiter.
- * @category Types
- */
-export type Token = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
+export type AnyToken = Token<true> | Token<false>;
 
 /**
  * AbortSignal Options.
@@ -439,12 +478,81 @@ export interface BinaryOptions {
 }
 
 /**
+ * Options for enabling location tracking in lexer output.
+ * @category Types
+ */
+export interface TrackLocationOption<TrackLocation extends boolean = false> {
+  /**
+   * Enable location tracking for tokens.
+   *
+   * @remarks
+   * When enabled, tokens include `location` with `start`, `end` Position objects
+   * and `rowNumber`. This is useful for error reporting but adds overhead.
+   *
+   * **Performance impact**:
+   * - `false` (default): No location tracking, maximum performance
+   * - `true`: Full location tracking with Position objects
+   *
+   * **When to enable**:
+   * - Custom error handling that needs line/column information
+   * - Building source maps or editors
+   * - Debugging CSV parsing issues
+   *
+   * **Note**: High-level APIs (parseString, etc.) always use `trackLocation: false`
+   * for performance. This option is only available in low-level Lexer APIs.
+   *
+   * @default false
+   *
+   * @example
+   * ```ts
+   * // No location tracking (default, fastest)
+   * const lexer = new FlexibleStringCSVLexer();
+   * for (const token of lexer.lex(csv)) {
+   *   console.log(token); // { type: Field, value: 'foo' }
+   * }
+   *
+   * // With location tracking
+   * const lexer = new FlexibleStringCSVLexer({ trackLocation: true });
+   * for (const token of lexer.lex(csv)) {
+   *   console.log(token);
+   *   // { type: Field, value: 'foo', location: { start: {...}, end: {...}, rowNumber: 1 } }
+   * }
+   * ```
+   */
+  trackLocation?: TrackLocation;
+}
+
+/**
+ * CSV Lexer Transformer Options.
+ * @category Types
+ */
+export interface CSVLexerTransformerOptions<
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+  TrackLocation extends boolean = false,
+> extends CommonOptions<Delimiter, Quotation>,
+    TrackLocationOption<TrackLocation>,
+    AbortSignalOptions {}
+
+/**
  * String CSV Lexer Transformer Stream Options.
  * Options for StringCSVLexerTransformer stream behavior.
  * @category Types
  */
 export interface StringCSVLexerTransformerStreamOptions
   extends BackpressureOptions {
+  /**
+   * @default 100
+   */
+  backpressureCheckInterval?: number;
+}
+
+/**
+ * CSV Lexer Transformer Stream Options.
+ * Options for CSVLexerTransformer stream behavior.
+ * @category Types
+ */
+export interface CSVLexerTransformerStreamOptions extends BackpressureOptions {
   /**
    * @default 100
    */
@@ -661,16 +769,21 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
          * See {@link ColumnCountStrategy} for detailed strategy descriptions.
          *
          * **Strategy overview**:
-         * - `'keep'`: Keep rows as-is (array format varies length; object format acts like `'pad'`)
-         * - `'pad'`: Pad short rows with undefined, truncate long rows
+         * - `'fill'` (default): Fill missing fields with empty string, truncate long rows
+         * - `'sparse'`: Fill missing fields with undefined, truncate long rows (array format only)
+         * - `'keep'`: Keep rows as-is (array format varies length; object format acts like `'fill'`)
          * - `'strict'`: Throw error on length mismatch
          * - `'truncate'`: Truncate long rows, keep short rows as-is (object format: all keys present)
+         *
+         * **Object format restriction**:
+         * `'sparse'` is not allowed for object format because object format requires all keys
+         * to have string values. Use `'fill'` instead.
          *
          * **Headerless CSV**:
          * When `header` is undefined or `[]`, this option is accepted but behaves as `'keep'`.
          * For explicit headerless mode (`header: []`), only `'keep'` is allowed at runtime.
          *
-         * @default 'keep' for array format, 'pad' for object format
+         * @default 'fill'
          *
          * @example Array format examples
          * ```ts
@@ -678,8 +791,9 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
          * // Row: 'Alice,30'
          * // outputFormat: 'array'
          *
+         * // columnCountStrategy: 'fill' → ['Alice', '30', ''] (padded with empty string)
+         * // columnCountStrategy: 'sparse' → ['Alice', '30', undefined] (padded with undefined)
          * // columnCountStrategy: 'keep' → ['Alice', '30'] (short row kept)
-         * // columnCountStrategy: 'pad' → ['Alice', '30', undefined] (padded)
          * // columnCountStrategy: 'strict' → Error thrown
          * // columnCountStrategy: 'truncate' → ['Alice', '30'] (short row kept)
          * ```
@@ -690,10 +804,11 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
          * // Row: 'Alice,30'
          * // outputFormat: 'object'
          *
-         * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
-         * // columnCountStrategy: 'pad' → { name: 'Alice', age: '30', city: undefined } (all keys)
+         * // columnCountStrategy: 'fill' → { name: 'Alice', age: '30', city: '' } (all keys)
+         * // columnCountStrategy: 'sparse' → Error thrown (not allowed for object format)
+         * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: '' } (treated as 'fill')
          * // columnCountStrategy: 'strict' → Error thrown
-         * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: undefined } (all keys)
+         * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: '' } (all keys)
          * ```
          */
         columnCountStrategy?: ColumnCountStrategy;
@@ -839,7 +954,7 @@ export interface QueuingStrategyConfig {
    *
    * @default `{ highWaterMark: 1024 }` (1024 tokens)
    */
-  lexerReadable?: QueuingStrategy<Token>;
+  lexerReadable?: QueuingStrategy<AnyToken>;
 
   /**
    * Queuing strategy for the assembler's writable side (token input).
@@ -849,7 +964,7 @@ export interface QueuingStrategyConfig {
    *
    * @default `{ highWaterMark: 1024 }` (1024 tokens)
    */
-  assemblerWritable?: QueuingStrategy<Token>;
+  assemblerWritable?: QueuingStrategy<AnyToken>;
 
   /**
    * Queuing strategy for the assembler's readable side (record output).
@@ -1238,15 +1353,15 @@ export type InferFormat<Options> = Options extends { outputFormat: infer F }
  * @category Types
  *
  * @remarks
- * This type extracts the columnCountStrategy from options and defaults to 'keep' if not specified.
+ * This type extracts the columnCountStrategy from options and defaults to 'fill' if not specified.
  */
 export type InferStrategy<Options> = Options extends {
   columnCountStrategy: infer S;
 }
   ? S extends ColumnCountStrategy
     ? S
-    : "keep"
-  : "keep";
+    : "fill"
+  : "fill";
 
 /**
  * Helper type to get the CSV record type based on header and options.
@@ -1255,7 +1370,7 @@ export type InferStrategy<Options> = Options extends {
  *
  * @remarks
  * This type determines the CSVRecord type based on the header, output format, and columnCountStrategy in options.
- * For array format with 'pad' strategy, fields are typed as `string | undefined`.
+ * For array format with 'sparse' strategy, fields are typed as `string | undefined`.
  */
 export type InferCSVRecord<
   Header extends ReadonlyArray<string>,
@@ -1410,21 +1525,26 @@ export interface ParseBinaryOptions<
  *
  * @remarks
  * **Available strategies**:
+ * - `'fill'` (default): Fill missing fields with empty string `""`
+ *   - Array format: Pad short rows with `""`, truncate long rows
+ *   - Object format: All header keys present, missing values = `""`
+ *   - Type-safe: Fields typed as `string`
+ * - `'sparse'`: Fill missing fields with `undefined`
+ *   - Array format: Pad short rows with `undefined`, truncate long rows
+ *   - Object format: **Not allowed** (object format requires all keys to have string values)
+ *   - Type: Fields typed as `string | undefined`
  * - `'keep'`: Output rows as-is with their actual length
  *   - Array format: Row length varies, no padding or truncation
- *   - Object format: Treated as `'pad'` (all header keys present, missing values = undefined)
- * - `'pad'`: Ensure all rows match header length
- *   - Array format: Pad short rows with undefined, truncate long rows
- *   - Object format: All header keys present, missing values = undefined, extra values ignored
+ *   - Object format: Treated as `'fill'` (all header keys present, missing values = `""`)
  * - `'strict'`: Enforce exact header length match
  *   - Both formats: Throws error if row length ≠ header length
  * - `'truncate'`: Handle long rows only, keep short rows as-is
  *   - Array format: Truncate long rows to header length, keep short rows unchanged
- *   - Object format: All header keys present (like `'pad'`), missing values = undefined
+ *   - Object format: All header keys present (like `'fill'`), missing values = `""`
  *
  * **Default values**:
- * - Array format: `'keep'`
- * - Object format: `'pad'`
+ * - Array format: `'fill'`
+ * - Object format: `'fill'`
  *
  * **Headerless CSV behavior**:
  * When no header is provided (`header: undefined` or `header: []`):
@@ -1439,8 +1559,9 @@ export interface ParseBinaryOptions<
  * // Input row: 'Alice,30'
  * // outputFormat: 'array'
  *
+ * // fill → ['Alice', '30', ''] (padded with empty string)
+ * // sparse → ['Alice', '30', undefined] (padded with undefined)
  * // keep → ['Alice', '30'] (short row kept as-is)
- * // pad → ['Alice', '30', undefined] (padded to match header)
  * // strict → Error thrown (length mismatch)
  * // truncate → ['Alice', '30'] (short row kept as-is, only truncates long rows)
  * ```
@@ -1452,23 +1573,55 @@ export interface ParseBinaryOptions<
  * // Input row: 'Alice,30'
  * // outputFormat: 'object'
  *
- * // keep → { name: 'Alice', age: '30', city: undefined } (treated as 'pad')
- * // pad → { name: 'Alice', age: '30', city: undefined } (all keys present)
+ * // fill → { name: 'Alice', age: '30', city: '' } (all keys present with empty string)
+ * // sparse → Not allowed in object format (throws error)
+ * // keep → { name: 'Alice', age: '30', city: '' } (treated as 'fill')
  * // strict → Error thrown (length mismatch)
- * // truncate → { name: 'Alice', age: '30', city: undefined } (all keys present)
+ * // truncate → { name: 'Alice', age: '30', city: '' } (all keys present)
  * ```
  */
-export type ColumnCountStrategy = "keep" | "pad" | "strict" | "truncate";
+export type ColumnCountStrategy =
+  | "fill"
+  | "sparse"
+  | "keep"
+  | "strict"
+  | "truncate";
+
+/**
+ * Column count strategies allowed for object format.
+ *
+ * @category Types
+ *
+ * @remarks
+ * Object format does not support 'sparse' strategy because objects cannot
+ * have undefined values in a type-safe manner. Use 'fill' (default), 'strict',
+ * 'truncate', or 'keep' for object format.
+ *
+ * - `'fill'`: Fill missing fields with empty string (default)
+ * - `'keep'`: Falls back to 'fill' for object format
+ * - `'strict'`: Throw error if column count doesn't match header
+ * - `'truncate'`: Ignore extra fields, fill missing with empty string
+ */
+export type ObjectFormatColumnCountStrategy = Exclude<
+  ColumnCountStrategy,
+  "sparse"
+>;
 
 /**
  * CSV record as an object (traditional format).
  *
  * @category Types
  * @template Header Header of the CSV.
+ * @template Strategy Column count strategy (must not be 'sparse', default: 'fill')
  *
  * @remarks
  * This type represents a single CSV record as an object,
  * where each key corresponds to a header field and the value is the field's string content.
+ *
+ * **Important**: Object format does NOT support 'sparse' strategy.
+ * Using 'sparse' with object format will result in a type error at compile time
+ * and a runtime error if attempted.
+ * All strategies for object format produce `string` values (never `undefined`).
  *
  * @example
  *
@@ -1480,18 +1633,28 @@ export type ColumnCountStrategy = "keep" | "pad" | "strict" | "truncate";
  *
  * const record: Record = { foo: "1", bar: "2" };
  * ```
+ *
+ * @example Type error for sparse strategy
+ *
+ * ```ts
+ * // This will cause a type error because 'sparse' is not allowed
+ * type InvalidRecord = CSVObjectRecord<["a", "b"], "sparse">;
+ * // Error: Type '"sparse"' does not satisfy the constraint 'ObjectFormatColumnCountStrategy'
+ * ```
  */
-export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
-  Header[number],
-  string
->;
+export type CSVObjectRecord<
+  Header extends ReadonlyArray<string>,
+  Strategy extends ObjectFormatColumnCountStrategy = "fill",
+> = Strategy extends "sparse"
+  ? never // This branch is unreachable due to constraint, but provides safety
+  : Record<Header[number], string>;
 
 /**
  * CSV record as an array (named tuple format).
  *
  * @category Types
  * @template Header Header of the CSV.
- * @template Strategy Column count strategy that affects field types (default: 'keep')
+ * @template Strategy Column count strategy that affects field types (default: 'fill')
  *
  * @remarks
  * This type represents a single CSV record as a readonly array.
@@ -1499,8 +1662,8 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  * Without a header, it's a variable-length readonly string array.
  *
  * **Type safety with columnCountStrategy**:
- * - `'keep'`, `'strict'`, `'truncate'`: Fields are typed as `string`
- * - `'pad'`: Fields are typed as `string | undefined` (missing fields padded with undefined)
+ * - `'fill'`, `'keep'`, `'strict'`, `'truncate'`: Fields are typed as `string`
+ * - `'sparse'`: Fields are typed as `string | undefined` (missing fields filled with undefined)
  *
  * @example With header (named tuple)
  *
@@ -1515,12 +1678,12 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  * row.length; // 3 (compile-time constant)
  * ```
  *
- * @example With pad strategy (allows undefined)
+ * @example With sparse strategy (allows undefined)
  *
  * ```ts
  * const header = ["name", "age", "city"] as const;
  *
- * type Row = CSVArrayRecord<typeof header, 'pad'>;
+ * type Row = CSVArrayRecord<typeof header, 'sparse'>;
  * // readonly [name: string | undefined, age: string | undefined, city: string | undefined]
  *
  * const row: Row = ["Alice", "30", undefined]; // Type-safe!
@@ -1540,10 +1703,10 @@ export type CSVObjectRecord<Header extends ReadonlyArray<string>> = Record<
  */
 export type CSVArrayRecord<
   Header extends ReadonlyArray<string>,
-  Strategy extends ColumnCountStrategy = "keep",
+  Strategy extends ColumnCountStrategy = "fill",
 > = Header extends readonly []
   ? readonly string[]
-  : Strategy extends "pad"
+  : Strategy extends "sparse"
     ? { readonly [K in keyof Header]: string | undefined }
     : { readonly [K in keyof Header]: string };
 
@@ -1553,7 +1716,7 @@ export type CSVArrayRecord<
  * @category Types
  * @template Header Header of the CSV.
  * @template Format Output format: 'object' or 'array' (default: 'object')
- * @template Strategy Column count strategy for array format (default: 'keep')
+ * @template Strategy Column count strategy for array format (default: 'fill')
  *
  * @remarks
  * This type represents a single CSV record, which can be either an object or an array
@@ -1563,7 +1726,7 @@ export type CSVArrayRecord<
  * - When `Format` is `'array'`: Returns {@link CSVArrayRecord} (named tuple)
  *
  * For array format, the `Strategy` parameter affects field types:
- * - `'pad'`: Fields are typed as `string | undefined`
+ * - `'sparse'`: Fields are typed as `string | undefined`
  * - Other strategies: Fields are typed as `string`
  *
  * @example Object format (default)
@@ -1581,20 +1744,25 @@ export type CSVArrayRecord<
  * // Type: readonly [foo: string, bar: string]
  * ```
  *
- * @example Array format with pad strategy
+ * @example Array format with sparse strategy
  * ```ts
  * const header = ["foo", "bar"] as const;
- * const record: CSVRecord<typeof header, 'array', 'pad'> = ["1", undefined];
+ * const record: CSVRecord<typeof header, 'array', 'sparse'> = ["1", undefined];
  * // Type: readonly [foo: string | undefined, bar: string | undefined]
  * ```
  */
 export type CSVRecord<
   Header extends ReadonlyArray<string>,
   Format extends "object" | "array" = "object",
-  Strategy extends ColumnCountStrategy = "keep",
+  Strategy extends ColumnCountStrategy = "fill",
 > = Format extends "array"
   ? CSVArrayRecord<Header, Strategy>
-  : CSVObjectRecord<Header>;
+  : Strategy extends "sparse"
+    ? never // sparse is not allowed for object format
+    : CSVObjectRecord<
+        Header,
+        Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
+      >;
 
 /**
  * Join CSV field array into a CSV-formatted string with proper escaping.
@@ -1881,23 +2049,30 @@ export interface CSVLexerLexOptions {
  * String CSV Lexer interface
  *
  * StringCSVLexer tokenizes string CSV data into fields and records.
+ *
+ * @template TrackLocation - Whether to include location information in tokens (default: false)
  */
-export interface StringCSVLexer {
+export interface StringCSVLexer<TrackLocation extends boolean = false> {
   /**
    * Lexes the given chunk of CSV string data.
    * @param chunk - The chunk of CSV string data to be lexed. Omit to flush remaining data.
    * @param options - Lexer options.
    * @returns An iterable iterator of tokens.
    */
-  lex(chunk?: string, options?: CSVLexerLexOptions): IterableIterator<Token>;
+  lex(
+    chunk?: string,
+    options?: CSVLexerLexOptions,
+  ): IterableIterator<Token<TrackLocation>>;
 }
 
 /**
  * Binary CSV Lexer interface
  *
  * BinaryCSVLexer tokenizes binary CSV data (Uint8Array) into fields and records.
+ *
+ * @template TrackLocation - Whether to include location information in tokens (default: false)
  */
-export interface BinaryCSVLexer {
+export interface BinaryCSVLexer<TrackLocation extends boolean = false> {
   /**
    * Lexes the given chunk of CSV binary data.
    * @param chunk - The chunk of CSV binary data (Uint8Array) to be lexed. Omit to flush remaining data.
@@ -1907,7 +2082,7 @@ export interface BinaryCSVLexer {
   lex(
     chunk?: Uint8Array,
     options?: CSVLexerLexOptions,
-  ): IterableIterator<Token>;
+  ): IterableIterator<Token<TrackLocation>>;
 }
 
 /**
@@ -1920,7 +2095,6 @@ export interface CSVRecordAssemblerAssembleOptions {
    */
   stream?: boolean;
 }
-
 /**
  * CSV Object Record Assembler interface.
  *
@@ -1949,7 +2123,7 @@ export interface CSVObjectRecordAssembler<
    * @returns An iterable iterator of CSV records as objects.
    */
   assemble(
-    input?: Token | Iterable<Token>,
+    input?: AnyToken | Iterable<AnyToken>,
     options?: CSVRecordAssemblerAssembleOptions,
   ): IterableIterator<CSVObjectRecord<Header>>;
 }
@@ -1980,7 +2154,7 @@ export interface CSVArrayRecordAssembler<Header extends ReadonlyArray<string>> {
    * @returns An iterable iterator of CSV records as arrays/tuples.
    */
   assemble(
-    input?: Token | Iterable<Token>,
+    input?: AnyToken | Iterable<AnyToken>,
     options?: CSVRecordAssemblerAssembleOptions,
   ): IterableIterator<CSVArrayRecord<Header>>;
 }

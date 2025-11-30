@@ -49,7 +49,7 @@ describe("parseString function", () => {
         // Do nothing.
       }
     }).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+      `[ParseError: Unexpected EOF while parsing quoted field at line 2, column 1.]`,
     );
   });
 
