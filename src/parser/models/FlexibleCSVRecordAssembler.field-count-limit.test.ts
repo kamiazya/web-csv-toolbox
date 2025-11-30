@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import type { CSVRecordAssembler, Token } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
+import type { AnyToken, CSVRecordAssembler } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 
 describe("CSVRecordAssembler - Field Count Limit Protection", () => {
@@ -11,10 +11,12 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should not throw error for normal field counts", () => {
-      const tokens: Token[] = [
+      // In the unified token format, each token represents a field with `next` indicating what follows
+      const tokens: AnyToken[] = [
         {
-          type: Field,
           value: "a",
+          delimiter: Delimiter.Field,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
@@ -22,29 +24,12 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
           },
         },
         {
-          type: FieldDelimiter,
-          value: ",",
-          location: {
-            start: { line: 1, column: 2, offset: 1 },
-            end: { line: 1, column: 3, offset: 2 },
-            rowNumber: 1,
-          },
-        },
-        {
-          type: Field,
           value: "b",
+          delimiter: Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 3, offset: 2 },
             end: { line: 1, column: 4, offset: 3 },
-            rowNumber: 1,
-          },
-        },
-        {
-          type: RecordDelimiter,
-          value: "\n",
-          location: {
-            start: { line: 1, column: 4, offset: 3 },
-            end: { line: 2, column: 1, offset: 4 },
             rowNumber: 1,
           },
         },
@@ -54,80 +39,42 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
     });
 
     test("should throw RangeError when field count exceeds limit during header parsing", () => {
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
       const maxFields = 100001;
 
-      // Create header with excessive fields
+      // Create header with excessive fields using unified token format
       for (let i = 0; i < maxFields; i++) {
         tokens.push({
-          type: Field,
           value: `field${i}`,
+          delimiter: i < maxFields - 1 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: i * 2 + 1, offset: i * 2 },
             end: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
             rowNumber: 1,
           },
         });
-        if (i < maxFields - 1) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
-              end: { line: 1, column: i * 2 + 3, offset: i * 2 + 2 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: maxFields * 2, offset: maxFields * 2 - 1 },
-          end: { line: 2, column: 1, offset: maxFields * 2 },
-          rowNumber: 1,
-        },
-      });
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
     });
 
     test("should throw RangeError with proper error details", () => {
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
       const maxFields = 100001;
 
       for (let i = 0; i < maxFields; i++) {
         tokens.push({
-          type: Field,
           value: `f${i}`,
+          delimiter: i < maxFields - 1 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < maxFields - 1) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 1, offset: 0 },
-          end: { line: 2, column: 1, offset: 1 },
-          rowNumber: 1,
-        },
-      });
 
       try {
         [...assembler.assemble(tokens)];
@@ -145,41 +92,21 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("with custom field count limit", () => {
     test("should allow exactly N fields when limit is N", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 10 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create exactly 10 fields (at the limit, should succeed)
       for (let i = 0; i < 10; i++) {
         tokens.push({
-          type: Field,
           value: `field${i}`,
+          delimiter: i < 9 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 9) {
-          // 9 delimiters between 10 fields
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 1, offset: 0 },
-          end: { line: 2, column: 1, offset: 1 },
-          rowNumber: 1,
-        },
-      });
 
       // Should not throw - exactly at the limit
       expect(() => [...assembler.assemble(tokens)]).not.toThrow();
@@ -192,40 +119,21 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
 
     test("should respect custom maxFieldCount option", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 10 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 11 fields (exceeds limit of 10)
       for (let i = 0; i < 11; i++) {
         tokens.push({
-          type: Field,
           value: `f${i}`,
+          delimiter: i < 10 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 10) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 1, offset: 0 },
-          end: { line: 2, column: 1, offset: 1 },
-          rowNumber: 1,
-        },
-      });
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
     });
@@ -234,40 +142,21 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
       const assembler = createCSVRecordAssembler({
         maxFieldCount: Number.POSITIVE_INFINITY,
       });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 200000 fields (would exceed default limit)
       for (let i = 0; i < 200000; i++) {
         tokens.push({
-          type: Field,
           value: `f${i}`,
+          delimiter: i < 199999 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 199999) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 1, offset: 0 },
-          end: { line: 2, column: 1, offset: 1 },
-          rowNumber: 1,
-        },
-      });
 
       // This should not throw, but will take time and memory
       expect(() => [...assembler.assemble(tokens)]).not.toThrow(RangeError);
@@ -295,30 +184,20 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("realistic attack scenarios", () => {
     test("should prevent DoS via CSV with excessive columns", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 1000 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Simulate attack with 2000 columns
       for (let i = 0; i < 2000; i++) {
         tokens.push({
-          type: Field,
           value: "x",
+          delimiter: i < 1999 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 1999) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
 
       expect(() => [...assembler.assemble(tokens)]).toThrow(RangeError);
@@ -326,73 +205,35 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
 
     test("should properly handle CSV within field count limits", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 100 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
-      // Create 50 fields (within limit)
+      // Create 50 fields (within limit) - header row
       for (let i = 0; i < 50; i++) {
         tokens.push({
-          type: Field,
           value: `field${i}`,
+          delimiter: i < 49 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 49) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 1, offset: 0 },
-          end: { line: 2, column: 1, offset: 1 },
-          rowNumber: 1,
-        },
-      });
 
       // Add data row with same field count
       for (let i = 0; i < 50; i++) {
         tokens.push({
-          type: Field,
           value: `data${i}`,
+          delimiter: i < 49 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 2, column: 1, offset: 0 },
             end: { line: 2, column: 2, offset: 1 },
             rowNumber: 2,
           },
         });
-        if (i < 49) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 2, column: 1, offset: 0 },
-              end: { line: 2, column: 2, offset: 1 },
-              rowNumber: 2,
-            },
-          });
-        }
       }
-      tokens.push({
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 2, column: 1, offset: 0 },
-          end: { line: 3, column: 1, offset: 1 },
-          rowNumber: 2,
-        },
-      });
 
       const records = [...assembler.assemble(tokens)];
       expect(records).toHaveLength(1);
@@ -403,30 +244,20 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
   describe("error message details", () => {
     test("should include row number in error message", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 5 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 6 fields (exceeds limit of 5)
       for (let i = 0; i < 6; i++) {
         tokens.push({
-          type: Field,
           value: `field${i}`,
+          delimiter: i < 5 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: i * 2 + 1, offset: i * 2 },
             end: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
             rowNumber: 3,
           },
         });
-        if (i < 5) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
-              end: { line: 1, column: i * 2 + 3, offset: i * 2 + 2 },
-              rowNumber: 3,
-            },
-          });
-        }
       }
 
       try {
@@ -443,30 +274,20 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
         maxFieldCount: 5,
         source: "data.csv",
       });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 6 fields (exceeds limit of 5)
       for (let i = 0; i < 6; i++) {
         tokens.push({
-          type: Field,
           value: `field${i}`,
+          delimiter: i < 5 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: i * 2 + 1, offset: i * 2 },
             end: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
             rowNumber: 2,
           },
         });
-        if (i < 5) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: i * 2 + 2, offset: i * 2 + 1 },
-              end: { line: 1, column: i * 2 + 3, offset: i * 2 + 2 },
-              rowNumber: 2,
-            },
-          });
-        }
       }
 
       try {
@@ -483,30 +304,20 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
         maxFieldCount: 3,
         source: "users.csv",
       });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 4 fields (exceeds limit of 3)
       for (let i = 0; i < 4; i++) {
         tokens.push({
-          type: Field,
           value: `col${i}`,
+          delimiter: i < 3 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 10,
           },
         });
-        if (i < 3) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 10,
-            },
-          });
-        }
       }
 
       try {
@@ -525,30 +336,20 @@ describe("CSVRecordAssembler - Field Count Limit Protection", () => {
 
     test("should only include field count info when source is not provided", () => {
       const assembler = createCSVRecordAssembler({ maxFieldCount: 2 });
-      const tokens: Token[] = [];
+      const tokens: AnyToken[] = [];
 
       // Create 3 fields (exceeds limit of 2)
       for (let i = 0; i < 3; i++) {
         tokens.push({
-          type: Field,
           value: `f${i}`,
+          delimiter: i < 2 ? Delimiter.Field : Delimiter.Record,
+          delimiterLength: 1,
           location: {
             start: { line: 1, column: 1, offset: 0 },
             end: { line: 1, column: 2, offset: 1 },
             rowNumber: 1,
           },
         });
-        if (i < 2) {
-          tokens.push({
-            type: FieldDelimiter,
-            value: ",",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 2, offset: 1 },
-              rowNumber: 1,
-            },
-          });
-        }
       }
 
       try {

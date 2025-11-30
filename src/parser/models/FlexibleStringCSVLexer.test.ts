@@ -1,20 +1,21 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import type { StringCSVLexer } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
 describe("CSVLexer", () => {
-  let lexer: StringCSVLexer;
+  // Use trackLocation: true for tests that verify location tracking
+  let lexer: FlexibleStringCSVLexer<",", '"', true>;
   beforeEach(() => {
-    lexer = new FlexibleStringCSVLexer();
+    lexer = new FlexibleStringCSVLexer({ trackLocation: true });
   });
 
   test("should parse a field with not escaped", () => {
     const tokens = lexer.lex("field");
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "field",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 1, column: 6, offset: 5 },
@@ -28,8 +29,9 @@ describe("CSVLexer", () => {
     const tokens = lexer.lex('"field"');
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "field",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 1, column: 8, offset: 7 },
@@ -40,11 +42,12 @@ describe("CSVLexer", () => {
   });
 
   test("should parse a field with escaped and delimiter", () => {
-    const tokens = lexer.lex('"field",');
+    const tokens = lexer.lex('"field",next');
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "field",
+        delimiter: Delimiter.Field,
+        delimiterLength: 1,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 1, column: 8, offset: 7 },
@@ -52,11 +55,12 @@ describe("CSVLexer", () => {
         },
       },
       {
-        type: FieldDelimiter,
-        value: ",",
+        value: "next",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
-          start: { line: 1, column: 8, offset: 7 },
-          end: { line: 1, column: 9, offset: 8 },
+          start: { line: 1, column: 9, offset: 8 },
+          end: { line: 1, column: 13, offset: 12 },
           rowNumber: 1,
         },
       },
@@ -67,8 +71,9 @@ describe("CSVLexer", () => {
     const tokens = lexer.lex('"fie\nld"\n"Hello\nWorld"');
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "fie\nld",
+        delimiter: Delimiter.Record,
+        delimiterLength: 1,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 2, column: 4, offset: 8 },
@@ -76,17 +81,9 @@ describe("CSVLexer", () => {
         },
       },
       {
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 2, column: 4, offset: 8 },
-          end: { line: 3, column: 1, offset: 9 },
-          rowNumber: 1,
-        },
-      },
-      {
-        type: Field,
         value: "Hello\nWorld",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
           start: { line: 3, column: 1, offset: 9 },
           end: { line: 4, column: 7, offset: 22 },
@@ -97,11 +94,13 @@ describe("CSVLexer", () => {
   });
 
   test("should parse a field with escaped and delimiter and record delimiter and EOF(LF)", () => {
+    // Trailing newline should not create an extra empty record
     const tokens = lexer.lex('"fie\nld"\nHello World\n');
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "fie\nld",
+        delimiter: Delimiter.Record,
+        delimiterLength: 1,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 2, column: 4, offset: 8 },
@@ -109,17 +108,9 @@ describe("CSVLexer", () => {
         },
       },
       {
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 2, column: 4, offset: 8 },
-          end: { line: 3, column: 1, offset: 9 },
-          rowNumber: 1,
-        },
-      },
-      {
-        type: Field,
         value: "Hello World",
+        delimiter: Delimiter.Record,
+        delimiterLength: 1,
         location: {
           start: { line: 3, column: 1, offset: 9 },
           end: { line: 3, column: 12, offset: 20 },
@@ -130,11 +121,13 @@ describe("CSVLexer", () => {
   });
 
   test("should parse a field with escaped and delimiter and record delimiter and EOF(RCLF)", () => {
+    // Trailing newline should not create an extra empty record
     const tokens = lexer.lex('"fie\r\nld"\r\nHello World\r\n');
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "fie\r\nld",
+        delimiter: Delimiter.Record,
+        delimiterLength: 2,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 2, column: 4, offset: 9 },
@@ -142,17 +135,9 @@ describe("CSVLexer", () => {
         },
       },
       {
-        type: RecordDelimiter,
-        value: "\r\n",
-        location: {
-          start: { line: 2, column: 4, offset: 9 },
-          end: { line: 3, column: 1, offset: 11 },
-          rowNumber: 1,
-        },
-      },
-      {
-        type: Field,
         value: "Hello World",
+        delimiter: Delimiter.Record,
+        delimiterLength: 2,
         location: {
           start: { line: 3, column: 1, offset: 11 },
           end: { line: 3, column: 12, offset: 22 },
@@ -166,20 +151,12 @@ describe("CSVLexer", () => {
     let tokens = lexer.lex("Hello World\nHello ", { stream: true });
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "Hello World",
+        delimiter: Delimiter.Record,
+        delimiterLength: 1,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 1, column: 12, offset: 11 },
-          rowNumber: 1,
-        },
-      },
-      {
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 12, offset: 11 },
-          end: { line: 2, column: 1, offset: 12 },
           rowNumber: 1,
         },
       },
@@ -188,8 +165,9 @@ describe("CSVLexer", () => {
 
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "Hello World",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
           start: { line: 2, column: 1, offset: 12 },
           end: { line: 2, column: 12, offset: 23 },
@@ -203,20 +181,12 @@ describe("CSVLexer", () => {
     let tokens = lexer.lex('"Hello World"\n"Hello"', { stream: true });
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: "Hello World",
+        delimiter: Delimiter.Record,
+        delimiterLength: 1,
         location: {
           start: { line: 1, column: 1, offset: 0 },
           end: { line: 1, column: 14, offset: 13 },
-          rowNumber: 1,
-        },
-      },
-      {
-        type: RecordDelimiter,
-        value: "\n",
-        location: {
-          start: { line: 1, column: 14, offset: 13 },
-          end: { line: 2, column: 1, offset: 14 },
           rowNumber: 1,
         },
       },
@@ -225,8 +195,9 @@ describe("CSVLexer", () => {
 
     expect([...tokens]).toStrictEqual([
       {
-        type: Field,
         value: 'Hello"World',
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
         location: {
           start: { line: 2, column: 1, offset: 14 },
           end: { line: 2, column: 15, offset: 28 },
@@ -248,6 +219,7 @@ describe("CSVLexer", () => {
       controller = new AbortController();
       lexer = new FlexibleStringCSVLexer({
         signal: controller.signal,
+        trackLocation: true,
       });
     });
 
@@ -289,7 +261,7 @@ describe("CSVLexer", () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
 
-    lexer = new FlexibleStringCSVLexer({ signal });
+    lexer = new FlexibleStringCSVLexer({ signal, trackLocation: true });
     try {
       [...lexer.lex('"Hello"')];
       expect.unreachable();
@@ -317,7 +289,10 @@ describe("CSVLexer", () => {
     });
 
     test("should include row number in ParseError", () => {
-      const lexerWithSource = new FlexibleStringCSVLexer();
+      // trackLocation: true is required to get rowNumber in errors
+      const lexerWithSource = new FlexibleStringCSVLexer({
+        trackLocation: true,
+      });
 
       try {
         // Invalid CSV: unclosed quoted field (missing closing quote before EOF)
@@ -332,8 +307,10 @@ describe("CSVLexer", () => {
     });
 
     test("should include both source and row number in ParseError", () => {
+      // trackLocation: true is required to get rowNumber in errors
       const lexerWithSource = new FlexibleStringCSVLexer({
         source: "data.csv",
+        trackLocation: true,
       });
 
       try {

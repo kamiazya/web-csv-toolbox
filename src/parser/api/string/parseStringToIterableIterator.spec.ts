@@ -23,6 +23,6 @@ test("throws an error if the CSV is invalid", () => {
       // Do nothing
     }
   }).toThrowErrorMatchingInlineSnapshot(
-    `[ParseError: Unexpected EOF while parsing quoted field.]`,
+    `[ParseError: Unexpected EOF while parsing quoted field at line 2, column 1.]`,
   );
 });

@@ -1,6 +1,6 @@
 import { assert, beforeEach, describe, expect, test } from "vitest";
-import { Field } from "@/core/constants";
-import type { CSVRecordAssembler } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
+import type { AnyToken, CSVRecordAssembler } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
@@ -51,20 +51,20 @@ describe("CSVRecordAssembler", () => {
     });
     test("should throw DOMException named AbortError if the signal is aborted", () => {
       controller.abort();
+      const tokens: AnyToken[] = [
+        {
+          value: "",
+          delimiter: Delimiter.EOF,
+          delimiterLength: 0,
+          location: {
+            start: { line: 1, column: 1, offset: 0 },
+            end: { line: 1, column: 1, offset: 0 },
+            rowNumber: 1,
+          },
+        },
+      ];
       try {
-        [
-          ...assembler.assemble([
-            {
-              type: Field,
-              value: "",
-              location: {
-                start: { line: 1, column: 1, offset: 0 },
-                end: { line: 1, column: 1, offset: 0 },
-                rowNumber: 1,
-              },
-            },
-          ]),
-        ];
+        [...assembler.assemble(tokens)];
         expect.unreachable();
       } catch (error) {
         assert(error instanceof DOMException);
@@ -82,20 +82,20 @@ describe("CSVRecordAssembler", () => {
 
       controller.abort(new MyCustomError("Custom reason"));
 
+      const tokens: AnyToken[] = [
+        {
+          value: "",
+          delimiter: Delimiter.EOF,
+          delimiterLength: 0,
+          location: {
+            start: { line: 1, column: 1, offset: 0 },
+            end: { line: 1, column: 1, offset: 0 },
+            rowNumber: 1,
+          },
+        },
+      ];
       expect(() => {
-        [
-          ...assembler.assemble([
-            {
-              type: Field,
-              value: "",
-              location: {
-                start: { line: 1, column: 1, offset: 0 },
-                end: { line: 1, column: 1, offset: 0 },
-                rowNumber: 1,
-              },
-            },
-          ]),
-        ];
+        [...assembler.assemble(tokens)];
       }).toThrowErrorMatchingInlineSnapshot(`[MyCustomError: Custom reason]`);
     });
   });
@@ -111,20 +111,20 @@ describe("CSVRecordAssembler", () => {
     const signal = AbortSignal.timeout(0);
     await waitAbort(signal);
     const assembler = createCSVRecordAssembler({ signal });
+    const tokens: AnyToken[] = [
+      {
+        value: "",
+        delimiter: Delimiter.EOF,
+        delimiterLength: 0,
+        location: {
+          start: { line: 1, column: 1, offset: 0 },
+          end: { line: 1, column: 1, offset: 0 },
+          rowNumber: 1,
+        },
+      },
+    ];
     try {
-      [
-        ...assembler.assemble([
-          {
-            type: Field,
-            value: "",
-            location: {
-              start: { line: 1, column: 1, offset: 0 },
-              end: { line: 1, column: 1, offset: 0 },
-              rowNumber: 1,
-            },
-          },
-        ]),
-      ];
+      [...assembler.assemble(tokens)];
       expect.unreachable();
     } catch (error) {
       assert(error instanceof DOMException);

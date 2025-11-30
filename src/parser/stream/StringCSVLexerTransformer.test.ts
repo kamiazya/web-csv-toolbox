@@ -45,7 +45,7 @@ describe("StringCSVLexerTransformer", () => {
     await expect(async () => {
       await transform(transformer, ['"']);
     }).rejects.toThrowErrorMatchingInlineSnapshot(
-      `[ParseError: Unexpected EOF while parsing quoted field.]`,
+      `[ParseError: Unexpected EOF while parsing quoted field at line 1, column 1.]`,
     );
   });
 

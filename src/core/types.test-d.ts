@@ -274,7 +274,7 @@ describe("CSVRecordAssemblerOptions", () => {
       const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "array",
-        columnCountStrategy: "pad",
+        columnCountStrategy: "sparse",
       };
 
       const opts3: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
@@ -284,13 +284,13 @@ describe("CSVRecordAssemblerOptions", () => {
       };
 
       expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
       expectTypeOf(opts2.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
       expectTypeOf(opts3.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
     });
 

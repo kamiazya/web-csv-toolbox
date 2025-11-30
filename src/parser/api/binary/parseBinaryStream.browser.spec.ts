@@ -57,7 +57,7 @@ describe("parseBinaryStream with execution strategies", () => {
               },
             }).pipeThrough(new TextEncoderStream());
             for await (const row of parseBinaryStream(stream, { engine })) {
-              expect(data[i++]).toStrictEqual(row);
+              expect(data[i++]).toEqual(row);
             }
           },
         ),

@@ -4,8 +4,8 @@ import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.
 
 describe("CSVRecordAssembler - Object Output", () => {
   describe("columnCountStrategy option", () => {
-    describe("pad strategy (default)", () => {
-      test("should pad short rows with undefined", () => {
+    describe("fill strategy (default)", () => {
+      test("should fill short rows with empty string", () => {
         const csv = `Alice,30
 Bob,25,LA`;
 
@@ -15,7 +15,7 @@ Bob,25,LA`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
@@ -24,12 +24,12 @@ Bob,25,LA`;
         expect(records[0]).toEqual({
           name: "Alice",
           age: "30",
-          city: undefined,
-        }); // Missing field filled with undefined (pad behavior)
+          city: "",
+        }); // Missing field filled with empty string (fill behavior)
         expect(records[1]).toEqual({ name: "Bob", age: "25", city: "LA" }); // Exact match
       });
 
-      test("should pad second row with undefined (regression test)", () => {
+      test("should fill second row with empty string (regression test)", () => {
         const csv = `Alice,30,NY
 Bob,25`;
 
@@ -39,14 +39,14 @@ Bob,25`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(2);
         expect(records[0]).toEqual({ name: "Alice", age: "30", city: "NY" }); // Exact match
-        expect(records[1]).toEqual({ name: "Bob", age: "25", city: undefined }); // Missing field filled with undefined
+        expect(records[1]).toEqual({ name: "Bob", age: "25", city: "" }); // Missing field filled with empty string
       });
 
       test("should ignore extra fields in long rows", () => {
@@ -58,13 +58,27 @@ Bob,25`;
         const assembler = createCSVRecordAssembler({
           header: ["name", "age", "city"] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(1);
         expect(records[0]).toEqual({ name: "Alice", age: "30", city: "NY" }); // Extra fields ignored
+      });
+    });
+
+    describe("sparse strategy", () => {
+      test("should throw error because sparse is not allowed for object format", () => {
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "object",
+            columnCountStrategy: "sparse",
+          });
+        }).toThrow(
+          "columnCountStrategy 'sparse' is not allowed for object format",
+        );
       });
     });
 
@@ -162,7 +176,7 @@ Bob,25,LA`;
         expect(records[0]).toEqual({ name: "Alice", age: "30", city: "NY" }); // Truncated
       });
 
-      test("should keep short rows as-is without padding", () => {
+      test("should fill short rows with empty string", () => {
         const csv = `Alice,30`;
 
         const lexer = new FlexibleStringCSVLexer();
@@ -180,13 +194,13 @@ Bob,25,LA`;
         expect(records[0]).toEqual({
           name: "Alice",
           age: "30",
-          city: undefined,
-        }); // Missing field remains undefined with truncate strategy
+          city: "",
+        }); // Missing field filled with empty string (object format always fills)
       });
     });
 
     describe("keep strategy", () => {
-      test("should warn and fallback to pad strategy", () => {
+      test("should warn and fallback to fill strategy", () => {
         const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
         const csv = `Alice,30`;
@@ -211,8 +225,8 @@ Bob,25,LA`;
         expect(records[0]).toEqual({
           name: "Alice",
           age: "30",
-          city: undefined,
-        }); // Behaves like pad (fills with undefined)
+          city: "",
+        }); // Behaves like fill (fills with empty string)
 
         warnSpy.mockRestore();
       });
@@ -228,7 +242,7 @@ Bob,25,LA`;
         const assembler = createCSVRecordAssembler({
           header: ["a", "b", "c"] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
@@ -237,7 +251,7 @@ Bob,25,LA`;
         expect(records[0]).toEqual({ a: "", b: "x", c: "" }); // Empty fields → ""
       });
 
-      test("should use undefined for missing fields in short rows (object format)", () => {
+      test("should use empty string for missing fields in short rows (object format)", () => {
         const csv = `x`;
 
         const lexer = new FlexibleStringCSVLexer();
@@ -246,13 +260,13 @@ Bob,25,LA`;
         const assembler = createCSVRecordAssembler({
           header: ["a", "b", "c"] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
         });
 
         const records = [...assembler.assemble(tokens)];
 
         expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({ a: "x", b: undefined, c: undefined }); // Missing fields → undefined
+        expect(records[0]).toEqual({ a: "x", b: "", c: "" }); // Missing fields → "" (fill strategy)
       });
     });
   });
@@ -271,12 +285,24 @@ Bob,25,LA`;
       );
     });
 
-    test("should throw error when header: [] with object format and columnCountStrategy: 'pad'", () => {
+    test("should throw error when header: [] with object format and columnCountStrategy: 'fill'", () => {
       expect(() =>
         createCSVRecordAssembler({
           header: [] as const,
           outputFormat: "object",
-          columnCountStrategy: "pad",
+          columnCountStrategy: "fill",
+        }),
+      ).toThrow(
+        /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,
+      );
+    });
+
+    test("should throw error when header: [] with object format and columnCountStrategy: 'sparse'", () => {
+      expect(() =>
+        createCSVRecordAssembler({
+          header: [] as const,
+          outputFormat: "object",
+          columnCountStrategy: "sparse",
         }),
       ).toThrow(
         /Headerless mode \(header: \[\]\) is not supported for outputFormat: 'object'/,

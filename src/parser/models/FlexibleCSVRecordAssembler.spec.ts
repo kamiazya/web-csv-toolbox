@@ -1,13 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
-import {
-  Field,
-  FieldDelimiter,
-  LF,
-  RecordDelimiter,
-} from "@/core/constants.ts";
-import type { Token } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
+import type { AnyToken } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 
 const LOCATION_SHAPE = {
@@ -45,7 +40,6 @@ describe("class RecordAssembler", () => {
     fc.assert(
       fc.asyncProperty(
         fc.gen().map((g) => {
-          const EOL = g(FC.eol);
           const header = g(FC.header);
           const rows = g(FC.csvData, {
             columnsConstraints: {
@@ -53,38 +47,25 @@ describe("class RecordAssembler", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
+          // In unified token format, each token represents a field with its following delimiter
+          const tokens: AnyToken[] = [
             // generate header tokens
-            ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field, location: LOCATION_SHAPE },
-              i === header.length - 1
-                ? {
-                    type: RecordDelimiter,
-                    value: EOL,
-                    location: LOCATION_SHAPE,
-                  }
-                : {
-                    type: FieldDelimiter,
-                    value: ",",
-                    location: LOCATION_SHAPE,
-                  },
-            ]),
+            ...header.map<AnyToken>((field, i) => ({
+              value: field,
+              delimiter:
+                i === header.length - 1 ? Delimiter.Record : Delimiter.Field,
+              delimiterLength: 1,
+              location: LOCATION_SHAPE,
+            })),
             // generate rows tokens
-            ...rows.flatMap<Token>((row) =>
-              // generate row tokens
-              row.flatMap<Token>((field, j) => [
-                { type: Field, value: field, location: LOCATION_SHAPE },
-                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-                // generate record delimiter token
-                ...((j === row.length - 1
-                  ? [
-                      {
-                        type: RecordDelimiter,
-                        value: LF,
-                      },
-                    ]
-                  : []) as Token[]),
-              ]),
+            ...rows.flatMap((row) =>
+              row.map<AnyToken>((field, j) => ({
+                value: field,
+                delimiter:
+                  j === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+                delimiterLength: 1,
+                location: LOCATION_SHAPE,
+              })),
             ),
           ];
           const expected = rows.map((row) =>
@@ -112,22 +93,16 @@ describe("class RecordAssembler", () => {
               maxLength: header.length,
             },
           });
-          const tokens: Token[] = [
-            ...rows.flatMap<Token>((row) =>
-              row.flatMap<Token>((field, j) => [
-                { type: Field, value: field, location: LOCATION_SHAPE },
-                { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-                ...((j === row.length - 1
-                  ? [
-                      {
-                        type: RecordDelimiter,
-                        value: LF,
-                      },
-                    ]
-                  : []) as Token[]),
-              ]),
-            ),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const tokens: AnyToken[] = rows.flatMap((row) =>
+            row.map<AnyToken>((field, j) => ({
+              value: field,
+              delimiter:
+                j === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+              delimiterLength: 1,
+              location: LOCATION_SHAPE,
+            })),
+          );
           const expected = rows.map((row) =>
             Object.fromEntries(row.map((field, i) => [header[i], field])),
           );

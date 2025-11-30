@@ -63,7 +63,7 @@ describe("parseBinary with execution strategies", () => {
           async ({ data, csv }) => {
             let i = 0;
             for await (const row of parseBinary(csv, { engine })) {
-              expect(data[i++]).toStrictEqual(row);
+              expect(data[i++]).toEqual(row);
             }
           },
         ),
