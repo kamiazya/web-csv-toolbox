@@ -11,8 +11,8 @@ import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArra
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
 
-const describe = describe_.concurrent;
-const it = it_.concurrent;
+const describe = describe_;
+const it = it_;
 
 describe("BinaryCSVParserStream", () => {
   const encoder = new TextEncoder();

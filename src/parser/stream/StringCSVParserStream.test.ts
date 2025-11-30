@@ -11,8 +11,8 @@ import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArra
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
 
-const describe = describe_.concurrent;
-const it = it_.concurrent;
+const describe = describe_;
+const it = it_;
 
 describe("StringCSVParserStream", () => {
   beforeEach(() => {
