@@ -9,6 +9,7 @@ import type {
   CSVObjectRecord,
   CSVRecordAssemblerAssembleOptions,
   CSVRecordAssemblerCommonOptions,
+  CSVRecordView,
 } from "@/core/types.ts";
 import { ReusableArrayPool } from "@/utils/memory/ReusableArrayPool.ts";
 
@@ -37,6 +38,11 @@ export class FlexibleCSVObjectRecordAssembler<
   #columnCountStrategy: ColumnCountStrategy;
   #rowLength = 0;
   #rowPool = new ReusableArrayPool<string[]>();
+  // Experimental: emit zero-copy “view” records that read directly from the row buffer.
+  // These records keep the completed row alive (no pool release) until user GC.
+  #useRecordView: boolean;
+  #recordViewDescriptorTemplate: PropertyDescriptorMap | undefined;
+  static readonly #ROW_SYMBOL = Symbol("csvObjectRecordRow");
 
   // Optimization: Pre-bound strategy function (avoids switch per record)
   #assembleRecordFn:
@@ -49,9 +55,13 @@ export class FlexibleCSVObjectRecordAssembler<
   // Optimization: Track if row has content (avoids some() call per record)
   #hasContent = false;
 
-  constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
+  constructor(
+    options: CSVRecordAssemblerCommonOptions<Header> = {},
+    useRecordView = false,
+  ) {
     // Validate and set columnCountStrategy
     this.#columnCountStrategy = options.columnCountStrategy ?? "fill";
+    this.#useRecordView = useRecordView;
 
     // 'sparse' is not allowed in object format because object format requires all keys to have string values
     if (this.#columnCountStrategy === "sparse") {
@@ -62,13 +72,14 @@ export class FlexibleCSVObjectRecordAssembler<
       );
     }
 
-    if (this.#columnCountStrategy === "keep") {
-      console.warn(
-        "columnCountStrategy 'keep' has no effect in object format. " +
-          "Object format always maps to header keys. " +
-          "Falling back to 'fill' strategy.",
+    if (
+      this.#columnCountStrategy === "keep" ||
+      this.#columnCountStrategy === "truncate"
+    ) {
+      throw new Error(
+        `columnCountStrategy '${this.#columnCountStrategy}' is not allowed for object format. ` +
+          "Use 'fill' (default) or 'strict' for object output.",
       );
-      this.#columnCountStrategy = "fill";
     }
     if (this.#columnCountStrategy !== "fill" && options.header === undefined) {
       throw new Error(
@@ -226,6 +237,12 @@ export class FlexibleCSVObjectRecordAssembler<
         this.#headerKeys.push(key);
       }
     }
+    if (this.#useRecordView) {
+      this.#recordViewDescriptorTemplate =
+        this.#createRecordViewDescriptorTemplate();
+    } else {
+      this.#recordViewDescriptorTemplate = undefined;
+    }
 
     // Optimization: Pre-bind strategy function based on columnCountStrategy
     switch (this.#columnCountStrategy) {
@@ -257,6 +274,9 @@ export class FlexibleCSVObjectRecordAssembler<
       this.#releaseRow(row);
       // Headerless: return empty object (shouldn't happen in normal flow)
       return Object.create(null) as CSVObjectRecord<Header>;
+    }
+    if (this.#useRecordView) {
+      return this.#assembleRecordView(row, rowLength);
     }
     const record = this.#assembleRecordFn(row, rowLength);
     this.#releaseRow(row);
@@ -339,6 +359,44 @@ export class FlexibleCSVObjectRecordAssembler<
     return obj;
   };
 
+  /**
+   * Creates a hybrid record view that behaves like both an array (tuple) and an object.
+   * Keeps the original row alive (no copy), so consumers should treat results as immutable views.
+   */
+  #assembleRecordView(row: string[], rowLength: number): CSVRecordView<Header> {
+    const headerLength = this.#header!.length;
+    if (this.#columnCountStrategy === "strict" && rowLength !== headerLength) {
+      this.#releaseRow(row);
+      throw new ParseError(
+        `Expected ${headerLength} columns, got ${rowLength}${
+          this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
+        }${this.#source ? ` in ${JSON.stringify(this.#source)}` : ""}`,
+        {
+          source: this.#source,
+        },
+      );
+    }
+    if (this.#columnCountStrategy === "fill" && rowLength < headerLength) {
+      // Ensure tuple-style access honors 'fill' semantics for short rows
+      for (let i = rowLength; i < headerLength; i++) {
+        row[i] = "";
+      }
+      row.length = headerLength;
+    } else {
+      row.length = rowLength;
+    }
+    const view = row as unknown as CSVRecordView<Header>;
+    Object.defineProperty(view, FlexibleCSVObjectRecordAssembler.#ROW_SYMBOL, {
+      value: row,
+      enumerable: false,
+      configurable: true,
+    });
+    if (this.#recordViewDescriptorTemplate) {
+      Object.defineProperties(view, this.#recordViewDescriptorTemplate);
+    }
+    return view;
+  }
+
   #takeRow(rowLength: number): string[] {
     const record = this.#row;
     record.length = rowLength;
@@ -349,9 +407,8 @@ export class FlexibleCSVObjectRecordAssembler<
   }
 
   #releaseRow(row: string[]): void {
-    this.#rowPool.release(row, (buffer) => {
-      buffer.length = 0;
-    });
+    row.length = 0;
+    this.#rowPool.release(row);
   }
 
   #resetRowBuilderState(replacedBuffer = false): void {
@@ -385,5 +442,32 @@ export class FlexibleCSVObjectRecordAssembler<
       (obj as Record<string, string>)[header[i]!] = "";
     }
     return obj;
+  }
+
+  #createRecordViewDescriptorTemplate(): PropertyDescriptorMap {
+    const template: PropertyDescriptorMap = Object.create(null);
+    for (let j = 0; j < this.#headerKeys.length; j++) {
+      const key = this.#headerKeys[j]!;
+      const index = this.#validHeaderIndices[j]!;
+      template[key] = {
+        enumerable: true,
+        configurable: true,
+        get(this: Record<string, unknown>) {
+          const row = (this as any)[
+            FlexibleCSVObjectRecordAssembler.#ROW_SYMBOL
+          ] as string[] | undefined;
+          return row?.[index] ?? "";
+        },
+        set(this: Record<string, unknown>, value: string) {
+          Object.defineProperty(this, key, {
+            value,
+            writable: true,
+            enumerable: true,
+            configurable: true,
+          });
+        },
+      };
+    }
+    return template;
   }
 }
