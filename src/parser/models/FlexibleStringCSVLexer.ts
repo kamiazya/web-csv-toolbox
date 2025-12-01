@@ -1190,8 +1190,7 @@ export class FlexibleStringCSVLexer<
   }
 
   #releaseSegments(segments: string[]): void {
-    this.#segmentPool.release(segments, (buffer) => {
-      buffer.length = 0;
-    });
+    segments.length = 0;
+    this.#segmentPool.release(segments);
   }
 }

@@ -424,20 +424,16 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
       ).toThrow();
     });
 
-    test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleBinaryObjectCSVParser({
-        header: ["name", "age"] as const,
-        columnCountStrategy: "truncate",
-        charset: "utf-8",
-      });
-
-      const records = Array.from(
-        parser.parse(encoder.encode("Alice,30,extra\nBob,25")),
+    test("should reject 'truncate' strategy for object output", () => {
+      expect(() => {
+        new FlexibleBinaryObjectCSVParser({
+          header: ["name", "age"] as const,
+          columnCountStrategy: "truncate",
+          charset: "utf-8",
+        });
+      }).toThrow(
+        /columnCountStrategy 'truncate' is not allowed for object format/,
       );
-      expect(records).toEqual([
-        { name: "Alice", age: "30" },
-        { name: "Bob", age: "25" },
-      ]);
     });
   });
 

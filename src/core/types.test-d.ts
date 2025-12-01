@@ -1,6 +1,7 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type {
   CSVRecordAssemblerOptions,
+  CSVRecordView,
   EngineConfig,
   MainThreadEngineConfig,
   WorkerEngineConfig,
@@ -40,6 +41,27 @@ describe("EngineConfig", () => {
       >();
 
       expectTypeOf(config2.wasm).toEqualTypeOf<boolean | undefined>();
+    });
+
+    describe("CSVRecordView hybrid", () => {
+      it("supports both tuple and object access", () => {
+        type Header = readonly ["name", "age", "city"];
+        const view = [] as unknown as CSVRecordView<Header>;
+        expectTypeOf(view[0]).toEqualTypeOf<string>();
+        expectTypeOf(view.name).toEqualTypeOf<string>();
+        expectTypeOf(view.length).toEqualTypeOf<Header["length"]>();
+      });
+
+      it("is assignable to both CSVArrayRecord and CSVObjectRecord contracts", () => {
+        type Header = readonly ["name", "age"];
+        const view = [] as unknown as CSVRecordView<Header>;
+        // Tuple behavior
+        expectTypeOf(view).toMatchTypeOf<
+          readonly [name: string, age: string]
+        >();
+        // Object behavior
+        expectTypeOf(view).toMatchTypeOf<{ name: string; age: string }>();
+      });
     });
 
     it("WorkerEngineConfig: worker is true", () => {
@@ -264,7 +286,7 @@ describe("CSVRecordAssemblerOptions", () => {
       >();
     });
 
-    it("Normal mode allows all columnCountStrategy options", () => {
+    it("Array format accepts all columnCountStrategy options", () => {
       const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "array",
@@ -279,8 +301,8 @@ describe("CSVRecordAssemblerOptions", () => {
 
       const opts3: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
-        outputFormat: "object",
-        columnCountStrategy: "strict",
+        outputFormat: "array",
+        columnCountStrategy: "truncate",
       };
 
       expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
@@ -294,7 +316,52 @@ describe("CSVRecordAssemblerOptions", () => {
       >();
     });
 
-    it("Normal mode allows both array and object output formats", () => {
+    it("Object format restricts columnCountStrategy to fill | strict", () => {
+      const opts: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+        columnCountStrategy: "strict",
+      };
+
+      expectTypeOf(opts.columnCountStrategy).toEqualTypeOf<
+        "fill" | "strict" | undefined
+      >();
+
+      // @ts-expect-error keep is not allowed for object format
+      const _invalidKeep: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+        columnCountStrategy: "keep",
+      };
+
+      // @ts-expect-error truncate is not allowed for object format
+      const _invalidTruncate: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+        columnCountStrategy: "truncate",
+      };
+    });
+
+    it("Record-view format shares object columnCountStrategy restrictions", () => {
+      const opts: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "record-view",
+        columnCountStrategy: "fill",
+      };
+
+      expectTypeOf(opts.columnCountStrategy).toEqualTypeOf<
+        "fill" | "strict" | undefined
+      >();
+
+      // @ts-expect-error keep is not allowed for record-view format
+      const _invalidKeep: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "record-view",
+        columnCountStrategy: "keep",
+      };
+    });
+
+    it("Normal mode allows array, object, and record-view output formats", () => {
       const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "array",
@@ -305,11 +372,17 @@ describe("CSVRecordAssemblerOptions", () => {
         outputFormat: "object",
       };
 
-      expectTypeOf(opts1.outputFormat).toEqualTypeOf<
-        "object" | "array" | undefined
-      >();
+      const opts3: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "record-view",
+      };
+
+      expectTypeOf(opts1.outputFormat).toEqualTypeOf<"array">();
       expectTypeOf(opts2.outputFormat).toEqualTypeOf<
-        "object" | "array" | undefined
+        "object" | "record-view" | undefined
+      >();
+      expectTypeOf(opts3.outputFormat).toEqualTypeOf<
+        "object" | "record-view" | undefined
       >();
     });
   });

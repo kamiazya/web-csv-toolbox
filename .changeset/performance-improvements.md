@@ -34,6 +34,7 @@ This release includes significant internal optimizations that improve JavaScript
 | Header-length builder preallocation | Assembler | Capacity stays steady on wide CSV |
 | Object assembler row buffer pooling | Assembler | Lower GC spikes on object output |
 | Lexer segment-buffer pooling | Lexer | Smoother GC for quoted-heavy input |
+| Object record view (zero-copy option) | Assembler | ~4% faster when `recordView` is enabled |
 
 ### Final Performance Results (Pure JavaScript)
 

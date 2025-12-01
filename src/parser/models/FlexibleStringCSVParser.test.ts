@@ -241,17 +241,15 @@ describe("FlexibleStringCSVParser (Object and Array)", () => {
       expect(() => Array.from(parser.parse("Alice,30,extra"))).toThrow();
     });
 
-    test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleStringObjectCSVParser({
-        header: ["name", "age"] as const,
-        columnCountStrategy: "truncate",
-      });
-
-      const records = Array.from(parser.parse("Alice,30,extra\nBob,25"));
-      expect(records).toEqual([
-        { name: "Alice", age: "30" },
-        { name: "Bob", age: "25" },
-      ]);
+    test("should reject 'truncate' strategy for object output", () => {
+      expect(() => {
+        new FlexibleStringObjectCSVParser({
+          header: ["name", "age"] as const,
+          columnCountStrategy: "truncate",
+        });
+      }).toThrow(
+        /columnCountStrategy 'truncate' is not allowed for object format/,
+      );
     });
   });
 

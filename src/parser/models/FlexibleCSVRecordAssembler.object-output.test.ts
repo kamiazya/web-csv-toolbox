@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
@@ -158,77 +158,44 @@ Bob,25,LA`;
     });
 
     describe("truncate strategy", () => {
-      test("should truncate long rows to match header length", () => {
-        const csv = `Alice,30,NY,Extra`;
-
-        const lexer = new FlexibleStringCSVLexer();
-        const tokens = lexer.lex(csv);
-
-        const assembler = createCSVRecordAssembler({
-          header: ["name", "age", "city"] as const,
-          outputFormat: "object",
-          columnCountStrategy: "truncate",
-        });
-
-        const records = [...assembler.assemble(tokens)];
-
-        expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({ name: "Alice", age: "30", city: "NY" }); // Truncated
-      });
-
-      test("should fill short rows with empty string", () => {
-        const csv = `Alice,30`;
-
-        const lexer = new FlexibleStringCSVLexer();
-        const tokens = lexer.lex(csv);
-
-        const assembler = createCSVRecordAssembler({
-          header: ["name", "age", "city"] as const,
-          outputFormat: "object",
-          columnCountStrategy: "truncate",
-        });
-
-        const records = [...assembler.assemble(tokens)];
-
-        expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({
-          name: "Alice",
-          age: "30",
-          city: "",
-        }); // Missing field filled with empty string (object format always fills)
+      test("should throw error because truncate is not allowed for object format", () => {
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "object",
+            columnCountStrategy: "truncate",
+          });
+        }).toThrowError(
+          /columnCountStrategy 'truncate' is not allowed for object format/,
+        );
       });
     });
 
     describe("keep strategy", () => {
-      test("should warn and fallback to fill strategy", () => {
-        const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-        const csv = `Alice,30`;
-
-        const lexer = new FlexibleStringCSVLexer();
-        const tokens = lexer.lex(csv);
-
-        const assembler = createCSVRecordAssembler({
-          header: ["name", "age", "city"] as const,
-          outputFormat: "object",
-          columnCountStrategy: "keep",
-        });
-
-        const records = [...assembler.assemble(tokens)];
-
-        expect(warnSpy).toHaveBeenCalledWith(
-          expect.stringContaining(
-            "columnCountStrategy 'keep' has no effect in object format",
-          ),
+      test("should throw error because keep is not allowed for object format", () => {
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "object",
+            columnCountStrategy: "keep",
+          });
+        }).toThrowError(
+          /columnCountStrategy 'keep' is not allowed for object format/,
         );
-        expect(records).toHaveLength(1);
-        expect(records[0]).toEqual({
-          name: "Alice",
-          age: "30",
-          city: "",
-        }); // Behaves like fill (fills with empty string)
+      });
+    });
 
-        warnSpy.mockRestore();
+    describe("record-view format", () => {
+      test("should reject unsupported columnCountStrategy values", () => {
+        expect(() => {
+          createCSVRecordAssembler({
+            header: ["name", "age", "city"] as const,
+            outputFormat: "record-view",
+            columnCountStrategy: "keep",
+          });
+        }).toThrowError(
+          /columnCountStrategy 'keep' is not allowed for object format/,
+        );
       });
     });
 

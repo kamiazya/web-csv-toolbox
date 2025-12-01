@@ -1,6 +1,7 @@
 import type { CSVRecordAssemblerFactoryOptions } from "@/core/types.ts";
 import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
+import { FlexibleCSVRecordViewAssembler } from "@/parser/models/FlexibleCSVRecordViewAssembler.ts";
 
 /**
  * Factory function to create the appropriate CSV record assembler based on options.
@@ -39,9 +40,11 @@ export function createCSVRecordAssembler<
     CSVRecordAssemblerFactoryOptions<Header> = CSVRecordAssemblerFactoryOptions<Header>,
 >(
   options?: Options,
-): Options extends { outputFormat: "array" }
-  ? FlexibleCSVArrayRecordAssembler<Header>
-  : FlexibleCSVObjectRecordAssembler<Header> {
+): Options extends { outputFormat: "record-view" }
+  ? FlexibleCSVRecordViewAssembler<Header>
+  : Options extends { outputFormat: "array" }
+    ? FlexibleCSVArrayRecordAssembler<Header>
+    : FlexibleCSVObjectRecordAssembler<Header> {
   const format = options?.outputFormat ?? "object";
 
   // Validate headerless mode (header: [])
@@ -84,17 +87,31 @@ export function createCSVRecordAssembler<
   }
 
   // Validate that 'sparse' strategy is not used with object format
-  if (format === "object" && options?.columnCountStrategy === "sparse") {
-    throw new Error(
-      "columnCountStrategy 'sparse' is not allowed for object format. " +
-        "'sparse' fills missing fields with undefined, which is not compatible with object format. " +
-        "Use 'fill' (fills with empty string) or outputFormat: 'array' for sparse data.",
-    );
+  if (
+    (format === "object" || format === "record-view") &&
+    options?.columnCountStrategy
+  ) {
+    const strategy = options.columnCountStrategy;
+    if (strategy === "sparse") {
+      throw new Error(
+        "columnCountStrategy 'sparse' is not allowed for object format. " +
+          "'sparse' fills missing fields with undefined, which is not compatible with object format. " +
+          "Use 'fill' (fills with empty string) or outputFormat: 'array' for sparse data.",
+      );
+    }
+    if (strategy === "keep" || strategy === "truncate") {
+      throw new Error(
+        `columnCountStrategy '${strategy}' is not allowed for object format. ` +
+          "Use 'fill' (default) or 'strict' for object output.",
+      );
+    }
   }
 
-  if (format === "array") {
-    return new FlexibleCSVArrayRecordAssembler<Header>(options ?? {}) as any;
+  if (format === "record-view") {
+    return new FlexibleCSVRecordViewAssembler<Header>(options) as any;
+  } else if (format === "array") {
+    return new FlexibleCSVArrayRecordAssembler<Header>(options) as any;
   } else {
-    return new FlexibleCSVObjectRecordAssembler<Header>(options ?? {}) as any;
+    return new FlexibleCSVObjectRecordAssembler<Header>(options) as any;
   }
 }

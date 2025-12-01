@@ -605,7 +605,7 @@ export interface CSVRecordAssemblerCommonOptions<
 > extends SourceOption,
     AbortSignalOptions {
   header?: Header;
-  outputFormat?: "object" | "array";
+  outputFormat?: "object" | "array" | "record-view";
   includeHeader?: boolean;
   columnCountStrategy?: ColumnCountStrategy;
   maxFieldCount?: number;
@@ -637,7 +637,7 @@ export interface CSVRecordAssemblerFactoryOptions<
  * **Normal Mode (header inferred or explicit)**:
  * - `header: undefined` → infer from first row
  * - `header: ['col1', ...]` → explicit header
- * - Allows any `outputFormat` and `columnCountStrategy`
+ * - Array output can use any {@link ColumnCountStrategy}; object / record-view output supports only `'fill'` or `'strict'`
  *
  * @example Type-safe headerless mode
  * ```ts
@@ -694,127 +694,76 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
          */
         includeHeader?: boolean;
       }
-    : // Normal mode: flexible configuration
-      CSVRecordAssemblerBaseOptions & {
-        /**
-         * CSV header specification.
-         *
-         * @remarks
-         * **Behavior by value**:
-         * - `undefined` (default): First row is automatically inferred as the header
-         * - `['col1', 'col2', ...]`: Explicit header, first row is treated as data
-         *
-         * @default undefined (infer from first row)
-         *
-         * @example
-         * ```ts
-         * // Infer header from first row
-         * const records = parseStringToArraySync('name,age\nAlice,30', {
-         *   // header: undefined (default)
-         * });
-         * // => [{ name: 'Alice', age: '30' }]
-         *
-         * // Explicit header
-         * const records = parseStringToArraySync('Alice,30\nBob,25', {
-         *   header: ['name', 'age']
-         * });
-         * // => [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
-         * ```
-         */
-        header?: Header;
+    : // Normal mode: flexible configuration (object vs array branches)
+        | (Omit<CSVRecordAssemblerBaseOptions, "outputFormat"> & {
+            /**
+             * CSV header specification.
+             *
+             * @remarks
+             * **Behavior by value**:
+             * - `undefined` (default): First row is automatically inferred as the header
+             * - `['col1', 'col2', ...]`: Explicit header, first row is treated as data
+             *
+             * @default undefined (infer from first row)
+             */
+            header?: Header;
 
-        /**
-         * Output format for CSV records.
-         *
-         * @remarks
-         * - `'object'` (default): Records are returned as objects with header keys
-         * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
-         *
-         * @default 'object'
-         *
-         * @example
-         * ```ts
-         * // With 'object' format (default)
-         * { name: 'Alice', age: '30' }
-         *
-         * // With 'array' format
-         * ['Alice', '30'] // Type: readonly [name: string, age: string]
-         * ```
-         */
-        outputFormat?: "object" | "array";
+            /**
+             * Output format for CSV records.
+             *
+             * @remarks
+             * Defaults to `'object'` when omitted.
+             */
+            outputFormat?: "object" | "record-view";
 
-        /**
-         * Include header row as the first element in array output.
-         *
-         * @remarks
-         * Only valid when `outputFormat` is `'array'`.
-         * When true, the header array will be yielded as the first record.
-         *
-         * @default false
-         *
-         * @throws {Error} If used with `outputFormat: 'object'`
-         *
-         * @example
-         * ```ts
-         * // With includeHeader: true and header: ['name', 'age']
-         * // First record: ['name', 'age']
-         * // Second record: ['Alice', '30']
-         * ```
-         */
-        includeHeader?: boolean;
+            /**
+             * Column-count strategy for object output.
+             *
+             * @remarks
+             * - `'fill'` (default): Always emit every header key, padding missing values with empty string.
+             * - `'strict'`: Enforce exact column counts and throw on mismatch.
+             */
+            columnCountStrategy?: ObjectFormatColumnCountStrategy;
 
-        /**
-         * Strategy for handling column count mismatches between header and data rows.
-         *
-         * @remarks
-         * Controls how to handle rows with column counts different from the header.
-         * See {@link ColumnCountStrategy} for detailed strategy descriptions.
-         *
-         * **Strategy overview**:
-         * - `'fill'` (default): Fill missing fields with empty string, truncate long rows
-         * - `'sparse'`: Fill missing fields with undefined, truncate long rows (array format only)
-         * - `'keep'`: Keep rows as-is (array format varies length; object format acts like `'fill'`)
-         * - `'strict'`: Throw error on length mismatch
-         * - `'truncate'`: Truncate long rows, keep short rows as-is (object format: all keys present)
-         *
-         * **Object format restriction**:
-         * `'sparse'` is not allowed for object format because object format requires all keys
-         * to have string values. Use `'fill'` instead.
-         *
-         * **Headerless CSV**:
-         * When `header` is undefined or `[]`, this option is accepted but behaves as `'keep'`.
-         * For explicit headerless mode (`header: []`), only `'keep'` is allowed at runtime.
-         *
-         * @default 'fill'
-         *
-         * @example Array format examples
-         * ```ts
-         * // Header: ['name', 'age', 'city']
-         * // Row: 'Alice,30'
-         * // outputFormat: 'array'
-         *
-         * // columnCountStrategy: 'fill' → ['Alice', '30', ''] (padded with empty string)
-         * // columnCountStrategy: 'sparse' → ['Alice', '30', undefined] (padded with undefined)
-         * // columnCountStrategy: 'keep' → ['Alice', '30'] (short row kept)
-         * // columnCountStrategy: 'strict' → Error thrown
-         * // columnCountStrategy: 'truncate' → ['Alice', '30'] (short row kept)
-         * ```
-         *
-         * @example Object format examples
-         * ```ts
-         * // Header: ['name', 'age', 'city']
-         * // Row: 'Alice,30'
-         * // outputFormat: 'object'
-         *
-         * // columnCountStrategy: 'fill' → { name: 'Alice', age: '30', city: '' } (all keys)
-         * // columnCountStrategy: 'sparse' → Error thrown (not allowed for object format)
-         * // columnCountStrategy: 'keep' → { name: 'Alice', age: '30', city: '' } (treated as 'fill')
-         * // columnCountStrategy: 'strict' → Error thrown
-         * // columnCountStrategy: 'truncate' → { name: 'Alice', age: '30', city: '' } (all keys)
-         * ```
-         */
-        columnCountStrategy?: ColumnCountStrategy;
-      };
+            /**
+             * `includeHeader` is not supported for object output.
+             */
+            includeHeader?: never;
+          })
+        | (Omit<CSVRecordAssemblerBaseOptions, "outputFormat"> & {
+            /**
+             * CSV header specification (required for strategies other than 'fill'/'keep').
+             */
+            header?: Header;
+
+            /**
+             * Output format for CSV records.
+             *
+             * @remarks
+             * `'array'` returns records as readonly tuples. Enables `includeHeader`.
+             */
+            outputFormat: "array";
+
+            /**
+             * Include header row as the first element in array output.
+             *
+             * @default false
+             */
+            includeHeader?: boolean;
+
+            /**
+             * Column-count strategy for array output.
+             *
+             * @remarks
+             * Choose according to purpose:
+             * - `'fill'`: Pad with `""` and trim excess columns.
+             * - `'keep'`: Preserve ragged rows (also required for `header: []`).
+             * - `'truncate'`: Drop extra columns but leave short rows untouched.
+             * - `'sparse'`: Pad with `undefined` (requires an explicit header).
+             * - `'strict'`: Throw on any mismatch.
+             */
+            columnCountStrategy?: ColumnCountStrategy;
+          });
 
 /**
  * CSV Record Assembler Transformer Stream Options.
@@ -1344,7 +1293,7 @@ export interface EngineOptions {
  * This type extracts the output format from options and defaults to 'object' if not specified.
  */
 export type InferFormat<Options> = Options extends { outputFormat: infer F }
-  ? F extends "object" | "array"
+  ? F extends "object" | "array" | "record-view"
     ? F
     : "object"
   : "object";
@@ -1526,33 +1475,25 @@ export interface ParseBinaryOptions<
  * @category Types
  *
  * @remarks
- * **Available strategies**:
- * - `'fill'` (default): Fill missing fields with empty string `""`
- *   - Array format: Pad short rows with `""`, truncate long rows
- *   - Object format: All header keys present, missing values = `""`
- *   - Type-safe: Fields typed as `string`
- * - `'sparse'`: Fill missing fields with `undefined`
- *   - Array format: Pad short rows with `undefined`, truncate long rows
- *   - Object format: **Not allowed** (object format requires all keys to have string values)
- *   - Type: Fields typed as `string | undefined`
- * - `'keep'`: Output rows as-is with their actual length
- *   - Array format: Row length varies, no padding or truncation
- *   - Object format: Treated as `'fill'` (all header keys present, missing values = `""`)
- * - `'strict'`: Enforce exact header length match
- *   - Both formats: Throws error if row length ≠ header length
- * - `'truncate'`: Handle long rows only, keep short rows as-is
- *   - Array format: Truncate long rows to header length, keep short rows unchanged
- *   - Object format: All header keys present (like `'fill'`), missing values = `""`
+ * **Choose by goal:**
+ * - `'fill'` (default): Keep a consistent shape by padding missing columns with empty string and trimming extra columns (arrays & objects).
+ * - `'strict'`: Enforce schema correctness by throwing whenever a row length differs from the header (arrays & objects).
+ * - `'keep'`: Preserve ragged rows exactly as parsed (array format only; required when `header: []`).
+ * - `'truncate'`: Drop trailing columns from long rows while leaving short rows untouched (array format only).
+ * - `'sparse'`: Allow optional columns by padding with `undefined` (array format only, explicit header required so the target width is known).
  *
- * **Default values**:
- * - Array format: `'fill'`
- * - Object format: `'fill'`
+ * **Format-specific availability**:
+ * - *Object / record-view output*: only `'fill'` and `'strict'` are valid. Selecting `'keep'`, `'truncate'`, or `'sparse'` results in a runtime/type error.
+ * - *Array output*: all strategies are available.
  *
- * **Headerless CSV behavior**:
- * When no header is provided (`header: undefined` or `header: []`):
- * - The strategy option is accepted but effectively behaves as `'keep'`
- * - All rows maintain their actual length with no validation
- * - For explicit headerless mode (`header: []`), only `'keep'` is allowed at runtime
+ * **Header requirements**:
+ * - Headerless mode (`header: []`) mandates `'keep'`.
+ * - Inferred headers (`header` omitted) permit `'fill'` (default) or `'keep'`; other strategies need a declared header so the target column count is known.
+ * - `'sparse'`, `'strict'`, and `'truncate'` all require an explicit header.
+ *
+ * **Defaults:**
+ * - Array format → `'fill'`
+ * - Object / record-view format → `'fill'`
  *
  * @example Array format examples
  *
@@ -1576,10 +1517,10 @@ export interface ParseBinaryOptions<
  * // outputFormat: 'object'
  *
  * // fill → { name: 'Alice', age: '30', city: '' } (all keys present with empty string)
- * // sparse → Not allowed in object format (throws error)
- * // keep → { name: 'Alice', age: '30', city: '' } (treated as 'fill')
  * // strict → Error thrown (length mismatch)
- * // truncate → { name: 'Alice', age: '30', city: '' } (all keys present)
+ * // keep → Error (object format requires 'fill' or 'strict')
+ * // truncate → Error (object format requires 'fill' or 'strict')
+ * // sparse → Error (not supported for object format)
  * ```
  */
 export type ColumnCountStrategy =
@@ -1596,17 +1537,18 @@ export type ColumnCountStrategy =
  *
  * @remarks
  * Object format does not support 'sparse' strategy because objects cannot
- * have undefined values in a type-safe manner. Use 'fill' (default), 'strict',
- * 'truncate', or 'keep' for object format.
+ * have undefined values in a type-safe manner. Likewise, 'keep' and 'truncate'
+ * would drop keys or change row shape, so object output only allows 'fill'
+ * (default) or 'strict'.
  *
  * - `'fill'`: Fill missing fields with empty string (default)
- * - `'keep'`: Falls back to 'fill' for object format
+ * - `'keep'`: Not allowed (throws). Use array output if you need ragged rows.
  * - `'strict'`: Throw error if column count doesn't match header
- * - `'truncate'`: Ignore extra fields, fill missing with empty string
+ * - `'truncate'`: Not allowed (throws). Use array output to drop extra fields.
  */
-export type ObjectFormatColumnCountStrategy = Exclude<
+export type ObjectFormatColumnCountStrategy = Extract<
   ColumnCountStrategy,
-  "sparse"
+  "fill" | "strict"
 >;
 
 /**
@@ -1755,16 +1697,48 @@ export type CSVArrayRecord<
  */
 export type CSVRecord<
   Header extends ReadonlyArray<string>,
-  Format extends "object" | "array" = "object",
+  Format extends "object" | "array" | "record-view" = "object",
   Strategy extends ColumnCountStrategy = "fill",
 > = Format extends "array"
   ? CSVArrayRecord<Header, Strategy>
-  : Strategy extends "sparse"
-    ? never // sparse is not allowed for object format
-    : CSVObjectRecord<
-        Header,
-        Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
-      >;
+  : Format extends "record-view"
+    ? Strategy extends "sparse"
+      ? never
+      : CSVRecordView<
+          Header,
+          Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
+        >
+    : Strategy extends "sparse"
+      ? never // sparse is not allowed for object/record-view format
+      : CSVObjectRecord<
+          Header,
+          Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
+        >;
+
+/**
+ * Hybrid CSV record view (array indices + object keys).
+ *
+ * @category Types
+ * @template Header Header definition for the CSV.
+ *
+ * @remarks
+ * Combines the ergonomics of {@link CSVArrayRecord} (named tuple / numeric index access)
+ * with {@link CSVObjectRecord} (header-keyed lookups). Used when `outputFormat: 'record-view'`
+ * is specified, so records behave like arrays underneath while still exposing header properties.
+ *
++ @example
+ * ```ts
+ * type Header = ["name", "age"] as const;
+ * const record: CSVRecordView<Header> = getRecordViewSomehow();
+ * record[0];      // "name" column via tuple index
+ * record.name;    // Same column via object property
+ * record.length;  // -> 2 (from tuple metadata)
+ * ```
+ */
+export type CSVRecordView<
+  Header extends ReadonlyArray<string>,
+  Strategy extends ObjectFormatColumnCountStrategy = "fill",
+> = CSVObjectRecord<Header, Strategy> & CSVArrayRecord<Header>;
 
 /**
  * Join CSV field array into a CSV-formatted string with proper escaping.
