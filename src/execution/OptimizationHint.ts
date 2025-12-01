@@ -59,15 +59,15 @@ export const CONTEXT_PRIORITY: Record<OptimizationHint, ContextType[]> = {
  *
  * ### Rationale
  *
- * - **speed**: Larger workgroup size maximizes parallelism
- * - **memory**: Smaller workgroup size reduces GPU memory usage
- * - **balanced/responsive**: Middle ground for general use
+ * - **speed**: 128 workgroup size for high throughput with high-performance GPU
+ * - **memory**: 32 workgroup size to minimize GPU memory usage
+ * - **balanced/responsive**: 64 (recommended default) for general use
  */
 export const GPU_CONFIG: Record<OptimizationHint, GPUBackendConfig> = {
-  speed: { workgroupSize: 256, devicePreference: "high-performance" },
-  memory: { workgroupSize: 64, devicePreference: "low-power" },
-  balanced: { workgroupSize: 128, devicePreference: "balanced" },
-  responsive: { workgroupSize: 128, devicePreference: "balanced" },
+  speed: { workgroupSize: 128, devicePreference: "high-performance" },
+  memory: { workgroupSize: 32, devicePreference: "low-power" },
+  balanced: { workgroupSize: 64, devicePreference: "balanced" },
+  responsive: { workgroupSize: 64, devicePreference: "balanced" },
 };
 
 /**

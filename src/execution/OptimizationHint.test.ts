@@ -111,23 +111,23 @@ describe("OptimizationHint constants", () => {
       }
     });
 
-    it("should use largest workgroup size for speed hint", () => {
-      expect(GPU_CONFIG.speed.workgroupSize).toBe(256);
+    it("should use larger workgroup size for speed hint", () => {
+      expect(GPU_CONFIG.speed.workgroupSize).toBe(128);
       expect(GPU_CONFIG.speed.devicePreference).toBe("high-performance");
     });
 
     it("should use smallest workgroup size for memory hint", () => {
-      expect(GPU_CONFIG.memory.workgroupSize).toBe(64);
+      expect(GPU_CONFIG.memory.workgroupSize).toBe(32);
       expect(GPU_CONFIG.memory.devicePreference).toBe("low-power");
     });
 
-    it("should use medium workgroup size for balanced hint", () => {
-      expect(GPU_CONFIG.balanced.workgroupSize).toBe(128);
+    it("should use recommended default workgroup size for balanced hint", () => {
+      expect(GPU_CONFIG.balanced.workgroupSize).toBe(64);
       expect(GPU_CONFIG.balanced.devicePreference).toBe("balanced");
     });
 
-    it("should use medium workgroup size for responsive hint", () => {
-      expect(GPU_CONFIG.responsive.workgroupSize).toBe(128);
+    it("should use recommended default workgroup size for responsive hint", () => {
+      expect(GPU_CONFIG.responsive.workgroupSize).toBe(64);
       expect(GPU_CONFIG.responsive.devicePreference).toBe("balanced");
     });
 

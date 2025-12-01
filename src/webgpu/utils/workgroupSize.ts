@@ -13,8 +13,12 @@ export type WorkgroupSize = 32 | 64 | 128 | 256 | 512;
 
 /**
  * Default workgroup size for GPU compute (used before device is available)
+ *
+ * @remarks
+ * 64 is the recommended workgroup size for WebGPU compute shaders.
+ * It provides a good balance between parallelism and resource usage.
  */
-export const DEFAULT_WORKGROUP_SIZE: WorkgroupSize = 256;
+export const DEFAULT_WORKGROUP_SIZE: WorkgroupSize = 64;
 
 /**
  * Supported workgroup sizes (must be power of 2)
