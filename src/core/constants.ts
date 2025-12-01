@@ -112,6 +112,6 @@ export enum Delimiter {
   Field = 0,
   /** Next token is a record delimiter (newline) */
   Record = 1,
-  /** End of file/stream */
-  EOF = 2,
+  // /** End of file/stream */
+  // EOF = 2,
 }

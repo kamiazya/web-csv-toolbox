@@ -37,9 +37,13 @@ export class FlexibleCSVArrayRecordAssembler<
   #columnCountStrategy: ColumnCountStrategy;
   #headerIncluded = false;
 
-  #assembleRecordFn: (() => CSVArrayRecord<Header>) | undefined;
+  #assembleRecordFn:
+    | ((rowLength: number) => CSVArrayRecord<Header>)
+    | undefined;
   #headerLength = 0;
   #hasContent = false;
+  #emptyRecordTemplate: string[] | undefined;
+  #rowLength = 0;
 
   constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
     this.#includeHeader = options.includeHeader ?? false;
@@ -148,34 +152,36 @@ export class FlexibleCSVArrayRecordAssembler<
     if (value !== "") {
       this.#hasContent = true;
     }
+    this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
 
     // Check what follows this field
-    if (
-      token.delimiter === Delimiter.Record ||
-      token.delimiter === Delimiter.EOF
-    ) {
-      // End of record - yield assembled record
-      if (this.#header === undefined) {
-        this.#setHeader(this.#row as unknown as Header);
-        yield* this.#maybeYieldHeader();
-      } else {
-        // Check if row has any non-empty content (tracked incrementally)
-        if (this.#hasContent) {
-          yield this.#assembleRecord();
-        } else if (!this.#skipEmptyLines) {
-          yield new Array(this.#header.length).fill(
-            "",
-          ) as unknown as CSVArrayRecord<Header>;
-        }
+    switch (token.delimiter) {
+      case Delimiter.Field: {
+        this.#fieldIndex++;
+        this.#checkFieldCount();
+        this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
+        break;
       }
-      // Reset for next record
-      this.#fieldIndex = 0;
-      this.#row.length = 0;
-      this.#hasContent = false;
-    } else {
-      // Field delimiter - move to next field
-      this.#fieldIndex++;
-      this.#checkFieldCount();
+      default: {
+        // End of record - yield assembled record
+        const rowLength = this.#rowLength || this.#fieldIndex + 1 || 0;
+        if (this.#header === undefined) {
+          const headerRow = this.#takeRow(rowLength);
+          this.#setHeader(headerRow as unknown as Header);
+          yield* this.#maybeYieldHeader();
+        } else {
+          // Check if row has any non-empty content (tracked incrementally)
+          if (this.#hasContent) {
+            yield this.#assembleRecord(rowLength);
+          } else if (!this.#skipEmptyLines) {
+            this.#resetRowBuilderState();
+            yield this.#createEmptyRecord();
+          } else {
+            this.#resetRowBuilderState();
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -212,6 +218,7 @@ export class FlexibleCSVArrayRecordAssembler<
     }
 
     this.#headerLength = header.length;
+    this.#emptyRecordTemplate = undefined;
     switch (this.#columnCountStrategy) {
       case "fill":
         this.#assembleRecordFn = this.#assembleRecordFill;
@@ -232,62 +239,64 @@ export class FlexibleCSVArrayRecordAssembler<
         this.#assembleRecordFn = this.#assembleRecordFill;
         break;
     }
+    this.#row = this.#allocateRowBuffer(this.#headerLength);
+    this.#rowLength = 0;
   }
 
-  #assembleRecord(): CSVArrayRecord<Header> {
+  #assembleRecord(rowLength: number): CSVArrayRecord<Header> {
     if (!this.#assembleRecordFn) {
-      return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+      return this.#takeRow(rowLength) as unknown as CSVArrayRecord<Header>;
     }
-    return this.#assembleRecordFn();
+    return this.#assembleRecordFn(rowLength);
   }
 
-  #assembleRecordKeep = (): CSVArrayRecord<Header> => {
-    return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+  #assembleRecordKeep = (rowLength: number): CSVArrayRecord<Header> => {
+    const record = this.#takeRow(rowLength);
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
   };
 
-  #assembleRecordFill = (): CSVArrayRecord<Header> => {
-    const rowLength = this.#row.length;
+  #assembleRecordFill = (rowLength: number): CSVArrayRecord<Header> => {
     const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
 
     if (rowLength < headerLength) {
-      const filled = this.#row.slice();
-      while (filled.length < headerLength) {
-        filled.push("");
+      for (let i = rowLength; i < headerLength; i++) {
+        record[i] = "";
       }
-      return filled as unknown as CSVArrayRecord<Header>;
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
     } else if (rowLength > headerLength) {
-      return this.#row.slice(
-        0,
-        headerLength,
-      ) as unknown as CSVArrayRecord<Header>;
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
     }
-    return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
   };
 
-  #assembleRecordSparse = (): CSVArrayRecord<Header> => {
-    const rowLength = this.#row.length;
+  #assembleRecordSparse = (rowLength: number): CSVArrayRecord<Header> => {
     const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
 
     if (rowLength < headerLength) {
-      const padded = this.#row.slice();
-      while (padded.length < headerLength) {
-        padded.push(undefined as unknown as string);
+      for (let i = rowLength; i < headerLength; i++) {
+        record[i] = undefined as unknown as string;
       }
-      return padded as unknown as CSVArrayRecord<Header>;
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
     } else if (rowLength > headerLength) {
-      return this.#row.slice(
-        0,
-        headerLength,
-      ) as unknown as CSVArrayRecord<Header>;
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
     }
-    return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
   };
 
-  #assembleRecordStrict = (): CSVArrayRecord<Header> => {
-    const rowLength = this.#row.length;
+  #assembleRecordStrict = (rowLength: number): CSVArrayRecord<Header> => {
     const headerLength = this.#headerLength;
 
     if (rowLength !== headerLength) {
+      this.#takeRow(rowLength);
       throw new ParseError(
         `Expected ${headerLength} columns, got ${rowLength}${
           this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
@@ -297,21 +306,61 @@ export class FlexibleCSVArrayRecordAssembler<
         },
       );
     }
-    return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+    const record = this.#takeRow(rowLength);
+    record.length = headerLength;
+    return record as unknown as CSVArrayRecord<Header>;
   };
 
-  #assembleRecordTruncate = (): CSVArrayRecord<Header> => {
-    const rowLength = this.#row.length;
+  #assembleRecordTruncate = (rowLength: number): CSVArrayRecord<Header> => {
     const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
 
     if (rowLength > headerLength) {
-      return this.#row.slice(
-        0,
-        headerLength,
-      ) as unknown as CSVArrayRecord<Header>;
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
     }
-    return this.#row.slice() as unknown as CSVArrayRecord<Header>;
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
   };
+
+  #takeRow(rowLength: number): string[] {
+    const record = this.#row;
+    record.length = rowLength;
+    const capacityHint =
+      this.#headerLength > 0 ? this.#headerLength : Math.max(rowLength, 4);
+    this.#row = this.#allocateRowBuffer(capacityHint);
+    this.#resetRowBuilderState(true);
+    return record;
+  }
+
+  #resetRowBuilderState(replacedBuffer = false): void {
+    this.#fieldIndex = 0;
+    this.#rowLength = 0;
+    this.#hasContent = false;
+    if (!replacedBuffer) {
+      this.#row.length = 0;
+    }
+  }
+
+  #allocateRowBuffer(capacityHint: number): string[] {
+    if (capacityHint <= 0) {
+      return [];
+    }
+    return new Array(capacityHint);
+  }
+
+  #createEmptyRecord(): CSVArrayRecord<Header> {
+    if (this.#headerLength === 0) {
+      return [] as unknown as CSVArrayRecord<Header>;
+    }
+    if (
+      this.#emptyRecordTemplate === undefined ||
+      this.#emptyRecordTemplate.length !== this.#headerLength
+    ) {
+      this.#emptyRecordTemplate = new Array(this.#headerLength).fill("");
+    }
+    return this.#emptyRecordTemplate.slice() as unknown as CSVArrayRecord<Header>;
+  }
 
   *#maybeYieldHeader(): IterableIterator<CSVArrayRecord<Header>> {
     if (

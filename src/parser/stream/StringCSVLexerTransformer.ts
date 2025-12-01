@@ -132,6 +132,7 @@ export class StringCSVLexerTransformer<
           }
         },
       },
+      // undefined, // writableStrategy
       writableStrategy,
       readableStrategy,
     );

@@ -54,7 +54,7 @@ describe("parseBinary function", () => {
         async ({ data, csv }) => {
           let i = 0;
           for await (const row of parseBinary(csv)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),

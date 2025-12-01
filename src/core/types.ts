@@ -567,7 +567,9 @@ export interface CSVLexerTransformerStreamOptions extends BackpressureOptions {
 export interface StringCSVLexerOptions<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
+  TrackLocation extends boolean = false,
 > extends CommonOptions<Delimiter, Quotation>,
+    TrackLocationOption<TrackLocation>,
     AbortSignalOptions,
     EngineOptions {}
 

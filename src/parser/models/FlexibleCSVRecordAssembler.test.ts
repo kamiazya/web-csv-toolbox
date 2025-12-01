@@ -54,7 +54,7 @@ describe("CSVRecordAssembler", () => {
       const tokens: AnyToken[] = [
         {
           value: "",
-          delimiter: Delimiter.EOF,
+          delimiter: Delimiter.Record,
           delimiterLength: 0,
           location: {
             start: { line: 1, column: 1, offset: 0 },
@@ -85,7 +85,7 @@ describe("CSVRecordAssembler", () => {
       const tokens: AnyToken[] = [
         {
           value: "",
-          delimiter: Delimiter.EOF,
+          delimiter: Delimiter.Record,
           delimiterLength: 0,
           location: {
             start: { line: 1, column: 1, offset: 0 },
@@ -114,7 +114,7 @@ describe("CSVRecordAssembler", () => {
     const tokens: AnyToken[] = [
       {
         value: "",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 1, column: 1, offset: 0 },

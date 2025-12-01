@@ -29,6 +29,11 @@ This release includes significant internal optimizations that improve JavaScript
 | Token type numeric conversion | Lexer/GC | -7% / -13% |
 | Location tracking made optional | Lexer | -19% to -31% |
 | Object.create(null) for records | Assembler | -31% |
+| Empty-row template cache | Assembler | ~4% faster on sparse CSV |
+| Row buffer reuse (no per-record slice) | Assembler | ~6% faster array format |
+| Header-length builder preallocation | Assembler | Capacity stays steady on wide CSV |
+| Object assembler row buffer pooling | Assembler | Lower GC spikes on object output |
+| Lexer segment-buffer pooling | Lexer | Smoother GC for quoted-heavy input |
 
 ### Final Performance Results (Pure JavaScript)
 

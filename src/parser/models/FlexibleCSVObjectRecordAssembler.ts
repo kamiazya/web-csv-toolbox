@@ -10,6 +10,7 @@ import type {
   CSVRecordAssemblerAssembleOptions,
   CSVRecordAssemblerCommonOptions,
 } from "@/core/types.ts";
+import { ReusableArrayPool } from "@/utils/memory/ReusableArrayPool.ts";
 
 /**
  * Flexible CSV Object Record Assembler implementation.
@@ -34,9 +35,13 @@ export class FlexibleCSVObjectRecordAssembler<
   #currentRowNumber?: number | undefined;
   #source?: string | undefined;
   #columnCountStrategy: ColumnCountStrategy;
+  #rowLength = 0;
+  #rowPool = new ReusableArrayPool<string[]>();
 
   // Optimization: Pre-bound strategy function (avoids switch per record)
-  #assembleRecordFn: (() => CSVObjectRecord<Header>) | undefined;
+  #assembleRecordFn:
+    | ((row: string[], rowLength: number) => CSVObjectRecord<Header>)
+    | undefined;
   // Optimization: Pre-computed valid header indices (avoids if check per field)
   #validHeaderIndices: number[] = [];
   // Optimization: Pre-created header keys (avoids header lookup per record)
@@ -142,31 +147,34 @@ export class FlexibleCSVObjectRecordAssembler<
     if (value !== "") {
       this.#hasContent = true;
     }
+    this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
 
-    // Check what follows this field
-    if (
-      token.delimiter === Delimiter.Record ||
-      token.delimiter === Delimiter.EOF
-    ) {
-      // End of record - yield assembled record
-      if (this.#header === undefined) {
-        this.#setHeader(this.#row as unknown as Header);
-      } else {
-        // A row with any fields (even all empty) is a valid record
-        // skipEmptyLines only skips rows where ALL fields are empty strings
-        if (this.#hasContent || !this.#skipEmptyLines) {
-          yield this.#assembleRecord();
-        }
-      }
-      // Reset for next record
-      this.#fieldIndex = 0;
-      this.#row.length = 0;
-      this.#hasContent = false;
-    } else {
-      // Field delimiter - move to next field
+    if (token.delimiter === Delimiter.Field) {
       this.#fieldIndex++;
       this.#checkFieldCount();
+      this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
+      return;
     }
+
+    const rowLength = this.#rowLength || this.#fieldIndex + 1 || 0;
+    const hadContent = this.#hasContent;
+    const completedRow = this.#takeRow(rowLength);
+
+    if (this.#header === undefined) {
+      this.#setHeader(completedRow as unknown as Header);
+      // Header takes ownership of completedRow; do not release.
+      return;
+    }
+
+    if (hadContent) {
+      yield this.#assembleRecord(completedRow, rowLength);
+    } else if (!this.#skipEmptyLines) {
+      this.#releaseRow(completedRow);
+      yield this.#createEmptyRecord();
+    } else {
+      this.#releaseRow(completedRow);
+    }
+    this.#hasContent = false;
   }
 
   *#flush(): IterableIterator<CSVObjectRecord<Header>> {
@@ -244,22 +252,27 @@ export class FlexibleCSVObjectRecordAssembler<
    * - Is faster than Object.fromEntries() (~3.6x speedup)
    * See CSVRecordAssembler.prototype-safety.test.ts for details.
    */
-  #assembleRecord(): CSVObjectRecord<Header> {
+  #assembleRecord(row: string[], rowLength: number): CSVObjectRecord<Header> {
     if (!this.#header || !this.#assembleRecordFn) {
+      this.#releaseRow(row);
       // Headerless: return empty object (shouldn't happen in normal flow)
       return Object.create(null) as CSVObjectRecord<Header>;
     }
-    return this.#assembleRecordFn();
+    const record = this.#assembleRecordFn(row, rowLength);
+    this.#releaseRow(row);
+    return record;
   }
 
   /**
    * Optimized "fill" strategy: map all header keys, fill missing values with empty string.
    * Uses Object.create(null) for faster object creation and proper "__proto__" handling.
    */
-  #assembleRecordFill = (): CSVObjectRecord<Header> => {
+  #assembleRecordFill = (
+    row: string[],
+    _rowLength: number,
+  ): CSVObjectRecord<Header> => {
     const indices = this.#validHeaderIndices;
     const len = indices.length;
-    const row = this.#row;
     const keys = this.#headerKeys;
 
     // Object.create(null) is ~3.6x faster than Object.fromEntries
@@ -276,11 +289,14 @@ export class FlexibleCSVObjectRecordAssembler<
    * Optimized "strict" strategy: throw error if column count doesn't match.
    * Uses Object.create(null) for faster object creation and proper "__proto__" handling.
    */
-  #assembleRecordStrict = (): CSVObjectRecord<Header> => {
+  #assembleRecordStrict = (
+    row: string[],
+    rowLength: number,
+  ): CSVObjectRecord<Header> => {
     const headerLength = this.#header!.length;
-    const rowLength = this.#row.length;
 
     if (rowLength !== headerLength) {
+      this.#releaseRow(row);
       throw new ParseError(
         `Expected ${headerLength} columns, got ${rowLength}${
           this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
@@ -293,7 +309,6 @@ export class FlexibleCSVObjectRecordAssembler<
 
     const indices = this.#validHeaderIndices;
     const len = indices.length;
-    const row = this.#row;
     const keys = this.#headerKeys;
 
     const obj = Object.create(null) as CSVObjectRecord<Header>;
@@ -308,10 +323,12 @@ export class FlexibleCSVObjectRecordAssembler<
    * Optimized "truncate" strategy: only include fields up to header length.
    * Uses Object.create(null) for faster object creation and proper "__proto__" handling.
    */
-  #assembleRecordTruncate = (): CSVObjectRecord<Header> => {
+  #assembleRecordTruncate = (
+    row: string[],
+    _rowLength: number,
+  ): CSVObjectRecord<Header> => {
     const indices = this.#validHeaderIndices;
     const len = indices.length;
-    const row = this.#row;
     const keys = this.#headerKeys;
 
     const obj = Object.create(null) as CSVObjectRecord<Header>;
@@ -321,4 +338,52 @@ export class FlexibleCSVObjectRecordAssembler<
 
     return obj;
   };
+
+  #takeRow(rowLength: number): string[] {
+    const record = this.#row;
+    record.length = rowLength;
+    const capacityHint = Math.max(rowLength, this.#header?.length ?? 4);
+    this.#row = this.#allocateRowBuffer(capacityHint);
+    this.#resetRowBuilderState(true);
+    return record;
+  }
+
+  #releaseRow(row: string[]): void {
+    this.#rowPool.release(row, (buffer) => {
+      buffer.length = 0;
+    });
+  }
+
+  #resetRowBuilderState(replacedBuffer = false): void {
+    this.#fieldIndex = 0;
+    this.#rowLength = 0;
+    this.#hasContent = false;
+    if (!replacedBuffer) {
+      this.#row.length = 0;
+    }
+  }
+
+  #allocateRowBuffer(capacityHint: number): string[] {
+    const ensure = Math.max(capacityHint, 0);
+    const buffer = this.#rowPool.take(() =>
+      ensure > 0 ? new Array(ensure) : [],
+    );
+    if (ensure > 0 && buffer.length < ensure) {
+      buffer.length = ensure;
+    }
+    buffer.length = 0;
+    return buffer;
+  }
+
+  #createEmptyRecord(): CSVObjectRecord<Header> {
+    const header = this.#header;
+    const obj = Object.create(null) as CSVObjectRecord<Header>;
+    if (!header) {
+      return obj;
+    }
+    for (let i = 0; i < header.length; i++) {
+      (obj as Record<string, string>)[header[i]!] = "";
+    }
+    return obj;
+  }
 }

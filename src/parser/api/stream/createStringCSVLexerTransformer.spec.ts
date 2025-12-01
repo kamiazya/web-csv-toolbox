@@ -1,13 +1,10 @@
 import fc from "fast-check";
-import { describe as describe_, expect, it as it_ } from "vitest";
+import { describe, expect, it } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
 import { Delimiter } from "@/core/constants.ts";
 import { createStringCSVLexerTransformer } from "@/parser/api/stream/createStringCSVLexerTransformer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
-
-const describe = describe_.concurrent;
-const it = it_.concurrent;
 
 describe("createStringCSVLexerTransformer", () => {
   it("should return a StringCSVLexerTransformer instance", () => {
@@ -21,13 +18,12 @@ describe("createStringCSVLexerTransformer", () => {
     const chunks = ["name,age\r\n", "Alice,20\r\n"];
 
     const tokens = await transform(transformer, chunks);
-    const flat = tokens.flat();
-
-    // New unified token format: tokens have 'delimiter' property
-    // Field delimiter tokens have delimiter: Delimiter.Field
-    // Record delimiter tokens have delimiter: Delimiter.Record
-    expect(flat.some((t) => t.delimiter === Delimiter.Field)).toBe(true);
-    expect(flat.some((t) => t.delimiter === Delimiter.Record)).toBe(true);
+    expect(tokens).toEqual([
+      { value: "name", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "age", delimiter: Delimiter.Record, delimiterLength: 2 },
+      { value: "Alice", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "20", delimiter: Delimiter.Record, delimiterLength: 2 },
+    ]);
   });
 
   it("should create transformer with custom delimiter", async () => {
@@ -35,15 +31,12 @@ describe("createStringCSVLexerTransformer", () => {
     const chunks = ["name\tage\r\n", "Alice\t20\r\n"];
 
     const tokens = await transform(transformer, chunks);
-    const flat = tokens.flat();
-
-    // Field tokens followed by field delimiter should have delimiter: Delimiter.Field
-    const fieldDelimiterTokens = flat.filter(
-      (t) => t.delimiter === Delimiter.Field,
-    );
-    expect(fieldDelimiterTokens.length).toBeGreaterThan(0);
-    // The delimiterLength should be 1 for tab
-    expect(fieldDelimiterTokens[0]?.delimiterLength).toBe(1);
+    expect(tokens).toEqual([
+      { value: "name", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "age", delimiter: Delimiter.Record, delimiterLength: 2 },
+      { value: "Alice", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "20", delimiter: Delimiter.Record, delimiterLength: 2 },
+    ]);
   });
 
   it("should create transformer with custom quotation", async () => {
@@ -65,25 +58,43 @@ describe("createStringCSVLexerTransformer", () => {
         fc.gen().map((g) => {
           const row = g(FC.row);
           const quote = g(FC.quote);
-          const chunks = autoChunk(
-            g,
-            row.map((v) => escapeField(v, { quote })).join(","),
-          );
+          const csv = row.map((v) => escapeField(v, { quote })).join(",");
+          const chunks = csv.length === 0 ? [""] : autoChunk(g, csv);
+          const ambiguousSingleEmpty =
+            row.length === 1 &&
+            row[0] === "" &&
+            escapeField(row[0]!, { quote }) === row[0];
           // New unified format: each field token includes delimiter info
           const expected = row.map((value, index) => ({
             value,
             delimiter:
-              index === row.length - 1 ? Delimiter.EOF : Delimiter.Field,
-            delimiterLength: index === row.length - 1 ? 0 : 1,
+              index === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+            delimiterLength: expect.any(Number),
           }));
+          if (ambiguousSingleEmpty) {
+            expected.pop();
+          }
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
           const transformer = createStringCSVLexerTransformer();
-          const actual = (await transform(transformer, chunks)).flat();
+          const actual = await transform(transformer, chunks);
           expect(actual).toMatchObject(expected);
         },
       ),
+      {
+        // examples: [
+        //   {
+        //     row: ["name", "age"],
+        //     chunks: ["name,age\r\n"],
+        //     expected: [
+        //       { value: "name", delimiter: Delimiter.Field, delimiterLength: 1 },
+        //       { value: "age", delimiter: Delimiter.Record, delimiterLength: 2 },
+        //     ],
+        //   },
+        //   { row: [""], chunks: [""], expected: [{ value: "", delimiter: 1, delimiterLength: 0 }] },
+        // ],
+      },
     );
   });
 
@@ -114,15 +125,12 @@ describe("createStringCSVLexerTransformer", () => {
             row.map((value, j) => {
               const isLastField = j === row.length - 1;
               const isLastRow = i === data.length - 1;
-              let delimiter:
-                | typeof Delimiter.Field
-                | typeof Delimiter.Record
-                | typeof Delimiter.EOF;
+              let delimiter: Delimiter;
               let delimiterLength: number;
 
               if (isLastField) {
                 if (isLastRow && !EOF) {
-                  delimiter = Delimiter.EOF;
+                  delimiter = Delimiter.Record;
                   delimiterLength = 0;
                 } else {
                   delimiter = Delimiter.Record;

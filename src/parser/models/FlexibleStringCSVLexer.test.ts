@@ -14,7 +14,7 @@ describe("CSVLexer", () => {
     expect([...tokens]).toStrictEqual([
       {
         value: "field",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 1, column: 1, offset: 0 },
@@ -30,7 +30,7 @@ describe("CSVLexer", () => {
     expect([...tokens]).toStrictEqual([
       {
         value: "field",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 1, column: 1, offset: 0 },
@@ -56,7 +56,7 @@ describe("CSVLexer", () => {
       },
       {
         value: "next",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 1, column: 9, offset: 8 },
@@ -82,7 +82,7 @@ describe("CSVLexer", () => {
       },
       {
         value: "Hello\nWorld",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 3, column: 1, offset: 9 },
@@ -166,7 +166,7 @@ describe("CSVLexer", () => {
     expect([...tokens]).toStrictEqual([
       {
         value: "Hello World",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 2, column: 1, offset: 12 },
@@ -196,7 +196,7 @@ describe("CSVLexer", () => {
     expect([...tokens]).toStrictEqual([
       {
         value: 'Hello"World',
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: {
           start: { line: 2, column: 1, offset: 14 },

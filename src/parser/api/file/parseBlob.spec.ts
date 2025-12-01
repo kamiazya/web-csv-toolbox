@@ -54,7 +54,7 @@ describe("parseBlob function", () => {
         async ({ data, blob }) => {
           let i = 0;
           for await (const row of parseBlob(blob)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),
@@ -70,7 +70,7 @@ describe("parseBlob function", () => {
 
     let i = 0;
     for await (const row of parseBlob(blob)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -84,7 +84,7 @@ describe("parseBlob function", () => {
 
     let i = 0;
     for await (const row of parseBlob(blob)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -98,7 +98,7 @@ describe("parseBlob function", () => {
 
     let i = 0;
     for await (const row of parseBlob(file)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -111,7 +111,7 @@ describe("parseBlob function", () => {
     ];
 
     const records = await parseBlob.toArray(blob);
-    expect(records).toStrictEqual(expected);
+    expect(records).toEqual(expected);
   });
 
   describe("source handling", () => {

@@ -7,13 +7,13 @@ import {
 } from "@/core/constants.ts";
 import { ParseError } from "@/core/errors.ts";
 import type {
-  AbortSignalOptions,
-  CommonOptions,
   CSVLexerLexOptions,
   Position,
+  StringCSVLexer,
+  StringCSVLexerOptions,
   Token,
-  TrackLocationOption,
 } from "@/core/types.ts";
+import { ReusableArrayPool } from "@/utils/memory/ReusableArrayPool.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 /**
@@ -39,7 +39,8 @@ export class FlexibleStringCSVLexer<
   DelimiterType extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
   TrackLocation extends boolean = false,
-> {
+> implements StringCSVLexer<TrackLocation>
+{
   #delimiter: string;
   #quotation: string;
   #buffer = "";
@@ -72,13 +73,15 @@ export class FlexibleStringCSVLexer<
 
   #signal?: AbortSignal | undefined;
   #source?: string | undefined;
+  #segmentPool: ReusableArrayPool<string[]>;
+  static readonly #SEGMENT_POOL_LIMIT = 32;
 
   constructor(
-    options: CommonOptions<DelimiterType, Quotation> &
-      TrackLocationOption<TrackLocation> &
-      AbortSignalOptions = {} as CommonOptions<DelimiterType, Quotation> &
-      TrackLocationOption<TrackLocation> &
-      AbortSignalOptions,
+    options: StringCSVLexerOptions<
+      DelimiterType,
+      Quotation,
+      TrackLocation
+    > = {},
   ) {
     const {
       delimiter = DEFAULT_DELIMITER,
@@ -96,6 +99,9 @@ export class FlexibleStringCSVLexer<
     this.#trackLocation = trackLocation;
     this.#source = source;
     this.#signal = signal;
+    this.#segmentPool = new ReusableArrayPool<string[]>(
+      FlexibleStringCSVLexer.#SEGMENT_POOL_LIMIT,
+    );
 
     // Pre-compute character codes
     this.#delimiterCode = delimiter.charCodeAt(0);
@@ -214,26 +220,29 @@ export class FlexibleStringCSVLexer<
     this.#signal?.throwIfAborted();
     const remainingLen = this.#buffer.length - this.#bufferOffset;
     if (remainingLen === 0) {
-      // Emit empty EOF token after trailing field delimiter (e.g., ",x," -> 3 fields)
-      if (this.#pendingTrailingFieldEOF && this.#flush) {
-        this.#pendingTrailingFieldEOF = false;
-        if (this.#trackLocation) {
+      // Emit empty token when flushing
+      if (this.#flush) {
+        // Emit empty token after trailing field delimiter (e.g., ",x," -> 3 fields)
+        if (this.#pendingTrailingFieldEOF) {
+          this.#pendingTrailingFieldEOF = false;
+          if (this.#trackLocation) {
+            return {
+              value: "",
+              delimiter: Delimiter.Record,
+              delimiterLength: 0,
+              location: {
+                start: { ...this.#cursor },
+                end: { ...this.#cursor },
+                rowNumber: this.#rowNumber,
+              },
+            } as Token<TrackLocation>;
+          }
           return {
             value: "",
-            delimiter: Delimiter.EOF,
+            delimiter: Delimiter.Record,
             delimiterLength: 0,
-            location: {
-              start: { ...this.#cursor },
-              end: { ...this.#cursor },
-              rowNumber: this.#rowNumber,
-            },
           } as Token<TrackLocation>;
         }
-        return {
-          value: "",
-          delimiter: Delimiter.EOF,
-          delimiterLength: 0,
-        } as Token<TrackLocation>;
       }
       return null;
     }
@@ -288,96 +297,115 @@ export class FlexibleStringCSVLexer<
   }
 
   #parseQuotedFieldNoLocation(): Token<false> | null {
-    const baseOffset = this.#bufferOffset;
-    const buf = this.#buffer;
-    const quotCode = this.#quotationCode;
-    let localOffset = 1;
-    const segments: string[] = [];
-    let segmentStart = localOffset;
+    const segments = this.#borrowSegments();
+    try {
+      const baseOffset = this.#bufferOffset;
+      const buf = this.#buffer;
+      const quotCode = this.#quotationCode;
+      let localOffset = 1;
+      let segmentStart = localOffset;
 
-    let curCode = buf.charCodeAt(baseOffset + localOffset);
-    if (Number.isNaN(curCode)) {
-      if (!this.#flush) {
-        return null;
-      }
-      this.#throwUnexpectedEOF();
-    }
-
-    let nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
-
-    do {
-      if (curCode === quotCode) {
-        if (nextCode === quotCode) {
-          // Escaped quote
-          segments.push(
-            buf.slice(baseOffset + segmentStart, baseOffset + localOffset + 1),
-          );
-          localOffset += 2;
-          segmentStart = localOffset;
-          curCode = buf.charCodeAt(baseOffset + localOffset);
-          nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
-          continue;
-        }
-
-        if (Number.isNaN(nextCode) && !this.#flush) {
+      let curCode = buf.charCodeAt(baseOffset + localOffset);
+      if (Number.isNaN(curCode)) {
+        if (!this.#flush) {
           return null;
         }
-
-        // End of quoted field - collect value
-        if (localOffset > segmentStart) {
-          segments.push(
-            buf.slice(baseOffset + segmentStart, baseOffset + localOffset),
-          );
-        }
-
-        const value = segments.length === 1 ? segments[0]! : segments.join("");
-        localOffset++; // skip closing quote
-
-        // Inline delimiter determination using charCodeAt
-        const delimCode = buf.charCodeAt(baseOffset + localOffset);
-
-        // Field delimiter
-        if (delimCode === this.#delimiterCode) {
-          this.#bufferOffset =
-            baseOffset + localOffset + this.#fieldDelimiterLength;
-          this.#pendingTrailingFieldEOF =
-            this.#bufferOffset >= this.#buffer.length;
-          return {
-            value,
-            delimiter: Delimiter.Field,
-            delimiterLength: this.#fieldDelimiterLength,
-          };
-        }
-
-        // Record delimiter (CRLF)
-        if (
-          delimCode === CR &&
-          buf.charCodeAt(baseOffset + localOffset + 1) === LF_CODE
-        ) {
-          this.#bufferOffset = baseOffset + localOffset + 2;
-          return { value, delimiter: Delimiter.Record, delimiterLength: 2 };
-        }
-
-        // Record delimiter (LF)
-        if (delimCode === LF_CODE) {
-          this.#bufferOffset = baseOffset + localOffset + 1;
-          return { value, delimiter: Delimiter.Record, delimiterLength: 1 };
-        }
-
-        // EOF
-        this.#bufferOffset = baseOffset + localOffset;
-        return { value, delimiter: Delimiter.EOF, delimiterLength: 0 };
+        this.#throwUnexpectedEOF();
       }
 
-      localOffset++;
-      curCode = nextCode;
-      nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
-    } while (!Number.isNaN(curCode));
+      let nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
+      do {
+        if (curCode === quotCode) {
+          if (nextCode === quotCode) {
+            // Escaped quote
+            segments.push(
+              buf.slice(
+                baseOffset + segmentStart,
+                baseOffset + localOffset + 1,
+              ),
+            );
+            localOffset += 2;
+            segmentStart = localOffset;
+            curCode = buf.charCodeAt(baseOffset + localOffset);
+            nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
+            continue;
+          }
 
-    if (this.#flush) {
-      this.#throwUnexpectedEOF();
+          if (Number.isNaN(nextCode) && !this.#flush) {
+            return null;
+          }
+
+          // End of quoted field - collect value
+          if (localOffset > segmentStart) {
+            segments.push(
+              buf.slice(baseOffset + segmentStart, baseOffset + localOffset),
+            );
+          }
+
+          const value =
+            segments.length === 1 ? segments[0]! : segments.join("");
+          localOffset++; // skip closing quote
+
+          // Inline delimiter determination using charCodeAt
+          const delimPos = baseOffset + localOffset;
+          const delimCode = buf.charCodeAt(delimPos);
+
+          if (Number.isNaN(delimCode)) {
+            if (!this.#flush) {
+              return null;
+            }
+            this.#bufferOffset = delimPos;
+            return { value, delimiter: Delimiter.Record, delimiterLength: 0 };
+          }
+
+          // Field delimiter
+          if (delimCode === this.#delimiterCode) {
+            this.#bufferOffset = delimPos + this.#fieldDelimiterLength;
+            this.#pendingTrailingFieldEOF =
+              this.#bufferOffset >= this.#buffer.length;
+            return {
+              value,
+              delimiter: Delimiter.Field,
+              delimiterLength: this.#fieldDelimiterLength,
+            };
+          }
+
+          // Record delimiter (CRLF)
+          if (delimCode === CR) {
+            const nextCode = buf.charCodeAt(delimPos + 1);
+            if (Number.isNaN(nextCode)) {
+              if (!this.#flush) {
+                return null;
+              }
+            } else if (nextCode === LF_CODE) {
+              this.#bufferOffset = delimPos + 2;
+              return { value, delimiter: Delimiter.Record, delimiterLength: 2 };
+            }
+          }
+
+          // Record delimiter (LF)
+          if (delimCode === LF_CODE) {
+            this.#bufferOffset = delimPos + 1;
+            return { value, delimiter: Delimiter.Record, delimiterLength: 1 };
+          }
+
+          // EOF
+          this.#bufferOffset = delimPos;
+          return { value, delimiter: Delimiter.Record, delimiterLength: 0 };
+        }
+
+        localOffset++;
+        curCode = nextCode;
+        nextCode = buf.charCodeAt(baseOffset + localOffset + 1);
+      } while (!Number.isNaN(curCode));
+
+      if (this.#flush) {
+        this.#throwUnexpectedEOF();
+      }
+      return null;
+    } finally {
+      this.#releaseSegments(segments);
     }
-    return null;
   }
 
   #parseUnquotedFieldNoLocation(): Token<false> | null {
@@ -440,7 +468,7 @@ export class FlexibleStringCSVLexer<
     // EOF
     const value = buf.slice(startOffset, startOffset + localEnd);
     this.#bufferOffset = startOffset + localEnd;
-    return { value, delimiter: Delimiter.EOF, delimiterLength: 0 };
+    return { value, delimiter: Delimiter.Record, delimiterLength: 0 };
   }
 
   /**
@@ -453,124 +481,138 @@ export class FlexibleStringCSVLexer<
   ): Token<false> | null {
     const buf = this.#buffer;
     const quotCode = this.#quotationCode;
-    const segments: string[] = [];
-
-    // Add prefix (unquoted part before the quote)
-    if (prefixLen > 0) {
-      segments.push(buf.slice(startOffset, startOffset + prefixLen));
-    }
-
-    let localOffset = prefixLen + 1; // Skip opening quote
-    let segmentStart = localOffset;
-
-    let curCode = buf.charCodeAt(startOffset + localOffset);
-    if (Number.isNaN(curCode)) {
-      if (!this.#flush) {
-        return null;
+    const segments = this.#borrowSegments();
+    try {
+      // Add prefix (unquoted part before the quote)
+      if (prefixLen > 0) {
+        segments.push(buf.slice(startOffset, startOffset + prefixLen));
       }
-      this.#throwUnexpectedEOF();
-    }
 
-    let nextCode = buf.charCodeAt(startOffset + localOffset + 1);
+      let localOffset = prefixLen + 1; // Skip opening quote
+      let segmentStart = localOffset;
 
-    while (!Number.isNaN(curCode)) {
-      if (curCode === quotCode) {
-        if (nextCode === quotCode) {
-          // Escaped quote
-          segments.push(
-            buf.slice(
-              startOffset + segmentStart,
-              startOffset + localOffset + 1,
-            ),
-          );
-          localOffset += 2;
-          segmentStart = localOffset;
-          curCode = buf.charCodeAt(startOffset + localOffset);
-          nextCode = buf.charCodeAt(startOffset + localOffset + 1);
-          continue;
-        }
-
-        if (Number.isNaN(nextCode) && !this.#flush) {
+      let curCode = buf.charCodeAt(startOffset + localOffset);
+      if (Number.isNaN(curCode)) {
+        if (!this.#flush) {
           return null;
         }
-
-        // End of quoted section - collect value
-        if (localOffset > segmentStart) {
-          segments.push(
-            buf.slice(startOffset + segmentStart, startOffset + localOffset),
-          );
-        }
-
-        localOffset++; // skip closing quote
-
-        // Check what follows the quoted section
-        const afterCode = buf.charCodeAt(startOffset + localOffset);
-
-        // Continue parsing if more unquoted content follows
-        if (
-          !Number.isNaN(afterCode) &&
-          afterCode !== this.#delimiterCode &&
-          afterCode !== CR &&
-          afterCode !== LF_CODE
-        ) {
-          // Recursively handle the rest (could have more quoted sections)
-          this.#bufferOffset = startOffset + localOffset;
-          const rest = this.#parseUnquotedFieldNoLocation();
-          if (rest === null) {
-            return null;
-          }
-          segments.push(rest.value);
-          return {
-            value: segments.join(""),
-            delimiter: rest.delimiter,
-            delimiterLength: rest.delimiterLength,
-          };
-        }
-
-        const value = segments.join("");
-
-        // Field delimiter
-        if (afterCode === this.#delimiterCode) {
-          this.#bufferOffset =
-            startOffset + localOffset + this.#fieldDelimiterLength;
-          this.#pendingTrailingFieldEOF =
-            this.#bufferOffset >= this.#buffer.length;
-          return {
-            value,
-            delimiter: Delimiter.Field,
-            delimiterLength: this.#fieldDelimiterLength,
-          };
-        }
-
-        // Record delimiter (CRLF)
-        if (
-          afterCode === CR &&
-          buf.charCodeAt(startOffset + localOffset + 1) === LF_CODE
-        ) {
-          this.#bufferOffset = startOffset + localOffset + 2;
-          return { value, delimiter: Delimiter.Record, delimiterLength: 2 };
-        }
-
-        // Record delimiter (LF)
-        if (afterCode === LF_CODE) {
-          this.#bufferOffset = startOffset + localOffset + 1;
-          return { value, delimiter: Delimiter.Record, delimiterLength: 1 };
-        }
-
-        // EOF
-        this.#bufferOffset = startOffset + localOffset;
-        return { value, delimiter: Delimiter.EOF, delimiterLength: 0 };
+        this.#throwUnexpectedEOF();
       }
 
-      localOffset++;
-      curCode = nextCode;
-      nextCode = buf.charCodeAt(startOffset + localOffset + 1);
-    }
+      let nextCode = buf.charCodeAt(startOffset + localOffset + 1);
 
-    if (this.#flush) {
-      this.#throwUnexpectedEOF();
+      while (!Number.isNaN(curCode)) {
+        if (curCode === quotCode) {
+          if (nextCode === quotCode) {
+            // Escaped quote
+            segments.push(
+              buf.slice(
+                startOffset + segmentStart,
+                startOffset + localOffset + 1,
+              ),
+            );
+            localOffset += 2;
+            segmentStart = localOffset;
+            curCode = buf.charCodeAt(startOffset + localOffset);
+            nextCode = buf.charCodeAt(startOffset + localOffset + 1);
+            continue;
+          }
+
+          if (Number.isNaN(nextCode) && !this.#flush) {
+            return null;
+          }
+
+          // End of quoted section - collect value
+          if (localOffset > segmentStart) {
+            segments.push(
+              buf.slice(startOffset + segmentStart, startOffset + localOffset),
+            );
+          }
+
+          localOffset++; // skip closing quote
+
+          // Check what follows the quoted section
+          const afterCode = buf.charCodeAt(startOffset + localOffset);
+          const value = segments.join("");
+
+          if (Number.isNaN(afterCode)) {
+            if (!this.#flush) {
+              return null;
+            }
+            this.#bufferOffset = startOffset + localOffset;
+            return { value, delimiter: Delimiter.Record, delimiterLength: 0 };
+          }
+
+          // Continue parsing if more unquoted content follows
+          if (
+            !Number.isNaN(afterCode) &&
+            afterCode !== this.#delimiterCode &&
+            afterCode !== CR &&
+            afterCode !== LF_CODE
+          ) {
+            // Recursively handle the rest (could have more quoted sections)
+            this.#bufferOffset = startOffset + localOffset;
+            const rest = this.#parseUnquotedFieldNoLocation();
+            if (rest === null) {
+              return null;
+            }
+            segments.push(rest.value);
+            return {
+              value: segments.join(""),
+              delimiter: rest.delimiter,
+              delimiterLength: rest.delimiterLength,
+            };
+          }
+
+          // Field delimiter
+          if (afterCode === this.#delimiterCode) {
+            this.#bufferOffset =
+              startOffset + localOffset + this.#fieldDelimiterLength;
+            this.#pendingTrailingFieldEOF =
+              this.#bufferOffset >= this.#buffer.length;
+            return {
+              value,
+              delimiter: Delimiter.Field,
+              delimiterLength: this.#fieldDelimiterLength,
+            };
+          }
+
+          // Record delimiter (CRLF)
+          if (afterCode === CR) {
+            const nextAfter = buf.charCodeAt(startOffset + localOffset + 1);
+            if (Number.isNaN(nextAfter)) {
+              if (!this.#flush) {
+                return null;
+              }
+            } else if (nextAfter === LF_CODE) {
+              this.#bufferOffset = startOffset + localOffset + 2;
+              return { value, delimiter: Delimiter.Record, delimiterLength: 2 };
+            }
+          }
+
+          // Record delimiter (LF)
+          if (afterCode === LF_CODE) {
+            this.#bufferOffset = startOffset + localOffset + 1;
+            return { value, delimiter: Delimiter.Record, delimiterLength: 1 };
+          }
+
+          // EOF
+          this.#bufferOffset = startOffset + localOffset;
+          return { value, delimiter: Delimiter.Record, delimiterLength: 0 };
+        }
+
+        localOffset++;
+        curCode = nextCode;
+        nextCode = buf.charCodeAt(startOffset + localOffset + 1);
+      }
+
+      if (this.#flush) {
+        this.#throwUnexpectedEOF();
+      }
+      return null;
+    } finally {
+      this.#releaseSegments(segments);
     }
-    return null;
   }
 
   // ==================== Location-Tracking Parsing Methods ====================
@@ -656,141 +698,175 @@ export class FlexibleStringCSVLexer<
     let column = 2;
     let line = 0;
 
-    const segments: string[] = [];
-    let segmentStart = localOffset;
+    const segments = this.#borrowSegments();
+    try {
+      let segmentStart = localOffset;
 
-    let cur: string | undefined = this.#buffer[baseOffset + localOffset];
-    if (cur === undefined) {
-      if (!this.#flush) {
-        return null;
-      }
-      this.#throwUnexpectedEOFWithLocation();
-    }
-
-    let next: string | undefined = this.#buffer[baseOffset + localOffset + 1];
-
-    do {
-      if (cur === this.#quotation) {
-        if (next === this.#quotation) {
-          segments.push(
-            this.#buffer.slice(
-              baseOffset + segmentStart,
-              baseOffset + localOffset + 1,
-            ),
-          );
-          localOffset += 2;
-          segmentStart = localOffset;
-          cur = this.#buffer[baseOffset + localOffset];
-          next = this.#buffer[baseOffset + localOffset + 1];
-          column += 2;
-          continue;
-        }
-
-        if (next === undefined && !this.#flush) {
+      let cur: string | undefined = this.#buffer[baseOffset + localOffset];
+      if (cur === undefined) {
+        if (!this.#flush) {
           return null;
         }
+        this.#throwUnexpectedEOFWithLocation();
+      }
 
-        // End of quoted field - collect value
-        if (localOffset > segmentStart) {
-          segments.push(
-            this.#buffer.slice(
-              baseOffset + segmentStart,
-              baseOffset + localOffset,
-            ),
-          );
-        }
+      let next: string | undefined = this.#buffer[baseOffset + localOffset + 1];
 
-        const value = segments.length === 1 ? segments[0]! : segments.join("");
-        localOffset++; // skip closing quote
-        this.#cursor.column += column;
-        this.#cursor.offset += localOffset;
-        this.#cursor.line += line;
+      do {
+        if (cur === this.#quotation) {
+          if (next === this.#quotation) {
+            segments.push(
+              this.#buffer.slice(
+                baseOffset + segmentStart,
+                baseOffset + localOffset + 1,
+              ),
+            );
+            localOffset += 2;
+            segmentStart = localOffset;
+            cur = this.#buffer[baseOffset + localOffset];
+            next = this.#buffer[baseOffset + localOffset + 1];
+            column += 2;
+            continue;
+          }
 
-        // Inline delimiter determination
-        const nextChar = this.#buffer[baseOffset + localOffset];
+          if (next === undefined && !this.#flush) {
+            return null;
+          }
 
-        // Field delimiter
-        if (nextChar === this.#delimiter) {
-          const end: Position = { ...this.#cursor };
-          this.#bufferOffset =
-            baseOffset + localOffset + this.#fieldDelimiterLength;
-          this.#cursor.column += this.#fieldDelimiterLength;
-          this.#cursor.offset += this.#fieldDelimiterLength;
-          this.#pendingTrailingFieldEOF =
-            this.#bufferOffset >= this.#buffer.length;
-          return {
-            value,
-            delimiter: Delimiter.Field,
-            delimiterLength: this.#fieldDelimiterLength,
-            location: { start, end, rowNumber: this.#rowNumber },
-          };
-        }
+          // End of quoted field - collect value
+          if (localOffset > segmentStart) {
+            segments.push(
+              this.#buffer.slice(
+                baseOffset + segmentStart,
+                baseOffset + localOffset,
+              ),
+            );
+          }
 
-        // Record delimiter (CRLF)
-        if (
-          nextChar === "\r" &&
-          this.#buffer[baseOffset + localOffset + 1] === "\n"
-        ) {
-          const end: Position = { ...this.#cursor };
-          this.#bufferOffset = baseOffset + localOffset + 2;
-          this.#cursor.line++;
-          this.#cursor.column = 1;
-          this.#cursor.offset += 2;
-          const rowNum = this.#rowNumber++;
+          const value =
+            segments.length === 1 ? segments[0]! : segments.join("");
+          localOffset++; // skip closing quote
+          const nextChar = this.#buffer[baseOffset + localOffset];
+
+          if (nextChar === undefined) {
+            if (!this.#flush) {
+              return null;
+            }
+            this.#cursor.column += column;
+            this.#cursor.offset += localOffset;
+            this.#cursor.line += line;
+            this.#bufferOffset = baseOffset + localOffset;
+            return {
+              value,
+              delimiter: Delimiter.Record,
+              delimiterLength: 0,
+              location: {
+                start,
+                end: { ...this.#cursor },
+                rowNumber: this.#rowNumber,
+              },
+            };
+          }
+
+          if (
+            nextChar === "\r" &&
+            this.#buffer[baseOffset + localOffset + 1] === undefined &&
+            !this.#flush
+          ) {
+            return null;
+          }
+
+          this.#cursor.column += column;
+          this.#cursor.offset += localOffset;
+          this.#cursor.line += line;
+
+          // Inline delimiter determination
+
+          // Field delimiter
+          if (nextChar === this.#delimiter) {
+            const end: Position = { ...this.#cursor };
+            this.#bufferOffset =
+              baseOffset + localOffset + this.#fieldDelimiterLength;
+            this.#cursor.column += this.#fieldDelimiterLength;
+            this.#cursor.offset += this.#fieldDelimiterLength;
+            this.#pendingTrailingFieldEOF =
+              this.#bufferOffset >= this.#buffer.length;
+            return {
+              value,
+              delimiter: Delimiter.Field,
+              delimiterLength: this.#fieldDelimiterLength,
+              location: { start, end, rowNumber: this.#rowNumber },
+            };
+          }
+
+          // Record delimiter (CRLF)
+          if (
+            nextChar === "\r" &&
+            this.#buffer[baseOffset + localOffset + 1] === "\n"
+          ) {
+            const end: Position = { ...this.#cursor };
+            this.#bufferOffset = baseOffset + localOffset + 2;
+            this.#cursor.line++;
+            this.#cursor.column = 1;
+            this.#cursor.offset += 2;
+            const rowNum = this.#rowNumber++;
+            return {
+              value,
+              delimiter: Delimiter.Record,
+              delimiterLength: 2,
+              location: { start, end, rowNumber: rowNum },
+            };
+          }
+
+          // Record delimiter (LF)
+          if (nextChar === "\n") {
+            const end: Position = { ...this.#cursor };
+            this.#bufferOffset = baseOffset + localOffset + 1;
+            this.#cursor.line++;
+            this.#cursor.column = 1;
+            this.#cursor.offset += 1;
+            const rowNum = this.#rowNumber++;
+            return {
+              value,
+              delimiter: Delimiter.Record,
+              delimiterLength: 1,
+              location: { start, end, rowNumber: rowNum },
+            };
+          }
+
+          // EOF
+          this.#bufferOffset = baseOffset + localOffset;
           return {
             value,
             delimiter: Delimiter.Record,
-            delimiterLength: 2,
-            location: { start, end, rowNumber: rowNum },
+            delimiterLength: 0,
+            location: {
+              start,
+              end: { ...this.#cursor },
+              rowNumber: this.#rowNumber,
+            },
           };
         }
 
-        // Record delimiter (LF)
-        if (nextChar === "\n") {
-          const end: Position = { ...this.#cursor };
-          this.#bufferOffset = baseOffset + localOffset + 1;
-          this.#cursor.line++;
-          this.#cursor.column = 1;
-          this.#cursor.offset += 1;
-          const rowNum = this.#rowNumber++;
-          return {
-            value,
-            delimiter: Delimiter.Record,
-            delimiterLength: 1,
-            location: { start, end, rowNumber: rowNum },
-          };
+        if (cur === LF) {
+          line++;
+          column = 1;
+        } else {
+          column++;
         }
 
-        // EOF
-        this.#bufferOffset = baseOffset + localOffset;
-        return {
-          value,
-          delimiter: Delimiter.EOF,
-          delimiterLength: 0,
-          location: {
-            start,
-            end: { ...this.#cursor },
-            rowNumber: this.#rowNumber,
-          },
-        };
+        localOffset++;
+        cur = next;
+        next = this.#buffer[baseOffset + localOffset + 1];
+      } while (cur !== undefined);
+
+      if (this.#flush) {
+        this.#throwUnexpectedEOFWithLocation();
       }
-
-      if (cur === LF) {
-        line++;
-        column = 1;
-      } else {
-        column++;
-      }
-
-      localOffset++;
-      cur = next;
-      next = this.#buffer[baseOffset + localOffset + 1];
-    } while (cur !== undefined);
-
-    if (this.#flush) {
-      this.#throwUnexpectedEOFWithLocation();
+      return null;
+    } finally {
+      this.#releaseSegments(segments);
     }
-    return null;
   }
 
   #parseUnquotedFieldWithLocation(): Token<true> | null {
@@ -883,7 +959,7 @@ export class FlexibleStringCSVLexer<
     this.#cursor.offset += localEnd;
     return {
       value,
-      delimiter: Delimiter.EOF,
+      delimiter: Delimiter.Record,
       delimiterLength: 0,
       location: {
         start,
@@ -904,169 +980,218 @@ export class FlexibleStringCSVLexer<
   ): Token<true> | null {
     const buf = this.#buffer;
     const quotation = this.#quotation;
-    const segments: string[] = [];
-
-    // Add prefix (unquoted part before the quote)
-    if (prefixLen > 0) {
-      segments.push(buf.slice(startOffset, startOffset + prefixLen));
-    }
-
-    // Update cursor for the prefix and opening quote
-    this.#cursor.column += prefixLen + 1;
-    this.#cursor.offset += prefixLen + 1;
-
-    let localOffset = prefixLen + 1; // Skip opening quote
-    let segmentStart = localOffset;
-    let line = 0;
-    let column = 0;
-
-    let cur: string | undefined = buf[startOffset + localOffset];
-    if (cur === undefined) {
-      if (!this.#flush) {
-        return null;
+    const segments = this.#borrowSegments();
+    try {
+      // Add prefix (unquoted part before the quote)
+      if (prefixLen > 0) {
+        segments.push(buf.slice(startOffset, startOffset + prefixLen));
       }
-      this.#throwUnexpectedEOFWithLocation();
-    }
 
-    let next: string | undefined = buf[startOffset + localOffset + 1];
+      // Update cursor for the prefix and opening quote
+      this.#cursor.column += prefixLen + 1;
+      this.#cursor.offset += prefixLen + 1;
 
-    while (cur !== undefined) {
-      if (cur === quotation) {
-        if (next === quotation) {
-          // Escaped quote
-          segments.push(
-            buf.slice(
-              startOffset + segmentStart,
-              startOffset + localOffset + 1,
-            ),
-          );
-          localOffset += 2;
-          segmentStart = localOffset;
-          cur = buf[startOffset + localOffset];
-          next = buf[startOffset + localOffset + 1];
-          column += 2;
-          continue;
-        }
+      let localOffset = prefixLen + 1; // Skip opening quote
+      let segmentStart = localOffset;
+      let line = 0;
+      let column = 0;
 
-        if (next === undefined && !this.#flush) {
+      let cur: string | undefined = buf[startOffset + localOffset];
+      if (cur === undefined) {
+        if (!this.#flush) {
           return null;
         }
+        this.#throwUnexpectedEOFWithLocation();
+      }
 
-        // End of quoted section - collect value
-        if (localOffset > segmentStart) {
-          segments.push(
-            buf.slice(startOffset + segmentStart, startOffset + localOffset),
-          );
-        }
+      let next: string | undefined = buf[startOffset + localOffset + 1];
 
-        localOffset++; // skip closing quote
-        this.#cursor.column += column + 1;
-        this.#cursor.offset += localOffset - prefixLen - 1;
-        this.#cursor.line += line;
+      while (cur !== undefined) {
+        if (cur === quotation) {
+          if (next === quotation) {
+            // Escaped quote
+            segments.push(
+              buf.slice(
+                startOffset + segmentStart,
+                startOffset + localOffset + 1,
+              ),
+            );
+            localOffset += 2;
+            segmentStart = localOffset;
+            cur = buf[startOffset + localOffset];
+            next = buf[startOffset + localOffset + 1];
+            column += 2;
+            continue;
+          }
 
-        // Check what follows the quoted section
-        const afterChar = buf[startOffset + localOffset];
-
-        // Continue parsing if more unquoted content follows
-        if (
-          afterChar !== undefined &&
-          afterChar !== this.#delimiter &&
-          afterChar !== "\r" &&
-          afterChar !== "\n"
-        ) {
-          // Recursively handle the rest (could have more quoted sections)
-          this.#bufferOffset = startOffset + localOffset;
-          const rest = this.#parseUnquotedFieldWithLocation();
-          if (rest === null) {
+          if (next === undefined && !this.#flush) {
             return null;
           }
-          segments.push(rest.value);
-          return {
-            value: segments.join(""),
-            delimiter: rest.delimiter,
-            delimiterLength: rest.delimiterLength,
-            location: {
-              start,
-              end: rest.location.end,
-              rowNumber: rest.location.rowNumber,
-            },
-          };
-        }
 
-        const value = segments.join("");
-        const end: Position = { ...this.#cursor };
+          // End of quoted section - collect value
+          if (localOffset > segmentStart) {
+            segments.push(
+              buf.slice(startOffset + segmentStart, startOffset + localOffset),
+            );
+          }
 
-        // Field delimiter
-        if (afterChar === this.#delimiter) {
-          this.#bufferOffset =
-            startOffset + localOffset + this.#fieldDelimiterLength;
-          this.#cursor.column += this.#fieldDelimiterLength;
-          this.#cursor.offset += this.#fieldDelimiterLength;
-          this.#pendingTrailingFieldEOF =
-            this.#bufferOffset >= this.#buffer.length;
+          localOffset++; // skip closing quote
+
+          // Check what follows the quoted section
+          const afterChar = buf[startOffset + localOffset];
+          const value = segments.join("");
+
+          if (afterChar === undefined) {
+            if (!this.#flush) {
+              return null;
+            }
+            this.#cursor.column += column + 1;
+            this.#cursor.offset += localOffset - prefixLen - 1;
+            this.#cursor.line += line;
+            this.#bufferOffset = startOffset + localOffset;
+            return {
+              value,
+              delimiter: Delimiter.Record,
+              delimiterLength: 0,
+              location: {
+                start,
+                end: { ...this.#cursor },
+                rowNumber: this.#rowNumber,
+              },
+            };
+          }
+
+          if (
+            afterChar === "\r" &&
+            buf[startOffset + localOffset + 1] === undefined &&
+            !this.#flush
+          ) {
+            return null;
+          }
+
+          this.#cursor.column += column + 1;
+          this.#cursor.offset += localOffset - prefixLen - 1;
+          this.#cursor.line += line;
+
+          // Continue parsing if more unquoted content follows
+          if (
+            afterChar !== undefined &&
+            afterChar !== this.#delimiter &&
+            afterChar !== "\r" &&
+            afterChar !== "\n"
+          ) {
+            // Recursively handle the rest (could have more quoted sections)
+            this.#bufferOffset = startOffset + localOffset;
+            const rest = this.#parseUnquotedFieldWithLocation();
+            if (rest === null) {
+              return null;
+            }
+            segments.push(rest.value);
+            return {
+              value: segments.join(""),
+              delimiter: rest.delimiter,
+              delimiterLength: rest.delimiterLength,
+              location: {
+                start,
+                end: rest.location.end,
+                rowNumber: rest.location.rowNumber,
+              },
+            };
+          }
+
+          const end: Position = { ...this.#cursor };
+
+          // Field delimiter
+          if (afterChar === this.#delimiter) {
+            this.#bufferOffset =
+              startOffset + localOffset + this.#fieldDelimiterLength;
+            this.#cursor.column += this.#fieldDelimiterLength;
+            this.#cursor.offset += this.#fieldDelimiterLength;
+            this.#pendingTrailingFieldEOF =
+              this.#bufferOffset >= this.#buffer.length;
+            return {
+              value,
+              delimiter: Delimiter.Field,
+              delimiterLength: this.#fieldDelimiterLength,
+              location: { start, end, rowNumber: this.#rowNumber },
+            };
+          }
+
+          // Record delimiter (CRLF)
+          if (afterChar === "\r") {
+            const nextAfter = buf[startOffset + localOffset + 1];
+            if (nextAfter === undefined) {
+              if (!this.#flush) {
+                return null;
+              }
+            } else if (nextAfter === "\n") {
+              this.#bufferOffset = startOffset + localOffset + 2;
+              this.#cursor.line++;
+              this.#cursor.column = 1;
+              this.#cursor.offset += 2;
+              const rowNum = this.#rowNumber++;
+              return {
+                value,
+                delimiter: Delimiter.Record,
+                delimiterLength: 2,
+                location: { start, end, rowNumber: rowNum },
+              };
+            }
+          }
+
+          // Record delimiter (LF)
+          if (afterChar === "\n") {
+            this.#bufferOffset = startOffset + localOffset + 1;
+            this.#cursor.line++;
+            this.#cursor.column = 1;
+            this.#cursor.offset += 1;
+            const rowNum = this.#rowNumber++;
+            return {
+              value,
+              delimiter: Delimiter.Record,
+              delimiterLength: 1,
+              location: { start, end, rowNumber: rowNum },
+            };
+          }
+
+          // EOF
+          this.#bufferOffset = startOffset + localOffset;
           return {
             value,
-            delimiter: Delimiter.Field,
-            delimiterLength: this.#fieldDelimiterLength,
+            delimiter: Delimiter.Record,
+            delimiterLength: 0,
             location: { start, end, rowNumber: this.#rowNumber },
           };
         }
 
-        // Record delimiter (CRLF)
-        if (afterChar === "\r" && buf[startOffset + localOffset + 1] === "\n") {
-          this.#bufferOffset = startOffset + localOffset + 2;
-          this.#cursor.line++;
-          this.#cursor.column = 1;
-          this.#cursor.offset += 2;
-          const rowNum = this.#rowNumber++;
-          return {
-            value,
-            delimiter: Delimiter.Record,
-            delimiterLength: 2,
-            location: { start, end, rowNumber: rowNum },
-          };
+        if (cur === LF) {
+          line++;
+          column = 0;
+        } else {
+          column++;
         }
 
-        // Record delimiter (LF)
-        if (afterChar === "\n") {
-          this.#bufferOffset = startOffset + localOffset + 1;
-          this.#cursor.line++;
-          this.#cursor.column = 1;
-          this.#cursor.offset += 1;
-          const rowNum = this.#rowNumber++;
-          return {
-            value,
-            delimiter: Delimiter.Record,
-            delimiterLength: 1,
-            location: { start, end, rowNumber: rowNum },
-          };
-        }
-
-        // EOF
-        this.#bufferOffset = startOffset + localOffset;
-        return {
-          value,
-          delimiter: Delimiter.EOF,
-          delimiterLength: 0,
-          location: { start, end, rowNumber: this.#rowNumber },
-        };
+        localOffset++;
+        cur = next;
+        next = buf[startOffset + localOffset + 1];
       }
 
-      if (cur === LF) {
-        line++;
-        column = 0;
-      } else {
-        column++;
+      if (this.#flush) {
+        this.#throwUnexpectedEOFWithLocation();
       }
-
-      localOffset++;
-      cur = next;
-      next = buf[startOffset + localOffset + 1];
+      return null;
+    } finally {
+      this.#releaseSegments(segments);
     }
+  }
 
-    if (this.#flush) {
-      this.#throwUnexpectedEOFWithLocation();
-    }
-    return null;
+  #borrowSegments(): string[] {
+    return this.#segmentPool.take(() => []);
+  }
+
+  #releaseSegments(segments: string[]): void {
+    this.#segmentPool.release(segments, (buffer) => {
+      buffer.length = 0;
+    });
   }
 }

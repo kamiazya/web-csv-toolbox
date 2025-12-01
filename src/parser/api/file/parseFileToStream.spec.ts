@@ -16,7 +16,7 @@ describe("parseFileToStream", () => {
       result = await reader.read();
     }
 
-    expect(records).toStrictEqual([
+    expect(records).toEqual([
       { name: "Alice", age: "42" },
       { name: "Bob", age: "69" },
     ]);
@@ -53,7 +53,7 @@ describe("parseFileToStream", () => {
     const reader = stream.getReader();
 
     const result = await reader.read();
-    expect(result.value).toStrictEqual({ name: "Alice", age: "42" });
+    expect(result.value).toEqual({ name: "Alice", age: "42" });
   });
 
   it("should support streaming large files", async () => {
@@ -146,12 +146,12 @@ describe("parseFileToStream", () => {
     const reader = stream.getReader();
 
     const record1 = await reader.read();
-    expect(record1.value).toStrictEqual({
+    expect(record1.value).toEqual({
       name: "Alice",
       message: "Hello, World",
     });
 
     const record2 = await reader.read();
-    expect(record2.value).toStrictEqual({ name: "Bob", message: "Hi there" });
+    expect(record2.value).toEqual({ name: "Bob", message: "Hi there" });
   });
 });

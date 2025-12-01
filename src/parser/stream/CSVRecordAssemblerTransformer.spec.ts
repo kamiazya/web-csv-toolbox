@@ -135,7 +135,7 @@ describe("CSVRecordAssemblerTransformer", () => {
     const tokens: AnyToken[] = [
       {
         value: "test",
-        delimiter: Delimiter.EOF,
+        delimiter: Delimiter.Record,
         delimiterLength: 0,
         location: LOCATION_SHAPE,
       },

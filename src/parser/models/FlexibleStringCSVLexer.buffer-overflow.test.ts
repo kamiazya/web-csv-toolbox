@@ -159,7 +159,7 @@ describe("CSVLexer - Buffer Overflow Protection", () => {
 
       const tokens = [...lexer.lex(validData)];
       expect(tokens).toHaveLength(1);
-      expect(tokens[0]?.delimiter).toBe(Delimiter.EOF);
+      expect(tokens[0]?.delimiter).toBe(Delimiter.Record);
       expect(tokens[0]?.value).toBe('"'.repeat(1000));
     });
   });

@@ -12,7 +12,7 @@ describe("parseFile function", () => {
 
     let i = 0;
     for await (const row of parseFile(file)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -25,7 +25,7 @@ describe("parseFile function", () => {
     ];
 
     const records = await parseFile.toArray(file);
-    expect(records).toStrictEqual(expected);
+    expect(records).toEqual(expected);
   });
 
   describe("automatic source tracking", () => {

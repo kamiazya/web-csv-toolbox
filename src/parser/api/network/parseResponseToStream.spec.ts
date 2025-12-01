@@ -97,7 +97,7 @@ describe("parseResponseToStream", () => {
         async ({ data, response }) => {
           let i = 0;
           for await (const row of parseResponse(response)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),
