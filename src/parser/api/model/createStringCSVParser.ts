@@ -1,4 +1,6 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
+  ColumnCountStrategy,
   StringArrayCSVParser,
   StringCSVParserFactoryOptions,
   StringObjectCSVParser,
@@ -27,7 +29,7 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * @example Object format (default)
  * ```ts
  * const parser = createStringCSVParser({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   delimiter: ',',
  *   signal: abortController.signal,
  * });
@@ -39,7 +41,7 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * @example Array format
  * ```ts
  * const parser = createStringCSVParser({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   outputFormat: 'array',
  * });
  * for (const record of parser.parse('Alice,30\nBob,25')) {
@@ -47,40 +49,93 @@ import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObj
  * }
  * ```
  */
+// Overload: When outputFormat is explicitly "array"
 export function createStringCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
+  options: StringCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    "array",
+    Strategy
+  > & {
     outputFormat: "array";
   },
 ): StringArrayCSVParser<Header>;
 
+// Overload: When outputFormat is explicitly "object"
 export function createStringCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
+  options: StringCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    "object",
+    Strategy
+  > & {
     outputFormat: "object";
   },
 ): StringObjectCSVParser<Header>;
 
+// Overload: When outputFormat is omitted or undefined (defaults to object)
 export function createStringCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<StringCSVParserFactoryOptions<Header>, "outputFormat"> & {
-    outputFormat: "object" | "array";
-  },
-): StringArrayCSVParser<Header> | StringObjectCSVParser<Header>;
-
-export function createStringCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
->(
-  options?: StringCSVParserFactoryOptions<Header>,
+  options?: Omit<
+    StringCSVParserFactoryOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      "object",
+      Strategy
+    >,
+    "outputFormat"
+  >,
 ): StringObjectCSVParser<Header>;
 
+// Overload: When outputFormat is a union type (dynamic/runtime determined)
 export function createStringCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options?: StringCSVParserFactoryOptions<Header>,
+  options: StringCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    OutputFormat,
+    Strategy
+  >,
+): StringArrayCSVParser<Header> | StringObjectCSVParser<Header>;
+
+// Implementation signature
+export function createStringCSVParser<
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options?: StringCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    OutputFormat,
+    Strategy
+  >,
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
@@ -97,8 +152,12 @@ export function createStringCSVParser<
   // Instantiate the appropriate class based on outputFormat
   // Each class explicitly implements its respective interface
   if (format === "array") {
-    return new FlexibleStringArrayCSVParser<Header>(options ?? {}) as any;
+    return new FlexibleStringArrayCSVParser<Header>(
+      (options as any) ?? {},
+    ) as any;
   } else {
-    return new FlexibleStringObjectCSVParser<Header>(options ?? {}) as any;
+    return new FlexibleStringObjectCSVParser<Header>(
+      (options as any) ?? {},
+    ) as any;
   }
 }

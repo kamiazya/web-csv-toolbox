@@ -64,7 +64,7 @@ import { createStringCSVParser } from 'web-csv-toolbox';
 
 // Object format (default)
 const objectParser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   // outputFormat: 'object' is default
 });
 
@@ -74,7 +74,7 @@ console.log(records1);
 
 // Array format
 const arrayParser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   outputFormat: 'array',
 });
 
@@ -90,7 +90,7 @@ When processing data in chunks, you must call `parse()` without arguments at the
 ```typescript
 // Streaming mode - parse chunk by chunk
 const parser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
 });
 
 const records1 = parser.parse('Alice,30\nBob,', { stream: true });
@@ -131,7 +131,7 @@ import { createBinaryCSVParser } from 'web-csv-toolbox';
 
 // Object format (default)
 const objectParser = createBinaryCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   charset: 'utf-8',
   ignoreBOM: true,
 });
@@ -145,7 +145,7 @@ console.log(records1);
 
 // Array format
 const arrayParser = createBinaryCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   outputFormat: 'array',
   charset: 'utf-8',
 });
@@ -166,7 +166,7 @@ When processing data in chunks, you must call `parse()` without arguments at the
 ```typescript
 // Streaming mode - handles multi-byte characters across chunks
 const parser = createBinaryCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
 });
 
 const utf8Bytes = encoder.encode('Alice,30\nあ,25\n'); // Multi-byte character
@@ -202,7 +202,7 @@ Both string and binary parsers work seamlessly with `StringCSVParserStream` and 
 import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
 const parser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
 });
 const stream = new StringCSVParserStream(parser);
 
@@ -221,7 +221,7 @@ await fetch('data.csv')
 import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
 const parser = createBinaryCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   charset: 'utf-8',
 });
 const stream = new BinaryCSVParserStream(parser);

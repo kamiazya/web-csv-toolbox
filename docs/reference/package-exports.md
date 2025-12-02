@@ -177,14 +177,14 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
     // Object format (default)
     const objectParser = createStringCSVParser({
-      header: ['name', 'age'] as const
+      header: ['name', 'age']
     });
     const records = objectParser.parse('Alice,30\nBob,25\n');
     // records: [{ name: 'Alice', age: '30' }, { name: 'Bob', age: '25' }]
 
     // Array format
     const arrayParser = createStringCSVParser({
-      header: ['name', 'age'] as const,
+      header: ['name', 'age'],
       outputFormat: 'array'
     });
     const arrayRecords = arrayParser.parse('Alice,30\nBob,25\n');
@@ -201,7 +201,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     ```typescript
     import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
-    const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+    const parser = createStringCSVParser({ header: ['name', 'age'] });
     const stream = new StringCSVParserStream(parser);
 
     await stringStream.pipeThrough(stream).pipeTo(yourSink);
@@ -219,7 +219,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
     // Object format (default)
     const objectParser = createBinaryCSVParser({
-      header: ['name', 'age'] as const,
+      header: ['name', 'age'],
       charset: 'utf-8'
     });
     const buffer = await fetch('data.csv').then(r => r.arrayBuffer());
@@ -228,7 +228,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
 
     // Array format
     const arrayParser = createBinaryCSVParser({
-      header: ['name', 'age'] as const,
+      header: ['name', 'age'],
       outputFormat: 'array',
       charset: 'utf-8'
     });
@@ -247,7 +247,7 @@ The library exports a 3-tier architecture for low-level CSV parsing:
     import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
     const parser = createBinaryCSVParser({
-      header: ['name', 'age'] as const,
+      header: ['name', 'age'],
       charset: 'utf-8'
     });
     const stream = new BinaryCSVParserStream(parser);
