@@ -32,7 +32,7 @@ import { BaseStringCSVParser } from "@/parser/models/base/BaseStringCSVParser.ts
  * ```
  */
 export class FlexibleStringArrayCSVParser<
-    Header extends ReadonlyArray<string> = readonly string[],
+    const Header extends ReadonlyArray<string> = readonly string[],
   >
   extends BaseStringCSVParser<Header, "array">
   implements StringArrayCSVParser<Header>

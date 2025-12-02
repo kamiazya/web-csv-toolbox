@@ -24,7 +24,7 @@ import { ReusableArrayPool } from "@/utils/memory/ReusableArrayPool.ts";
  * the token type switch statement and reducing token iteration count by 50%.
  */
 export class FlexibleCSVObjectRecordAssembler<
-  Header extends ReadonlyArray<string>,
+  const Header extends ReadonlyArray<string>,
 > {
   #fieldIndex = 0;
   #row: string[] = [];

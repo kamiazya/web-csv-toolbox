@@ -23,7 +23,7 @@ import type {
  * the token type switch statement and reducing token iteration count by 50%.
  */
 export class FlexibleCSVArrayRecordAssembler<
-  Header extends ReadonlyArray<string>,
+  const Header extends ReadonlyArray<string>,
 > {
   #fieldIndex = 0;
   #row: string[] = [];

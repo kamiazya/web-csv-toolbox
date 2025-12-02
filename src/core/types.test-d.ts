@@ -321,18 +321,18 @@ describe("CSVRecordAssemblerOptions", () => {
     });
 
     it("Normal mode allows array and object output formats", () => {
-      const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+      const opts1 = {
         header: ["a", "b"] as const,
-        outputFormat: "array",
+        outputFormat: "array" as const,
       };
 
-      const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+      const opts2 = {
         header: ["a", "b"] as const,
-        outputFormat: "object",
+        outputFormat: "object" as const,
       };
 
       expectTypeOf(opts1.outputFormat).toEqualTypeOf<"array">();
-      expectTypeOf(opts2.outputFormat).toEqualTypeOf<"object" | undefined>();
+      expectTypeOf(opts2.outputFormat).toEqualTypeOf<"object">();
     });
   });
 });

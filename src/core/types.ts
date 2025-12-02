@@ -712,25 +712,25 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
              */
             header?: Header;
 
-        /**
-         * Output format for CSV records.
-         *
-         * @remarks
-         * - `'object'` (default): Records are returned as objects with header keys
-         * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
-         *
-         * @default 'object'
-         *
-         * @example
-         * ```ts
-         * // With 'object' format (default)
-         * { name: 'Alice', age: '30' }
-         *
-         * // With 'array' format
-         * ['Alice', '30'] // Type: readonly [name: string, age: string]
-         * ```
-         */
-        outputFormat?: CSVOutputFormat;
+            /**
+             * Output format for CSV records.
+             *
+             * @remarks
+             * - `'object'` (default): Records are returned as objects with header keys
+             * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
+             *
+             * @default 'object'
+             *
+             * @example
+             * ```ts
+             * // With 'object' format (default)
+             * { name: 'Alice', age: '30' }
+             *
+             * // With 'array' format
+             * ['Alice', '30'] // Type: readonly [name: string, age: string]
+             * ```
+             */
+            outputFormat?: CSVOutputFormat;
 
             /**
              * Column-count strategy for object output.
