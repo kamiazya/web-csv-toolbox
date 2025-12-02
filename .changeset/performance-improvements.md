@@ -43,4 +43,4 @@ This release includes significant internal optimizations that improve JavaScript
 | Array format (1,000 rows) | **89.6 MB/s** |
 | Object format (5,000 rows) | **53.3 MB/s** |
 
-Array format is approximately 46% faster than Object format for the same data.
+Array format is approximately 83% faster (1.83× throughput) than Object format for the same data.

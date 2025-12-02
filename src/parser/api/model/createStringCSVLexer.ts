@@ -40,7 +40,7 @@ export function createStringCSVLexer<
   TrackLocation extends boolean = false,
 >(
   options?: StringCSVLexerOptions<Delimiter, Quotation, TrackLocation>,
-): StringCSVLexer {
+): StringCSVLexer<TrackLocation> {
   return new FlexibleStringCSVLexer<Delimiter, Quotation, TrackLocation>(
     options ?? {},
   );

@@ -4,7 +4,7 @@ import { FC } from "@/__tests__/helper.ts";
 import { parseResponse } from "@/parser/api/network/parseResponse.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
-describe("parseRequest function", () => {
+describe("parseResponse function", () => {
   it("should throw error if content-type header is not text/csv", async () => {
     const response = new Response("", {
       headers: {
