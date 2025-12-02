@@ -86,7 +86,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
  *
  * const parser = createBinaryCSVParser({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   charset: 'utf-8'
  * });
  * const stream = new BinaryCSVParserStream(parser);
@@ -98,7 +98,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * ```ts
  * import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
  *
- * const parser = createBinaryCSVParser({ header: ['name', 'age'] as const });
+ * const parser = createBinaryCSVParser({ header: ['name', 'age'] });
  * const stream = new BinaryCSVParserStream(parser);
  *
  * await fetch('large-file.csv')

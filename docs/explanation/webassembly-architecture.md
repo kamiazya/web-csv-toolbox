@@ -383,7 +383,7 @@ Force the JavaScript engine whenever you need array output or `includeHeader`:
 
 ```typescript
 const rows = await parse.toArray(csv, {
-  header: ["name", "age"] as const,
+  header: ["name", "age"],
   outputFormat: "array",
   includeHeader: true,
   engine: { wasm: false }, // Skip WASM, use JS implementation

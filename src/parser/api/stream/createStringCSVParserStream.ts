@@ -46,7 +46,7 @@ import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts"
  *
  * // CSV data without header row
  * const stream = createStringCSVParserStream({
- *   header: ['name', 'age'] as const
+ *   header: ['name', 'age']
  * });
  *
  * stringStream
@@ -87,7 +87,7 @@ import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts"
  * import { createStringCSVParserStream } from 'web-csv-toolbox';
  *
  * const stream = createStringCSVParserStream(
- *   { header: ['name', 'age'] as const },
+ *   { header: ['name', 'age'] },
  *   { backpressureCheckInterval: 50 },
  *   { highWaterMark: 131072, size: (chunk) => chunk.length },
  *   new CountQueuingStrategy({ highWaterMark: 512 })

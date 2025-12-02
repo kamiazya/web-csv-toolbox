@@ -1,7 +1,9 @@
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   BinaryArrayCSVParser,
   BinaryCSVParserFactoryOptions,
   BinaryObjectCSVParser,
+  ColumnCountStrategy,
 } from "@/core/types.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
@@ -27,7 +29,7 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * @example Object format (default)
  * ```ts
  * const parser = createBinaryCSVParser({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   charset: 'utf-8',
  *   decompression: 'gzip',
  *   signal: abortController.signal,
@@ -41,7 +43,7 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * @example Array format
  * ```ts
  * const parser = createBinaryCSVParser({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   outputFormat: 'array',
  *   charset: 'utf-8',
  * });
@@ -51,40 +53,103 @@ import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObj
  * }
  * ```
  */
+// Overload: When outputFormat is explicitly "array"
 export function createBinaryCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Charset extends string = "utf-8",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
+  options: BinaryCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    Charset,
+    "array",
+    Strategy
+  > & {
     outputFormat: "array";
   },
 ): BinaryArrayCSVParser<Header>;
 
+// Overload: When outputFormat is explicitly "object"
 export function createBinaryCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Charset extends string = "utf-8",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
+  options: BinaryCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    Charset,
+    "object",
+    Strategy
+  > & {
     outputFormat: "object";
   },
 ): BinaryObjectCSVParser<Header>;
 
+// Overload: When outputFormat is omitted or undefined (defaults to object)
 export function createBinaryCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Charset extends string = "utf-8",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options: Omit<BinaryCSVParserFactoryOptions<Header>, "outputFormat"> & {
-    outputFormat: "object" | "array";
-  },
-): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header>;
-
-export function createBinaryCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
->(
-  options?: BinaryCSVParserFactoryOptions<Header>,
+  options?: Omit<
+    BinaryCSVParserFactoryOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      Charset,
+      "object",
+      Strategy
+    >,
+    "outputFormat"
+  >,
 ): BinaryObjectCSVParser<Header>;
 
+// Overload: When outputFormat is a union type (dynamic/runtime determined)
 export function createBinaryCSVParser<
-  Header extends ReadonlyArray<string> = readonly string[],
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Charset extends string = "utf-8",
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options?: BinaryCSVParserFactoryOptions<Header>,
+  options: BinaryCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    Charset,
+    OutputFormat,
+    Strategy
+  >,
+): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header>;
+
+// Implementation signature
+export function createBinaryCSVParser<
+  const Header extends ReadonlyArray<string> = readonly string[],
+  const Delimiter extends string = DEFAULT_DELIMITER,
+  const Quotation extends string = DEFAULT_QUOTATION,
+  const Charset extends string = "utf-8",
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options?: BinaryCSVParserFactoryOptions<
+    Header,
+    Delimiter,
+    Quotation,
+    Charset,
+    OutputFormat,
+    Strategy
+  >,
 ): BinaryArrayCSVParser<Header> | BinaryObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
@@ -101,8 +166,12 @@ export function createBinaryCSVParser<
   // Instantiate the appropriate class based on outputFormat
   // Each class explicitly implements its respective interface
   if (format === "array") {
-    return new FlexibleBinaryArrayCSVParser<Header>(options ?? {}) as any;
+    return new FlexibleBinaryArrayCSVParser<Header>(
+      (options as any) ?? {},
+    ) as any;
   } else {
-    return new FlexibleBinaryObjectCSVParser<Header>(options ?? {}) as any;
+    return new FlexibleBinaryObjectCSVParser<Header>(
+      (options as any) ?? {},
+    ) as any;
   }
 }
