@@ -29,16 +29,6 @@ describe("createCSVRecordAssembler", () => {
     expect(records).toEqual([["Alice"]]);
   });
 
-  test("returns record-view assembler when outputFormat is 'record-view'", () => {
-    const assembler = createCSVRecordAssembler({
-      header: ["name", "age"] as const,
-      outputFormat: "record-view",
-    });
-    const records = [...assembler.assemble([makeToken("Alice")])];
-    expect(Array.isArray(records[0])).toBe(true);
-    expect(records[0]!.name).toBe("Alice");
-  });
-
   test("throws when headerless mode is not array format", () => {
     expect(() => {
       createCSVRecordAssembler({
@@ -66,7 +56,7 @@ describe("createCSVRecordAssembler", () => {
     }).toThrow(/includeHeader option is only valid for array format/);
   });
 
-  test("throws when object/record-view uses sparse strategy", () => {
+  test("throws when object uses sparse strategy", () => {
     expect(() => {
       createCSVRecordAssembler({
         header: ["name"] as const,
@@ -75,7 +65,7 @@ describe("createCSVRecordAssembler", () => {
     }).toThrow(/'sparse' is not allowed for object format/);
   });
 
-  test("throws when object/record-view uses keep strategy", () => {
+  test("throws when object uses keep strategy", () => {
     expect(() => {
       createCSVRecordAssembler({
         header: ["name"] as const,
@@ -84,11 +74,10 @@ describe("createCSVRecordAssembler", () => {
     }).toThrow(/'keep' is not allowed for object format/);
   });
 
-  test("throws when record-view uses truncate strategy", () => {
+  test("throws when object uses truncate strategy", () => {
     expect(() => {
       createCSVRecordAssembler({
         header: ["name"] as const,
-        outputFormat: "record-view",
         columnCountStrategy: "truncate",
       });
     }).toThrow(/'truncate' is not allowed for object format/);

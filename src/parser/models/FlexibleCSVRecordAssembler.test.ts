@@ -177,33 +177,4 @@ describe("CSVRecordAssembler", () => {
       expect(records[1]).toEqual({ name: "Bob", age: "25" });
     });
   });
-
-  describe("record view mode", () => {
-    test("should expose both tuple and key access", () => {
-      const lexer = new FlexibleStringCSVLexer();
-      const assembler = createCSVRecordAssembler({
-        outputFormat: "record-view",
-      });
-      const csv = "name,age\r\nAlice,30\r\n";
-      const records = [...assembler.assemble(lexer.lex(csv))];
-      expect(Array.isArray(records[0])).toBe(true);
-      expect(records[0]![0]).toBe("Alice");
-      expect(records[0]!.name).toBe("Alice");
-      expect(records[0]!.age).toBe("30");
-      expect(Object.keys(records[0]!)).toEqual(["0", "1", "name", "age"]);
-    });
-
-    test("should respect strict strategy", () => {
-      const lexer = new FlexibleStringCSVLexer();
-      const assembler = createCSVRecordAssembler({
-        outputFormat: "record-view",
-        columnCountStrategy: "strict",
-        header: ["name", "age"] as const,
-      });
-      const csv = "Alice,30\r\n";
-      const records = [...assembler.assemble(lexer.lex(csv))];
-      expect(records).toHaveLength(1);
-      expect(records[0]!.name).toBe("Alice");
-    });
-  });
 });

@@ -185,20 +185,6 @@ Bob,25,LA`;
       });
     });
 
-    describe("record-view format", () => {
-      test("should reject unsupported columnCountStrategy values", () => {
-        expect(() => {
-          createCSVRecordAssembler({
-            header: ["name", "age", "city"] as const,
-            outputFormat: "record-view",
-            columnCountStrategy: "keep",
-          });
-        }).toThrowError(
-          /columnCountStrategy 'keep' is not allowed for object format/,
-        );
-      });
-    });
-
     describe("empty fields vs missing fields", () => {
       test("should use empty string for empty fields", () => {
         const csv = `,x,`;

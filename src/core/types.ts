@@ -605,7 +605,7 @@ export interface CSVRecordAssemblerCommonOptions<
 > extends SourceOption,
     AbortSignalOptions {
   header?: Header;
-  outputFormat?: "object" | "array" | "record-view";
+  outputFormat?: "object" | "array";
   includeHeader?: boolean;
   columnCountStrategy?: ColumnCountStrategy;
   maxFieldCount?: number;
@@ -637,7 +637,7 @@ export interface CSVRecordAssemblerFactoryOptions<
  * **Normal Mode (header inferred or explicit)**:
  * - `header: undefined` → infer from first row
  * - `header: ['col1', ...]` → explicit header
- * - Array output can use any {@link ColumnCountStrategy}; object / record-view output supports only `'fill'` or `'strict'`
+ * - Array output can use any {@link ColumnCountStrategy}; object output supports only `'fill'` or `'strict'`
  *
  * @example Type-safe headerless mode
  * ```ts
@@ -714,7 +714,7 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
              * @remarks
              * Defaults to `'object'` when omitted.
              */
-            outputFormat?: "object" | "record-view";
+            outputFormat?: "object";
 
             /**
              * Column-count strategy for object output.
@@ -1293,7 +1293,7 @@ export interface EngineOptions {
  * This type extracts the output format from options and defaults to 'object' if not specified.
  */
 export type InferFormat<Options> = Options extends { outputFormat: infer F }
-  ? F extends "object" | "array" | "record-view"
+  ? F extends "object" | "array"
     ? F
     : "object"
   : "object";
@@ -1483,7 +1483,7 @@ export interface ParseBinaryOptions<
  * - `'sparse'`: Allow optional columns by padding with `undefined` (array format only, explicit header required so the target width is known).
  *
  * **Format-specific availability**:
- * - *Object / record-view output*: only `'fill'` and `'strict'` are valid. Selecting `'keep'`, `'truncate'`, or `'sparse'` results in a runtime/type error.
+ * - *Object output*: only `'fill'` and `'strict'` are valid. Selecting `'keep'`, `'truncate'`, or `'sparse'` results in a runtime/type error.
  * - *Array output*: all strategies are available.
  *
  * **Header requirements**:
@@ -1493,7 +1493,7 @@ export interface ParseBinaryOptions<
  *
  * **Defaults:**
  * - Array format → `'fill'`
- * - Object / record-view format → `'fill'`
+ * - Object format → `'fill'`
  *
  * @example Array format examples
  *
@@ -1697,48 +1697,16 @@ export type CSVArrayRecord<
  */
 export type CSVRecord<
   Header extends ReadonlyArray<string>,
-  Format extends "object" | "array" | "record-view" = "object",
+  Format extends "object" | "array" = "object",
   Strategy extends ColumnCountStrategy = "fill",
 > = Format extends "array"
   ? CSVArrayRecord<Header, Strategy>
-  : Format extends "record-view"
-    ? Strategy extends "sparse"
-      ? never
-      : CSVRecordView<
-          Header,
-          Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
-        >
-    : Strategy extends "sparse"
-      ? never // sparse is not allowed for object/record-view format
-      : CSVObjectRecord<
-          Header,
-          Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
-        >;
-
-/**
- * Hybrid CSV record view (array indices + object keys).
- *
- * @category Types
- * @template Header Header definition for the CSV.
- *
- * @remarks
- * Combines the ergonomics of {@link CSVArrayRecord} (named tuple / numeric index access)
- * with {@link CSVObjectRecord} (header-keyed lookups). Used when `outputFormat: 'record-view'`
- * is specified, so records behave like arrays underneath while still exposing header properties.
- *
-+ @example
- * ```ts
- * type Header = ["name", "age"] as const;
- * const record: CSVRecordView<Header> = getRecordViewSomehow();
- * record[0];      // "name" column via tuple index
- * record.name;    // Same column via object property
- * record.length;  // -> 2 (from tuple metadata)
- * ```
- */
-export type CSVRecordView<
-  Header extends ReadonlyArray<string>,
-  Strategy extends ObjectFormatColumnCountStrategy = "fill",
-> = CSVObjectRecord<Header, Strategy> & CSVArrayRecord<Header>;
+  : Strategy extends "sparse"
+    ? never // sparse is not allowed for object format
+    : CSVObjectRecord<
+        Header,
+        Strategy extends ObjectFormatColumnCountStrategy ? Strategy : "fill"
+      >;
 
 /**
  * Join CSV field array into a CSV-formatted string with proper escaping.
