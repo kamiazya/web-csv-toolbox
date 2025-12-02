@@ -315,7 +315,7 @@ export interface CommonOptions<
  * CSV Parsing Options for binary.
  * @category Types
  */
-export interface BinaryOptions {
+export interface BinaryOptions<Charset extends string = string> {
   /**
    * If the binary is compressed by a compression algorithm,
    * the decompressed CSV can be parsed by specifying the algorithm.
@@ -337,7 +337,7 @@ export interface BinaryOptions {
    *
    * @default 'utf-8'
    */
-  charset?: string | undefined;
+  charset?: Charset | undefined;
   /**
    * Maximum binary size in bytes for ArrayBuffer/Uint8Array inputs.
    *
@@ -602,12 +602,14 @@ type CSVRecordAssemblerBaseOptions = SourceOption &
  */
 export interface CSVRecordAssemblerCommonOptions<
   Header extends ReadonlyArray<string>,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 > extends SourceOption,
     AbortSignalOptions {
   header?: Header;
-  outputFormat?: "object" | "array";
+  outputFormat?: OutputFormat;
   includeHeader?: boolean;
-  columnCountStrategy?: ColumnCountStrategy;
+  columnCountStrategy?: Strategy;
   maxFieldCount?: number;
   skipEmptyLines?: boolean;
 }
@@ -619,7 +621,9 @@ export interface CSVRecordAssemblerCommonOptions<
  */
 export interface CSVRecordAssemblerFactoryOptions<
   Header extends ReadonlyArray<string>,
-> extends CSVRecordAssemblerCommonOptions<Header>,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends CSVRecordAssemblerCommonOptions<Header, OutputFormat, Strategy>,
     EngineOptions {}
 
 /**
@@ -708,13 +712,25 @@ export type CSVRecordAssemblerOptions<Header extends ReadonlyArray<string>> =
              */
             header?: Header;
 
-            /**
-             * Output format for CSV records.
-             *
-             * @remarks
-             * Defaults to `'object'` when omitted.
-             */
-            outputFormat?: "object";
+        /**
+         * Output format for CSV records.
+         *
+         * @remarks
+         * - `'object'` (default): Records are returned as objects with header keys
+         * - `'array'`: Records are returned as readonly arrays (named tuples when header is provided)
+         *
+         * @default 'object'
+         *
+         * @example
+         * ```ts
+         * // With 'object' format (default)
+         * { name: 'Alice', age: '30' }
+         *
+         * // With 'array' format
+         * ['Alice', '30'] // Type: readonly [name: string, age: string]
+         * ```
+         */
+        outputFormat?: CSVOutputFormat;
 
             /**
              * Column-count strategy for object output.
@@ -1293,7 +1309,7 @@ export interface EngineOptions {
  * This type extracts the output format from options and defaults to 'object' if not specified.
  */
 export type InferFormat<Options> = Options extends { outputFormat: infer F }
-  ? F extends "object" | "array"
+  ? F extends CSVOutputFormat
     ? F
     : "object"
   : "object";
@@ -1376,8 +1392,10 @@ export interface CSVProcessingOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 > extends CommonOptions<Delimiter, Quotation>,
-    CSVRecordAssemblerCommonOptions<Header>,
+    CSVRecordAssemblerCommonOptions<Header, OutputFormat, Strategy>,
     AbortSignalOptions {}
 
 /**
@@ -1396,7 +1414,15 @@ export interface ParseOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends CSVProcessingOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      OutputFormat,
+      Strategy
+    >,
     EngineOptions {}
 
 /**
@@ -1408,7 +1434,15 @@ export interface StringCSVParserFactoryOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends CSVProcessingOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      OutputFormat,
+      Strategy
+    >,
     EngineOptions {}
 
 /**
@@ -1438,8 +1472,17 @@ export interface BinaryCSVProcessingOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
-    BinaryOptions {}
+  Charset extends string = string,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends CSVProcessingOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      OutputFormat,
+      Strategy
+    >,
+    BinaryOptions<Charset> {}
 
 /**
  * Options for creating a Binary CSV Parser via factory function.
@@ -1450,7 +1493,17 @@ export interface BinaryCSVParserFactoryOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends BinaryCSVProcessingOptions<Header, Delimiter, Quotation>,
+  Charset extends string = string,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends BinaryCSVProcessingOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      Charset,
+      OutputFormat,
+      Strategy
+    >,
     EngineOptions {}
 
 /**
@@ -1552,6 +1605,36 @@ export type ObjectFormatColumnCountStrategy = Extract<
 >;
 
 /**
+ * CSV output format type.
+ *
+ * @category Types
+ *
+ * @remarks
+ * Determines the format of parsed CSV records:
+ * - `"object"`: Records are returned as objects with header fields as keys
+ * - `"array"`: Records are returned as arrays/tuples
+ *
+ * @example Object format
+ * ```ts
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'],
+ *   outputFormat: 'object' // CSVOutputFormat
+ * });
+ * // Returns: { name: 'Alice', age: '30' }
+ * ```
+ *
+ * @example Array format
+ * ```ts
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'],
+ *   outputFormat: 'array' // CSVOutputFormat
+ * });
+ * // Returns: ['Alice', '30']
+ * ```
+ */
+export type CSVOutputFormat = "object" | "array";
+
+/**
  * CSV record as an object (traditional format).
  *
  * @category Types
@@ -1570,7 +1653,7 @@ export type ObjectFormatColumnCountStrategy = Extract<
  * @example
  *
  * ```ts
- * const header = ["foo", "bar"] as const;
+ * const header = ["foo", "bar"];
  *
  * type Record = CSVObjectRecord<typeof header>;
  * // { foo: string; bar: string }
@@ -1612,7 +1695,7 @@ export type CSVObjectRecord<
  * @example With header (named tuple)
  *
  * ```ts
- * const header = ["name", "age", "city"] as const;
+ * const header = ["name", "age", "city"];
  *
  * type Row = CSVArrayRecord<typeof header>;
  * // readonly [name: string, age: string, city: string]
@@ -1625,7 +1708,7 @@ export type CSVObjectRecord<
  * @example With sparse strategy (allows undefined)
  *
  * ```ts
- * const header = ["name", "age", "city"] as const;
+ * const header = ["name", "age", "city"];
  *
  * type Row = CSVArrayRecord<typeof header, 'sparse'>;
  * // readonly [name: string | undefined, age: string | undefined, city: string | undefined]
@@ -1683,22 +1766,22 @@ export type CSVArrayRecord<
  *
  * @example Array format (named tuple)
  * ```ts
- * const header = ["foo", "bar"] as const;
+ * const header = ["foo", "bar"];
  * const record: CSVRecord<typeof header, 'array'> = ["1", "2"];
  * // Type: readonly [foo: string, bar: string]
  * ```
  *
  * @example Array format with sparse strategy
  * ```ts
- * const header = ["foo", "bar"] as const;
+ * const header = ["foo", "bar"];
  * const record: CSVRecord<typeof header, 'array', 'sparse'> = ["1", undefined];
  * // Type: readonly [foo: string | undefined, bar: string | undefined]
  * ```
  */
 export type CSVRecord<
   Header extends ReadonlyArray<string>,
-  Format extends "object" | "array" = "object",
-  Strategy extends ColumnCountStrategy = "fill",
+  Format extends CSVOutputFormat = "object",
+  Strategy extends ColumnCountStrategy = "keep",
 > = Format extends "array"
   ? CSVArrayRecord<Header, Strategy>
   : Strategy extends "sparse"
@@ -2114,7 +2197,7 @@ export interface CSVArrayRecordAssembler<Header extends ReadonlyArray<string>> {
  */
 export type CSVRecordAssembler<
   Header extends ReadonlyArray<string>,
-  Format extends "object" | "array" = "object",
+  Format extends CSVOutputFormat = "object",
 > = Format extends "array"
   ? CSVArrayRecordAssembler<Header>
   : CSVObjectRecordAssembler<Header>;
@@ -2230,7 +2313,7 @@ export interface StringArrayCSVParser<
  */
 export type StringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Format extends "object" | "array" = "object",
+  Format extends CSVOutputFormat = "object",
 > = Format extends "array"
   ? StringArrayCSVParser<Header>
   : StringObjectCSVParser<Header>;
@@ -2314,7 +2397,7 @@ export interface BinaryArrayCSVParser<
  */
 export type BinaryCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
-  Format extends "object" | "array" = "object",
+  Format extends CSVOutputFormat = "object",
 > = Format extends "array"
   ? BinaryArrayCSVParser<Header>
   : BinaryObjectCSVParser<Header>;

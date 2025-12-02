@@ -53,7 +53,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * const transformer = createCSVRecordAssemblerTransformer({
- *   header: ['name', 'age'] as const
+ *   header: ['name', 'age']
  * });
  *
  * // Data without header row
@@ -83,7 +83,7 @@ import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemble
  * import { createStringCSVLexerTransformer, createCSVRecordAssemblerTransformer } from 'web-csv-toolbox';
  *
  * const transformer = createCSVRecordAssemblerTransformer(
- *   { header: ['name', 'age'] as const },
+ *   { header: ['name', 'age'] },
  *   { backpressureCheckInterval: 20 },
  *   new CountQueuingStrategy({ highWaterMark: 2048 }),
  *   new CountQueuingStrategy({ highWaterMark: 512 })
@@ -104,7 +104,7 @@ export function createCSVRecordAssemblerTransformer<
   writableStrategy?: QueuingStrategy<Token>,
   readableStrategy?: QueuingStrategy<CSVRecord<Header, InferFormat<Options>>>,
 ): CSVRecordAssemblerTransformer<Header, InferFormat<Options>> {
-  const assembler = createCSVRecordAssembler<Header, Options>(options);
+  const assembler = createCSVRecordAssembler<Header>(options);
   return new CSVRecordAssemblerTransformer<Header, InferFormat<Options>>(
     assembler as any,
     streamOptions ?? {},

@@ -1,4 +1,7 @@
-import type { CSVRecordAssemblerFactoryOptions } from "@/core/types.ts";
+import type {
+  ColumnCountStrategy,
+  CSVRecordAssemblerFactoryOptions,
+} from "@/core/types.ts";
 import { FlexibleCSVArrayRecordAssembler } from "@/parser/models/FlexibleCSVArrayRecordAssembler.ts";
 import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObjectRecordAssembler.ts";
 
@@ -22,26 +25,69 @@ import { FlexibleCSVObjectRecordAssembler } from "@/parser/models/FlexibleCSVObj
  * ```ts
  * // Create an object record assembler
  * const objectAssembler = createCSVRecordAssembler({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   outputFormat: 'object'
  * });
  *
  * // Create an array record assembler
  * const arrayAssembler = createCSVRecordAssembler({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   outputFormat: 'array'
  * });
  * ```
  */
+// Overload: When outputFormat is explicitly "array"
 export function createCSVRecordAssembler<
-  Header extends ReadonlyArray<string>,
-  Options extends
-    CSVRecordAssemblerFactoryOptions<Header> = CSVRecordAssemblerFactoryOptions<Header>,
+  const Header extends ReadonlyArray<string>,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
 >(
-  options?: Options,
-): Options extends { outputFormat: "array" }
-  ? FlexibleCSVArrayRecordAssembler<Header>
-  : FlexibleCSVObjectRecordAssembler<Header> {
+  options: CSVRecordAssemblerFactoryOptions<Header, "array", Strategy> & {
+    outputFormat: "array";
+  },
+): FlexibleCSVArrayRecordAssembler<Header>;
+
+// Overload: When outputFormat is explicitly "object"
+export function createCSVRecordAssembler<
+  const Header extends ReadonlyArray<string>,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options: CSVRecordAssemblerFactoryOptions<Header, "object", Strategy> & {
+    outputFormat: "object";
+  },
+): FlexibleCSVObjectRecordAssembler<Header>;
+
+// Overload: When outputFormat is omitted or undefined (defaults to object)
+export function createCSVRecordAssembler<
+  const Header extends ReadonlyArray<string>,
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options?: Omit<
+    CSVRecordAssemblerFactoryOptions<Header, "object", Strategy>,
+    "outputFormat"
+  >,
+): FlexibleCSVObjectRecordAssembler<Header>;
+
+// Overload: When outputFormat is a union type (dynamic/runtime determined)
+export function createCSVRecordAssembler<
+  const Header extends ReadonlyArray<string>,
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options: CSVRecordAssemblerFactoryOptions<Header, OutputFormat, Strategy>,
+):
+  | FlexibleCSVArrayRecordAssembler<Header>
+  | FlexibleCSVObjectRecordAssembler<Header>;
+
+// Implementation signature
+export function createCSVRecordAssembler<
+  const Header extends ReadonlyArray<string>,
+  const OutputFormat extends "object" | "array" = "object" | "array",
+  const Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+>(
+  options?: CSVRecordAssemblerFactoryOptions<Header, OutputFormat, Strategy>,
+):
+  | FlexibleCSVArrayRecordAssembler<Header>
+  | FlexibleCSVObjectRecordAssembler<Header> {
   const format = options?.outputFormat ?? "object";
 
   // Validate headerless mode (header: [])
@@ -102,8 +148,12 @@ export function createCSVRecordAssembler<
   }
 
   if (format === "array") {
-    return new FlexibleCSVArrayRecordAssembler<Header>(options) as any;
+    return new FlexibleCSVArrayRecordAssembler<Header>(
+      (options as any) ?? {},
+    ) as any;
   } else {
-    return new FlexibleCSVObjectRecordAssembler<Header>(options) as any;
+    return new FlexibleCSVObjectRecordAssembler<Header>(
+      (options as any) ?? {},
+    ) as any;
   }
 }

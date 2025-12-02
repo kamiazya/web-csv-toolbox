@@ -61,7 +61,7 @@ import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts"
  *
  * // CSV data without header row
  * const stream = createBinaryCSVParserStream({
- *   header: ['name', 'age'] as const,
+ *   header: ['name', 'age'],
  *   charset: 'utf-8'
  * });
  *
@@ -104,7 +104,7 @@ import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts"
  * import { createBinaryCSVParserStream } from 'web-csv-toolbox';
  *
  * const stream = createBinaryCSVParserStream(
- *   { header: ['name', 'age'] as const, charset: 'utf-8' },
+ *   { header: ['name', 'age'], charset: 'utf-8' },
  *   { backpressureCheckInterval: 50 },
  *   new ByteLengthQueuingStrategy({ highWaterMark: 131072 }),
  *   new CountQueuingStrategy({ highWaterMark: 512 })

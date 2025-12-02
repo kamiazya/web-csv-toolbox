@@ -84,7 +84,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * ```ts
  * import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
  *
- * const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+ * const parser = createStringCSVParser({ header: ['name', 'age'] });
  * const stream = new StringCSVParserStream(parser);
  *
  * stringStream.pipeThrough(stream);
@@ -94,7 +94,7 @@ const DEFAULT_READABLE_STRATEGY = new CountQueuingStrategy({
  * ```ts
  * import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
  *
- * const parser = createStringCSVParser({ header: ['name', 'age'] as const });
+ * const parser = createStringCSVParser({ header: ['name', 'age'] });
  * const stream = new StringCSVParserStream(
  *   parser,
  *   { backpressureCheckInterval: 50 },

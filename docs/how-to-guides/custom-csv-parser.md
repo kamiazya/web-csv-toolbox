@@ -77,7 +77,7 @@ import { createStringCSVParser } from 'web-csv-toolbox';
 
 function parseCSV(csv: string) {
   const parser = createStringCSVParser({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     // outputFormat: 'object' is default
   });
 
@@ -272,7 +272,7 @@ function parseAsTuples(csv: string) {
   const tokens = lexer.lex(csv);
 
   const assembler = createCSVRecordAssembler({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     outputFormat: 'array',
     includeHeader: true,
     columnCountStrategy: 'pad',
@@ -502,7 +502,7 @@ Process CSV data in chunks using Parser Models:
 import { createStringCSVParser } from 'web-csv-toolbox';
 
 const parser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
 });
 
 // First chunk - incomplete record
@@ -532,7 +532,7 @@ Use `StringCSVParserStream` for Web Streams API integration:
 import { createStringCSVParser, StringCSVParserStream } from 'web-csv-toolbox';
 
 const parser = createStringCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
 });
 const stream = new StringCSVParserStream(parser);
 
@@ -553,7 +553,7 @@ For binary data with character encoding:
 import { createBinaryCSVParser, BinaryCSVParserStream } from 'web-csv-toolbox';
 
 const parser = createBinaryCSVParser({
-  header: ['name', 'age'] as const,
+  header: ['name', 'age'],
   charset: 'utf-8',
   ignoreBOM: true,
 });
@@ -970,7 +970,7 @@ const stream = await fetch('data.csv')
   .then(res => res.body)
   .then(body => body.pipeThrough(new TextDecoderStream()));
 
-for await (const record of parseStringStream(stream, { header: ['name', 'age'] as const })) {
+for await (const record of parseStringStream(stream, { header: ['name', 'age'] })) {
   console.log(record); // { name: 'Alice', age: '30' }
 }
 
@@ -996,7 +996,7 @@ await fetch('data.csv')
   .then(res => res.body)
   .pipeThrough(new TextDecoderStream())
   .pipeThrough(createStringCSVParserStream({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     delimiter: '\t',  // TSV support
   }))
   .pipeTo(new WritableStream({
@@ -1054,7 +1054,7 @@ csvStream
   .pipeThrough(createStringCSVLexerTransformer({ delimiter: '\t' }))
   .pipeThrough(new TokenFilterTransform())  // Custom processing
   .pipeThrough(createCSVRecordAssemblerTransformer({
-    header: ['name', 'age'] as const
+    header: ['name', 'age']
   }))
   .pipeTo(yourProcessor);
 ```

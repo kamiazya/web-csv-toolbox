@@ -495,12 +495,12 @@ Combines Lexer and Assembler for streamlined usage without sacrificing flexibili
   ```typescript
   // Object format (default)
   const objectParser = createStringCSVParser({
-    header: ['name', 'age'] as const
+    header: ['name', 'age']
   });
 
   // Array format
   const arrayParser = createStringCSVParser({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     outputFormat: 'array'
   });
 
@@ -530,13 +530,13 @@ Combines Lexer and Assembler for streamlined usage without sacrificing flexibili
   ```typescript
   // Object format (default)
   const objectParser = createBinaryCSVParser({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     charset: 'utf-8'
   });
 
   // Array format
   const arrayParser = createBinaryCSVParser({
-    header: ['name', 'age'] as const,
+    header: ['name', 'age'],
     outputFormat: 'array',
     charset: 'utf-8'
   });
@@ -775,7 +775,7 @@ console.log(result);
 High-level and mid-level parsers now let you choose whether records come back as objects (default) or as tuple-like arrays:
 
 ```ts
-const header = ["name", "age"] as const;
+const header = ["name", "age"];
 
 // Object output (default)
 for await (const record of parse(csv, { header })) {
