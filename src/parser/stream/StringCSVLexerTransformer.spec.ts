@@ -27,7 +27,8 @@ describe("StringCSVLexerTransformer", () => {
           const csv = row.map((v) => escapeField(v, { quote })).join(",");
           const chunks = csv.length === 0 ? [""] : autoChunk(g, csv);
           // In unified token format, each token represents a field with its following delimiter
-          const expected: TokenNoLocation[] = row.map((value, index) => ({
+          // Note: If CSV is empty string, no tokens are expected regardless of the row content
+          const expected: TokenNoLocation[] = csv.length === 0 ? [] : row.map((value, index) => ({
             value,
             delimiter:
               index === row.length - 1 ? Delimiter.Record : Delimiter.Field,

@@ -10,10 +10,10 @@ This release includes significant internal optimizations that improve JavaScript
 
 | Metric | Before (v0.14) | After | Improvement |
 |--------|----------------|-------|-------------|
-| 1,000 rows parsing | 3.57 ms | 1.77 ms | **50% faster** |
-| 5,000 rows parsing | 19.47 ms | 8.96 ms | **54% faster** |
-| Throughput (1,000 rows) | 23.8 MB/s | 49.0 MB/s | **2.06x** |
-| Throughput (5,000 rows) | 24.0 MB/s | 53.3 MB/s | **2.22x** |
+| 1,000 rows parsing | 3.57 ms | 1.42 ms | **60% faster** |
+| 5,000 rows parsing | 19.47 ms | 7.03 ms | **64% faster** |
+| Throughput (1,000 rows) | 24.3 MB/s | 61.2 MB/s | **2.51x** |
+| Throughput (5,000 rows) | 24.5 MB/s | 67.9 MB/s | **2.77x** |
 
 ### Optimization Summary
 
@@ -39,8 +39,9 @@ This release includes significant internal optimizations that improve JavaScript
 
 | Format | Throughput |
 |--------|------------|
-| Object format (1,000 rows) | **49.0 MB/s** |
-| Array format (1,000 rows) | **89.6 MB/s** |
-| Object format (5,000 rows) | **53.3 MB/s** |
+| Object format (1,000 rows) | **61.2 MB/s** |
+| Array format (1,000 rows) | **87.6 MB/s** |
+| Object format (5,000 rows) | **67.9 MB/s** |
+| Array format (5,000 rows) | **86.4 MB/s** |
 
-Array format is approximately 83% faster (1.83× throughput) than Object format for the same data.
+Array format is approximately 43% faster (1.43× throughput) than Object format for the same data.
