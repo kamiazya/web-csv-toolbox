@@ -803,8 +803,14 @@ for await (const record of parse(csv, {
 
 #### WASM Limitations
 
-- **UTF-8/UTF-16 only**: Non-UTF-8/UTF-16 encodings (Shift-JIS, EUC-JP) require JavaScript engine
-- **UTF-16 mode**: Use `charset: 'utf-16'` option for optimized string processing (skips TextEncoder/TextDecoder)
+**Encoding Support:**
+- **Binary inputs (Uint8Array, ArrayBuffer)**: UTF-8 only
+  - Non-UTF-8 encodings (Shift-JIS, EUC-JP) require JavaScript engine
+  - `charset` option is ignored with WASM binary parsing
+- **String inputs (JavaScript strings)**: UTF-8 or UTF-16 processing modes
+  - UTF-8 mode (default): Encodes string to UTF-8 bytes → WASM processing
+  - UTF-16 mode: Direct UTF-16 processing (faster, skips TextEncoder/TextDecoder)
+  - Use `charset: 'utf-16'` for optimized Unicode-heavy string processing
 - Custom delimiters and quotation characters are fully supported (ASCII only for WASM)
 
 #### Low-level WASM APIs
@@ -1009,17 +1015,28 @@ try {
 #### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
 
 ```js
-import { parseString } from 'web-csv-toolbox';
+import { parseString, parseBinary } from 'web-csv-toolbox';
 
-// Compiled WASM code for improved performance (UTF-8/UTF-16)
+// String input: UTF-8 or UTF-16 processing modes
 // For Unicode-heavy strings, use charset: 'utf-16' to skip TextEncoder/TextDecoder
-const records = parseString.toArraySync(csvString, { engine: { wasm: true } });
+const records = parseString.toArraySync(csvString, {
+  engine: { wasm: true },
+  charset: 'utf-16'  // Optimized for JavaScript strings
+});
+
+// Binary input: UTF-8 only (charset option ignored by WASM)
+const binaryRecords = parseBinary.toArraySync(utf8Binary, {
+  engine: { wasm: true }
+});
 ```
 
 ### Known Limitations
 
 - **Delimiter/Quotation**: JavaScript parser supports any character; WASM parser requires single-byte ASCII only
-- **WASM Parser**: UTF-8/UTF-16 encoding only, single-byte ASCII delimiter/quotation only (multi-byte UTF-8 characters not supported)
+- **WASM Parser Encoding**:
+  - Binary inputs: UTF-8 only (Shift-JIS, EUC-JP not supported)
+  - String inputs: UTF-8/UTF-16 processing modes
+  - Delimiters/quotation: Single-byte ASCII only (multi-byte UTF-8 characters not supported)
 - **Streaming**: Best performance with chunk sizes > 1KB
 
 ### Security Considerations

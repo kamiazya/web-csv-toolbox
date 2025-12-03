@@ -373,42 +373,58 @@ Main Thread:                 Worker Thread:
 
 ### Encoding Support
 
-**Supported encodings:**
-- **UTF-8** (default): Binary inputs and string processing
-- **UTF-16**: Optimized string processing mode
+WASM encoding support differs between binary and string inputs:
 
-**UTF-16 Mode:**
+**Binary Inputs (Uint8Array, ArrayBuffer, etc.):**
+- **WASM**: UTF-8 only (decoded internally)
+- **JavaScript**: Any encoding supported by TextDecoder (UTF-8, Shift-JIS, EUC-JP, etc.)
+
 ```typescript
-// For JavaScript string inputs (already UTF-16 internally)
+// ✅ WASM with UTF-8 binary
+const utf8Binary = new TextEncoder().encode(csvString);
+for await (const record of parse(utf8Binary, {
+  engine: { wasm: true }
+})) {
+  console.log(record);
+}
+
+// ❌ WASM with Shift-JIS binary → Automatic fallback to JavaScript
+for await (const record of parse(shiftJISBinary, {
+  engine: { wasm: true },
+  charset: 'shift-jis'  // Falls back to JavaScript automatically
+})) {
+  console.log(record);
+}
+```
+
+**String Inputs:**
+- **WASM**: Two processing modes
+  - `charset: 'utf-8'` (default): Encode to UTF-8 bytes → WASM processing
+  - `charset: 'utf-16'`: Direct UTF-16 processing (faster, skips TextEncoder/TextDecoder)
+- **JavaScript**: Always supported (already JavaScript strings)
+
+```typescript
+// ✅ WASM with UTF-16 mode (optimized for JavaScript strings)
 for await (const record of parse(unicodeCsv, {
   engine: { wasm: true },
-  charset: 'utf-16'  // Skip TextEncoder/TextDecoder
+  charset: 'utf-16'  // Skip TextEncoder/TextDecoder overhead
 })) {
   console.log(record);
 }
 ```
 
-**Benefits:**
+**UTF-16 Mode Benefits:**
+- JavaScript strings are internally UTF-16
 - Avoids TextEncoder/TextDecoder overhead
 - Faster for Unicode-heavy data (Japanese, Chinese, etc.)
-- JavaScript strings are already UTF-16
+- Only works with string inputs
 
-**Limitations:**
-- UTF-16 works only with string inputs (not binary)
-- Non-UTF-8/UTF-16 encodings not supported
+**Summary Table:**
 
-**Workaround:**
-For non-UTF-8/UTF-16 encodings, the router automatically falls back to JavaScript:
-
-```typescript
-// Automatic fallback for Shift-JIS
-for await (const record of parse(csv, {
-  engine: { wasm: true },
-  charset: 'shift-jis' // Falls back to JavaScript
-})) {
-  console.log(record);
-}
-```
+| Input Type | WASM Support | JavaScript Support |
+|-----------|--------------|-------------------|
+| Binary | UTF-8 only | Any TextDecoder encoding |
+| String | UTF-8/UTF-16 processing | Always supported |
 
 ---
 
