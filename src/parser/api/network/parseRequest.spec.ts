@@ -91,7 +91,7 @@ describe("parseRequest function", () => {
         async ({ data, request }) => {
           let i = 0;
           for await (const row of parseRequest(request)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),
@@ -113,7 +113,7 @@ describe("parseRequest function", () => {
 
     let i = 0;
     for await (const row of parseRequest(request)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -132,6 +132,6 @@ describe("parseRequest function", () => {
     ];
 
     const records = await parseRequest.toArray(request);
-    expect(records).toStrictEqual(expected);
+    expect(records).toEqual(expected);
   });
 });

@@ -95,39 +95,39 @@ describe("FlexibleStringCSVParser (Object and Array)", () => {
       ]);
     });
 
-    test("should preserve undefined for missing fields in array format (with pad strategy)", () => {
-      // In array format with 'pad' strategy, missing fields are filled with undefined
-      const parserWithPad = new FlexibleStringArrayCSVParser({
+    test("should preserve undefined for missing fields in array format (with sparse strategy)", () => {
+      // In array format with 'sparse' strategy, missing fields are filled with undefined
+      const parserWithSparse = new FlexibleStringArrayCSVParser({
         header: ["name", "age", "city"] as const,
 
-        columnCountStrategy: "pad",
+        columnCountStrategy: "sparse",
       });
 
-      const records = Array.from(parserWithPad.parse("Alice,30\nBob"));
+      const records = Array.from(parserWithSparse.parse("Alice,30\nBob"));
 
       expect(records).toEqual([
         ["Alice", "30", undefined],
-        ["Bob", undefined, undefined], // Missing fields → undefined (array format behavior)
+        ["Bob", undefined, undefined], // Missing fields → undefined (sparse strategy)
       ]);
     });
 
-    test("should distinguish empty vs missing in array format", () => {
-      const parserWithPad = new FlexibleStringArrayCSVParser({
+    test("should distinguish empty vs missing in array format (sparse strategy)", () => {
+      const parserWithSparse = new FlexibleStringArrayCSVParser({
         header: ["name", "age"] as const,
 
-        columnCountStrategy: "pad",
+        columnCountStrategy: "sparse",
       });
 
       // "Bob," has an empty age field → ""
       // "Charlie" has a missing age field → undefined
       const records = Array.from(
-        parserWithPad.parse("Alice,30\nBob,\nCharlie"),
+        parserWithSparse.parse("Alice,30\nBob,\nCharlie"),
       );
 
       expect(records).toEqual([
         ["Alice", "30"],
         ["Bob", ""], // empty field → ""
-        ["Charlie", undefined], // missing field → undefined (array format preserves undefined)
+        ["Charlie", undefined], // missing field → undefined (sparse strategy preserves undefined)
       ]);
     });
   });
@@ -160,19 +160,19 @@ describe("FlexibleStringCSVParser (Object and Array)", () => {
       const records = Array.from(parser.parse("Alice,30\nBob"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Missing field remains undefined
+        { name: "Bob", age: "" }, // Missing field filled with "" (fill strategy default)
       ]);
     });
 
-    test("should distinguish empty field from missing field in object format", () => {
-      // In object format, empty fields stay "", missing fields remain undefined
+    test("should fill missing field with empty string in object format", () => {
+      // In object format with fill strategy (default), both empty and missing fields are ""
       // "Bob," has an empty age field (present but empty) → ""
-      // "Charlie" has a missing age field (row too short) → undefined
+      // "Charlie" has a missing age field (row too short) → "" (fill strategy)
       const records = Array.from(parser.parse("Alice,30\nBob,\nCharlie"));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
         { name: "Bob", age: "" }, // empty field → ""
-        { name: "Charlie", age: undefined }, // missing field → undefined
+        { name: "Charlie", age: "" }, // missing field → "" (fill strategy)
       ]);
     });
   });
@@ -219,15 +219,15 @@ describe("FlexibleStringCSVParser (Object and Array)", () => {
   });
 
   describe("Column count strategy", () => {
-    test("should pad short rows with undefined in object format", () => {
+    test("should fill short rows with empty string in object format", () => {
       const parser = new FlexibleStringObjectCSVParser({
         header: ["name", "age", "city"] as const,
-        columnCountStrategy: "pad",
+        columnCountStrategy: "fill",
       });
 
       const records = Array.from(parser.parse("Alice,30\nBob,25,NYC"));
       expect(records).toEqual([
-        { name: "Alice", age: "30", city: undefined }, // Missing field filled with undefined
+        { name: "Alice", age: "30", city: "" }, // Missing field filled with empty string (fill strategy)
         { name: "Bob", age: "25", city: "NYC" },
       ]);
     });
@@ -241,17 +241,15 @@ describe("FlexibleStringCSVParser (Object and Array)", () => {
       expect(() => Array.from(parser.parse("Alice,30,extra"))).toThrow();
     });
 
-    test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleStringObjectCSVParser({
-        header: ["name", "age"] as const,
-        columnCountStrategy: "truncate",
-      });
-
-      const records = Array.from(parser.parse("Alice,30,extra\nBob,25"));
-      expect(records).toEqual([
-        { name: "Alice", age: "30" },
-        { name: "Bob", age: "25" },
-      ]);
+    test("should reject 'truncate' strategy for object output", () => {
+      expect(() => {
+        new FlexibleStringObjectCSVParser({
+          header: ["name", "age"] as const,
+          columnCountStrategy: "truncate",
+        });
+      }).toThrow(
+        /columnCountStrategy 'truncate' is not allowed for object format/,
+      );
     });
   });
 

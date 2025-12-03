@@ -1,38 +1,33 @@
 import {
   DEFAULT_ASSEMBLER_MAX_FIELD_COUNT,
-  FieldDelimiter,
-  RecordDelimiter,
+  Delimiter,
 } from "@/core/constants.ts";
 import { ParseError } from "@/core/errors.ts";
 import type {
+  AnyToken,
   ColumnCountStrategy,
   CSVArrayRecord,
-  CSVArrayRecordAssembler,
   CSVRecordAssemblerAssembleOptions,
   CSVRecordAssemblerCommonOptions,
-  Token,
 } from "@/core/types.ts";
 
 /**
  * Flexible CSV Array Record Assembler implementation.
  *
- * A balanced implementation that assembles tokens into CSV records as arrays,
- * optimizing for both performance and memory efficiency.
+ * An optimized assembler that works with unified field tokens.
+ * No switch statement needed - simply processes each field and checks
+ * the `delimiter` property to determine when a record is complete.
  *
  * @remarks
- * This implementation is designed to handle various CSV formats flexibly
- * while maintaining good performance characteristics. For specialized use cases,
- * future implementations may provide optimizations for specific scenarios
- * (e.g., speed-optimized, memory-optimized).
+ * This implementation provides better performance by eliminating
+ * the token type switch statement and reducing token iteration count by 50%.
  */
 export class FlexibleCSVArrayRecordAssembler<
-  Header extends ReadonlyArray<string>,
-> implements CSVArrayRecordAssembler<Header>
-{
+  const Header extends ReadonlyArray<string>,
+> {
   #fieldIndex = 0;
   #row: string[] = [];
   #header: Header | undefined;
-  #dirty = false;
   #signal?: AbortSignal | undefined;
   #maxFieldCount: number;
   #skipEmptyLines: boolean;
@@ -40,19 +35,26 @@ export class FlexibleCSVArrayRecordAssembler<
   #source?: string | undefined;
   #includeHeader: boolean;
   #columnCountStrategy: ColumnCountStrategy;
-  #headerIncluded = false; // Track if header has been included in output
+  #headerIncluded = false;
+
+  #assembleRecordFn:
+    | ((rowLength: number) => CSVArrayRecord<Header>)
+    | undefined;
+  #headerLength = 0;
+  #hasContent = false;
+  #emptyRecordTemplate: string[] | undefined;
+  #rowLength = 0;
 
   constructor(options: CSVRecordAssemblerCommonOptions<Header> = {}) {
-    // Validate includeHeader option
     this.#includeHeader = options.includeHeader ?? false;
 
-    // Validate headerless mode (header: [])
-    if (
+    // Detect headerless mode (header: [])
+    const isHeaderlessMode =
       options.header !== undefined &&
       Array.isArray(options.header) &&
-      options.header.length === 0
-    ) {
-      // Headerless mode: only 'keep' strategy is allowed
+      options.header.length === 0;
+
+    if (isHeaderlessMode) {
       if (
         options.columnCountStrategy !== undefined &&
         options.columnCountStrategy !== "keep"
@@ -65,17 +67,21 @@ export class FlexibleCSVArrayRecordAssembler<
       }
     }
 
-    // Validate and set columnCountStrategy
-    this.#columnCountStrategy = options.columnCountStrategy ?? "keep";
-    if (this.#columnCountStrategy !== "keep" && options.header === undefined) {
+    // Default to "keep" for headerless mode, "fill" otherwise
+    this.#columnCountStrategy =
+      options.columnCountStrategy ?? (isHeaderlessMode ? "keep" : "fill");
+    if (
+      this.#columnCountStrategy !== "keep" &&
+      this.#columnCountStrategy !== "fill" &&
+      options.header === undefined
+    ) {
       throw new Error(
         `columnCountStrategy '${this.#columnCountStrategy}' requires header option. ` +
-          `Use 'keep' or omit columnCountStrategy for headerless CSV.`,
+          `Use 'keep', 'fill', or omit columnCountStrategy for headerless CSV.`,
       );
     }
 
     const mfc = options.maxFieldCount ?? DEFAULT_ASSEMBLER_MAX_FIELD_COUNT;
-    // Validate maxFieldCount
     if (
       !(Number.isFinite(mfc) || mfc === Number.POSITIVE_INFINITY) ||
       (Number.isFinite(mfc) && (mfc < 1 || !Number.isInteger(mfc)))
@@ -102,22 +108,19 @@ export class FlexibleCSVArrayRecordAssembler<
    * @returns An iterable iterator of CSV records.
    */
   public *assemble(
-    input?: Token | Iterable<Token>,
+    input?: AnyToken | Iterable<AnyToken>,
     options?: CSVRecordAssemblerAssembleOptions,
   ): IterableIterator<CSVArrayRecord<Header>> {
     const stream = options?.stream ?? false;
 
-    // Yield header if includeHeader is enabled (before processing any records)
     yield* this.#maybeYieldHeader();
 
     if (input !== undefined) {
-      // Check if input is iterable (has Symbol.iterator)
       if (this.#isIterable(input)) {
         for (const token of input) {
           yield* this.#processToken(token);
         }
       } else {
-        // Single token
         yield* this.#processToken(input);
       }
     }
@@ -127,80 +130,63 @@ export class FlexibleCSVArrayRecordAssembler<
     }
   }
 
-  /**
-   * Checks if a value is iterable.
-   */
-  #isIterable(value: any): value is Iterable<Token> {
+  #isIterable(value: any): value is Iterable<AnyToken> {
     return value != null && typeof value[Symbol.iterator] === "function";
   }
 
   /**
-   * Processes a single token and yields a record if one is completed.
+   * Processes a single token.
+   * No switch needed - always a field, just check what follows.
    */
-  *#processToken(token: Token): IterableIterator<CSVArrayRecord<Header>> {
+  *#processToken(token: AnyToken): IterableIterator<CSVArrayRecord<Header>> {
     this.#signal?.throwIfAborted();
 
-    // Track the current record number for error reporting
-    if (token.location) {
+    // Track row number for error reporting
+    if ("location" in token && token.location) {
       this.#currentRowNumber = token.location.rowNumber;
     }
 
-    switch (token.type) {
-      case FieldDelimiter:
-        // Set empty string for empty fields
-        if (this.#row[this.#fieldIndex] === undefined) {
-          this.#row[this.#fieldIndex] = "";
-        }
+    // Store the field value and track if row has content
+    const value = token.value;
+    this.#row[this.#fieldIndex] = value;
+    if (value !== "") {
+      this.#hasContent = true;
+    }
+    this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
+
+    // Check what follows this field
+    switch (token.delimiter) {
+      case Delimiter.Field: {
         this.#fieldIndex++;
         this.#checkFieldCount();
-        this.#dirty = true;
+        this.#rowLength = Math.max(this.#rowLength, this.#fieldIndex + 1);
         break;
-      case RecordDelimiter:
-        // Set empty string for the last field if empty
-        if (this.#row[this.#fieldIndex] === undefined) {
-          this.#row[this.#fieldIndex] = "";
-        }
+      }
+      default: {
+        // End of record - yield assembled record
+        const rowLength = this.#rowLength || this.#fieldIndex + 1 || 0;
         if (this.#header === undefined) {
-          this.#setHeader(this.#row as unknown as Header);
-          // Yield header if includeHeader is enabled after header inference
+          const headerRow = this.#takeRow(rowLength);
+          this.#setHeader(headerRow as unknown as Header);
           yield* this.#maybeYieldHeader();
         } else {
-          if (this.#dirty) {
-            yield this.#assembleRecord();
+          // Check if row has any non-empty content (tracked incrementally)
+          if (this.#hasContent) {
+            yield this.#assembleRecord(rowLength);
+          } else if (!this.#skipEmptyLines) {
+            this.#resetRowBuilderState();
+            yield this.#createEmptyRecord();
           } else {
-            if (!this.#skipEmptyLines) {
-              // For empty lines, generate empty record
-              yield new Array(this.#header.length).fill(
-                "",
-              ) as unknown as CSVArrayRecord<Header>;
-            }
+            this.#resetRowBuilderState();
           }
         }
-        // Reset the row fields buffer.
-        this.#fieldIndex = 0;
-        this.#row = [];
-        this.#dirty = false;
         break;
-      default:
-        this.#dirty = true;
-        this.#row[this.#fieldIndex] = token.value;
-        break;
+      }
     }
   }
 
-  /**
-   * Flushes any remaining buffered data as a final record.
-   */
   *#flush(): IterableIterator<CSVArrayRecord<Header>> {
-    if (this.#header !== undefined) {
-      if (this.#dirty) {
-        // Set empty string for the last field if empty
-        if (this.#row[this.#fieldIndex] === undefined) {
-          this.#row[this.#fieldIndex] = "";
-        }
-        yield this.#assembleRecord();
-      }
-    }
+    // Nothing to flush - unified tokens always complete records
   }
 
   #checkFieldCount(): void {
@@ -222,8 +208,6 @@ export class FlexibleCSVArrayRecordAssembler<
       );
     }
     this.#header = header;
-    // Allow empty header for headerless mode (all rows are data)
-    // Only validate duplicates when header is non-empty
     if (
       this.#header.length > 0 &&
       new Set(this.#header).size !== this.#header.length
@@ -232,76 +216,152 @@ export class FlexibleCSVArrayRecordAssembler<
         source: this.#source,
       });
     }
-  }
 
-  /**
-   * Assembles a record in array format.
-   * Applies column count strategy if header is defined.
-   */
-  #assembleRecord(): CSVArrayRecord<Header> {
-    if (!this.#header) {
-      // Headerless: return row as-is
-      return [...this.#row] as unknown as CSVArrayRecord<Header>;
-    }
-
-    // Apply column count strategy
-    const headerLength = this.#header.length;
-    const rowLength = this.#row.length;
-
+    this.#headerLength = header.length;
+    this.#emptyRecordTemplate = undefined;
     switch (this.#columnCountStrategy) {
+      case "fill":
+        this.#assembleRecordFn = this.#assembleRecordFill;
+        break;
+      case "sparse":
+        this.#assembleRecordFn = this.#assembleRecordSparse;
+        break;
       case "keep":
-        // Return row as-is
-        return [...this.#row] as unknown as CSVArrayRecord<Header>;
-
-      case "pad":
-        // Pad short rows with undefined, truncate long rows
-        if (rowLength < headerLength) {
-          const padded = [...this.#row];
-          while (padded.length < headerLength) {
-            padded.push(undefined as unknown as string);
-          }
-          return padded as unknown as CSVArrayRecord<Header>;
-        } else if (rowLength > headerLength) {
-          return this.#row.slice(
-            0,
-            headerLength,
-          ) as unknown as CSVArrayRecord<Header>;
-        }
-        return [...this.#row] as unknown as CSVArrayRecord<Header>;
-
+        this.#assembleRecordFn = this.#assembleRecordKeep;
+        break;
       case "strict":
-        // Throw error if length doesn't match
-        if (rowLength !== headerLength) {
-          throw new ParseError(
-            `Expected ${headerLength} columns, got ${rowLength}${
-              this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
-            }${this.#source ? ` in ${JSON.stringify(this.#source)}` : ""}`,
-            {
-              source: this.#source,
-            },
-          );
-        }
-        return [...this.#row] as unknown as CSVArrayRecord<Header>;
-
+        this.#assembleRecordFn = this.#assembleRecordStrict;
+        break;
       case "truncate":
-        // Truncate long rows, keep short rows as-is
-        if (rowLength > headerLength) {
-          return this.#row.slice(
-            0,
-            headerLength,
-          ) as unknown as CSVArrayRecord<Header>;
-        }
-        return [...this.#row] as unknown as CSVArrayRecord<Header>;
-
+        this.#assembleRecordFn = this.#assembleRecordTruncate;
+        break;
       default:
-        // Should never reach here due to validation
-        return [...this.#row] as unknown as CSVArrayRecord<Header>;
+        this.#assembleRecordFn = this.#assembleRecordFill;
+        break;
+    }
+    this.#row = this.#allocateRowBuffer(this.#headerLength);
+    this.#rowLength = 0;
+  }
+
+  #assembleRecord(rowLength: number): CSVArrayRecord<Header> {
+    if (!this.#assembleRecordFn) {
+      return this.#takeRow(rowLength) as unknown as CSVArrayRecord<Header>;
+    }
+    return this.#assembleRecordFn(rowLength);
+  }
+
+  #assembleRecordKeep = (rowLength: number): CSVArrayRecord<Header> => {
+    const record = this.#takeRow(rowLength);
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
+  };
+
+  #assembleRecordFill = (rowLength: number): CSVArrayRecord<Header> => {
+    const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
+
+    if (rowLength < headerLength) {
+      for (let i = rowLength; i < headerLength; i++) {
+        record[i] = "";
+      }
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
+    } else if (rowLength > headerLength) {
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
+    }
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
+  };
+
+  #assembleRecordSparse = (rowLength: number): CSVArrayRecord<Header> => {
+    const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
+
+    if (rowLength < headerLength) {
+      for (let i = rowLength; i < headerLength; i++) {
+        record[i] = undefined as unknown as string;
+      }
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
+    } else if (rowLength > headerLength) {
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
+    }
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
+  };
+
+  #assembleRecordStrict = (rowLength: number): CSVArrayRecord<Header> => {
+    const headerLength = this.#headerLength;
+
+    if (rowLength !== headerLength) {
+      this.#takeRow(rowLength);
+      throw new ParseError(
+        `Expected ${headerLength} columns, got ${rowLength}${
+          this.#currentRowNumber ? ` at row ${this.#currentRowNumber}` : ""
+        }${this.#source ? ` in ${JSON.stringify(this.#source)}` : ""}`,
+        {
+          source: this.#source,
+        },
+      );
+    }
+    const record = this.#takeRow(rowLength);
+    record.length = headerLength;
+    return record as unknown as CSVArrayRecord<Header>;
+  };
+
+  #assembleRecordTruncate = (rowLength: number): CSVArrayRecord<Header> => {
+    const headerLength = this.#headerLength;
+    const record = this.#takeRow(rowLength);
+
+    if (rowLength > headerLength) {
+      record.length = headerLength;
+      return record as unknown as CSVArrayRecord<Header>;
+    }
+    record.length = rowLength;
+    return record as unknown as CSVArrayRecord<Header>;
+  };
+
+  #takeRow(rowLength: number): string[] {
+    const record = this.#row;
+    record.length = rowLength;
+    const capacityHint =
+      this.#headerLength > 0 ? this.#headerLength : Math.max(rowLength, 4);
+    this.#row = this.#allocateRowBuffer(capacityHint);
+    this.#resetRowBuilderState(true);
+    return record;
+  }
+
+  #resetRowBuilderState(replacedBuffer = false): void {
+    this.#fieldIndex = 0;
+    this.#rowLength = 0;
+    this.#hasContent = false;
+    if (!replacedBuffer) {
+      this.#row.length = 0;
     }
   }
 
-  /**
-   * Yields the header row if includeHeader is enabled and header hasn't been included yet.
-   */
+  #allocateRowBuffer(capacityHint: number): string[] {
+    if (capacityHint <= 0) {
+      return [];
+    }
+    return new Array(capacityHint);
+  }
+
+  #createEmptyRecord(): CSVArrayRecord<Header> {
+    if (this.#headerLength === 0) {
+      return [] as unknown as CSVArrayRecord<Header>;
+    }
+    if (
+      this.#emptyRecordTemplate === undefined ||
+      this.#emptyRecordTemplate.length !== this.#headerLength
+    ) {
+      this.#emptyRecordTemplate = new Array(this.#headerLength).fill("");
+    }
+    return this.#emptyRecordTemplate.slice() as unknown as CSVArrayRecord<Header>;
+  }
+
   *#maybeYieldHeader(): IterableIterator<CSVArrayRecord<Header>> {
     if (
       this.#includeHeader &&
@@ -309,8 +369,9 @@ export class FlexibleCSVArrayRecordAssembler<
       !this.#headerIncluded
     ) {
       this.#headerIncluded = true;
-      // Yield header as array
-      yield [...this.#header] as unknown as CSVArrayRecord<Header>;
+      yield (
+        this.#header as unknown as string[]
+      ).slice() as unknown as CSVArrayRecord<Header>;
     }
   }
 }

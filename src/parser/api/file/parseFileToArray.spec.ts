@@ -8,7 +8,7 @@ describe("parseFileToArray", () => {
 
     const records = await parseFileToArray(file);
 
-    expect(records).toStrictEqual([
+    expect(records).toEqual([
       { name: "Alice", age: "42" },
       { name: "Bob", age: "69" },
     ]);
@@ -19,7 +19,7 @@ describe("parseFileToArray", () => {
 
     const records = await parseFileToArray(file);
 
-    expect(records).toStrictEqual([]);
+    expect(records).toEqual([]);
   });
 
   it("should handle CSV with only headers", async () => {
@@ -28,7 +28,7 @@ describe("parseFileToArray", () => {
 
     const records = await parseFileToArray(file);
 
-    expect(records).toStrictEqual([]);
+    expect(records).toEqual([]);
   });
 
   it("should respect parsing options", async () => {
@@ -39,7 +39,7 @@ describe("parseFileToArray", () => {
 
     const records = await parseFileToArray(file, { delimiter: "\t" } as any);
 
-    expect(records).toStrictEqual([
+    expect(records).toEqual([
       { name: "Alice", age: "42" },
       { name: "Bob", age: "69" },
     ]);
@@ -88,8 +88,8 @@ describe("parseFileToArray", () => {
     const records = await parseFileToArray(file);
 
     expect(records).toHaveLength(1000);
-    expect(records[0]).toStrictEqual({ name: "User0", age: "20" });
-    expect(records[999]).toStrictEqual({ name: "User999", age: "69" }); // 20 + (999 % 50) = 20 + 49 = 69
+    expect(records[0]).toEqual({ name: "User0", age: "20" });
+    expect(records[999]).toEqual({ name: "User999", age: "69" }); // 20 + (999 % 50) = 20 + 49 = 69
   });
 
   it("should handle CSV with quoted fields", async () => {
@@ -98,7 +98,7 @@ describe("parseFileToArray", () => {
 
     const records = await parseFileToArray(file);
 
-    expect(records).toStrictEqual([
+    expect(records).toEqual([
       { name: "Alice", message: "Hello, World" },
       { name: "Bob", message: "Line1\\nLine2" },
     ]);

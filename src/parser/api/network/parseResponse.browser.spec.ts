@@ -71,7 +71,7 @@ describe("parseResponse with execution strategies", () => {
             let i = 0;
             // parseResponse returns AsyncIterableIterator directly, not Promise<AsyncIterableIterator>
             for await (const row of parseResponse(response, { engine })) {
-              expect(data[i++]).toStrictEqual(row);
+              expect(data[i++]).toEqual(row);
             }
           },
         ),

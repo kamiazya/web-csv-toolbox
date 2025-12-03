@@ -1,5 +1,7 @@
 import fc from "fast-check";
 
 fc.configureGlobal({
-  // This is the default value, but we set it here to be explicit.
+  // Set to true to stop property tests on first failure (default is false).
+  // This speeds up test runs by avoiding unnecessary iterations after a counterexample is found.
+  endOnFailure: true,
 });

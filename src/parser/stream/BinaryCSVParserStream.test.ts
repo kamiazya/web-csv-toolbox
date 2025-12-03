@@ -1,18 +1,8 @@
-import {
-  beforeEach,
-  describe as describe_,
-  expect,
-  it as it_,
-  test,
-  vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { transform } from "@/__tests__/helper.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
-
-const describe = describe_.concurrent;
-const it = it_.concurrent;
 
 describe("BinaryCSVParserStream", () => {
   const encoder = new TextEncoder();
@@ -74,7 +64,7 @@ describe("BinaryCSVParserStream", () => {
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Incomplete record leaves missing field undefined
+        { name: "Bob", age: "" }, // Incomplete record leaves missing field as empty string
       ]);
     });
 
@@ -92,7 +82,7 @@ describe("BinaryCSVParserStream", () => {
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Missing field remains undefined
+        { name: "Bob", age: "" }, // Missing field returns empty string
       ]);
     });
   });

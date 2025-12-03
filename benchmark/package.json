@@ -4,8 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "tsx main.ts",
-    "queuing-strategy": "tsx queuing-strategy.bench.ts"
+    "start": "node --import tsx main.ts",
+    "queuing-strategy": "node --import tsx queuing-strategy.bench.ts",
+    "quick": "node --import tsx scripts/quick-bench.mts",
+    "unified": "node --import tsx scripts/unified-token-bench.mts",
+    "profile:cpu": "node --cpu-prof --cpu-prof-dir=./profiles --import tsx scripts/profile-cpu.mts",
+    "profile:memory": "node --heap-prof --heap-prof-dir=./profiles --import tsx scripts/profile-memory.mts",
+    "profile:memory:gc": "node --heap-prof --heap-prof-dir=./profiles --expose-gc --import tsx scripts/profile-memory.mts"
   },
   "license": "MIT",
   "dependencies": {

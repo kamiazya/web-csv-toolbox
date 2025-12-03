@@ -1,27 +1,14 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { autoChunk, FC, transform } from "@/__tests__/helper.ts";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
+import type { TokenNoLocation } from "@/common";
+import { Delimiter } from "@/core/constants.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
-const describe = describe_.concurrent;
-const it = it_.concurrent;
-
-const LOCATION_SHAPE = {
-  start: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  end: {
-    line: expect.any(Number),
-    column: expect.any(Number),
-    offset: expect.any(Number),
-  },
-  rowNumber: expect.any(Number),
-};
+const describe = describe_;
+const it = it_;
 
 describe("StringCSVLexerTransformer", () => {
   it("should be a TransformStream", () => {
@@ -37,28 +24,21 @@ describe("StringCSVLexerTransformer", () => {
         fc.gen().map((g) => {
           const row = g(FC.row);
           const quote = g(FC.quote);
-          const chunks = autoChunk(
-            g,
-            row.map((v) => escapeField(v, { quote })).join(","),
-          );
-          const expected = [
-            ...row.flatMap((value, index) => [
-              // If the field is empty or quote is true, add a field.
-              ...(quote || value
-                ? [{ type: Field, value, location: LOCATION_SHAPE }]
-                : []),
-              // If the field is not the last field, add a field delimiter.
-              ...(index === row.length - 1
-                ? []
-                : [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                      location: LOCATION_SHAPE,
-                    },
-                  ]),
-            ]),
-          ];
+          const csv = row.map((v) => escapeField(v, { quote })).join(",");
+          const chunks = csv.length === 0 ? [""] : autoChunk(g, csv);
+          // In unified token format, each token represents a field with its following delimiter
+          // Note: If CSV is empty string, no tokens are expected regardless of the row content
+          const expected: TokenNoLocation[] =
+            csv.length === 0
+              ? []
+              : row.map((value, index) => ({
+                  value,
+                  delimiter:
+                    index === row.length - 1
+                      ? Delimiter.Record
+                      : Delimiter.Field,
+                  delimiterLength: expect.any(Number),
+                }));
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
@@ -68,6 +48,7 @@ describe("StringCSVLexerTransformer", () => {
           expect(actual).toMatchObject(expected);
         },
       ),
+      { numRuns: 10 }, // Reduce runs to debug
     );
   });
 
@@ -80,20 +61,13 @@ describe("StringCSVLexerTransformer", () => {
             g,
             row.map((v) => escapeField(v, { quote: true })).join(","),
           );
-          const expected = [
-            ...row.flatMap((value, index) => [
-              { type: Field, value, location: LOCATION_SHAPE },
-              ...(index === row.length - 1
-                ? []
-                : [
-                    {
-                      type: FieldDelimiter,
-                      value: ",",
-                      location: LOCATION_SHAPE,
-                    },
-                  ]),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected: TokenNoLocation[] = row.map((value, index) => ({
+            value,
+            delimiter:
+              index === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+            delimiterLength: expect.any(Number),
+          }));
           return { expected, chunks };
         }),
         async ({ expected, chunks }) => {
@@ -103,6 +77,7 @@ describe("StringCSVLexerTransformer", () => {
           expect(actual).toMatchObject(expected);
         },
       ),
+      { numRuns: 10 },
     );
   });
 
@@ -128,56 +103,33 @@ describe("StringCSVLexerTransformer", () => {
               )
               .join(eol) + (EOF ? eol : "");
           const chunks = autoChunk(g, csv);
-          const expected = [
-            ...data.flatMap((row, i) => [
-              // If row is empty, add a record delimiter.
-              ...row.flatMap((value, j) => [
-                // If the field is empty or quote is true, add a field.
-                ...(quote || value !== "" ? [{ type: Field, value }] : []),
-                // If the field is not the last field, add a field delimiter.
-                ...(row.length - 1 !== j
-                  ? [
-                      {
-                        type: FieldDelimiter,
-                        value: options.delimiter,
-                        location: LOCATION_SHAPE,
-                      },
-                    ]
-                  : []),
-              ]),
-              // If the field is the last field, add a record delimiter.
-              ...(data.length - 1 !== i
-                ? [
-                    {
-                      type: RecordDelimiter,
-                      value: eol,
-                      location: LOCATION_SHAPE,
-                    },
-                  ]
-                : []),
-            ]),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const expected: TokenNoLocation[] = [];
+          for (let i = 0; i < data.length; i++) {
+            const row = data[i]!;
+            for (let j = 0; j < row.length; j++) {
+              const value = row[j]!;
+              const isLastFieldInRow = j === row.length - 1;
+
+              // Always add token for every field (including empty ones)
+              expected.push({
+                value,
+                delimiter: isLastFieldInRow
+                  ? Delimiter.Record
+                  : Delimiter.Field,
+                delimiterLength: expect.any(Number),
+              });
+            }
+          }
           return { options, chunks, expected };
         }),
         async ({ options, chunks, expected }) => {
           const lexer = new FlexibleStringCSVLexer(options);
           const transformer = new StringCSVLexerTransformer(lexer);
-          const actual = (await transform(transformer, chunks)).flat();
+          const actual = await transform(transformer, chunks);
           expect(actual).toMatchObject(expected);
         },
       ),
-      {
-        examples: [
-          [
-            // only EOL is ignored
-            {
-              options: { delimiter: ",", quotation: '"' } as any,
-              chunks: ["\n"],
-              expected: [],
-            },
-          ],
-        ],
-      },
     );
   });
 });

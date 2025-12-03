@@ -36,7 +36,7 @@ import { BaseBinaryCSVParser } from "@/parser/models/base/BaseBinaryCSVParser.ts
  * ```
  */
 export class FlexibleBinaryObjectCSVParser<
-    Header extends ReadonlyArray<string> = readonly string[],
+    const Header extends ReadonlyArray<string> = readonly string[],
   >
   extends BaseBinaryCSVParser<Header, "object">
   implements BinaryObjectCSVParser<Header>

@@ -1,5 +1,5 @@
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-import type { StringCSVLexerOptions } from "@/core/types.ts";
+import type { StringCSVLexer, StringCSVLexerOptions } from "@/core/types.ts";
 import { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.ts";
 
 // Re-export the lexer class
@@ -37,8 +37,11 @@ export { FlexibleStringCSVLexer } from "@/parser/models/FlexibleStringCSVLexer.t
 export function createStringCSVLexer<
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
+  TrackLocation extends boolean = false,
 >(
-  options?: StringCSVLexerOptions<Delimiter, Quotation>,
-): FlexibleStringCSVLexer<Delimiter, Quotation> {
-  return new FlexibleStringCSVLexer<Delimiter, Quotation>(options ?? {});
+  options?: StringCSVLexerOptions<Delimiter, Quotation, TrackLocation>,
+): StringCSVLexer<TrackLocation> {
+  return new FlexibleStringCSVLexer<Delimiter, Quotation, TrackLocation>(
+    options ?? {},
+  );
 }

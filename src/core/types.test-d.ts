@@ -264,7 +264,7 @@ describe("CSVRecordAssemblerOptions", () => {
       >();
     });
 
-    it("Normal mode allows all columnCountStrategy options", () => {
+    it("Array format accepts all columnCountStrategy options", () => {
       const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "array",
@@ -274,43 +274,65 @@ describe("CSVRecordAssemblerOptions", () => {
       const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "array",
-        columnCountStrategy: "pad",
+        columnCountStrategy: "sparse",
       };
 
       const opts3: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "array",
+        columnCountStrategy: "truncate",
+      };
+
+      expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+      >();
+      expectTypeOf(opts2.columnCountStrategy).toEqualTypeOf<
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+      >();
+      expectTypeOf(opts3.columnCountStrategy).toEqualTypeOf<
+        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+      >();
+    });
+
+    it("Object format restricts columnCountStrategy to fill | strict", () => {
+      const opts: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "object",
         columnCountStrategy: "strict",
       };
 
-      expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
+      expectTypeOf(opts.columnCountStrategy).toEqualTypeOf<
+        "fill" | "strict" | undefined
       >();
-      expectTypeOf(opts2.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
-      >();
-      expectTypeOf(opts3.columnCountStrategy).toEqualTypeOf<
-        "keep" | "pad" | "strict" | "truncate" | undefined
-      >();
-    });
 
-    it("Normal mode allows both array and object output formats", () => {
-      const opts1: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
-        header: ["a", "b"] as const,
-        outputFormat: "array",
-      };
-
-      const opts2: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+      // @ts-expect-error keep is not allowed for object format
+      const _invalidKeep: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "object",
+        columnCountStrategy: "keep",
       };
 
-      expectTypeOf(opts1.outputFormat).toEqualTypeOf<
-        "object" | "array" | undefined
-      >();
-      expectTypeOf(opts2.outputFormat).toEqualTypeOf<
-        "object" | "array" | undefined
-      >();
+      // @ts-expect-error truncate is not allowed for object format
+      const _invalidTruncate: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+        header: ["a", "b"] as const,
+        outputFormat: "object",
+        columnCountStrategy: "truncate",
+      };
+    });
+
+    it("Normal mode allows array and object output formats", () => {
+      const opts1 = {
+        header: ["a", "b"] as const,
+        outputFormat: "array" as const,
+      };
+
+      const opts2 = {
+        header: ["a", "b"] as const,
+        outputFormat: "object" as const,
+      };
+
+      expectTypeOf(opts1.outputFormat).toEqualTypeOf<"array">();
+      expectTypeOf(opts2.outputFormat).toEqualTypeOf<"object">();
     });
   });
 });

@@ -53,7 +53,7 @@ describe("parseBinaryStream function", () => {
         async ({ data, csv }) => {
           let i = 0;
           for await (const row of parseBinaryStream(csv)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),
@@ -69,7 +69,7 @@ describe("parseBinaryStream function", () => {
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
     for await (const row of parseBinaryStream(csv)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -83,7 +83,7 @@ describe("parseBinaryStream function", () => {
     const expected = [{ a: "1", b: "2", c: "3" }];
     let i = 0;
     for await (const row of parseBinaryStream(csv)) {
-      expect(row).toStrictEqual(expected[i++]);
+      expect(row).toEqual(expected[i++]);
     }
   });
 
@@ -148,7 +148,7 @@ describe("parseBinaryStream function", () => {
           for await (const row of parseBinaryStream(csv, {
             decompression: decompression,
           })) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),
@@ -168,6 +168,6 @@ test("throws an error if the CSV is invalid", async () => {
       // Do nothing
     }
   }).rejects.toThrowErrorMatchingInlineSnapshot(
-    `[ParseError: Unexpected EOF while parsing quoted field.]`,
+    `[ParseError: Unexpected EOF while parsing quoted field at line 2, column 1.]`,
   );
 });

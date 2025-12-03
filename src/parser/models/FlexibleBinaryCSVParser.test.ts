@@ -216,16 +216,16 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
       ]);
     });
 
-    test("should preserve undefined for missing fields in array format (with pad strategy)", () => {
-      const parserWithPad = new FlexibleBinaryArrayCSVParser({
+    test("should preserve undefined for missing fields in array format (with sparse strategy)", () => {
+      const parserWithSparse = new FlexibleBinaryArrayCSVParser({
         header: ["name", "age", "city"] as const,
 
-        columnCountStrategy: "pad",
+        columnCountStrategy: "sparse",
         charset: "utf-8",
       });
 
       const records = Array.from(
-        parserWithPad.parse(encoder.encode("Alice,30\nBob")),
+        parserWithSparse.parse(encoder.encode("Alice,30\nBob")),
       );
 
       expect(records).toEqual([
@@ -268,7 +268,7 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
       const records = Array.from(parser.parse(encoder.encode("Alice,30\nBob")));
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Missing field remains undefined
+        { name: "Bob", age: "" }, // Missing field filled with "" (fill strategy default)
       ]);
     });
 
@@ -396,10 +396,10 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
   });
 
   describe("Column count strategy", () => {
-    test("should pad short rows with undefined in object format", () => {
+    test("should fill short rows with empty string in object format", () => {
       const parser = new FlexibleBinaryObjectCSVParser({
         header: ["name", "age", "city"] as const,
-        columnCountStrategy: "pad",
+        columnCountStrategy: "fill",
         charset: "utf-8",
       });
 
@@ -407,7 +407,7 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
         parser.parse(encoder.encode("Alice,30\nBob,25,NYC")),
       );
       expect(records).toEqual([
-        { name: "Alice", age: "30", city: undefined },
+        { name: "Alice", age: "30", city: "" },
         { name: "Bob", age: "25", city: "NYC" },
       ]);
     });
@@ -424,20 +424,16 @@ describe("FlexibleBinaryCSVParser (Object and Array)", () => {
       ).toThrow();
     });
 
-    test("should truncate long rows with 'truncate' strategy", () => {
-      const parser = new FlexibleBinaryObjectCSVParser({
-        header: ["name", "age"] as const,
-        columnCountStrategy: "truncate",
-        charset: "utf-8",
-      });
-
-      const records = Array.from(
-        parser.parse(encoder.encode("Alice,30,extra\nBob,25")),
+    test("should reject 'truncate' strategy for object output", () => {
+      expect(() => {
+        new FlexibleBinaryObjectCSVParser({
+          header: ["name", "age"] as const,
+          columnCountStrategy: "truncate",
+          charset: "utf-8",
+        });
+      }).toThrow(
+        /columnCountStrategy 'truncate' is not allowed for object format/,
       );
-      expect(records).toEqual([
-        { name: "Alice", age: "30" },
-        { name: "Bob", age: "25" },
-      ]);
     });
   });
 

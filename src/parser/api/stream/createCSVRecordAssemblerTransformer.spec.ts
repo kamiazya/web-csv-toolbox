@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_ } from "vitest";
 import { FC, transform } from "@/__tests__/helper.ts";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import type { Token } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
+import type { AnyToken } from "@/core/types.ts";
 import { createCSVRecordAssemblerTransformer } from "@/parser/api/stream/createCSVRecordAssemblerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -33,15 +33,12 @@ describe("createCSVRecordAssemblerTransformer", () => {
   it("should create transformer with default options", async () => {
     const transformer = createCSVRecordAssemblerTransformer();
 
-    const tokens: Token[] = [
-      { type: Field, value: "name", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "age", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
-      { type: Field, value: "Alice", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "20", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
+    // New unified token format: each field token includes what follows (delimiter info)
+    const tokens: AnyToken[] = [
+      { value: "name", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "age", delimiter: Delimiter.Record, delimiterLength: 1 },
+      { value: "Alice", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "20", delimiter: Delimiter.Record, delimiterLength: 1 },
     ];
 
     const records = await transform(transformer, tokens);
@@ -53,15 +50,11 @@ describe("createCSVRecordAssemblerTransformer", () => {
       header: ["name", "age"] as const,
     });
 
-    const tokens: Token[] = [
-      { type: Field, value: "Alice", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "20", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
-      { type: Field, value: "Bob", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "25", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
+    const tokens: AnyToken[] = [
+      { value: "Alice", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "20", delimiter: Delimiter.Record, delimiterLength: 1 },
+      { value: "Bob", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "25", delimiter: Delimiter.Record, delimiterLength: 1 },
     ];
 
     const records = await transform(transformer, tokens);
@@ -76,15 +69,11 @@ describe("createCSVRecordAssemblerTransformer", () => {
       outputFormat: "array",
     });
 
-    const tokens: Token[] = [
-      { type: Field, value: "name", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "age", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
-      { type: Field, value: "Alice", location: LOCATION_SHAPE },
-      { type: FieldDelimiter, value: ",", location: LOCATION_SHAPE },
-      { type: Field, value: "20", location: LOCATION_SHAPE },
-      { type: RecordDelimiter, value: "\n", location: LOCATION_SHAPE },
+    const tokens: AnyToken[] = [
+      { value: "name", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "age", delimiter: Delimiter.Record, delimiterLength: 1 },
+      { value: "Alice", delimiter: Delimiter.Field, delimiterLength: 1 },
+      { value: "20", delimiter: Delimiter.Record, delimiterLength: 1 },
     ];
 
     const records = await transform(transformer, tokens);
@@ -118,38 +107,25 @@ describe("createCSVRecordAssemblerTransformer", () => {
               maxLength: header.length,
             },
           });
-          const tokens: Token[] = [
+          // New unified token format
+          const tokens: AnyToken[] = [
             // generate header tokens
-            ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field, location: LOCATION_SHAPE },
-              i === header.length - 1
-                ? {
-                    type: RecordDelimiter,
-                    value: "\n",
-                    location: LOCATION_SHAPE,
-                  }
-                : {
-                    type: FieldDelimiter,
-                    value: ",",
-                    location: LOCATION_SHAPE,
-                  },
-            ]),
+            ...header.map<AnyToken>((field, i) => ({
+              value: field,
+              delimiter:
+                i === header.length - 1 ? Delimiter.Record : Delimiter.Field,
+              delimiterLength: 1,
+              location: LOCATION_SHAPE,
+            })),
             // generate rows tokens
             ...rows.flatMap((row) =>
-              row.flatMap<Token>((field, j) => [
-                { type: Field, value: field, location: LOCATION_SHAPE },
-                j === row.length - 1
-                  ? {
-                      type: RecordDelimiter,
-                      value: "\n",
-                      location: LOCATION_SHAPE,
-                    }
-                  : {
-                      type: FieldDelimiter,
-                      value: ",",
-                      location: LOCATION_SHAPE,
-                    },
-              ]),
+              row.map<AnyToken>((field, j) => ({
+                value: field,
+                delimiter:
+                  j === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+                delimiterLength: 1,
+                location: LOCATION_SHAPE,
+              })),
             ),
           ];
           const expected = rows.map((row) =>

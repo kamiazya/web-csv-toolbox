@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe as describe_, expect, it as it_, vi } from "vitest";
 import { FC, transform } from "@/__tests__/helper.ts";
-import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
-import type { Token } from "@/core/types.ts";
+import { Delimiter } from "@/core/constants.ts";
+import type { AnyToken } from "@/core/types.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 
@@ -51,42 +51,25 @@ describe("CSVRecordAssemblerTransformer", () => {
               maxLength: header.length,
             },
           });
-          const tokens: Token[] = [
+          // In unified token format, each token represents a field with its following delimiter
+          const tokens: AnyToken[] = [
             // generate header tokens
-            ...header.flatMap<Token>((field, i) => [
-              { type: Field, value: field, location: LOCATION_SHAPE },
-              i === header.length - 1
-                ? {
-                    type: RecordDelimiter,
-                    value: "\n",
-                    location: LOCATION_SHAPE,
-                  }
-                : {
-                    type: FieldDelimiter,
-                    value: ",",
-                    location: LOCATION_SHAPE,
-                  },
-            ]),
+            ...header.map<AnyToken>((field, i) => ({
+              value: field,
+              delimiter:
+                i === header.length - 1 ? Delimiter.Record : Delimiter.Field,
+              delimiterLength: 1,
+              location: LOCATION_SHAPE,
+            })),
             // generate rows tokens
             ...rows.flatMap((row) =>
-              // generate row tokens
-              row.flatMap<Token>((field, j) => [
-                { type: Field, value: field, location: LOCATION_SHAPE },
-                {
-                  type: FieldDelimiter,
-                  value: ",",
-                  location: LOCATION_SHAPE,
-                },
-                // generate record delimiter token
-                ...((j === row.length - 1
-                  ? [
-                      {
-                        type: RecordDelimiter,
-                        value: "\n",
-                      },
-                    ]
-                  : []) as Token[]),
-              ]),
+              row.map<AnyToken>((field, j) => ({
+                value: field,
+                delimiter:
+                  j === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+                delimiterLength: 1,
+                location: LOCATION_SHAPE,
+              })),
             ),
           ];
           const expected = rows.map((row) =>
@@ -116,26 +99,16 @@ describe("CSVRecordAssemblerTransformer", () => {
               maxLength: header.length,
             },
           });
-          const tokens = [
-            ...rows.flatMap<Token>((row) =>
-              row.flatMap<Token>((field, j) => [
-                { type: Field, value: field, location: LOCATION_SHAPE },
-                {
-                  type: FieldDelimiter,
-                  value: ",",
-                  location: LOCATION_SHAPE,
-                },
-                ...((j === row.length - 1
-                  ? [
-                      {
-                        type: RecordDelimiter,
-                        value: "\n",
-                      },
-                    ]
-                  : []) as Token[]),
-              ]),
-            ),
-          ];
+          // In unified token format, each token represents a field with its following delimiter
+          const tokens: AnyToken[] = rows.flatMap((row) =>
+            row.map<AnyToken>((field, j) => ({
+              value: field,
+              delimiter:
+                j === row.length - 1 ? Delimiter.Record : Delimiter.Field,
+              delimiterLength: 1,
+              location: LOCATION_SHAPE,
+            })),
+          );
           const expected = rows.map((row) =>
             Object.fromEntries(row.map((field, i) => [header[i], field])),
           );
@@ -159,10 +132,16 @@ describe("CSVRecordAssemblerTransformer", () => {
         throw new Error("test");
       },
     );
+    const tokens: AnyToken[] = [
+      {
+        value: "test",
+        delimiter: Delimiter.Record,
+        delimiterLength: 0,
+        location: LOCATION_SHAPE,
+      },
+    ];
     await expect(async () => {
-      await transform(transformer, [
-        { type: Field, value: "test", location: LOCATION_SHAPE },
-      ]);
+      await transform(transformer, tokens);
     }).rejects.toThrowErrorMatchingInlineSnapshot(`[Error: test]`);
   });
 

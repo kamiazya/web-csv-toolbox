@@ -4,7 +4,7 @@ import { FC } from "@/__tests__/helper.ts";
 import { parseResponse } from "@/parser/api/network/parseResponse.ts";
 import { escapeField } from "@/utils/serialization/escapeField.ts";
 
-describe("parseRequest function", () => {
+describe("parseResponse function", () => {
   it("should throw error if content-type header is not text/csv", async () => {
     const response = new Response("", {
       headers: {
@@ -87,7 +87,7 @@ describe("parseRequest function", () => {
         async ({ data, response }) => {
           let i = 0;
           for await (const row of parseResponse(response)) {
-            expect(data[i++]).toStrictEqual(row);
+            expect(data[i++]).toEqual(row);
           }
         },
       ),

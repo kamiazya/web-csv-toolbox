@@ -1,18 +1,8 @@
-import {
-  beforeEach,
-  describe as describe_,
-  expect,
-  it as it_,
-  test,
-  vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 import { transform } from "@/__tests__/helper.ts";
 import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
-
-const describe = describe_.concurrent;
-const it = it_.concurrent;
 
 describe("StringCSVParserStream", () => {
   beforeEach(() => {
@@ -73,7 +63,7 @@ describe("StringCSVParserStream", () => {
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
-        { name: "Bob", age: undefined }, // Missing field remains undefined
+        { name: "Bob", age: "" }, // Missing field returns empty string
       ]);
     });
   });
