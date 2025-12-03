@@ -1189,7 +1189,7 @@ Bob,25,LA`;
       });
 
       test("should not throw error for normal field counts", () => {
-        // In the unified token format, each token represents a field with `next` indicating what follows
+        // In the unified token format, each token represents a field with `delimiter` (Delimiter.Field or Delimiter.Record) and `delimiterLength`
         const tokens: AnyToken[] = [
           {
             value: "a",
@@ -1269,7 +1269,11 @@ Bob,25,LA`;
 
     describe("with custom field count limit", () => {
       test("should allow exactly N fields when limit is N", () => {
-        const assembler = createCSVRecordAssembler({ maxFieldCount: 10 });
+        const header = Array.from({ length: 10 }, (_, i) => `col${i}`);
+        const assembler = createCSVRecordAssembler({
+          maxFieldCount: 10,
+          header,
+        });
         const tokens: AnyToken[] = [];
 
         // Create exactly 10 fields (at the limit, should succeed)
@@ -1286,10 +1290,7 @@ Bob,25,LA`;
           });
         }
 
-        // Should not throw - exactly at the limit
-        expect(() => [...assembler.assemble(tokens)]).not.toThrow();
-
-        // Verify the record was correctly assembled
+        // Verify the record was correctly assembled (exactly at the limit)
         const records = [...assembler.assemble(tokens)];
         expect(records).toHaveLength(1);
         expect(Object.keys(records[0] as object)).toHaveLength(10);
@@ -1337,7 +1338,7 @@ Bob,25,LA`;
         }
 
         // This should not throw, but will take time and memory
-        expect(() => [...assembler.assemble(tokens)]).not.toThrow(RangeError);
+        expect(() => [...assembler.assemble(tokens)]).not.toThrow();
       });
     });
 
