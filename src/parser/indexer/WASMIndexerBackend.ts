@@ -1,6 +1,6 @@
 import type { CSVSeparatorIndexResult } from "../types/SeparatorIndexResult.ts";
-import type { CSVIndexerBackendSync } from "./CSVSeparatorIndexer.ts";
 import { getProcessedBytesCount } from "../utils/separatorUtils.ts";
+import type { CSVIndexerBackendSync } from "./CSVSeparatorIndexer.ts";
 
 // Type for the raw result from WASM scanCsvBytesExtendedStreaming
 interface WASMScanStreamingResult {
@@ -42,10 +42,18 @@ export class WASMIndexerBackend implements CSVIndexerBackendSync {
   private readonly maxChunkSize: number;
 
   /** Cached WASM scan function */
-  private scanFn: ((input: Uint8Array, delimiter: number, prevInQuote: boolean) => WASMScanStreamingResult) | null = null;
+  private scanFn:
+    | ((
+        input: Uint8Array,
+        delimiter: number,
+        prevInQuote: boolean,
+      ) => WASMScanStreamingResult)
+    | null = null;
 
   /** Cached fallback scan function (non-streaming) */
-  private fallbackScanFn: ((input: Uint8Array, delimiter: number) => Uint32Array) | null = null;
+  private fallbackScanFn:
+    | ((input: Uint8Array, delimiter: number) => Uint32Array)
+    | null = null;
 
   /**
    * Create a new WASMIndexerBackend
@@ -129,9 +137,20 @@ export class WASMIndexerBackend implements CSVIndexerBackendSync {
    * @throws Error if required functions are not available
    */
   initializeWithModule(wasmModule: {
-    scanCsvBytesExtendedStreaming?: (input: Uint8Array, delimiter: number, prevInQuote: boolean) => WASMScanStreamingResult;
-    scanCsvBytesStreaming?: (input: Uint8Array, delimiter: number, prevInQuote: boolean) => WASMScanStreamingResult;
-    scanCsvBytesZeroCopy?: (input: Uint8Array, delimiter: number) => Uint32Array;
+    scanCsvBytesExtendedStreaming?: (
+      input: Uint8Array,
+      delimiter: number,
+      prevInQuote: boolean,
+    ) => WASMScanStreamingResult;
+    scanCsvBytesStreaming?: (
+      input: Uint8Array,
+      delimiter: number,
+      prevInQuote: boolean,
+    ) => WASMScanStreamingResult;
+    scanCsvBytesZeroCopy?: (
+      input: Uint8Array,
+      delimiter: number,
+    ) => Uint32Array;
     isInitialized: () => boolean;
     loadWASMSync: () => void;
   }): void {

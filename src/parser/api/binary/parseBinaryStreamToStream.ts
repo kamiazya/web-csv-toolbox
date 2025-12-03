@@ -63,7 +63,10 @@ export function parseBinaryStreamToStream<
       maxFieldCount: options?.maxFieldCount,
       source: options?.source,
     };
-    const parser = new WASMBinaryObjectCSVParser<Header>(parserOptions, backend);
+    const parser = new WASMBinaryObjectCSVParser<Header>(
+      parserOptions,
+      backend,
+    );
 
     // Create WASM-accelerated stream transformer
     const parserStream = new BinaryCSVParserStream<Header, "object">(parser);
@@ -72,9 +75,10 @@ export function parseBinaryStreamToStream<
     if (decompression) {
       return stream
         .pipeThrough(
-          new DecompressionStream(
-            decompression,
-          ) as unknown as TransformStream<Uint8Array, Uint8Array>,
+          new DecompressionStream(decompression) as unknown as TransformStream<
+            Uint8Array,
+            Uint8Array
+          >,
         )
         .pipeThrough(
           parserStream as unknown as TransformStream<

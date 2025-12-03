@@ -147,9 +147,9 @@ export async function* parseString<
     } else {
       // Main thread execution (JavaScript iterator)
       const iterator = parseStringToIterableIterator(csv, options);
-      yield* convertIterableIteratorToAsync(
-        iterator,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
     }
   } catch (error) {
     commonParseErrorHandling(error);

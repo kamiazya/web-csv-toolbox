@@ -76,15 +76,23 @@ describe("WASMBinaryCSVLexer", () => {
 
       const tokens1 = [...lexer.lex(chunk1, { stream: true })];
       const tokens2 = [...lexer.lex(chunk2, { stream: true })];
-      const tokensFlush = [...lexer.lex()];
+      const _tokensFlush = [...lexer.lex()];
 
       // First chunk should yield tokens for first row
-      expect(tokens1.some(t => t.type === Field && t.value === "a")).toBe(true);
-      expect(tokens1.some(t => t.type === Field && t.value === "b")).toBe(true);
+      expect(tokens1.some((t) => t.type === Field && t.value === "a")).toBe(
+        true,
+      );
+      expect(tokens1.some((t) => t.type === Field && t.value === "b")).toBe(
+        true,
+      );
 
       // Second chunk should yield tokens for second row
-      expect(tokens2.some(t => t.type === Field && t.value === "c")).toBe(true);
-      expect(tokens2.some(t => t.type === Field && t.value === "d")).toBe(true);
+      expect(tokens2.some((t) => t.type === Field && t.value === "c")).toBe(
+        true,
+      );
+      expect(tokens2.some((t) => t.type === Field && t.value === "d")).toBe(
+        true,
+      );
     });
 
     test("should handle partial rows across chunks", () => {
@@ -100,10 +108,10 @@ describe("WASMBinaryCSVLexer", () => {
       // First chunk has no complete row, should yield nothing or partial
       // Second chunk completes the row
       const allTokens = [...tokens1, ...tokens2];
-      const fieldTokens = allTokens.filter(t => t.type === Field);
+      const fieldTokens = allTokens.filter((t) => t.type === Field);
 
-      expect(fieldTokens.some(t => t.value === "hello")).toBe(true);
-      expect(fieldTokens.some(t => t.value === "world")).toBe(true);
+      expect(fieldTokens.some((t) => t.value === "hello")).toBe(true);
+      expect(fieldTokens.some((t) => t.value === "world")).toBe(true);
     });
 
     test("should flush remaining data correctly", () => {
@@ -117,7 +125,7 @@ describe("WASMBinaryCSVLexer", () => {
 
       // Combine all tokens
       const allTokens = [...tokens1, ...tokensFlush];
-      const fieldTokens = allTokens.filter(t => t.type === Field);
+      const fieldTokens = allTokens.filter((t) => t.type === Field);
 
       // Should get both fields even without trailing newline
       expect(fieldTokens.length).toBeGreaterThanOrEqual(2);
@@ -136,7 +144,7 @@ describe("WASMBinaryCSVLexer", () => {
       dataWithBOM.set(content, bom.length);
 
       const tokens = [...lexer.lex(dataWithBOM)];
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
 
       // First field should be "a", not "\xef\xbb\xbfa"
       expect(fieldTokens[0]?.value).toBe("a");
@@ -159,8 +167,8 @@ describe("WASMBinaryCSVLexer", () => {
       const tokens2 = [...lexer.lex(chunk2, { stream: true })];
 
       // BOM should be preserved in field value
-      const fieldTokens = tokens2.filter(t => t.type === Field);
-      expect(fieldTokens.some(t => t.value.length > 0)).toBe(true);
+      const fieldTokens = tokens2.filter((t) => t.type === Field);
+      expect(fieldTokens.some((t) => t.value.length > 0)).toBe(true);
     });
   });
 
@@ -170,7 +178,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode('"hello",world\n');
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe("hello");
       expect(fieldTokens[1]?.value).toBe("world");
     });
@@ -180,7 +188,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode('"hello ""world"""\n');
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe('hello "world"');
     });
 
@@ -189,7 +197,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode('"a,b",c\n');
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe("a,b");
       expect(fieldTokens[1]?.value).toBe("c");
     });
@@ -199,7 +207,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode('"line1\nline2",b\n');
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe("line1\nline2");
       expect(fieldTokens[1]?.value).toBe("b");
     });
@@ -211,7 +219,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode("a,b\nc,d\n");
       const tokens = [...lexer.lex(data)];
 
-      const recordDelims = tokens.filter(t => t.type === RecordDelimiter);
+      const recordDelims = tokens.filter((t) => t.type === RecordDelimiter);
       expect(recordDelims[0]?.value).toBe("\n");
     });
 
@@ -220,11 +228,11 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode("a,b\r\nc,d\r\n");
       const tokens = [...lexer.lex(data)];
 
-      const recordDelims = tokens.filter(t => t.type === RecordDelimiter);
+      const recordDelims = tokens.filter((t) => t.type === RecordDelimiter);
       expect(recordDelims[0]?.value).toBe("\r\n");
 
       // Fields should not include CR
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[1]?.value).toBe("b");
       expect(fieldTokens[3]?.value).toBe("d");
     });
@@ -237,7 +245,7 @@ describe("WASMBinaryCSVLexer", () => {
 
       const lexer = new WASMBinaryCSVLexer({
         backend: tabBackend,
-        delimiter: "\t"
+        delimiter: "\t",
       });
       const data = encoder.encode("a\tb\n");
       const tokens = [...lexer.lex(data)];
@@ -257,12 +265,12 @@ describe("WASMBinaryCSVLexer", () => {
 
       const lexer = new WASMBinaryCSVLexer({
         backend: semiBackend,
-        delimiter: ";"
+        delimiter: ";",
       });
       const data = encoder.encode("a;b\n");
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe("a");
       expect(fieldTokens[1]?.value).toBe("b");
     });
@@ -300,7 +308,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data2 = encoder.encode("c,d\n");
       const tokens = [...lexer.lex(data2)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
       expect(fieldTokens[0]?.value).toBe("c");
       expect(fieldTokens[0]?.location?.rowNumber).toBe(1);
     });
@@ -327,7 +335,7 @@ describe("WASMBinaryCSVLexer", () => {
       newDataWithBOM.set(content2, bom.length);
 
       const tokens = [...lexer.lex(newDataWithBOM)];
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
 
       expect(fieldTokens[0]?.value).toBe("c");
     });
@@ -339,7 +347,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode("a,b\nc,d\n");
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
 
       // First row
       expect(fieldTokens[0]?.location?.start.line).toBe(1);
@@ -356,7 +364,7 @@ describe("WASMBinaryCSVLexer", () => {
       const data = encoder.encode("a\nb\nc\n");
       const tokens = [...lexer.lex(data)];
 
-      const fieldTokens = tokens.filter(t => t.type === Field);
+      const fieldTokens = tokens.filter((t) => t.type === Field);
 
       expect(fieldTokens[0]?.location?.rowNumber).toBe(1);
       expect(fieldTokens[1]?.location?.rowNumber).toBe(2);

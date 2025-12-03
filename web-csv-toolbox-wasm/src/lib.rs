@@ -79,14 +79,12 @@ pub fn scan_csv_simd_zero_copy(input: &str, delimiter: u8) -> js_sys::Uint32Arra
 
         // Get WASM memory buffer
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         // Create Uint32Array view (zero-copy from JS perspective)
-        js_sys::Uint32Array::new_with_byte_offset_and_length(
-            &memory_buffer,
-            ptr,
-            len,
-        )
+        js_sys::Uint32Array::new_with_byte_offset_and_length(&memory_buffer, ptr, len)
     })
 }
 
@@ -120,7 +118,9 @@ pub fn scan_csv_bytes_zero_copy(input: &[u8], delimiter: u8) -> js_sys::Uint32Ar
         let len = buffer.len() as u32;
 
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         js_sys::Uint32Array::new_with_byte_offset_and_length(&memory_buffer, ptr, len)
     })
@@ -164,7 +164,9 @@ pub fn scan_csv_bytes_extended(input: &[u8], delimiter: u8) -> JsValue {
 
             // Get WASM memory
             let memory = wasm_bindgen::memory();
-            let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+            let memory_buffer = memory
+                .unchecked_ref::<js_sys::WebAssembly::Memory>()
+                .buffer();
 
             // Create Uint32Array views
             let sep_ptr = sep_buffer.as_ptr() as u32;
@@ -226,7 +228,9 @@ pub fn scan_csv_bytes_char_offsets(input: &[u8], delimiter: u8) -> js_sys::Uint3
         let len = buffer.len() as u32;
 
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         js_sys::Uint32Array::new_with_byte_offset_and_length(&memory_buffer, ptr, len)
     })
@@ -273,7 +277,9 @@ pub fn scan_csv_utf16_zero_copy(input: &[u16], delimiter: u8) -> js_sys::Uint32A
         let len = buffer.len() as u32;
 
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         js_sys::Uint32Array::new_with_byte_offset_and_length(&memory_buffer, ptr, len)
     })
@@ -647,7 +653,9 @@ pub fn scan_csv_bytes_streaming(input: &[u8], delimiter: u8, prev_in_quote: bool
 
         // Get WASM memory for zero-copy view
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         // Create Uint32Array view
         let ptr = buffer.as_ptr() as u32;
@@ -727,7 +735,11 @@ pub fn scan_csv_bytes_extended_streaming(
             // Check for errors first
             if let Some(error_msg) = &result.error {
                 let obj = js_sys::Object::new();
-                let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("error"), &JsValue::from_str(error_msg));
+                let _ = js_sys::Reflect::set(
+                    &obj,
+                    &JsValue::from_str("error"),
+                    &JsValue::from_str(error_msg),
+                );
                 return obj.into();
             }
 
@@ -747,7 +759,9 @@ pub fn scan_csv_bytes_extended_streaming(
 
             // Get WASM memory for zero-copy view
             let memory = wasm_bindgen::memory();
-            let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+            let memory_buffer = memory
+                .unchecked_ref::<js_sys::WebAssembly::Memory>()
+                .buffer();
 
             // Create Uint32Array views
             let sep_ptr = sep_buffer.as_ptr() as u32;
@@ -851,7 +865,9 @@ pub fn scan_csv_bytes_char_offsets_streaming(
 
         // Get WASM memory for zero-copy view
         let memory = wasm_bindgen::memory();
-        let memory_buffer = memory.unchecked_ref::<js_sys::WebAssembly::Memory>().buffer();
+        let memory_buffer = memory
+            .unchecked_ref::<js_sys::WebAssembly::Memory>()
+            .buffer();
 
         // Create Uint32Array view
         let ptr = buffer.as_ptr() as u32;

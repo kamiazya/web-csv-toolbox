@@ -10,6 +10,13 @@ import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts
 import { createStringCSVParser } from "@/parser/api/model/createStringCSVParser.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
+/**
+ * Create an iterable iterator over CSV records from a string source.
+ *
+ * When `engine.wasm` is enabled, the iterator uses the WASM-accelerated parser.
+ * You can keep the data in UTF-16 by passing `charset: "utf-16"` (string parsing options),
+ * which avoids extra TextEncoder/TextDecoder steps for Unicode-heavy inputs.
+ */
 export function parseStringToIterableIterator<
   const CSVSource extends string,
   const Delimiter extends string = DEFAULT_DELIMITER,
@@ -58,7 +65,7 @@ export function parseStringToIterableIterator<
       // WASM SIMD path: Use optimized string parser with direct separator detection
       const parser = createStringCSVParser<Header>({
         ...options,
-        engine: { wasm: true },
+        engine: { ...(options?.engine ?? {}), wasm: true },
       });
 
       // Return generator that yields from parser

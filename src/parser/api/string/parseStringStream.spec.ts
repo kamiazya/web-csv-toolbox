@@ -52,6 +52,52 @@ describe("parseStringStream function", () => {
     ));
 });
 
+test("honors charset option for UTF-16 string streams", async () => {
+  const stream = new ReadableStream<string>({
+    start(controller) {
+      controller.enqueue("名前,値\n日");
+      controller.enqueue("本語,データ\n終わり,値2");
+      controller.close();
+    },
+  });
+
+  const rows: Array<Record<string, string>> = [];
+  for await (const row of parseStringStream(stream, {
+    charset: "utf-16",
+    engine: { wasm: true },
+  })) {
+    rows.push(row as Record<string, string>);
+  }
+
+  expect(rows).toEqual([
+    { 名前: "日本語", 値: "データ" },
+    { 名前: "終わり", 値: "値2" },
+  ]);
+});
+
+test("respects charset option for UTF-16 string streams", async () => {
+  const stream = new ReadableStream<string>({
+    start(controller) {
+      controller.enqueue("名前,値\n日");
+      controller.enqueue("本語,データ\n終わり,値2");
+      controller.close();
+    },
+  });
+
+  const rows: Array<Record<string, string>> = [];
+  for await (const row of parseStringStream(stream, {
+    charset: "utf-16",
+    engine: { wasm: true },
+  })) {
+    rows.push(row as Record<string, string>);
+  }
+
+  expect(rows).toEqual([
+    { 名前: "日本語", 値: "データ" },
+    { 名前: "終わり", 値: "値2" },
+  ]);
+});
+
 test("throws an error if invalid input", async () => {
   await expect(async () => {
     for await (const _ of parseStringStream(

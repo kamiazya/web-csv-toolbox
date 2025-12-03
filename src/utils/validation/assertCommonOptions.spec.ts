@@ -1,7 +1,15 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { FC } from "@/__tests__/helper.ts";
-import { COMMA, CR, CRLF, DEFAULT_MAX_FIELD_SIZE, DOUBLE_QUOTE, LF, MAX_FIELD_SIZE_LIMIT } from "@/core/constants.ts";
+import {
+  COMMA,
+  CR,
+  CRLF,
+  DEFAULT_MAX_FIELD_SIZE,
+  DOUBLE_QUOTE,
+  LF,
+  MAX_FIELD_SIZE_LIMIT,
+} from "@/core/constants.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 describe("function assertCommonOptions", () => {
@@ -43,7 +51,7 @@ describe("function assertCommonOptions", () => {
               quotation: value,
               delimiter: value,
               maxBufferSize: 1024,
-        maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
+              maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
             }),
           ).toThrowErrorMatchingInlineSnapshot(
             `[RangeError: delimiter must not be the same as quotation, use different characters]`,
@@ -60,7 +68,7 @@ describe("function assertCommonOptions", () => {
           quotation: quotation,
           delimiter: DOUBLE_QUOTE,
           maxBufferSize: 1024,
-        maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
+          maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[RangeError: quotation must not include CR or LF]`,
@@ -72,7 +80,7 @@ describe("function assertCommonOptions", () => {
           quotation: COMMA,
           delimiter: delimiter,
           maxBufferSize: 1024,
-        maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
+          maxFieldSize: DEFAULT_MAX_FIELD_SIZE,
         }),
       ).toThrowErrorMatchingInlineSnapshot(
         `[RangeError: delimiter must not include CR or LF]`,

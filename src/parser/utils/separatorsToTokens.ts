@@ -21,7 +21,10 @@
 
 import { Field, FieldDelimiter, RecordDelimiter } from "@/core/constants.ts";
 import type { Position, Token, TokenLocation } from "@/core/types.ts";
-import { SEP_TYPE_DELIMITER, SEP_TYPE_LF } from "@/parser/types/SeparatorIndexResult.ts";
+import {
+  SEP_TYPE_DELIMITER,
+  SEP_TYPE_LF,
+} from "@/parser/types/SeparatorIndexResult.ts";
 import { unpackSeparator } from "@/parser/utils/separatorUtils.ts";
 
 /**
@@ -131,7 +134,12 @@ function unescapeQuotes(value: string, quotation = '"'): string {
   if (value.startsWith(quotation) && value.endsWith(quotation)) {
     // Remove surrounding quotes and unescape internal quotes
     const escaped = quotation + quotation;
-    return value.slice(1, -1).replace(new RegExp(escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), quotation);
+    return value
+      .slice(1, -1)
+      .replace(
+        new RegExp(escaped.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
+        quotation,
+      );
   }
 
   return value;

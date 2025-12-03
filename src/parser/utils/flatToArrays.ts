@@ -57,8 +57,7 @@ export function flatToArrays<
   // Determine if we have sparse records (records with fewer fields than header)
   // Fast path: if no actualFieldCounts or all counts equal fieldCount, skip per-field checks
   const hasSparseRecords =
-    actualFieldCounts != null &&
-    actualFieldCounts.some((count) => count !== fieldCount);
+    actualFieldCounts?.some((count) => count !== fieldCount) ?? false;
 
   if (!hasSparseRecords) {
     // Fast path: all records have complete fields

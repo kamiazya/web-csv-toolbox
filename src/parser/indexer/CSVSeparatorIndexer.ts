@@ -125,7 +125,9 @@ export class CSVSeparatorIndexer {
 
     // Combine leftover with new chunk
     const combined =
-      this.leftover.length > 0 ? concatUint8Arrays(this.leftover, chunk) : chunk;
+      this.leftover.length > 0
+        ? concatUint8Arrays(this.leftover, chunk)
+        : chunk;
 
     // Scan through backend
     const result = this.backend.scan(combined, this.prevInQuote);

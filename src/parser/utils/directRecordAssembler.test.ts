@@ -149,7 +149,9 @@ describe("separatorsToObjectRecords", () => {
     const config = { header: ["name", "age"] as const };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToObjectRecords(separators, 2, csv, config, state)];
+    const records = [
+      ...separatorsToObjectRecords(separators, 2, csv, config, state),
+    ];
 
     expect(records).toEqual([{ name: "Alice", age: "30" }]);
   });
@@ -168,7 +170,9 @@ describe("separatorsToObjectRecords", () => {
     const config = {};
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToObjectRecords(separators, 4, csv, config, state)];
+    const records = [
+      ...separatorsToObjectRecords(separators, 4, csv, config, state),
+    ];
 
     expect(records).toEqual([{ name: "Alice", age: "30" }]);
     expect(state.headers).toEqual(["name", "age"]);
@@ -186,7 +190,9 @@ describe("separatorsToObjectRecords", () => {
     const config = { header: ["name", "age"] as const };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToObjectRecords(separators, 4, csv, config, state)];
+    const records = [
+      ...separatorsToObjectRecords(separators, 4, csv, config, state),
+    ];
 
     expect(records).toEqual([
       { name: "Alice", age: "30" },
@@ -204,7 +210,9 @@ describe("separatorsToObjectRecords", () => {
     const config = { header: ["greeting", "number"] as const };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToObjectRecords(separators, 2, csv, config, state)];
+    const records = [
+      ...separatorsToObjectRecords(separators, 2, csv, config, state),
+    ];
 
     expect(records).toEqual([{ greeting: "Hello, World", number: "42" }]);
   });
@@ -220,9 +228,13 @@ describe("separatorsToObjectRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToObjectRecords(separators, 1, csv, config, state)];
+      const records = [
+        ...separatorsToObjectRecords(separators, 1, csv, config, state),
+      ];
 
-      expect(records).toEqual([{ name: "Alice", age: undefined, city: undefined }]);
+      expect(records).toEqual([
+        { name: "Alice", age: undefined, city: undefined },
+      ]);
     });
 
     test("should throw on strict strategy with wrong column count", () => {
@@ -255,7 +267,9 @@ describe("separatorsToObjectRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToObjectRecords(separators, 4, csv, config, state)];
+      const records = [
+        ...separatorsToObjectRecords(separators, 4, csv, config, state),
+      ];
 
       expect(records).toEqual([{ name: "Alice", age: "30" }]);
     });
@@ -278,7 +292,9 @@ describe("separatorsToObjectRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToObjectRecords(separators, 5, csv, config, state)];
+      const records = [
+        ...separatorsToObjectRecords(separators, 5, csv, config, state),
+      ];
 
       expect(records).toEqual([
         { name: "Alice", age: "30" },
@@ -347,7 +363,9 @@ describe("separatorsToArrayRecords", () => {
     const config = { header: ["name", "age"] as const };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToArrayRecords(separators, 2, csv, config, state)];
+    const records = [
+      ...separatorsToArrayRecords(separators, 2, csv, config, state),
+    ];
 
     expect(records).toEqual([["Alice", "30"]]);
   });
@@ -365,7 +383,9 @@ describe("separatorsToArrayRecords", () => {
     };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToArrayRecords(separators, 2, csv, config, state)];
+    const records = [
+      ...separatorsToArrayRecords(separators, 2, csv, config, state),
+    ];
 
     expect(records).toEqual([
       ["name", "age"],
@@ -387,7 +407,9 @@ describe("separatorsToArrayRecords", () => {
     const config = { includeHeader: true };
     const state = createAssemblerState(config);
 
-    const records = [...separatorsToArrayRecords(separators, 4, csv, config, state)];
+    const records = [
+      ...separatorsToArrayRecords(separators, 4, csv, config, state),
+    ];
 
     expect(records).toEqual([
       ["name", "age"],
@@ -410,7 +432,9 @@ describe("separatorsToArrayRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToArrayRecords(separators, 3, csv, config, state)];
+      const records = [
+        ...separatorsToArrayRecords(separators, 3, csv, config, state),
+      ];
 
       expect(records).toEqual([["Alice", "30", "NY"]]);
     });
@@ -425,7 +449,9 @@ describe("separatorsToArrayRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToArrayRecords(separators, 1, csv, config, state)];
+      const records = [
+        ...separatorsToArrayRecords(separators, 1, csv, config, state),
+      ];
 
       expect(records).toEqual([["Alice", "", ""]]);
     });
@@ -445,7 +471,9 @@ describe("separatorsToArrayRecords", () => {
       };
       const state = createAssemblerState(config);
 
-      const records = [...separatorsToArrayRecords(separators, 4, csv, config, state)];
+      const records = [
+        ...separatorsToArrayRecords(separators, 4, csv, config, state),
+      ];
 
       expect(records).toEqual([["Alice", "30"]]);
     });
@@ -479,7 +507,7 @@ describe("flushObjectRecord", () => {
     state.headers = ["name", "name"]; // duplicate
 
     expect(() => [...flushObjectRecord(config, state)]).toThrow(
-      "The header must not contain duplicate fields"
+      "The header must not contain duplicate fields",
     );
   });
 });

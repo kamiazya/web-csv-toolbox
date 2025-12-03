@@ -1,8 +1,8 @@
 import type {
   CSVArrayRecord,
   CSVParserParseOptions,
-  CSVProcessingOptions,
   StringArrayCSVParser,
+  StringCSVProcessingOptions,
 } from "@/core/types.ts";
 import type { CSVIndexerBackendSync } from "@/parser/indexer/CSVSeparatorIndexer.ts";
 import { WASMBinaryArrayCSVParser } from "@/parser/models/WASMBinaryArrayCSVParser.ts";
@@ -55,7 +55,7 @@ export class WASMStringArrayCSVParser<
    * @param backend - WASM indexer backend (must be initialized)
    */
   constructor(
-    options: CSVProcessingOptions<Header>,
+    options: StringCSVProcessingOptions<Header>,
     backend: CSVIndexerBackendSync,
   ) {
     this.binaryParser = new WASMBinaryArrayCSVParser(options, backend);

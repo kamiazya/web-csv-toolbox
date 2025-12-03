@@ -6,13 +6,13 @@ import type {
   CSVRecord,
 } from "@/core/types.ts";
 import {
-  CSVSeparatorIndexer,
   type CSVIndexerBackendSync,
+  CSVSeparatorIndexer,
 } from "@/parser/indexer/CSVSeparatorIndexer.ts";
 import {
+  createAssemblerState,
   type DirectAssemblerConfig,
   type DirectAssemblerState,
-  createAssemblerState,
   flushArrayRecord,
   separatorsToArrayRecords,
 } from "@/parser/utils/directRecordAssembler.ts";
@@ -136,9 +136,10 @@ export class WASMBinaryArrayCSVParser<
 
     // Decode processed bytes to string
     // Optimization: use subarray (zero-copy view) instead of slice
-    const csvString = indexResult.processedBytes === data.length
-      ? this.decoder.decode(data)
-      : this.decoder.decode(data.subarray(0, indexResult.processedBytes));
+    const csvString =
+      indexResult.processedBytes === data.length
+        ? this.decoder.decode(data)
+        : this.decoder.decode(data.subarray(0, indexResult.processedBytes));
 
     // Direct conversion to records (with extended format if available)
     yield* separatorsToArrayRecords(

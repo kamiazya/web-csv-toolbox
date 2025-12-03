@@ -85,7 +85,8 @@ export interface DirectAssemblerState {
 export function createAssemblerState<
   Header extends ReadonlyArray<string> = readonly string[],
 >(config: DirectAssemblerConfig<Header>): DirectAssemblerState {
-  const hasExplicitHeader = config.header !== undefined && config.header.length > 0;
+  const hasExplicitHeader =
+    config.header !== undefined && config.header.length > 0;
 
   return {
     headers: hasExplicitHeader ? [...config.header!] : [],
@@ -272,8 +273,8 @@ export function* separatorsToObjectRecords<
     // Extract offset and sepType based on format
     // Extended format: bits 0-29=offset, bit 30=isQuoted, bit 31=sepType
     // Standard format: bits 0-30=offset, bit 31=sepType
-    const offset = useExtended ? (packed & 0x3fffffff) : (packed & 0x7fffffff);
-    const isQuoted = useExtended ? ((packed & 0x40000000) !== 0) : false;
+    const offset = useExtended ? packed & 0x3fffffff : packed & 0x7fffffff;
+    const isQuoted = useExtended ? (packed & 0x40000000) !== 0 : false;
     const sepType = packed >>> 31;
 
     // Get field value using appropriate unescape method
@@ -282,7 +283,14 @@ export function* separatorsToObjectRecords<
       // Extended format: use WASM-provided quote metadata
       const flagWord = unescapeFlags[i >> 5] ?? 0;
       const needsUnescape = (flagWord & (1 << (i & 31))) !== 0;
-      field = unescapeRangeExtended(csvString, fieldStart, offset, isQuoted, needsUnescape, quotation);
+      field = unescapeRangeExtended(
+        csvString,
+        fieldStart,
+        offset,
+        isQuoted,
+        needsUnescape,
+        quotation,
+      );
     } else {
       // Standard format: check first char for quote
       field = unescapeRange(csvString, fieldStart, offset, quotation);
@@ -331,9 +339,12 @@ export function* separatorsToObjectRecords<
           );
         }
         if (new Set(state.headers).size !== state.headers.length) {
-          throw new ParseError("The header must not contain duplicate fields.", {
-            source: config.source,
-          });
+          throw new ParseError(
+            "The header must not contain duplicate fields.",
+            {
+              source: config.source,
+            },
+          );
         }
         state.isHeaderRow = false;
       } else if (record !== null) {
@@ -373,7 +384,12 @@ export function* separatorsToObjectRecords<
 
   // Handle trailing field (after last separator but before end of data)
   if (fieldStart < csvString.length) {
-    const field = unescapeRange(csvString, fieldStart, csvString.length, quotation);
+    const field = unescapeRange(
+      csvString,
+      fieldStart,
+      csvString.length,
+      quotation,
+    );
 
     if (state.isHeaderRow) {
       state.headers.push(field);
@@ -424,9 +440,10 @@ export function* flushObjectRecord<
 
     // Build record directly
     const record: Record<string, string | undefined> = Object.create(null);
-    const effectiveLength = strategy === "truncate"
-      ? Math.min(rowLength, headerLength)
-      : Math.min(rowLength, headerLength);
+    const effectiveLength =
+      strategy === "truncate"
+        ? Math.min(rowLength, headerLength)
+        : Math.min(rowLength, headerLength);
 
     for (let i = 0; i < effectiveLength; i++) {
       const headerKey = state.headers[i];
@@ -526,7 +543,12 @@ export function* separatorsToArrayRecords<
   const useExtended = unescapeFlags !== undefined && unescapeFlags.length > 0;
 
   // Yield header if requested and explicit header provided (before processing)
-  if (includeHeader && !state.headerIncluded && state.headers.length > 0 && !state.isHeaderRow) {
+  if (
+    includeHeader &&
+    !state.headerIncluded &&
+    state.headers.length > 0 &&
+    !state.isHeaderRow
+  ) {
     yield [...state.headers] as unknown as CSVRecord<Header, "array">;
     state.headerIncluded = true;
   }
@@ -539,8 +561,8 @@ export function* separatorsToArrayRecords<
     // Extract offset and sepType based on format
     // Extended format: bits 0-29=offset, bit 30=isQuoted, bit 31=sepType
     // Standard format: bits 0-30=offset, bit 31=sepType
-    const offset = useExtended ? (packed & 0x3fffffff) : (packed & 0x7fffffff);
-    const isQuoted = useExtended ? ((packed & 0x40000000) !== 0) : false;
+    const offset = useExtended ? packed & 0x3fffffff : packed & 0x7fffffff;
+    const isQuoted = useExtended ? (packed & 0x40000000) !== 0 : false;
     const sepType = packed >>> 31;
 
     // Get field value using appropriate unescape method
@@ -549,7 +571,14 @@ export function* separatorsToArrayRecords<
       // Extended format: use WASM-provided quote metadata
       const flagWord = unescapeFlags[i >> 5] ?? 0;
       const needsUnescape = (flagWord & (1 << (i & 31))) !== 0;
-      field = unescapeRangeExtended(csvString, fieldStart, offset, isQuoted, needsUnescape, quotation);
+      field = unescapeRangeExtended(
+        csvString,
+        fieldStart,
+        offset,
+        isQuoted,
+        needsUnescape,
+        quotation,
+      );
     } else {
       // Standard format: check first char for quote
       field = unescapeRange(csvString, fieldStart, offset, quotation);
@@ -608,7 +637,12 @@ export function* separatorsToArrayRecords<
 
   // Handle trailing field
   if (fieldStart < csvString.length) {
-    const field = unescapeRange(csvString, fieldStart, csvString.length, quotation);
+    const field = unescapeRange(
+      csvString,
+      fieldStart,
+      csvString.length,
+      quotation,
+    );
 
     if (state.isHeaderRow) {
       state.headers.push(field);

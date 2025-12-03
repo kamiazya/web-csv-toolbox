@@ -103,8 +103,7 @@ export function flatToObjects<
   // Determine if we have sparse records (records with fewer fields than header)
   // Fast path: if no actualFieldCounts or all counts equal fieldCount, skip per-field checks
   const hasSparseRecords =
-    actualFieldCounts != null &&
-    actualFieldCounts.some((count) => count !== fieldCount);
+    actualFieldCounts?.some((count) => count !== fieldCount) ?? false;
 
   if (!hasSparseRecords) {
     // Fast path: all records have complete fields
@@ -133,7 +132,8 @@ export function flatToObjects<
         const headerKey = headers[f];
         if (headerKey !== undefined) {
           // Fields beyond actualCount are undefined (sparse record)
-          record[headerKey] = f < actualCount ? fieldData[rowOffset + f] : undefined;
+          record[headerKey] =
+            f < actualCount ? fieldData[rowOffset + f] : undefined;
         }
       }
       records[r] = record as CSVObjectRecord<Header>;

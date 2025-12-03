@@ -1433,6 +1433,26 @@ export type InferCSVRecord<
  * });
  * ```
  */
+export type StringCharset = "utf-8" | "utf-16";
+
+/**
+ * Encoding hint for JavaScript string inputs.
+ *
+ * @category Types
+ */
+export interface StringEncodingOptions {
+  /**
+   * Character encoding to assume when the CSV input is already a JavaScript string.
+   *
+   * @remarks
+   * - `'utf-8'` (default): Uses the existing TextEncoder/TextDecoder pipeline.
+   * - `'utf-16'`: Keeps the data in UTF-16 code units and skips encode/decode.
+   *
+   * @default "utf-8"
+   */
+  charset?: StringCharset;
+}
+
 export interface CSVProcessingOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
@@ -1440,6 +1460,13 @@ export interface CSVProcessingOptions<
 > extends CommonOptions<Delimiter, Quotation>,
     CSVRecordAssemblerCommonOptions<Header>,
     AbortSignalOptions {}
+
+export interface StringCSVProcessingOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+    StringEncodingOptions {}
 
 /**
  * Parse options for CSV string (high-level API).
@@ -1457,7 +1484,7 @@ export interface ParseOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+> extends StringCSVProcessingOptions<Header, Delimiter, Quotation>,
     EngineOptions {}
 
 /**

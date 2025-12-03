@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "vitest";
-import { Field, DEFAULT_MAX_FIELD_SIZE } from "@/core/constants.ts";
+import { DEFAULT_MAX_FIELD_SIZE, Field } from "@/core/constants.ts";
 import type { StringCSVLexer } from "@/core/types.ts";
 import { FlexibleStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 
@@ -247,9 +247,9 @@ describe("CSVLexer - Field Size Limit Protection (maxFieldSize)", () => {
 
       expect(() => {
         // Stream chunks that build up a large field
-        [...lexer.lex('"' + "a".repeat(50), { stream: true })]; // Start quoted field
+        [...lexer.lex(`"${"a".repeat(50)}`, { stream: true })]; // Start quoted field
         // Include comma after closing quote to trigger field emission
-        [...lexer.lex("a".repeat(60) + '",b\n')]; // Continue, close, and add more (total: 110 chars in field)
+        [...lexer.lex(`${"a".repeat(60)}",b\n`)]; // Continue, close, and add more (total: 110 chars in field)
       }).toThrow(RangeError);
     });
 
@@ -257,8 +257,8 @@ describe("CSVLexer - Field Size Limit Protection (maxFieldSize)", () => {
       const lexer = new FlexibleStringCSVLexer({ maxFieldSize: 100 });
 
       // Stream chunks that build up a field within limit
-      [...lexer.lex('"' + "a".repeat(40), { stream: true })]; // Start quoted field
-      const tokens = [...lexer.lex("a".repeat(40) + '",b\n')]; // Continue and close (total: 80 chars)
+      [...lexer.lex(`"${"a".repeat(40)}`, { stream: true })]; // Start quoted field
+      const tokens = [...lexer.lex(`${"a".repeat(40)}",b\n`)]; // Continue and close (total: 80 chars)
 
       expect(tokens.length).toBeGreaterThan(0);
     });
@@ -269,7 +269,7 @@ describe("CSVLexer - Field Size Limit Protection (maxFieldSize)", () => {
       expect(() => {
         // Unquoted field that exceeds limit
         [...lexer.lex("a".repeat(50), { stream: true })];
-        [...lexer.lex("a".repeat(60) + ",b\n")]; // Complete field (total: 110 chars)
+        [...lexer.lex(`${"a".repeat(60)},b\n`)]; // Complete field (total: 110 chars)
       }).toThrow(RangeError);
     });
   });

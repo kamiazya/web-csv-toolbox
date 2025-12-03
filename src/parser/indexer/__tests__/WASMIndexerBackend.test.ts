@@ -1,7 +1,10 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { WASMIndexerBackend } from "../WASMIndexerBackend.ts";
+import { beforeAll, describe, expect, it } from "vitest";
+import {
+  loadWASMSync,
+  scanCsvBytesStreaming,
+} from "@/wasm/WasmInstance.main.web.ts";
 import { CSVSeparatorIndexer } from "../CSVSeparatorIndexer.ts";
-import { loadWASMSync, scanCsvBytesStreaming } from "@/wasm/WasmInstance.main.web.ts";
+import { WASMIndexerBackend } from "../WASMIndexerBackend.ts";
 
 describe("WASMIndexerBackend", () => {
   beforeAll(() => {

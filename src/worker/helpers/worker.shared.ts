@@ -1,4 +1,3 @@
-import { convertBinaryToUint8Array } from "@/converters/binary/convertBinaryToUint8Array.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVArrayRecord,
@@ -196,7 +195,7 @@ export const streamRecordsToPort = async <
  */
 export const createMessageHandler = (workerContext: WorkerContext) => {
   return async (request: ParseRequest) => {
-    const { id, type, useWASM, resultPort } = request;
+    const { id, type, resultPort } = request;
 
     try {
       // Handle TransferableStream strategy (stream + resultPort)

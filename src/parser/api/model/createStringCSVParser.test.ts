@@ -100,6 +100,46 @@ describe("createStringCSVParser", () => {
       const results = [...parser.parse("'Alice',30\n")];
       expect(results).toEqual([{ name: "Alice", age: "30" }]);
     });
+
+    test("should create UTF-16 object parser when charset is utf-16", () => {
+      const parser = createStringCSVParser({
+        header: ["名前", "値"] as const,
+        engine: { wasm: true },
+        charset: "utf-16",
+      });
+      const results = [...parser.parse("日本語,データ\n")];
+      expect(results).toEqual([{ 名前: "日本語", 値: "データ" }]);
+    });
+
+    test("should create UTF-16 array parser when charset is utf-16 and outputFormat is array", () => {
+      const parser = createStringCSVParser({
+        header: ["名前", "値"] as const,
+        outputFormat: "array",
+        engine: { wasm: true },
+        charset: "utf-16",
+      });
+      const results = [...parser.parse("日本語,データ\n")];
+      expect(results).toEqual([["日本語", "データ"]]);
+    });
+
+    test("should default to UTF-8 parser when charset is not specified", () => {
+      const parser = createStringCSVParser({
+        header: ["name", "age"] as const,
+        engine: { wasm: true },
+      });
+      const results = [...parser.parse("Alice,30\n")];
+      expect(results).toEqual([{ name: "Alice", age: "30" }]);
+    });
+
+    test("should use UTF-8 parser when charset is explicitly utf-8", () => {
+      const parser = createStringCSVParser({
+        header: ["name", "age"] as const,
+        engine: { wasm: true },
+        charset: "utf-8",
+      });
+      const results = [...parser.parse("Alice,30\n")];
+      expect(results).toEqual([{ name: "Alice", age: "30" }]);
+    });
   });
 
   describe("Validation", () => {

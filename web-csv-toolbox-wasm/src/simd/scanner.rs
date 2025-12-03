@@ -470,7 +470,11 @@ impl SimdScanner {
                     } else if self.in_quote == 0 {
                         // Outside quotes - check for separators
                         if (delim_mask & bit) != 0 {
-                            separators.push(pack_separator_extended(pos, field_is_quoted, SEP_DELIMITER));
+                            separators.push(pack_separator_extended(
+                                pos,
+                                field_is_quoted,
+                                SEP_DELIMITER,
+                            ));
 
                             if field_has_escaped_quote {
                                 current_flags |= 1 << (field_index & 31);
@@ -591,19 +595,31 @@ impl SimdScanner {
     /// # Returns
     /// ScanResultCharOffset with character-based separator positions
     #[cfg(target_arch = "wasm32")]
-    pub fn scan_char_offsets(&mut self, chunk: &[u8], base_char_offset: u32) -> ScanResultCharOffset {
+    pub fn scan_char_offsets(
+        &mut self,
+        chunk: &[u8],
+        base_char_offset: u32,
+    ) -> ScanResultCharOffset {
         unsafe { self.scan_char_offsets_simd(chunk, base_char_offset) }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn scan_char_offsets(&mut self, chunk: &[u8], base_char_offset: u32) -> ScanResultCharOffset {
+    pub fn scan_char_offsets(
+        &mut self,
+        chunk: &[u8],
+        base_char_offset: u32,
+    ) -> ScanResultCharOffset {
         self.scan_char_offsets_scalar(chunk, base_char_offset)
     }
 
     /// SIMD-accelerated character offset scanning
     #[cfg(target_arch = "wasm32")]
     #[target_feature(enable = "simd128")]
-    unsafe fn scan_char_offsets_simd(&mut self, chunk: &[u8], base_char_offset: u32) -> ScanResultCharOffset {
+    unsafe fn scan_char_offsets_simd(
+        &mut self,
+        chunk: &[u8],
+        base_char_offset: u32,
+    ) -> ScanResultCharOffset {
         let len = chunk.len();
         let mut separators = Vec::with_capacity(len / 4);
         let mut char_offset = base_char_offset;
@@ -726,7 +742,11 @@ impl SimdScanner {
     }
 
     /// Scalar character offset scanning (fallback)
-    fn scan_char_offsets_scalar(&mut self, chunk: &[u8], base_char_offset: u32) -> ScanResultCharOffset {
+    fn scan_char_offsets_scalar(
+        &mut self,
+        chunk: &[u8],
+        base_char_offset: u32,
+    ) -> ScanResultCharOffset {
         let mut separators = Vec::with_capacity(chunk.len() / 4);
         let mut char_offset = base_char_offset;
 
@@ -818,7 +838,11 @@ impl SimdScanner {
     ///
     /// Processes 8 UTF-16 code units (16 bytes) at a time using SIMD.
     #[cfg(target_arch = "wasm32")]
-    pub fn scan_utf16_simd(&mut self, utf16: &[u16], base_char_offset: u32) -> ScanResultCharOffset {
+    pub fn scan_utf16_simd(
+        &mut self,
+        utf16: &[u16],
+        base_char_offset: u32,
+    ) -> ScanResultCharOffset {
         let len = utf16.len();
         if len < 8 {
             return self.scan_utf16(utf16, base_char_offset);
@@ -1088,7 +1112,7 @@ pub fn extract_fields<'a>(
 /// Removes surrounding quotes and unescapes doubled quotes ("" -> ")
 /// Returns Cow::Borrowed when no allocation is needed (unquoted fields or
 /// quoted fields without escaped quotes), Cow::Owned when unescaping is needed.
-pub fn unescape_field<'a>(field: &'a [u8], quote: u8) -> Cow<'a, [u8]> {
+pub fn unescape_field(field: &[u8], quote: u8) -> Cow<'_, [u8]> {
     if field.len() < 2 {
         return Cow::Borrowed(field);
     }
@@ -1214,7 +1238,10 @@ mod tests {
         assert_eq!(&*unescape_field(b"\"hello\"", b'"'), b"hello");
 
         // Quoted field with escaped quote
-        assert_eq!(&*unescape_field(b"\"hello\"\"world\"", b'"'), b"hello\"world");
+        assert_eq!(
+            &*unescape_field(b"\"hello\"\"world\"", b'"'),
+            b"hello\"world"
+        );
 
         // Multiple escaped quotes
         assert_eq!(&*unescape_field(b"\"a\"\"b\"\"c\"", b'"'), b"a\"b\"c");

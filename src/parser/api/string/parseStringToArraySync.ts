@@ -1,7 +1,4 @@
-import type {
-  DEFAULT_DELIMITER,
-  DEFAULT_QUOTATION,
-} from "@/core/constants.ts";
+import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   InferCSVRecord,
   ParseOptions,
@@ -45,6 +42,12 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * const records = parseStringToArraySync(csv, { engine: { wasm: true } });
  * // [{ name: "Alice", age: "30" }, { name: "Bob", age: "25" }]
  * ```
+ *
+ * @example UTF-16 direct scanning
+ * ```ts
+ * const csv = "名前,値\n日本語,データ";
+ * const records = parseStringToArraySync(csv, { charset: "utf-16", engine: { wasm: true } });
+ * ```
  */
 export function parseStringToArraySync<
   const CSVSource extends string,
@@ -82,7 +85,7 @@ export function parseStringToArraySync<
       // WASM SIMD path: Use optimized string parser with direct separator detection
       const parser = createStringCSVParser<Header>({
         ...options,
-        engine: { wasm: true },
+        engine: { ...(options?.engine ?? {}), wasm: true },
       });
 
       // Collect all records from parser

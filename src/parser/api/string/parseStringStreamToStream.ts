@@ -9,6 +9,7 @@ import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAsse
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
 import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
+import { WASMStringUtf16ObjectCSVParser } from "@/parser/models/WASMStringUtf16ObjectCSVParser.ts";
 import { CSVLexerTransformer } from "@/parser/stream/CSVLexerTransformer.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
@@ -63,25 +64,13 @@ export function parseStringStreamToStream<
   const engineConfig = new InternalEngineConfig(options?.engine);
 
   if (engineConfig.hasWasm()) {
-    // WASM SIMD path: Use optimized string parser with direct separator detection
-    // Ensure WASM is initialized
     if (!isWASMInitialized()) {
       loadWASMSync();
     }
 
-    // Get delimiter character code
-    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+    const charset = options?.charset ?? "utf-8";
+    const preferUtf16 = charset === "utf-16";
 
-    // Create and initialize WASM backend
-    const backend = new WASMIndexerBackend(delimiterCode);
-    backend.initializeWithModule({
-      scanCsvBytesStreaming,
-      scanCsvBytesZeroCopy,
-      isInitialized: isWASMInitialized,
-      loadWASMSync,
-    });
-
-    // Create WASM-accelerated parser
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parserOptions: any = {
       header: options?.header,
@@ -91,8 +80,12 @@ export function parseStringStreamToStream<
       skipEmptyLines: options?.skipEmptyLines,
       maxFieldCount: options?.maxFieldCount,
       source: options?.source,
+      charset,
     };
-    const parser = new WASMStringObjectCSVParser<Header>(parserOptions, backend);
+
+    const parser = preferUtf16
+      ? new WASMStringUtf16ObjectCSVParser<Header>(parserOptions)
+      : createUtf8WasmStringParser(parserOptions);
 
     // Create WASM-accelerated stream transformer
     const parserStream = new StringCSVParserStream<Header, "object">(parser);
@@ -114,4 +107,19 @@ export function parseStringStreamToStream<
     .pipeThrough(
       new CSVRecordAssemblerTransformer(assembler),
     ) as ReadableStream<InferCSVRecord<Header, Options>>;
+}
+
+function createUtf8WasmStringParser<Header extends ReadonlyArray<string>>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  options: any,
+) {
+  const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+  const backend = new WASMIndexerBackend(delimiterCode);
+  backend.initializeWithModule({
+    scanCsvBytesStreaming,
+    scanCsvBytesZeroCopy,
+    isInitialized: isWASMInitialized,
+    loadWASMSync,
+  });
+  return new WASMStringObjectCSVParser<Header>(options, backend);
 }

@@ -18,9 +18,11 @@ test("parseBinaryToIterableIterator", async () => {
 });
 
 test("throws an error if the binary is invalid", () => {
-  expect(() =>
-    parseBinaryToIterableIterator(new Uint8Array([0x80]), {
+  expect(() => {
+    for (const _ of parseBinaryToIterableIterator(new Uint8Array([0x80]), {
       fatal: true,
-    }),
-  ).toThrowError(TypeError); // NOTE: Error messages vary depending on the execution environment.
+    })) {
+      // Iterator should throw during iteration
+    }
+  }).toThrowError(TypeError); // NOTE: Error messages vary depending on the execution environment.
 });

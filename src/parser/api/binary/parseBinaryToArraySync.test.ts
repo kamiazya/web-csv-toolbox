@@ -48,6 +48,7 @@ test("allows infinite maxBinarySize", () => {
     parseBinaryToArraySync(largeData, {
       maxBinarySize: Number.POSITIVE_INFINITY,
       maxBufferSize: Number.POSITIVE_INFINITY,
+      maxFieldSize: 1073741823, // Max allowed: 1GB
     }),
   ).not.toThrow();
 });

@@ -1,7 +1,8 @@
 import type {
-  CSVProcessingOptions,
   FactoryEngineOptions,
   StringArrayCSVParser,
+  StringCharset,
+  StringCSVProcessingOptions,
   StringObjectCSVParser,
 } from "@/core/types.ts";
 import { WASMIndexerBackend } from "@/parser/indexer/WASMIndexerBackend.ts";
@@ -9,12 +10,22 @@ import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArra
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
 import { WASMStringArrayCSVParser } from "@/parser/models/WASMStringArrayCSVParser.ts";
 import { WASMStringObjectCSVParser } from "@/parser/models/WASMStringObjectCSVParser.ts";
+import { WASMStringUtf16ArrayCSVParser } from "@/parser/models/WASMStringUtf16ArrayCSVParser.ts";
+import { WASMStringUtf16ObjectCSVParser } from "@/parser/models/WASMStringUtf16ObjectCSVParser.ts";
 import {
   isInitialized as isWASMInitialized,
   loadWASMSync,
   scanCsvBytesStreaming,
   scanCsvBytesZeroCopy,
 } from "@/wasm/WasmInstance.main.web.ts";
+
+const DEFAULT_STRING_CHARSET: StringCharset = "utf-8";
+
+function prefersUtf16(
+  options?: StringCSVProcessingOptions & FactoryEngineOptions,
+): boolean {
+  return (options?.charset ?? DEFAULT_STRING_CHARSET) === "utf-16";
+}
 
 /**
  * Factory function to create the appropriate String CSV parser based on options.
@@ -53,7 +64,7 @@ import {
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> &
+  options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "array";
     },
@@ -62,7 +73,7 @@ export function createStringCSVParser<
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> &
+  options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "object";
     },
@@ -71,7 +82,7 @@ export function createStringCSVParser<
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options: Omit<CSVProcessingOptions<Header>, "outputFormat"> &
+  options: Omit<StringCSVProcessingOptions<Header>, "outputFormat"> &
     FactoryEngineOptions & {
       outputFormat: "object" | "array";
     },
@@ -80,13 +91,13 @@ export function createStringCSVParser<
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options?: CSVProcessingOptions<Header> & FactoryEngineOptions,
+  options?: StringCSVProcessingOptions<Header> & FactoryEngineOptions,
 ): StringObjectCSVParser<Header>;
 
 export function createStringCSVParser<
   Header extends ReadonlyArray<string> = readonly string[],
 >(
-  options?: CSVProcessingOptions<Header> & FactoryEngineOptions,
+  options?: StringCSVProcessingOptions<Header> & FactoryEngineOptions,
 ): StringArrayCSVParser<Header> | StringObjectCSVParser<Header> {
   const format = options?.outputFormat ?? "object";
 
@@ -104,16 +115,20 @@ export function createStringCSVParser<
   const useWASM = options?.engine?.wasm === true;
 
   if (useWASM) {
-    // WASM implementation
-    // Ensure WASM is initialized
     if (!isWASMInitialized()) {
       loadWASMSync();
     }
 
-    // Get delimiter character code
-    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+    const utf16Preferred = prefersUtf16(options);
+    if (utf16Preferred) {
+      if (format === "array") {
+        return new WASMStringUtf16ArrayCSVParser<Header>(options ?? {}) as any;
+      }
+      return new WASMStringUtf16ObjectCSVParser<Header>(options ?? {}) as any;
+    }
 
-    // Create and initialize WASM backend
+    // UTF-8 WASM implementation using byte indexer
+    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
     const backend = new WASMIndexerBackend(delimiterCode);
     backend.initializeWithModule({
       scanCsvBytesStreaming,
@@ -127,12 +142,8 @@ export function createStringCSVParser<
         options ?? {},
         backend,
       ) as any;
-    } else {
-      return new WASMStringObjectCSVParser<Header>(
-        options ?? {},
-        backend,
-      ) as any;
     }
+    return new WASMStringObjectCSVParser<Header>(options ?? {}, backend) as any;
   }
 
   // JavaScript implementation

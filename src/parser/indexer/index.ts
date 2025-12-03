@@ -30,8 +30,8 @@
  */
 
 export {
-  CSVSeparatorIndexer,
   type CSVIndexerBackendSync,
+  CSVSeparatorIndexer,
   type CSVSeparatorIndexerOptions,
 } from "./CSVSeparatorIndexer.ts";
 
