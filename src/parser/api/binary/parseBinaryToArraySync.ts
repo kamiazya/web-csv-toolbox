@@ -4,6 +4,7 @@ import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createBinaryCSVParser } from "@/parser/api/model/createBinaryCSVParser.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
+import { validateBinarySize } from "@/utils/validation/validateBinarySize.ts";
 
 /**
  * Synchronously parses binary CSV data into an array of records.
@@ -47,6 +48,9 @@ export function parseBinaryToArraySync<
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
+    // Validate binary size before processing (for both WASM and JS paths)
+    validateBinarySize(binary, options?.maxBinarySize);
+
     // Check if WASM engine is requested
     const engineConfig = new InternalEngineConfig(options?.engine);
 
@@ -68,8 +72,18 @@ export function parseBinaryToArraySync<
     // JavaScript path: Convert binary to string and parse
     const csv = convertBinaryToString(binary, options ?? {});
     // Exclude binary-specific options when calling string parser
-    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
-    return parseStringToArraySync(csv, stringOptions as any) as InferCSVRecord<Header, Options>[];
+    const {
+      charset: _charset,
+      fatal: _fatal,
+      ignoreBOM: _ignoreBOM,
+      maxBinarySize: _maxBinarySize,
+      decompression: _decompression,
+      ...stringOptions
+    } = options ?? {};
+    return parseStringToArraySync(csv, stringOptions as any) as InferCSVRecord<
+      Header,
+      Options
+    >[];
   } catch (error) {
     commonParseErrorHandling(error);
   }

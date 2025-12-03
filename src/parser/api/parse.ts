@@ -216,8 +216,17 @@ export async function* parse<
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   if (typeof csv === "string") {
     // Exclude binary-specific options for string parsing
-    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
-    yield* parseString(csv, stringOptions as any) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const {
+      charset: _charset,
+      fatal: _fatal,
+      ignoreBOM: _ignoreBOM,
+      maxBinarySize: _maxBinarySize,
+      decompression: _decompression,
+      ...stringOptions
+    } = options ?? {};
+    yield* parseString(csv, stringOptions as any) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } else if (csv instanceof ArrayBuffer || ArrayBuffer.isView(csv)) {
     yield* parseBinary(csv, options);
   } else if (csv instanceof ReadableStream) {
@@ -227,19 +236,47 @@ export async function* parse<
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
       // Exclude binary-specific options for string parsing
-      const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
-      yield* parseStringStream(branch2 as ReadableStream<string>, stringOptions as any) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      const {
+        charset: _charset,
+        fatal: _fatal,
+        ignoreBOM: _ignoreBOM,
+        maxBinarySize: _maxBinarySize,
+        decompression: _decompression,
+        ...stringOptions
+      } = options ?? {};
+      yield* parseStringStream(
+        branch2 as ReadableStream<string>,
+        stringOptions as any,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } else if (firstChunk instanceof Uint8Array) {
       yield* parseBinaryStream(branch2 as ReadableStream<Uint8Array>, options);
     }
   } else if (csv instanceof Response) {
     // parseResponse expects ParseOptions (string options)
-    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
-    yield* parseResponse(csv, stringOptions as any) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const {
+      charset: _charset,
+      fatal: _fatal,
+      ignoreBOM: _ignoreBOM,
+      maxBinarySize: _maxBinarySize,
+      decompression: _decompression,
+      ...stringOptions
+    } = options ?? {};
+    yield* parseResponse(csv, stringOptions as any) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } else if (csv instanceof Request) {
     // parseRequest expects ParseOptions (string options)
-    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
-    yield* parseRequest(csv, stringOptions as any) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const {
+      charset: _charset,
+      fatal: _fatal,
+      ignoreBOM: _ignoreBOM,
+      maxBinarySize: _maxBinarySize,
+      decompression: _decompression,
+      ...stringOptions
+    } = options ?? {};
+    yield* parseRequest(csv, stringOptions as any) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } else if (csv instanceof Blob) {
     yield* parseBlob(csv, options);
   }

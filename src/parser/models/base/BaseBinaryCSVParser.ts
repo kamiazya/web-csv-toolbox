@@ -58,7 +58,12 @@ export abstract class BaseBinaryCSVParser<
 
     // Initialize string parser with the same options (excluding binary-specific options)
     // createStringCSVParser returns the correct type based on outputFormat in options
-    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, ...stringOptions } = options;
+    const {
+      charset: _charset,
+      fatal: _fatal,
+      ignoreBOM: _ignoreBOM,
+      ...stringOptions
+    } = options;
     this.stringParser = createStringCSVParser<Header>(
       stringOptions as any,
     ) as StringCSVParser<Header, Format>;
