@@ -55,14 +55,14 @@ test("supports WASM UTF-16 mode with array output", () => {
   const unicodeCsv = `名前,値
 日本語,データ`;
 
-  const results: string[][] = [];
+  const results: (readonly string[])[] = [];
   for (const row of parseStringToIterableIterator(unicodeCsv, {
     engine: { wasm: true },
     charset: "utf-16",
     outputFormat: "array",
     includeHeader: true,
   })) {
-    results.push(row as string[]);
+    results.push(row);
   }
 
   expect(results).toEqual([

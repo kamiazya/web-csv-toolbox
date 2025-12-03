@@ -67,7 +67,9 @@ export function parseBinaryToArraySync<
 
     // JavaScript path: Convert binary to string and parse
     const csv = convertBinaryToString(binary, options ?? {});
-    return parseStringToArraySync(csv, options);
+    // Exclude binary-specific options when calling string parser
+    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
+    return parseStringToArraySync(csv, stringOptions as any) as InferCSVRecord<Header, Options>[];
   } catch (error) {
     commonParseErrorHandling(error);
   }

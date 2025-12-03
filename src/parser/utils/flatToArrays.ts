@@ -76,7 +76,7 @@ export function flatToArrays<
     for (let r = 0; r < recordCount; r++) {
       const rowOffset = r * fieldCount;
       // actualFieldCounts is guaranteed non-null in this branch, fallback is defensive
-      const actualCount = actualFieldCounts[r] ?? fieldCount;
+      const actualCount = actualFieldCounts![r] ?? fieldCount;
       // Pre-allocate row array
       const arr: (string | undefined)[] = new Array(fieldCount);
       for (let f = 0; f < fieldCount; f++) {

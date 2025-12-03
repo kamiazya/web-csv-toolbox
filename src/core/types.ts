@@ -1509,7 +1509,7 @@ export interface StringCSVParserFactoryOptions<
   Header extends ReadonlyArray<string> = ReadonlyArray<string>,
   Delimiter extends string = DEFAULT_DELIMITER,
   Quotation extends string = DEFAULT_QUOTATION,
-> extends CSVProcessingOptions<Header, Delimiter, Quotation>,
+> extends StringCSVProcessingOptions<Header, Delimiter, Quotation>,
     EngineOptions {}
 
 /**

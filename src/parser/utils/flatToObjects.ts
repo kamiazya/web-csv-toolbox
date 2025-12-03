@@ -125,7 +125,7 @@ export function flatToObjects<
     for (let r = 0; r < recordCount; r++) {
       const rowOffset = r * fieldCount;
       // actualFieldCounts is guaranteed non-null in this branch, fallback is defensive
-      const actualCount = actualFieldCounts[r] ?? fieldCount;
+      const actualCount = actualFieldCounts![r] ?? fieldCount;
       // Object.create(null) creates prototype-less object (safe from prototype pollution)
       const record: Record<string, string | undefined> = Object.create(null);
       for (let f = 0; f < fieldCount; f++) {

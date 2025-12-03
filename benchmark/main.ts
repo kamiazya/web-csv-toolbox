@@ -3,9 +3,9 @@ import { withCodSpeed } from "@codspeed/tinybench-plugin";
 import { Bench } from 'tinybench';
 import {
   FlexibleStringCSVLexer,
-  StringCSVLexerTransformer,
+  createStringCSVLexerTransformer,
   createCSVRecordAssembler,
-  CSVRecordAssemblerTransformer,
+  createCSVRecordAssemblerTransformer,
   EnginePresets,
   loadWASM,
   parseBinary,
@@ -546,8 +546,8 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
+      .pipeThrough(createStringCSVLexerTransformer())
+      .pipeThrough(createCSVRecordAssemblerTransformer())
       .pipeTo(new WritableStream({
         write() {
           // noop
@@ -563,8 +563,8 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
+      .pipeThrough(createStringCSVLexerTransformer())
+      .pipeThrough(createCSVRecordAssemblerTransformer())
       .pipeTo(new WritableStream({
         write() {
           // noop
@@ -580,8 +580,8 @@ bench = bench
     });
 
     await stream
-      .pipeThrough(new StringCSVLexerTransformer(new FlexibleStringCSVLexer(), {}))
-      .pipeThrough(new CSVRecordAssemblerTransformer(createCSVRecordAssembler(), {}))
+      .pipeThrough(createStringCSVLexerTransformer())
+      .pipeThrough(createCSVRecordAssemblerTransformer())
       .pipeTo(new WritableStream({
         write() {
           // noop

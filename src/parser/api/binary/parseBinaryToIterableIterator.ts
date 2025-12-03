@@ -36,7 +36,9 @@ function* parseBinaryToIterableIteratorInternal<
 
     // JavaScript path: Convert binary to string and parse
     const csv = convertBinaryToString(binary, options ?? {});
-    yield* parseStringToIterableIterator(csv, options);
+    // Exclude binary-specific options when calling string parser
+    const { charset: _charset, fatal: _fatal, ignoreBOM: _ignoreBOM, maxBinarySize: _maxBinarySize, decompression: _decompression, ...stringOptions } = options ?? {};
+    yield* parseStringToIterableIterator(csv, stringOptions as any) as IterableIterator<InferCSVRecord<Header, Options>>;
   } catch (error) {
     commonParseErrorHandling(error);
   }
