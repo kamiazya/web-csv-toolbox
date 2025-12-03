@@ -803,8 +803,9 @@ for await (const record of parse(csv, {
 
 #### WASM Limitations
 
-- **UTF-8 only**: Non-UTF-8 encodings (Shift-JIS, EUC-JP) require JavaScript engine
-- Custom delimiters and quotation characters are fully supported
+- **UTF-8/UTF-16 only**: Non-UTF-8/UTF-16 encodings (Shift-JIS, EUC-JP) require JavaScript engine
+- **UTF-16 mode**: Use `charset: 'utf-16'` option for optimized string processing (skips TextEncoder/TextDecoder)
+- Custom delimiters and quotation characters are fully supported (ASCII only for WASM)
 
 #### Low-level WASM APIs
 
@@ -1010,15 +1011,15 @@ try {
 ```js
 import { parseString } from 'web-csv-toolbox';
 
-// Compiled WASM code for improved performance (UTF-8 only)
-// See CodSpeed benchmarks for actual performance metrics
+// Compiled WASM code for improved performance (UTF-8/UTF-16)
+// For Unicode-heavy strings, use charset: 'utf-16' to skip TextEncoder/TextDecoder
 const records = parseString.toArraySync(csvString, { engine: { wasm: true } });
 ```
 
 ### Known Limitations
 
 - **Delimiter/Quotation**: JavaScript parser supports any character; WASM parser requires single-byte ASCII only
-- **WASM Parser**: UTF-8 encoding only, single-byte ASCII delimiter/quotation only (multi-byte UTF-8 characters not supported)
+- **WASM Parser**: UTF-8/UTF-16 encoding only, single-byte ASCII delimiter/quotation only (multi-byte UTF-8 characters not supported)
 - **Streaming**: Best performance with chunk sizes > 1KB
 
 ### Security Considerations

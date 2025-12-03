@@ -98,13 +98,14 @@ WebAssembly (WASM) is a binary instruction format that runs in modern browsers a
 ## When to use WebAssembly
 
 **✅ Use WASM when:**
-- Parsing UTF-8 CSV files
+- Parsing UTF-8 or UTF-16 encoded CSV files
 - Server-side parsing where blocking is acceptable
 - CSV uses ASCII delimiters (comma, tab, semicolon, etc.)
 - Using ASCII quotation marks (`"`, `'`, etc.)
+- Working with Unicode-heavy data (consider `charset: 'utf-16'`)
 
 **❌ Skip WASM when:**
-- CSV uses non-UTF-8 encoding (Shift-JIS, EUC-JP, etc.)
+- CSV uses non-UTF-8/UTF-16 encoding (Shift-JIS, EUC-JP, etc.)
 - Stability is the highest priority (use JavaScript parser instead)
 - WASM initialization overhead matters for your use case
 
@@ -340,23 +341,31 @@ const binaryRecords = parseBinary.toArraySync(binary, {
 
 ## WASM Limitations
 
-### UTF-8 Only
+### String Encoding Support
 
-WASM only supports UTF-8 encoding.
+WASM supports **UTF-8 and UTF-16** encodings for string inputs:
 
 ```typescript
 import { parse, loadWASM } from 'web-csv-toolbox';
 
 await loadWASM();
 
-// ✅ Works (UTF-8)
+// ✅ Works (UTF-8, default)
 for await (const record of parse(csv, {
   engine: { wasm: true }
 })) {
   console.log(record);
 }
 
-// ❌ Error (Shift-JIS not supported)
+// ✅ Works (UTF-16, optimized for JavaScript strings)
+for await (const record of parse(unicodeCsv, {
+  engine: { wasm: true },
+  charset: 'utf-16'  // Skip TextEncoder/TextDecoder overhead
+})) {
+  console.log(record);
+}
+
+// ❌ Error (Shift-JIS not supported in WASM)
 for await (const record of parse(shiftJISBinary, {
   engine: { wasm: true },
   charset: 'shift-jis'
@@ -365,7 +374,14 @@ for await (const record of parse(shiftJISBinary, {
 }
 ```
 
-**Workaround:** Use JavaScript parser for non-UTF-8 encodings:
+**UTF-16 Mode Benefits:**
+- JavaScript strings are internally UTF-16
+- Avoids TextEncoder/TextDecoder overhead
+- Faster for Unicode-heavy data (Japanese, Chinese, etc.)
+- Works with string inputs only (binary inputs always use UTF-8)
+
+**Workaround for non-UTF-8/UTF-16 encodings:**
+Use JavaScript parser for legacy encodings like Shift-JIS:
 
 ```typescript
 for await (const record of parse(shiftJISBinary, {
@@ -497,8 +513,8 @@ export default app;
 | Approach | Execution | UI Blocking | Characteristics |
 |----------|-----------|-------------|-----------------|
 | JavaScript (main thread) | Standard | ✅ Yes | Most stable, all encodings |
-| WASM (main thread) | Compiled code | ✅ Yes | UTF-8 only, no worker overhead |
-| Worker + WASM | Compiled code | ❌ No | UTF-8 only, worker communication overhead |
+| WASM (main thread) | Compiled code | ✅ Yes | UTF-8/UTF-16, no worker overhead |
+| Worker + WASM | Compiled code | ❌ No | UTF-8/UTF-16, worker communication overhead |
 
 **Note:** Actual performance depends on many factors:
 - CSV structure and size
@@ -571,7 +587,8 @@ You've learned how to:
 **Problem:** Incorrect characters in parsed data
 
 **Solution:**
-- WASM only supports UTF-8
+- WASM supports UTF-8 and UTF-16 encodings
+- For UTF-16 string inputs, use `charset: 'utf-16'` option
 - For other encodings (Shift-JIS, EUC-JP), use JavaScript parser with `{ engine: { wasm: false } }`
 
 ## Example Projects

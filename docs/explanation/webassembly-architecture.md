@@ -32,7 +32,7 @@ The library provides two entry points for WASM functionality:
 │ Implementation   │              │ Implementation   │
 │                  │              │                  │
 │ - All features   │              │ - Compiled code  │
-│ - All encodings  │              │ - UTF-8 only     │
+│ - All encodings  │              │ - UTF-8/UTF-16   │
 │ - All options    │              │ - Limited options│
 └──────────────────┘              └──────────────────┘
 ```
@@ -102,7 +102,7 @@ WASM is opt-in rather than always-on because:
 **Trade-offs:**
 - **Size:** WASM binary adds to bundle size
 - **Initialization:** Module loading adds overhead
-- **Limitations:** UTF-8 only
+- **Limitations:** UTF-8 and UTF-16 only
 
 **Flexibility:**
 - Users can choose based on their needs
@@ -371,18 +371,34 @@ Main Thread:                 Worker Thread:
 
 ## Limitations and Trade-offs
 
-### UTF-8 Only
+### Encoding Support
 
-**Limitation:**
-WASM parser only supports UTF-8 encoded strings.
+**Supported encodings:**
+- **UTF-8** (default): Binary inputs and string processing
+- **UTF-16**: Optimized string processing mode
 
-**Why:**
-- Simplifies implementation
-- UTF-8 is the web standard
-- Smaller WASM binary size
+**UTF-16 Mode:**
+```typescript
+// For JavaScript string inputs (already UTF-16 internally)
+for await (const record of parse(unicodeCsv, {
+  engine: { wasm: true },
+  charset: 'utf-16'  // Skip TextEncoder/TextDecoder
+})) {
+  console.log(record);
+}
+```
+
+**Benefits:**
+- Avoids TextEncoder/TextDecoder overhead
+- Faster for Unicode-heavy data (Japanese, Chinese, etc.)
+- JavaScript strings are already UTF-16
+
+**Limitations:**
+- UTF-16 works only with string inputs (not binary)
+- Non-UTF-8/UTF-16 encodings not supported
 
 **Workaround:**
-For non-UTF-8 encodings, the router automatically falls back to JavaScript:
+For non-UTF-8/UTF-16 encodings, the router automatically falls back to JavaScript:
 
 ```typescript
 // Automatic fallback for Shift-JIS
@@ -520,9 +536,9 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 │ Check: Is WASM loaded?                                       │
 └─────────────────────────────────────────────────────────────┘
         ↓ No                              ↓ Yes
-┌──────────────────┐              ┌──────────────────┐
-│ Fallback to JS   │              │ Check: UTF-8?    │
-└──────────────────┘              └──────────────────┘
+┌──────────────────┐              ┌──────────────────────┐
+│ Fallback to JS   │              │ Check: UTF-8/UTF-16? │
+└──────────────────┘              └──────────────────────┘
                                           ↓ No         ↓ Yes
                                   ┌──────────────┐  ┌──────────────┐
                                   │ Fallback     │  │ Check:       │
@@ -537,7 +553,7 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 
 **Fallback scenarios:**
 1. WASM initialization failed or module could not be loaded
-2. Non-UTF-8 encoding specified
+2. Non-UTF-8/UTF-16 encoding specified (e.g., Shift-JIS)
 3. Non-ASCII delimiter or quotation specified (e.g., Japanese `、`)
 4. WASM not supported in runtime (rare)
 
@@ -630,16 +646,17 @@ web-csv-toolbox's WebAssembly implementation provides:
 5. **Integration**: Works with Worker Threads for non-blocking parsing
 
 **Trade-offs:**
-- UTF-8 only (no Shift-JIS, EUC-JP, etc.)
+- UTF-8 and UTF-16 only (no Shift-JIS, EUC-JP, etc.)
 - Processes entire string at once (not incremental)
 - Module loading adds initial overhead
 
 **When to use WASM:**
 - Evaluate performance for your specific use case
 - Consider WASM when:
-  - Working with UTF-8 CSV files
+  - Working with UTF-8 or UTF-16 CSV files
   - Using single-byte ASCII delimiter and quotation
   - Processing complete CSV strings
+  - Unicode-heavy data (use `charset: 'utf-16'`)
 - Benchmark your actual data to make informed decisions
 
 **Performance:** See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for actual measured performance across different scenarios.
