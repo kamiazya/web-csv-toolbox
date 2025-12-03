@@ -1,5 +1,5 @@
-import { DEFAULT_BINARY_MAX_SIZE } from "@/core/constants.ts";
 import type { BinaryOptions } from "@/core/types.ts";
+import { validateBinarySize } from "@/utils/validation/validateBinarySize.ts";
 
 /**
  * Converts binary data to a string.
@@ -14,27 +14,8 @@ export function convertBinaryToString(
   binary: BufferSource,
   options: BinaryOptions,
 ): string {
-  const maxBinarySize = options?.maxBinarySize ?? DEFAULT_BINARY_MAX_SIZE;
-
-  // Validate maxBinarySize
-  if (
-    !(
-      Number.isFinite(maxBinarySize) ||
-      maxBinarySize === Number.POSITIVE_INFINITY
-    ) ||
-    (Number.isFinite(maxBinarySize) && maxBinarySize < 0)
-  ) {
-    throw new RangeError(
-      "maxBinarySize must be a non-negative number or Number.POSITIVE_INFINITY",
-    );
-  }
-
-  // Check binary size
-  if (Number.isFinite(maxBinarySize) && binary.byteLength > maxBinarySize) {
-    throw new RangeError(
-      `Binary size (${binary.byteLength} bytes) exceeded maximum allowed size of ${maxBinarySize} bytes`,
-    );
-  }
+  // Validate binary size
+  validateBinarySize(binary, options?.maxBinarySize);
 
   // Try to create TextDecoder with error handling for invalid charsets
   let decoder: TextDecoder;

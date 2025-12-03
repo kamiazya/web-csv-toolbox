@@ -4,29 +4,12 @@ import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createBinaryCSVParser } from "@/parser/api/model/createBinaryCSVParser.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
+import { validateBinarySize } from "@/utils/validation/validateBinarySize.ts";
 
 /**
- * Parses the given binary data into an iterable iterator of CSV records.
- *
- * @param binary - The binary data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
- * @param options - The parse options.
- * @returns An iterable iterator of CSV records.
- * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
- * @throws {TypeError} If the encoded data is not valid.
- * @throws {ParseError} When an error occurs while parsing the CSV data.
- *
- * @remarks
- * **WARNING**: This function loads the entire binary data into memory before iteration.
- * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseBinaryStream()`
- * to avoid memory exhaustion.
- *
- * The default maxBinarySize is 100MB. While this function returns an iterator, the entire
- * binary is converted to a string in memory before iteration begins.
- *
- * When `engine.wasm` is enabled, this function uses WASM SIMD for separator detection,
- * providing 6-8x faster performance for large files (>1MB).
+ * Internal generator function for parsing binary data.
  */
-export function* parseBinaryToIterableIterator<
+function* parseBinaryToIterableIteratorInternal<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
 >(
@@ -57,4 +40,39 @@ export function* parseBinaryToIterableIterator<
   } catch (error) {
     commonParseErrorHandling(error);
   }
+}
+
+/**
+ * Parses the given binary data into an iterable iterator of CSV records.
+ *
+ * @param binary - The binary data to parse (BufferSource: Uint8Array, ArrayBuffer, or other TypedArray).
+ * @param options - The parse options.
+ * @returns An iterable iterator of CSV records.
+ * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
+ * @throws {TypeError} If the encoded data is not valid.
+ * @throws {ParseError} When an error occurs while parsing the CSV data.
+ *
+ * @remarks
+ * **WARNING**: This function loads the entire binary data into memory before iteration.
+ * For large files (>100MB), consider using streaming alternatives like `parseStream()` or `parseBinaryStream()`
+ * to avoid memory exhaustion.
+ *
+ * The default maxBinarySize is 100MB. While this function returns an iterator, the entire
+ * binary is converted to a string in memory before iteration begins.
+ *
+ * When `engine.wasm` is enabled, this function uses WASM SIMD for separator detection,
+ * providing 6-8x faster performance for large files (>1MB).
+ */
+export function parseBinaryToIterableIterator<
+  Header extends ReadonlyArray<string>,
+  Options extends ParseBinaryOptions<Header> = ParseBinaryOptions<Header>,
+>(
+  binary: BufferSource,
+  options?: Options,
+): IterableIterator<InferCSVRecord<Header, Options>> {
+  // Validate binary size immediately (before generator starts)
+  validateBinarySize(binary, options?.maxBinarySize);
+
+  // Return the internal generator
+  return parseBinaryToIterableIteratorInternal(binary, options);
 }
