@@ -220,6 +220,16 @@ export default bytes.buffer || bytes;
     coverage: {
       provider: "istanbul",
       include: ["src/**/*.ts"],
+      exclude: [
+        "**/*.{test,spec,test-d}.ts",
+        "**/*.browser.{test,spec}.ts",
+        "**/*.node.{test,spec}.ts",
+        "**/test/**",
+        "**/tests/**",
+        "**/__tests__/**",
+      ],
+      reporter: ["text", "json", "html", "clover"],
+      reportsDirectory: "./coverage",
     },
     projects: [
       {
