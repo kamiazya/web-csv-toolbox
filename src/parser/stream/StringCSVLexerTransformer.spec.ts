@@ -28,12 +28,17 @@ describe("StringCSVLexerTransformer", () => {
           const chunks = csv.length === 0 ? [""] : autoChunk(g, csv);
           // In unified token format, each token represents a field with its following delimiter
           // Note: If CSV is empty string, no tokens are expected regardless of the row content
-          const expected: TokenNoLocation[] = csv.length === 0 ? [] : row.map((value, index) => ({
-            value,
-            delimiter:
-              index === row.length - 1 ? Delimiter.Record : Delimiter.Field,
-            delimiterLength: expect.any(Number),
-          }));
+          const expected: TokenNoLocation[] =
+            csv.length === 0
+              ? []
+              : row.map((value, index) => ({
+                  value,
+                  delimiter:
+                    index === row.length - 1
+                      ? Delimiter.Record
+                      : Delimiter.Field,
+                  delimiterLength: expect.any(Number),
+                }));
           return { row, chunks, expected };
         }),
         async ({ chunks, expected }) => {
