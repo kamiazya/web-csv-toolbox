@@ -115,3 +115,41 @@ export enum Delimiter {
   // /** End of file/stream */
   // EOF = 2,
 }
+
+/**
+ * Token type enumeration for CSV lexer (WASM-compatible).
+ *
+ * Uses numeric values for zero-overhead WASM interoperability.
+ * Values must match the Rust enum in `web-csv-toolbox-wasm/src/lib.rs`.
+ *
+ * @category Constants
+ */
+export enum TokenType {
+  /** Field token - represents a CSV field value */
+  Field = 0,
+  /** Field delimiter token - represents a comma or custom delimiter */
+  FieldDelimiter = 1,
+  /** Record delimiter token - represents a newline (CR, LF, or CRLF) */
+  RecordDelimiter = 2,
+}
+
+/**
+ * Field token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.Field` instead. Will be removed in next major version.
+ */
+export const Field = TokenType.Field;
+
+/**
+ * FieldDelimiter token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.FieldDelimiter` instead. Will be removed in next major version.
+ */
+export const FieldDelimiter = TokenType.FieldDelimiter;
+
+/**
+ * RecordDelimiter token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.RecordDelimiter` instead. Will be removed in next major version.
+ */
+export const RecordDelimiter = TokenType.RecordDelimiter;

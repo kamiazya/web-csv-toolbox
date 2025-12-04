@@ -284,17 +284,17 @@ describe("CSVRecordAssemblerOptions", () => {
       };
 
       expectTypeOf(opts1.columnCountStrategy).toEqualTypeOf<
-        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+        "fill" | "pad" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
       expectTypeOf(opts2.columnCountStrategy).toEqualTypeOf<
-        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+        "fill" | "pad" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
       expectTypeOf(opts3.columnCountStrategy).toEqualTypeOf<
-        "fill" | "sparse" | "keep" | "strict" | "truncate" | undefined
+        "fill" | "pad" | "sparse" | "keep" | "strict" | "truncate" | undefined
       >();
     });
 
-    it("Object format restricts columnCountStrategy to fill | strict", () => {
+    it("Object format restricts columnCountStrategy to fill | pad | truncate | strict", () => {
       const opts: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "object",
@@ -302,7 +302,7 @@ describe("CSVRecordAssemblerOptions", () => {
       };
 
       expectTypeOf(opts.columnCountStrategy).toEqualTypeOf<
-        "fill" | "strict" | undefined
+        "fill" | "pad" | "truncate" | "strict" | undefined
       >();
 
       // @ts-expect-error keep is not allowed for object format
@@ -312,11 +312,11 @@ describe("CSVRecordAssemblerOptions", () => {
         columnCountStrategy: "keep",
       };
 
-      // @ts-expect-error truncate is not allowed for object format
-      const _invalidTruncate: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
+      // @ts-expect-error sparse is not allowed for object format
+      const _invalidSparse: CSVRecordAssemblerOptions<readonly ["a", "b"]> = {
         header: ["a", "b"] as const,
         outputFormat: "object",
-        columnCountStrategy: "truncate",
+        columnCountStrategy: "sparse",
       };
     });
 
