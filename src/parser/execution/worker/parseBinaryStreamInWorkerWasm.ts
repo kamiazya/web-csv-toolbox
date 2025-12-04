@@ -47,7 +47,7 @@ export async function* parseBinaryStreamInWorkerWasm<
       type: "parseBinaryStream",
       data: stream,
       options: serializeOptions(options),
-      useWasm: true, // Enable Wasm binary processing
+      useWASM: true, // Enable Wasm binary processing
     },
     options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
     [stream], // Transfer stream

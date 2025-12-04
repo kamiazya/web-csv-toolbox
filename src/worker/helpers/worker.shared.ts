@@ -13,8 +13,8 @@ declare const __VARIANT__: "main" | "slim";
 
 const parseStringToArrayWasmPath =
   typeof __VARIANT__ !== "undefined" && __VARIANT__ === "slim"
-    ? "../../parser/api/string/parseStringToArraySyncWASM.slim.ts"
-    : "../../parser/api/string/parseStringToArraySyncWASM.main.node.ts";
+    ? "../../parser/api/string/parseStringToArraySyncWasm.slim.ts"
+    : "../../parser/api/string/parseStringToArraySyncWasm.main.node.ts";
 
 /**
  * Base interface for Worker requests
@@ -326,13 +326,13 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
           if (useWASM) {
             // Dynamic import WASM implementation
             try {
-              const { parseStringToArraySyncWASM } = await import(
+              const { parseStringToArraySyncWasm } = await import(
                 /* @vite-ignore */ parseStringToArrayWasmPath
               );
               await streamRecordsToMain(
                 workerContext,
                 id,
-                parseStringToArraySyncWASM(req.data, req.options),
+                parseStringToArraySyncWasm(req.data, req.options),
               );
               return;
             } catch (_error) {
@@ -518,13 +518,13 @@ export const createMessageHandler = (workerContext: WorkerContext) => {
                 asBytes,
               );
             }
-            const { parseStringToArraySyncWASM } = await import(
+            const { parseStringToArraySyncWasm } = await import(
               /* @vite-ignore */ parseStringToArrayWasmPath
             );
             await streamRecordsToMain(
               workerContext,
               id,
-              parseStringToArraySyncWASM(decoded, req.options),
+              parseStringToArraySyncWasm(decoded, req.options),
             );
             return;
           } catch (_error) {

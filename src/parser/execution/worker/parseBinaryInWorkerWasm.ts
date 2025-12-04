@@ -38,7 +38,7 @@ export async function* parseBinaryInWorkerWasm<
       type: "parseBinary",
       data: binary,
       options: serializeOptions(options),
-      useWasm: true,
+      useWASM: true,
     },
     options as ParseOptions<Header> | ParseBinaryOptions<Header> | undefined,
   );
