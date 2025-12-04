@@ -8,7 +8,7 @@
  * - Common exports are in `main.shared.ts`
  * - This file only contains Node.js-specific exports
  * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports based on entry file name
- * - WASM loader selection: `.node.ts` → uses `loadWASM.node.ts` (Buffer.from + fs.readFile)
+ * - WASM loader selection: `.node.ts` → uses `loadWasm.node.ts` (Buffer.from + fs.readFile)
  *
  * @packageDocumentation
  */
@@ -22,7 +22,7 @@ export * from "@/main.shared.ts";
 // ============================================================================
 // Node.js-specific: WASM functions
 // ============================================================================
-export * from "@/parser/api/string/parseStringToArraySyncWASM.main.node.ts";
+export * from "@/parser/api/string/parseStringToArraySyncWasm.main.node.ts";
 export * from "@/wasm/WasmInstance.main.node.ts";
 
 // ============================================================================
