@@ -58,7 +58,7 @@ Prevents execution of `preinstall`, `postinstall`, and `install` scripts from al
 
 **Whitelist for native modules (if needed):**
 ```
-onlyBuiltDependencies[]=package-name
+only-built-dependencies[]=package-name
 ```
 
 **Current status:** This project requires no install scripts. WASM builds use `wasm-pack` which runs manually via `pnpm build:wasm`.
