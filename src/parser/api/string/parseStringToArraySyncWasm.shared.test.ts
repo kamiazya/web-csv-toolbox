@@ -181,6 +181,7 @@ describe("parseStringToArraySyncWasm.shared", () => {
         "a,b\n1,2",
         44,
         10485760,
+        1000,
         "",
         mockWasmFunction,
       );
@@ -195,14 +196,14 @@ describe("parseStringToArraySyncWasm.shared", () => {
         return "[]";
       };
 
-      parseWithWasm("test csv", 59, 2048, "test.csv", mockWasmFunction);
+      parseWithWasm("test csv", 59, 2048, 1000, "test.csv", mockWasmFunction);
 
       expect(capturedParams).toEqual(["test csv", 59, 2048, "test.csv"]);
     });
 
     it("should handle empty result", () => {
       const mockWasmFunction = () => "[]";
-      const result = parseWithWasm("", 44, 10485760, "", mockWasmFunction);
+      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
 
       expect(result).toEqual([]);
     });
@@ -210,7 +211,7 @@ describe("parseStringToArraySyncWasm.shared", () => {
     it("should handle complex nested data", () => {
       const mockWasmFunction = () =>
         '[{"name":"Alice","address":{"city":"NYC"}}]';
-      const result = parseWithWasm("", 44, 10485760, "", mockWasmFunction);
+      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
 
       expect(result).toEqual([{ name: "Alice", address: { city: "NYC" } }]);
     });
@@ -219,7 +220,7 @@ describe("parseStringToArraySyncWasm.shared", () => {
       const mockWasmFunction = () => "invalid json";
 
       expect(() =>
-        parseWithWasm("", 44, 10485760, "", mockWasmFunction),
+        parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction),
       ).toThrow(SyntaxError);
     });
   });
@@ -262,6 +263,7 @@ describe("parseStringToArraySyncWasm.shared", () => {
         csvToParse,
         options.delimiterCode,
         options.maxBufferSize,
+        options.maxFieldCount,
         options.source,
         mockWasmFunction,
       );

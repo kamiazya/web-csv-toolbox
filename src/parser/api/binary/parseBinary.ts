@@ -11,7 +11,7 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
-import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
+import { parseBinaryInWasm } from "@/parser/execution/wasm/parseBinaryInWasm.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -79,7 +79,7 @@ export async function* parseBinary<
             "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
         );
       }
-      yield* parseBinaryInWASM(
+      yield* parseBinaryInWasm(
         bytes,
         options as ParseBinaryOptions<Header> | undefined,
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;

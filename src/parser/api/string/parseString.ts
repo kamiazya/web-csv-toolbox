@@ -12,7 +12,7 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
-import { parseStringInWASM } from "@/parser/execution/wasm/parseStringInWASM.ts";
+import { parseStringInWasm } from "@/parser/execution/wasm/parseStringInWasm.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -156,7 +156,7 @@ export async function* parseString<
           );
         }
         // WASM execution with implicit initialization
-        yield* parseStringInWASM(csv, options) as AsyncIterableIterator<
+        yield* parseStringInWasm(csv, options) as AsyncIterableIterator<
           InferCSVRecord<Header, Options>
         >;
       } else {

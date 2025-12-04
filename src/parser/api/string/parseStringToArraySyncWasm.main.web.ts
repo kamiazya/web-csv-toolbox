@@ -1,4 +1,4 @@
-import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loaders/loadWasm.js";
+import { parseStringToArraySyncJson as wasmParseStringToArraySync } from "#/wasm/loaders/loadWasm.js";
 import {
   isSyncInitialized,
   loadWasmSync,
@@ -116,7 +116,7 @@ export function parseStringToArraySyncWasm<
   const { header } = options;
 
   // Validate options
-  const { delimiter, delimiterCode, quotation, maxBufferSize, source } =
+  const { delimiter, delimiterCode, quotation, maxBufferSize, maxFieldCount, source } =
     validateWasmOptions(options);
 
   // Prepare CSV with custom header if provided
@@ -145,6 +145,7 @@ export function parseStringToArraySyncWasm<
     csvToParse,
     delimiterCode,
     maxBufferSize,
+    maxFieldCount,
     source,
     wasmParseStringToArraySync,
   );

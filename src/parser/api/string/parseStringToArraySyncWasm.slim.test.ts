@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("web-csv-toolbox-wasm", () => ({
-  parseStringToArraySync: vi.fn(),
+  parseStringToArraySyncJson: vi.fn(),
 }));
 
 vi.mock("@/wasm/loaders/wasmState.ts", () => ({
@@ -16,13 +16,13 @@ vi.mock("./parseStringToArraySyncWasm.shared.ts", async () => {
   >("./parseStringToArraySyncWasm.shared.ts");
   return {
     ...actual,
-    parseWithWasm: vi.fn((csv, delim, buffer, source, wasmFn) =>
+    parseWithWasm: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) =>
       JSON.parse(wasmFn(csv, delim, buffer, source)),
     ),
   };
 });
 
-import { parseStringToArraySync as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
+import { parseStringToArraySyncJson as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
 import { isInitialized } from "@/wasm/loaders/wasmState.ts";
 import { parseWithWasm } from "./parseStringToArraySyncWasm.shared.ts";
 import { parseStringToArraySyncWasm } from "./parseStringToArraySyncWasm.slim.ts";
@@ -185,6 +185,7 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
         csv,
         44, // delimiter code for ","
         10485760, // default maxBufferSize
+        1000, // default maxFieldCount
         "", // default source
         wasmParseStringToArraySync,
       );
@@ -205,6 +206,7 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
         csv,
         59, // delimiter code for ";"
         2048,
+        1000, // default maxFieldCount
         "test.csv",
         wasmParseStringToArraySync,
       );

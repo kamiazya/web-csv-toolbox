@@ -1,5 +1,9 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
-import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import type {
+  InferCSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "@/core/types.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
@@ -30,7 +34,10 @@ export function parseBinaryToIterableIterator<
 ): IterableIterator<InferCSVRecord<Header, Options>> {
   try {
     const csv = convertBinaryToString(binary, options ?? {});
-    return parseStringToIterableIterator(csv, options);
+    // Extract only CSV processing options (not binary-specific ones)
+    // Binary options (charset, decompression, etc.) were already handled by convertBinaryToString
+    const csvOptions = options as ParseOptions<Header> | undefined;
+    return parseStringToIterableIterator(csv, csvOptions) as IterableIterator<InferCSVRecord<Header, Options>>;
   } catch (error) {
     commonParseErrorHandling(error);
   }

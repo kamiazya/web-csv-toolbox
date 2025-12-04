@@ -1,4 +1,4 @@
-import { parseStringToArraySync as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
+import { parseStringToArraySyncJson as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";
 import { isInitialized } from "@/wasm/loaders/wasmState.ts";
@@ -59,7 +59,7 @@ export function parseStringToArraySyncWasm<
   const { header } = options;
 
   // Validate options
-  const { delimiter, delimiterCode, quotation, maxBufferSize, source } =
+  const { delimiter, delimiterCode, quotation, maxBufferSize, maxFieldCount, source } =
     validateWasmOptions(options);
 
   // Check if Wasm is initialized (required for slim entry)
@@ -78,6 +78,7 @@ export function parseStringToArraySyncWasm<
     csvToParse,
     delimiterCode,
     maxBufferSize,
+    maxFieldCount,
     source,
     wasmParseStringToArraySync,
   );
