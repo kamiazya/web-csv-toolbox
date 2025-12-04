@@ -150,12 +150,12 @@ export const base64 = "${base64}";
       // Return as JavaScript module that exports an ArrayBuffer
       // Import shared base64 data and decode it based on environment
       if (env === "node") {
-        // Node.js build: Use Buffer.from
+        // Node.js build: Use globalThis.Buffer (available in Node.js without import)
+        // This avoids issues with Vite's browser compatibility handling of node: imports
         return `
 // WASM file inlined as base64-encoded ArrayBuffer (Node.js)
-import { Buffer } from "node:buffer";
 import { base64 } from "${sharedModuleId}";
-const bytes = Buffer.from(base64, 'base64');
+const bytes = globalThis.Buffer.from(base64, 'base64');
 export default bytes.buffer || bytes;
 `;
       } else if (env === "deno") {

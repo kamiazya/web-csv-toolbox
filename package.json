@@ -99,21 +99,21 @@
       "node": "./dist/node/_virtual/web_csv_toolbox_wasm_bg.node.wasm.js",
       "default": "./dist/_virtual/web_csv_toolbox_wasm_bg.web.wasm.js"
     },
-    "#/wasm/loaders/loadWASM.js": {
-      "types": "./dist/wasm/loaders/loadWASM.d.ts",
-      "bundler": "./dist/wasm/loaders/loadWASM.web.js",
-      "deno": "./dist/node/wasm/loaders/loadWASM.node.js",
-      "node": "./dist/node/wasm/loaders/loadWASM.node.js",
-      "browser": "./dist/wasm/loaders/loadWASM.web.js",
-      "default": "./dist/wasm/loaders/loadWASM.web.js"
+    "#/wasm/loaders/loadWasm.js": {
+      "types": "./dist/wasm/loaders/loadWasm.d.ts",
+      "bundler": "./dist/wasm/loaders/loadWasm.web.js",
+      "deno": "./dist/node/wasm/loaders/loadWasm.node.js",
+      "node": "./dist/node/wasm/loaders/loadWasm.node.js",
+      "browser": "./dist/wasm/loaders/loadWasm.web.js",
+      "default": "./dist/wasm/loaders/loadWasm.web.js"
     },
-    "#/wasm/loaders/loadWASMSync.js": {
-      "types": "./dist/wasm/loaders/loadWASMSync.d.ts",
-      "bundler": "./dist/wasm/loaders/loadWASMSync.web.js",
-      "deno": "./dist/node/wasm/loaders/loadWASMSync.node.js",
-      "node": "./dist/node/wasm/loaders/loadWASMSync.node.js",
-      "browser": "./dist/wasm/loaders/loadWASMSync.web.js",
-      "default": "./dist/wasm/loaders/loadWASMSync.web.js"
+    "#/wasm/loaders/loadWasmSync.js": {
+      "types": "./dist/wasm/loaders/loadWasmSync.d.ts",
+      "bundler": "./dist/wasm/loaders/loadWasmSync.web.js",
+      "deno": "./dist/node/wasm/loaders/loadWasmSync.node.js",
+      "node": "./dist/node/wasm/loaders/loadWasmSync.node.js",
+      "browser": "./dist/wasm/loaders/loadWasmSync.web.js",
+      "default": "./dist/wasm/loaders/loadWasmSync.web.js"
     },
     "#/worker/helpers/createWorker.js": {
       "types": "./dist/worker/helpers/createWorker.d.ts",
@@ -136,13 +136,13 @@
       "browser": "./dist/utils/charset/getCharsetValidation.constants.web.js",
       "default": "./dist/utils/charset/getCharsetValidation.constants.web.js"
     },
-    "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
-      "types": "./dist/parser/api/string/parseStringToArraySyncWASM.main.d.ts",
-      "bundler": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
-      "deno": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
-      "node": "./dist/node/parser/api/string/parseStringToArraySyncWASM.main.node.js",
-      "browser": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js",
-      "default": "./dist/parser/api/string/parseStringToArraySyncWASM.main.web.js"
+    "#/parser/api/string/parseStringToArraySyncWasm.main.js": {
+      "types": "./dist/parser/api/string/parseStringToArraySyncWasm.main.d.ts",
+      "bundler": "./dist/parser/api/string/parseStringToArraySyncWasm.main.web.js",
+      "deno": "./dist/node/parser/api/string/parseStringToArraySyncWasm.main.node.js",
+      "node": "./dist/node/parser/api/string/parseStringToArraySyncWasm.main.node.js",
+      "browser": "./dist/parser/api/string/parseStringToArraySyncWasm.main.web.js",
+      "default": "./dist/parser/api/string/parseStringToArraySyncWasm.main.web.js"
     }
   },
   "files": [
