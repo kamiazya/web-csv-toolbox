@@ -351,7 +351,12 @@ async function processRecord(record) {
 
 ### How It Works
 
-Parsing uses pre-compiled WebAssembly code for improved performance compared to JavaScript.
+Parsing uses pre-compiled WebAssembly code with SIMD acceleration for improved performance compared to JavaScript.
+
+**SIMD Requirements:**
+- WASM module is built with SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+- Runtime automatically detects SIMD availability via `hasWasmSimd()`
+- Automatically falls back to JavaScript implementation if SIMD is not supported
 
 - **In Browsers**: Generally faster than JavaScript, but still occupies the main thread
 - **On Servers**: Potentially faster parsing with lower CPU usage, but still occupies the event loop
@@ -374,33 +379,37 @@ function parseCSV(text) {
 
 **WebAssembly:**
 ```wasm
-;; Pre-compiled to machine code
+;; Pre-compiled to machine code with SIMD128
 (func $parse_csv
   ;; Optimized low-level operations
   ;; Direct memory access
+  ;; SIMD parallel processing
   ;; Efficient memory operations
 )
 ```
 
 **Performance Characteristics:**
-- Generally faster parsing (actual speedup varies by workload)
+- Generally faster parsing with SIMD acceleration (actual speedup varies by workload)
 - Lower CPU usage in many scenarios
 - More efficient memory access
+- SIMD parallel data processing
 - Performance depends on data size, complexity, and runtime
 
 ### Characteristics
 
 **Advantages:**
-- ✅ Generally faster than JavaScript (speedup varies by workload)
+- ✅ Generally faster than JavaScript with SIMD acceleration (speedup varies by workload)
 - ✅ Lower CPU usage in many scenarios
 - ✅ Predictable performance characteristics
-- ✅ Small binary size (~82KB WASM module)
+- ✅ Small binary size (~82KB WASM module with SIMD support)
 
 **Disadvantages:**
+- ❌ Requires SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+  - Automatically falls back to JavaScript if SIMD not available
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Still occupies main thread/event loop
-- ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
+- ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWasm()` beforehand)
 
 ### Limitations
 
@@ -443,18 +452,18 @@ parse("a,'b,c',d", {
 - Non-UTF-8 encoding (e.g., Shift-JIS, EUC-JP)
 - Custom quotation characters
 - Broad format support needed
-- First-time initialization latency is critical (unless you pre-load with `loadWASM()`)
+- First-time initialization latency is critical (unless you pre-load with `loadWasm()`)
 
 ### Example
 
 #### Recommended: Pre-load WASM for better performance
 
 ```typescript
-import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parse, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
 // Recommended: Load WASM module once at startup
 // This prevents initialization overhead on first parse
-await loadWASM();
+await loadWasm();
 
 // Parse with WASM
 for await (const record of parse(csv, {
@@ -478,7 +487,7 @@ for await (const record of parse(csv, {
 }
 ```
 
-**Note:** The first WASM parse without pre-loading can take longer due to module initialization. Pre-loading with `loadWASM()` is recommended to avoid this bottleneck, especially in performance-critical applications.
+**Note:** The first WASM parse without pre-loading can take longer due to module initialization. Pre-loading with `loadWasm()` is recommended to avoid this bottleneck, especially in performance-critical applications.
 
 ---
 
@@ -537,7 +546,7 @@ Combines the benefits of both strategies:
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Worker + WASM initialization overhead
-- ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
+- ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWasm()` beforehand)
 
 ### When to Use Combined
 
@@ -558,10 +567,10 @@ Combines the benefits of both strategies:
 #### Recommended: Pre-load WASM for better performance
 
 ```typescript
-import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parse, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
 // Recommended: Load WASM module once at startup
-await loadWASM();
+await loadWasm();
 
 // Best of both worlds: Worker + WASM + stream-transfer
 for await (const record of parse(csv, {

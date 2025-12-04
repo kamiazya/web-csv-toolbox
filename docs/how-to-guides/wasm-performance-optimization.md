@@ -44,10 +44,10 @@ Before optimizing, understand where time is spent:
 ### ❌ Bad: Initialize Before Each Parse
 
 ```typescript
-import { loadWASM, parse } from 'web-csv-toolbox';
+import { loadWasm, parse } from 'web-csv-toolbox';
 
 async function parseCSV(csv: string) {
-  await loadWASM(); // ❌ Slow! Loads WASM every time
+  await loadWasm(); // ❌ Slow! Loads WASM every time
 
   for await (const record of parse(csv, {
     engine: { wasm: true }
@@ -69,10 +69,10 @@ await parseCSV(csv3); // Loads WASM ~50ms
 ### ✅ Good: Initialize Once at Startup
 
 ```typescript
-import { loadWASM, parse } from 'web-csv-toolbox';
+import { loadWasm, parse } from 'web-csv-toolbox';
 
 // Load once at application startup
-await loadWASM();
+await loadWasm();
 
 async function parseCSV(csv: string) {
   for await (const record of parse(csv, {
@@ -515,9 +515,9 @@ for await (const record of parse(csv, {
 
 ```typescript
 import { performance } from 'perf_hooks'; // Node.js
-import { loadWASM, parse, EnginePresets } from 'web-csv-toolbox';
+import { loadWasm, parse, EnginePresets } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 async function benchmark(csv: string, label: string) {
   const start = performance.now();
@@ -575,13 +575,13 @@ for await (const record of parse(csv, {
 
 ```typescript
 import { Hono } from 'hono';
-import { loadWASM, parse, ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
+import { loadWasm, parse, ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 import { z } from 'zod';
 
 const app = new Hono();
 
 // 1. Initialize WASM once
-await loadWASM();
+await loadWasm();
 
 // 2. Create worker pool
 using pool = new ReusableWorkerPool({ maxWorkers: 4 });
@@ -638,7 +638,7 @@ export default app;
 
 ### Before Production
 
-- [ ] Call `loadWASM()` once at startup
+- [ ] Call `loadWasm()` once at startup
 - [ ] Use `EnginePresets.responsiveFast()` for UTF-8 CSV
 - [ ] Use `ReusableWorkerPool` to limit concurrent workers
 - [ ] Handle errors gracefully
@@ -697,8 +697,8 @@ export default app;
 
 - **[Using WebAssembly](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WebAssembly Architecture](../explanation/webassembly-architecture.md)** - Understanding WASM internals
-- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
-- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
+- **[loadWasm API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWasm.html)** - WASM initialization
+- **[parseStringToArraySyncWasm API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWasm.html)** - Synchronous WASM parsing
 - **[Working with Workers](../tutorials/working-with-workers.md)** - Worker threads guide
 
 ---
@@ -707,7 +707,7 @@ export default app;
 
 To maximize WASM performance:
 
-1. **Initialize once** - Call `loadWASM()` at startup
+1. **Initialize once** - Call `loadWasm()` at startup
 2. **Use presets** - `EnginePresets.responsiveFast()` for optimal config
 3. **Combine strategies** - Worker + WASM for best results
 4. **Batch processing** - Process records in batches

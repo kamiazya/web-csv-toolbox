@@ -7,7 +7,7 @@ group: Platform Usage
 
 Node.js `Buffer` objects are automatically supported (Buffer extends Uint8Array).
 
-> Note: For WASM-enabled features in Node, Node.js 20.6+ is recommended (the WASM loader uses `import.meta.resolve`). On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
+> Note: For WASM-enabled features in Node, Node.js 20.6+ is recommended (the WASM loader uses `import.meta.resolve`). On older Node versions, pass an explicit URL/Buffer to `loadWasm()`.
 
 ```typescript
 import { parseBinary } from 'web-csv-toolbox';

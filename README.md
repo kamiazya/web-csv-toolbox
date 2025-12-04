@@ -68,8 +68,10 @@ A CSV Toolbox utilizing Web Standard APIs.
   - 🔄 Flexible BOM handling.
   - 🗜️ Supports various compression formats.
   - 🔤 Charset specification for diverse encoding.
-- 🚀 **Using WebAssembly for High Performance**: WebAssembly is used for high performance parsing. (_Experimental_)
-  - 📦 WebAssembly is used for high performance parsing.
+- 🚀 **Using WebAssembly for High Performance**: WebAssembly with SIMD acceleration for high performance parsing. (_Experimental_)
+  - 📦 WebAssembly is used for high performance parsing with SIMD support.
+  - 🔍 Automatic SIMD detection with transparent fallback to JavaScript if not supported.
+  - 🌐 SIMD supported in: Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+.
   - ⚠️ **Experimental**: WASM automatic initialization (base64-embedded) is experimental and may change in future versions.
 - 📦 **Lightweight and Zero Dependencies**: No external dependencies, only Web Standards APIs.
 - 📚 **Fully Typed and Documented**: Fully typed and documented with [TypeDoc](https://typedoc.org/).
@@ -126,17 +128,17 @@ For a deeper comparison and migration guidance, see:
 **Best for**: Most users who want automatic WASM initialization and all features
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox';
 
 // Optional but recommended: preload to reduce first‑parse latency
-await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+await loadWasm();
+const records = parseStringToArraySyncWasm(csv);
 ```
 
 **Characteristics:**
 - ✅ Full features including synchronous WASM APIs
 - ✅ Automatic WASM initialization on first use (not at import time)
-- 💡 Call `loadWASM()` at startup to reduce first‑parse latency (optional)
+- 💡 Call `loadWasm()` at startup to reduce first‑parse latency (optional)
 - ⚠️ **Experimental**: WASM auto-init embeds WASM as base64, may change in future
 - ⚠️ Larger bundle size (WASM embedded in main bundle)
 
@@ -145,24 +147,24 @@ const records = parseStringToArraySyncWASM(csv);
 **Best for**: Bundle size-sensitive applications and production optimization
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
-await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+await loadWasm();
+const records = parseStringToArraySyncWasm(csv);
 ```
 
 **Characteristics:**
 - ✅ Smaller main bundle (WASM not embedded)
 - ✅ External WASM loading for better caching
 - ✅ Explicit control over initialization timing
-- ❌ Requires manual `loadWASM()` call before using WASM features
+- ❌ Requires manual `loadWasm()` call before using WASM features
 
 **Comparison:**
 
 | Aspect | Main | Slim |
 |--------|------|------|
-| **Initialization** | Automatic | Manual (`loadWASM()` required) |
+| **Initialization** | Automatic | Manual (`loadWasm()` required) |
 | **Bundle Size** | Larger (WASM embedded) | Smaller (WASM external) |
 | **Caching** | Single bundle | WASM cached separately |
 | **Use Case** | Convenience, prototyping | Production, bundle optimization |
@@ -398,7 +400,7 @@ try {
 | 22.x     | ✅     |
 | 24.x     | ✅     |
 
-> Note: For Node environments, the WASM loader uses `import.meta.resolve`. Node.js 20.6+ is recommended. On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
+> Note: For Node environments, the WASM loader uses `import.meta.resolve`. Node.js 20.6+ is recommended. On older Node versions, pass an explicit URL/Buffer to `loadWasm()`.
 
 
 ### Works on Browser
@@ -726,7 +728,10 @@ You can use WebAssembly to parse CSV data for high performance.
 - Currently embeds WASM as base64 in the main bundle
 - Future versions may change the loading strategy for better bundle size optimization
 
-**WASM Limitations:**
+**WASM Requirements and Limitations:**
+- **SIMD Support Required**: WASM module is built with SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+  - Runtime automatically detects SIMD availability via `hasWasmSimd()`
+  - Automatically falls back to JavaScript implementation if SIMD is not supported
 - Parsing with WebAssembly is faster than parsing with JavaScript,
 but it takes time to load the WebAssembly module.
 - Supports only UTF-8 encoding csv data.
@@ -735,24 +740,24 @@ but it takes time to load the WebAssembly module.
 - Record output is always object-shaped; `outputFormat: 'array'` requires the JavaScript engine (`engine: { wasm: false }`).
 
 ```ts
-import { loadWASM, parseStringToArraySyncWASM } from "web-csv-toolbox";
+import { loadWasm, parseStringToArraySyncWasm } from "web-csv-toolbox";
 
 // load WebAssembly module
-await loadWASM();
+await loadWasm();
 
 const csv = "a,b,c\n1,2,3";
 
 // parse CSV string
-const result = parseStringToArraySyncWASM(csv);
+const result = parseStringToArraySyncWasm(csv);
 console.log(result);
 // Prints:
 // [{ a: "1", b: "2", c: "3" }]
 ```
 
-- **`function loadWASM(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)
-  - Loads the WebAssembly module.
-- **`function parseStringToArraySyncWASM(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)
-  - Parses CSV strings into an array of records.
+- **`function loadWasm(): Promise<void>`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/loadWasm.html)
+  - Loads the WebAssembly module. Automatically checks for SIMD support and falls back to JavaScript if unavailable.
+- **`function parseStringToArraySyncWasm(string[, options]): CSVRecord[]`**: [📑](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWasm.html)
+  - Parses CSV strings into an array of records using WASM with SIMD acceleration.
 
 ## Options Configuration 🛠️
 
@@ -921,17 +926,22 @@ try {
 #### 3. Use WebAssembly parser for CPU-intensive workloads (Experimental)
 
 ```js
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseStringToArraySyncWasm } from 'web-csv-toolbox';
 
-// Compiled WASM code for improved performance (UTF-8 only)
+// Compiled WASM code with SIMD for improved performance (UTF-8 only)
+// Requires SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+// Automatically falls back to JavaScript if SIMD not available
 // See CodSpeed benchmarks for actual performance metrics
-const records = parseStringToArraySyncWASM(csvString);
+const records = parseStringToArraySyncWasm(csvString);
 ```
 
 ### Known Limitations
 
 - **Delimiter/Quotation**: Must be a single character (multi-character delimiters not supported)
-- **WASM Parser**: UTF-8 encoding only, double-quote (`"`) only
+- **WASM Parser**:
+  - Requires SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+  - UTF-8 encoding only, double-quote (`"`) only
+  - Automatically falls back to JavaScript if SIMD is not available
 - **Streaming**: Best performance with chunk sizes > 1KB
 
 ### Security Considerations

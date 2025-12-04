@@ -223,7 +223,7 @@ for await (const record of parse(response, {
 - ❌ Blocks main thread during parsing
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
-- ❌ Requires loadWASM() initialization
+- ❌ Requires loadWasm() initialization
 
 **Use when:**
 - Parse speed is the highest priority
@@ -234,13 +234,13 @@ for await (const record of parse(response, {
 **Limitations:**
 - Only supports UTF-8 encoding
 - Only supports double-quote (`"`) as quotation character
-- Must call `loadWASM()` before use
+- Must call `loadWasm()` before use
 
 **Example:**
 ```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parseString, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 for await (const record of parseString(csv, {
   engine: EnginePresets.fast()
@@ -279,7 +279,7 @@ for await (const record of parseString(csv, {
 - ⚠️ WASM implementation may change in future versions
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
-- ❌ Requires loadWASM() initialization
+- ❌ Requires loadWasm() initialization
 
 **Use when:**
 - Both UI responsiveness and parse speed are important
@@ -288,9 +288,9 @@ for await (const record of parseString(csv, {
 
 **Example:**
 ```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parseString, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 for await (const record of parseString(csv, {
   engine: EnginePresets.responsiveFast()

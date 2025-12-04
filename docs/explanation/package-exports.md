@@ -15,16 +15,16 @@ This library provides multiple import paths for different use cases. The appropr
 
 1. **Main library** (`web-csv-toolbox`): Full features with automatic WASM initialization
    ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
-// Auto-initializes on first use; optionally call loadWASM() at startup to reduce first‑parse latency
-const records = parseStringToArraySyncWASM(csv);
+import { parseStringToArraySyncWasm } from 'web-csv-toolbox';
+// Auto-initializes on first use; optionally call loadWasm() at startup to reduce first‑parse latency
+const records = parseStringToArraySyncWasm(csv);
    ```
 
 2. **Slim library** (`web-csv-toolbox/slim`): Smaller bundle size, manual WASM initialization required
    ```typescript
-   import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
-   await loadWASM(); // Must call before using WASM functions
-   const records = parseStringToArraySyncWASM(csv);
+   import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
+   await loadWasm(); // Must call before using WASM functions
+   const records = parseStringToArraySyncWasm(csv);
    ```
 
 3. **Worker file** (`web-csv-toolbox/worker`): Only needed when using bundlers with worker-based parsing
@@ -37,7 +37,7 @@ const records = parseStringToArraySyncWASM(csv);
    ```
 
 4. **WASM module** (`web-csv-toolbox/csv.wasm`): For advanced deployment scenarios
-   - Default: WASM auto-initializes on first use; you can optionally preload via `loadWASM()` to reduce first‑parse latency
+   - Default: WASM auto-initializes on first use; you can optionally preload via `loadWasm()` to reduce first‑parse latency
    - Advanced: Import directly for separate caching or custom loading
 
 The library handles environment detection and optimizations automatically using [Conditional Exports](https://nodejs.org/api/packages.html#conditional-exports).
@@ -66,16 +66,16 @@ The library provides two entry points with different trade-offs:
 **Best for**: Most users who want automatic WASM initialization and convenience
 
 ```typescript
-import { parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseStringToArraySyncWasm } from 'web-csv-toolbox';
 
 // Auto-initialization occurs on first use; optional preloading recommended for faster first parse
-const records = parseStringToArraySyncWASM(csv);
+const records = parseStringToArraySyncWasm(csv);
 ```
 
 **Characteristics:**
 - ✅ Automatic WASM initialization on first use (no required preload)
 - ✅ All features available
-- ✅ Simple API; you may call `loadWASM()` at startup to reduce first‑parse latency
+- ✅ Simple API; you may call `loadWasm()` at startup to reduce first‑parse latency
 - ⚠️ Larger bundle size (WASM binary embedded as base64)
 - ⚠️ **Experimental**: Auto-init may change in future versions
 
@@ -89,18 +89,18 @@ const records = parseStringToArraySyncWASM(csv);
 **Best for**: Bundle size-sensitive applications
 
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
 
 // Manual initialization required
-await loadWASM();
-const records = parseStringToArraySyncWASM(csv);
+await loadWasm();
+const records = parseStringToArraySyncWasm(csv);
 ```
 
 **Characteristics:**
 - ✅ Smaller bundle size (no embedded WASM)
 - ✅ External WASM loading for better caching
 - ✅ More control over initialization timing
-- ❌ Requires manual `loadWASM()` call
+- ❌ Requires manual `loadWasm()` call
 - ❌ More code to write
 
 **When to use:**
@@ -166,10 +166,10 @@ This exports the pre-compiled WebAssembly module used for high-performance CSV p
 **No, in most cases.** The library automatically loads the WASM module when you use WASM-enabled features.
 
 ```typescript
-import { parse, loadWASM } from 'web-csv-toolbox';
+import { parse, loadWasm } from 'web-csv-toolbox';
 
 // WASM module is automatically loaded
-await loadWASM();
+await loadWasm();
 
 // Just use the API - WASM file is handled internally
 for await (const record of parse(csv, { engine: { wasm: true } })) {

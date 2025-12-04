@@ -311,10 +311,10 @@ try {
 **For UTF-8 files with double-quotes:**
 
 ```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parseString, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
 // Optional: Pre-load WASM for better first-parse performance
-await loadWASM();
+await loadWasm();
 
 // Fast parsing with WASM
 for await (const record of parseString(csv, {
@@ -494,7 +494,7 @@ try {
 - **Set appropriate resource limits** (`maxBufferSize`, `maxFieldCount`)
 - **Handle errors with try-catch** and check error types
 - **Use AbortSignal for timeouts** on long-running operations
-- **Pre-load WASM once at startup** with `loadWASM()` for best performance
+- **Pre-load WASM once at startup** with `loadWasm()` for best performance
 - **Use WorkerPool for multiple files** to reuse workers efficiently
 - **Choose engine presets** based on your requirements
 
@@ -503,7 +503,7 @@ try {
 - **Don't use `toArray()` for large files** (> 100MB) - causes OOM
 - **Don't ignore error handling** - always use try-catch
 - **Don't create workers per request** - use WorkerPool instead
-- **Don't forget `loadWASM()` when using WASM presets** - reduces first-parse latency
+- **Don't forget `loadWasm()` when using WASM presets** - reduces first-parse latency
 - **Don't use WASM for non-UTF-8** - it only supports UTF-8
 - **Don't block main thread in UI apps** - use worker-based presets
 
@@ -525,7 +525,7 @@ try {
 **Solutions:**
 1. Use WASM for UTF-8 files: `EnginePresets.fast()`
 2. Use workers for non-blocking: `EnginePresets.balanced()`
-3. Pre-load WASM at startup: `await loadWASM()`
+3. Pre-load WASM at startup: `await loadWasm()`
 4. Use WorkerPool for multiple files
 
 ### Issue: UI Freezing
@@ -550,7 +550,7 @@ try {
 **Symptoms:** WASM presets fall back to JavaScript
 
 **Solutions:**
-1. Call `await loadWASM()` at application startup
+1. Call `await loadWasm()` at application startup
 2. For bundlers, see [Using with Bundlers](./using-with-bundlers.md)
 3. Check browser console for errors
 

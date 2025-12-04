@@ -88,14 +88,14 @@ for await (const record of parseString(csv, {
 Enable WebAssembly-based parsing for improved performance.
 
 **Initialization:**
-- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWASM()`.
-- `web-csv-toolbox/slim` (slim entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
+- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWasm()`.
+- `web-csv-toolbox/slim` (slim entry): You must call `loadWasm()`. With bundlers, you may need to pass a `wasmUrl` to `loadWasm()`.
 
 **Example:**
 ```typescript
-import { parseString, loadWASM } from 'web-csv-toolbox';
+import { parseString, loadWasm } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 for await (const record of parseString(csv, {
   engine: { wasm: true }
@@ -524,9 +524,9 @@ const config = EnginePresets.balanced({
 ### Maximum Performance (UTF-8)
 
 ```typescript
-import { EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { EnginePresets, loadWasm } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 const config = EnginePresets.responsiveFast();
 ```
@@ -759,10 +759,10 @@ try {
 ### WASM Not Loaded
 
 ```typescript
-import { parseString, loadWASM } from 'web-csv-toolbox';
+import { parseString, loadWasm } from 'web-csv-toolbox';
 
 try {
-  await loadWASM();
+  await loadWasm();
 } catch (error) {
   console.error('WASM failed to load:', error);
   // Use non-WASM config

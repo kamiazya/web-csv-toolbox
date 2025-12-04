@@ -914,7 +914,7 @@ for await (const record of parseString(csv, {
 **WASM:**
 ```typescript
 // Compiled WASM code
-await loadWASM();
+await loadWasm();
 for await (const record of parseString(csv, {
   engine: { wasm: true }
 })) {
@@ -934,7 +934,7 @@ for await (const record of parseString(csv, {
 **Worker + WASM:**
 ```typescript
 // Non-blocking execution with compiled WASM code
-await loadWASM();
+await loadWasm();
 for await (const record of parseString(csv, {
   engine: EnginePresets.responsiveFast()
 })) {
@@ -1120,7 +1120,7 @@ for await (const record of parseFile(file)) {
 - **Use streaming APIs for large files** (>10MB)
 - **Use `EnginePresets` for execution strategies** instead of manual configuration
 - **Reuse `WorkerPool`** across multiple parse operations
-- **Call `loadWASM()` once at startup** if using WASM
+- **Call `loadWasm()` once at startup** if using WASM
 
 ### ❌ Don't
 
