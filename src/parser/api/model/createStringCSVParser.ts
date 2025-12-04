@@ -20,9 +20,7 @@ import {
 
 const DEFAULT_STRING_CHARSET: StringCharset = "utf-8";
 
-function prefersUtf16(
-  options?: StringCSVParserFactoryOptions,
-): boolean {
+function prefersUtf16(options?: StringCSVParserFactoryOptions): boolean {
   return (options?.charset ?? DEFAULT_STRING_CHARSET) === "utf-16";
 }
 
