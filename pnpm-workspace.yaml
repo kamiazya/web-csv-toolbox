@@ -6,7 +6,7 @@ packages:
 
 # Supply chain attack mitigation: Block packages published within 48 hours
 # This provides a time buffer to detect malicious package updates before they are installed
-minimumReleaseAge: 2880
+minimumReleaseAge: 2880 # 48 hours in minutes
 
 catalogs:
   default:
