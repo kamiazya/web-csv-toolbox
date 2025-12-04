@@ -77,7 +77,7 @@ If you suspect your local environment may be compromised by supply chain attacks
 
 **1. Search for malicious GitHub repositories:**
 ```bash
-gh search repos "Sha1-Hulud: The Second Coming"
+gh search repos "Shai-Hulud: The Second Coming"
 ```
 
 **2. Check for malicious workflow files:**
