@@ -1,8 +1,8 @@
-import { parseString, ReusableWorkerPool, loadWASM } from "web-csv-toolbox/slim";
+import { parseString, ReusableWorkerPool, loadWasm } from "web-csv-toolbox/slim";
 // Import slim worker bundle URL from package exports
 // Vite's ?url suffix returns the URL for the module
 import workerUrl from "web-csv-toolbox/worker/slim?url";
-// Import WASM file URL - required for slim variant to include WASM in build output
+// Import Wasm file URL - required for slim variant to include Wasm in build output
 import wasmUrl from "web-csv-toolbox/csv.wasm?url";
 
 const csv = `name,age
@@ -79,16 +79,16 @@ document.getElementById("test1")?.addEventListener("click", async () => {
   }
 });
 
-// Test 2: Worker + WASM
+// Test 2: Worker + Wasm
 document.getElementById("test2")?.addEventListener("click", async () => {
   const button = document.getElementById("test2") as HTMLButtonElement;
   button.disabled = true;
 
   try {
-    displayResult("result2", "⏳ Parsing with Worker + WASM (non-blocking)...", "info");
+    displayResult("result2", "⏳ Parsing with Worker + Wasm (non-blocking)...", "info");
 
-    // Initialize WASM module for slim variant
-    await loadWASM(wasmUrl);
+    // Initialize Wasm module for slim variant
+    await loadWasm(wasmUrl);
 
     using pool = new ReusableWorkerPool({
       maxWorkers: 2,
@@ -107,7 +107,7 @@ document.getElementById("test2")?.addEventListener("click", async () => {
 
       displayResult(
         "result2",
-        `✅ Parsed Result (WASM in Worker):\n<pre>${JSON.stringify(records, null, 2)}</pre>`,
+        `✅ Parsed Result (Wasm in Worker):\n<pre>${JSON.stringify(records, null, 2)}</pre>`,
         "success"
       );
   } catch (error) {
@@ -126,8 +126,8 @@ document.getElementById("test3")?.addEventListener("click", async () => {
   try {
     displayResult("result3", "⏳ Parallel processing: multiple CSV files with multiple Workers...", "info");
 
-    // Initialize WASM module for slim variant
-    await loadWASM(wasmUrl);
+    // Initialize Wasm module for slim variant
+    await loadWasm(wasmUrl);
 
     using pool = new ReusableWorkerPool({
       maxWorkers: 3,
