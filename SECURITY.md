@@ -24,6 +24,78 @@ If you discover a security vulnerability in web-csv-toolbox, please report it pr
 
 We provide security updates for the latest minor version only.
 
+## Supply Chain Attack Protection
+
+This project implements a multi-layered defense approach to protect against npm supply chain attacks (such as Shai-Hulud 2.0 and similar threats).
+
+### Defense Layers
+
+#### Layer 1: New Package Release Delay
+
+**Configuration:** `pnpm-workspace.yaml`
+
+```yaml
+minimumReleaseAge: 2880  # 48 hours
+```
+
+Blocks installation of packages published within 48 hours. This time buffer allows the community to detect and report malicious package updates before they reach our dependencies.
+
+**Trade-offs:**
+- ✅ Prevents zero-day supply chain attacks
+- ⚠️ Delays access to legitimate bug fixes and security patches
+
+**When to adjust:** If you need to install a newly published package immediately, temporarily comment out this setting, then re-enable it after installation.
+
+#### Layer 2: Install Script Prevention
+
+**Configuration:** `.npmrc`
+
+```
+ignore-scripts=true
+```
+
+Prevents execution of `preinstall`, `postinstall`, and `install` scripts from all packages. Even if a compromised package is installed, its malicious code cannot execute during installation.
+
+**Whitelist for native modules (if needed):**
+```
+onlyBuiltDependencies[]=package-name
+```
+
+**Current status:** This project requires no install scripts. WASM builds use `wasm-pack` which runs manually via `pnpm build:wasm`.
+
+#### Layer 3: Continuous Vulnerability Scanning
+
+**Configuration:** `.github/workflows/.security-scan.yaml`
+
+Uses Google's OSV-Scanner to continuously scan dependencies for known vulnerabilities, aggregating data from multiple sources (GitHub Advisory Database, NVD, etc.).
+
+The CI pipeline fails if vulnerabilities are detected, preventing vulnerable code from being merged or deployed.
+
+### Checking for Compromise
+
+If you suspect your local environment may be compromised by supply chain attacks, check for these indicators:
+
+**1. Search for malicious GitHub repositories:**
+```bash
+gh search repos "Sha1-Hulud: The Second Coming"
+```
+
+**2. Check for malicious workflow files:**
+```bash
+find . -name "discussion.yaml" -path "*/.github/workflows/*"
+```
+
+**3. Search for known payload files:**
+```bash
+find . -name "setup_bun.js" -o -name "bun_environment.js" -o -name "cloud.json"
+```
+
+### Additional Resources
+
+- [npm Supply Chain Attack Defense Guide](https://zenn.dev/hand_dot/articles/04542a91bc432e) (Japanese)
+- [OSV-Scanner Documentation](https://google.github.io/osv-scanner/)
+- [pnpm Security Features](https://pnpm.io/feature-comparison#security-features)
+
 ## Secure Usage Guidelines
 
 ⚠️ **Critical for Production Applications**
