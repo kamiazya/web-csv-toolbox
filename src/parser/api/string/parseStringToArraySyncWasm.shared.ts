@@ -1,10 +1,12 @@
+import type { FlatParseResult } from "web-csv-toolbox-wasm";
 import {
   DEFAULT_DELIMITER,
   DEFAULT_QUOTATION,
   DOUBLE_QUOTE,
 } from "@/core/constants.ts";
-import type { CommonOptions } from "@/core/types.ts";
+import type { CommonOptions, CSVRecord } from "@/core/types.ts";
 import { escapeRegExp } from "@/helpers/string/escapeRegExp.ts";
+import { fromFlatParseResult } from "@/parser/utils/flatToObjects.ts";
 import { assertCommonOptions } from "@/utils/validation/assertCommonOptions.ts";
 
 /**
@@ -106,16 +108,22 @@ export function prepareCSVWithHeader(
 /**
  * Parses CSV string using Wasm function and returns parsed result.
  *
+ * Wasm returns FlatParseResult for efficient boundary crossing.
+ * Object assembly is done on the JavaScript side using fromFlatParseResult().
+ *
  * @param csv - CSV string to parse
  * @param delimiterCode - Character code of delimiter
  * @param maxBufferSize - Maximum buffer size
+ * @param maxFieldCount - Maximum number of fields allowed per record
  * @param source - Source identifier for error messages
- * @param wasmFunction - Wasm parsing function
+ * @param wasmFunction - Wasm parsing function that returns FlatParseResult
  * @returns Parsed CSV records
  *
  * @internal
  */
-export function parseWithWasm<T>(
+export function parseWithWasm<
+  Header extends ReadonlyArray<string> = readonly string[],
+>(
   csv: string,
   delimiterCode: number,
   maxBufferSize: number,
@@ -125,9 +133,20 @@ export function parseWithWasm<T>(
     input: string,
     delimiter: number,
     max_buffer_size: number,
+    max_field_count: number,
     source: string,
-  ) => string,
-): T {
-  const result = wasmFunction(csv, delimiterCode, maxBufferSize, source);
-  return JSON.parse(result);
+  ) => FlatParseResult,
+): CSVRecord<Header>[] {
+  // Wasm returns FlatParseResult for efficient boundary crossing
+  const flatResult = wasmFunction(
+    csv,
+    delimiterCode,
+    maxBufferSize,
+    maxFieldCount,
+    source,
+  );
+
+  // Convert flat result to objects using shared utility
+  // This uses Object.fromEntries for prototype pollution safety
+  return fromFlatParseResult<Header>(flatResult);
 }

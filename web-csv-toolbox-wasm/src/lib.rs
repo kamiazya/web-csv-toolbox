@@ -1,20 +1,19 @@
 use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 
-mod csv_json;
-mod error;
+pub mod flat_result;
 pub mod parser;
-pub mod parser_optimized;
-pub mod simd;
 
-// Re-export parse_csv_to_json for WASM binding
-use csv_json::parse_csv_to_json;
+// Re-export FlatParseResult
+pub use flat_result::FlatParseResult;
 
-// Re-export FlatParseResult from parser_optimized
-pub use parser_optimized::FlatParseResult;
-
-// Re-export csv-core based parser
-pub use parser::CSVParser;
+/// Format error message with optional source information
+fn format_error(message: String, source: Option<&str>) -> String {
+    match source {
+        Some(src) => format!("{} in \"{}\"", message, src),
+        None => message,
+    }
+}
 
 #[cfg(test)]
 mod tests;
@@ -66,7 +65,7 @@ pub fn scan_csv_simd_zero_copy(input: &str, delimiter: u8) -> js_sys::Uint32Arra
         buffer.clear();
 
         // Scan directly into the buffer
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
         let result = scanner.scan(input.as_bytes(), 0);
 
         // Copy separators to our persistent buffer
@@ -107,7 +106,7 @@ pub fn scan_csv_bytes_zero_copy(input: &[u8], delimiter: u8) -> js_sys::Uint32Ar
         buffer.clear();
 
         // Scan directly
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
         let result = scanner.scan(input, 0);
 
         // Copy to persistent buffer (within WASM memory)
@@ -155,7 +154,7 @@ pub fn scan_csv_bytes_extended(input: &[u8], delimiter: u8) -> JsValue {
             flags_buffer.clear();
 
             // Extended scan
-            let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+            let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
             let result = scanner.scan_extended(input, 0);
 
             // Copy to persistent buffers
@@ -217,7 +216,7 @@ pub fn scan_csv_bytes_char_offsets(input: &[u8], delimiter: u8) -> js_sys::Uint3
         buffer.clear();
 
         // Scan with character offset tracking
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
         let result = scanner.scan_char_offsets(input, 0);
 
         // Copy to persistent buffer
@@ -261,7 +260,7 @@ pub fn scan_csv_utf16_zero_copy(input: &[u16], delimiter: u8) -> js_sys::Uint32A
         buffer.clear();
 
         // Scan UTF-16 directly with SIMD
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
 
         #[cfg(target_arch = "wasm32")]
         let result = scanner.scan_utf16_simd(input, 0);
@@ -285,18 +284,23 @@ pub fn scan_csv_utf16_zero_copy(input: &[u16], delimiter: u8) -> js_sys::Uint32A
     })
 }
 
-/// Parse CSV string to flat format synchronously (WASM binding)
+/// Parse CSV string to array (WASM binding)
 ///
-/// Returns FlatParseResult for efficient WASM↔JS boundary crossing.
-/// Object assembly should be done on the JavaScript side using flatToObjects().
+/// This function provides high-performance CSV parsing using SIMD128 instructions.
+/// It provides ~3-5x speedup for large files.
+///
+/// **Architecture:**
+/// - Uses SIMD to scan 16 bytes at a time for delimiter detection
+/// - XOR-based quote state tracking
+/// - Returns data in Flat format for efficient WASM↔JS boundary crossing
 ///
 /// # Arguments
 ///
 /// * `input` - CSV string to parse
 /// * `delimiter` - Delimiter character (e.g., b',' for comma)
 /// * `max_buffer_size` - Maximum allowed input size in bytes
-/// * `max_field_count` - Maximum number of fields allowed per record (prevents DoS attacks)
-/// * `source` - Optional source identifier for error reporting (e.g., filename). Pass empty string for None.
+/// * `max_field_count` - Maximum number of fields per record
+/// * `source` - Optional source identifier for error reporting. Pass empty string for None.
 ///
 /// # Returns
 ///
@@ -304,7 +308,7 @@ pub fn scan_csv_utf16_zero_copy(input: &[u16], delimiter: u8) -> js_sys::Uint32A
 ///
 /// # Errors
 ///
-/// Returns a JsError if parsing fails or input size exceeds limit, which will be thrown as a JavaScript error.
+/// Returns a JsError if input size exceeds limit or field count exceeds maximum.
 #[wasm_bindgen(js_name = parseStringToArraySync)]
 pub fn parse_string_to_array_sync(
     input: &str,
@@ -321,7 +325,7 @@ pub fn parse_string_to_array_sync(
 
     // Validate input size
     if input.len() > max_buffer_size {
-        return Err(wasm_bindgen::JsError::new(&error::format_error(
+        return Err(wasm_bindgen::JsError::new(&format_error(
             format!(
                 "Input size ({} bytes) exceeds maximum allowed size ({} bytes)",
                 input.len(),
@@ -331,131 +335,12 @@ pub fn parse_string_to_array_sync(
         )));
     }
 
-    // Create parser with options
-    let options = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(
-        &options,
-        &JsValue::from_str("delimiter"),
-        &JsValue::from_str(&String::from_utf8_lossy(&[delimiter])),
-    );
-    let _ = js_sys::Reflect::set(
-        &options,
-        &JsValue::from_str("maxFieldCount"),
-        &JsValue::from_f64(max_field_count as f64),
-    );
-
-    // Use CSVParser with parseAll for one-shot parsing
-    let mut parser = CSVParser::new(options.into()).map_err(|e| {
-        wasm_bindgen::JsError::new(&error::format_error(
-            format!("Failed to create parser: {:?}", e),
-            source_opt,
-        ))
-    })?;
-
-    parser.parse_all(input).map_err(|e| {
-        wasm_bindgen::JsError::new(&error::format_error(
-            format!("Failed to parse CSV: {:?}", e),
-            source_opt,
-        ))
-    })
-}
-
-/// Parse CSV string to JSON string synchronously (WASM binding)
-///
-/// Returns a JSON string that can be parsed with JSON.parse() on the JavaScript side.
-/// This approach leverages V8's highly optimized JSON.parse() for object construction,
-/// providing better performance than the flat format for batch operations.
-///
-/// **Performance:**
-/// - V8's JSON.parse() is implemented in C++ with optimized object construction
-/// - Single WASM→JS boundary crossing (one string)
-/// - Benefits from V8's hidden class optimizations
-///
-/// # Arguments
-///
-/// * `input` - CSV string to parse
-/// * `delimiter` - Delimiter character (e.g., b',' for comma)
-/// * `max_buffer_size` - Maximum allowed input size in bytes
-/// * `source` - Optional source identifier for error reporting. Pass empty string for None.
-///
-/// # Returns
-///
-/// Result containing JSON string representing array of objects.
-/// Use JSON.parse() on the JavaScript side to convert to objects.
-///
-/// # Errors
-///
-/// Returns a JsError if parsing fails or input size exceeds limit.
-#[wasm_bindgen(js_name = parseStringToArraySyncJson)]
-pub fn parse_string_to_array_sync_json(
-    input: &str,
-    delimiter: u8,
-    max_buffer_size: usize,
-    source: &str,
-) -> Result<String, wasm_bindgen::JsError> {
-    let source_opt = if source.is_empty() {
-        None
-    } else {
-        Some(source)
-    };
-
-    parse_csv_to_json(input, delimiter, max_buffer_size, source_opt)
-        .map_err(|e| wasm_bindgen::JsError::new(&e))
-}
-
-/// Parse CSV string using SIMD-accelerated scanner (WASM binding)
-///
-/// This function uses SIMD128 instructions for high-performance CSV parsing.
-/// It provides ~3-5x speedup over the csv-core based parser for large files.
-///
-/// **Architecture:**
-/// - Uses SIMD to scan 16 bytes at a time for delimiter detection
-/// - XOR-based quote state tracking (inspired by WebGPU implementation)
-/// - Returns data in Flat format for efficient WASM↔JS boundary crossing
-///
-/// # Arguments
-///
-/// * `input` - CSV string to parse
-/// * `delimiter` - Delimiter character (e.g., b',' for comma)
-/// * `max_buffer_size` - Maximum allowed input size in bytes
-/// * `source` - Optional source identifier for error reporting. Pass empty string for None.
-///
-/// # Returns
-///
-/// Result containing FlatParseResult with headers, fieldData, fieldCount, recordCount, actualFieldCounts.
-///
-/// # Errors
-///
-/// Returns a JsError if input size exceeds limit.
-#[wasm_bindgen(js_name = parseStringToArraySyncSimd)]
-pub fn parse_string_to_array_sync_simd(
-    input: &str,
-    delimiter: u8,
-    max_buffer_size: usize,
-    source: &str,
-) -> Result<FlatParseResult, wasm_bindgen::JsError> {
-    let source_opt = if source.is_empty() {
-        None
-    } else {
-        Some(source)
-    };
-
-    // Validate input size
-    if input.len() > max_buffer_size {
-        return Err(wasm_bindgen::JsError::new(&error::format_error(
-            format!(
-                "Input size ({} bytes) exceeds maximum allowed size ({} bytes)",
-                input.len(),
-                max_buffer_size
-            ),
-            source_opt,
-        )));
-    }
-
-    // Use SIMD parser
+    // Parse CSV
     let quote = b'"'; // Default quote character
     let (headers, field_data, actual_field_counts) =
-        simd::parse_csv_str_simd(input, delimiter, quote);
+        parser::parse_csv_str(input, delimiter, quote, max_field_count).map_err(|e| {
+            wasm_bindgen::JsError::new(&format_error(e, source_opt))
+        })?;
 
     // Create JS arrays for headers
     let headers_array = js_sys::Array::new();
@@ -503,96 +388,13 @@ pub fn parse_string_to_array_sync_simd(
 /// Uint32Array of packed separator indices
 #[wasm_bindgen(js_name = scanCsvSimd)]
 pub fn scan_csv_simd(input: &str, delimiter: u8) -> js_sys::Uint32Array {
-    let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+    let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
     let result = scanner.scan(input.as_bytes(), 0);
 
     // Convert Vec<u32> to Uint32Array
     let array = js_sys::Uint32Array::new_with_length(result.separators.len() as u32);
     array.copy_from(&result.separators);
     array
-}
-
-/// Parse CSV string using SIMD scanner and return JSON string (WASM binding)
-///
-/// This function combines SIMD-accelerated parsing with JSON output for optimal performance:
-/// - SIMD128 instructions for high-performance delimiter detection
-/// - JSON output for efficient single boundary crossing
-/// - Uses serde_json for maintainable serialization
-///
-/// **Performance:**
-/// - SIMD scanning: ~3-5x faster than csv-core for delimiter detection
-/// - JSON output: Single WASM→JS boundary crossing
-/// - JSON.parse(): V8's C++ optimized object construction
-///
-/// # Arguments
-///
-/// * `input` - CSV string to parse
-/// * `delimiter` - Delimiter character (e.g., b',' for comma)
-/// * `max_buffer_size` - Maximum allowed input size in bytes
-/// * `source` - Optional source identifier for error reporting. Pass empty string for None.
-///
-/// # Returns
-///
-/// Result containing JSON string representing array of objects.
-/// Use JSON.parse() on the JavaScript side to convert to objects.
-///
-/// # Errors
-///
-/// Returns a JsError if input size exceeds limit or serialization fails.
-#[wasm_bindgen(js_name = parseStringToArraySyncSimdJson)]
-pub fn parse_string_to_array_sync_simd_json(
-    input: &str,
-    delimiter: u8,
-    max_buffer_size: usize,
-    source: &str,
-) -> Result<String, wasm_bindgen::JsError> {
-    let source_opt = if source.is_empty() {
-        None
-    } else {
-        Some(source)
-    };
-
-    // Validate input size
-    if input.len() > max_buffer_size {
-        return Err(wasm_bindgen::JsError::new(&error::format_error(
-            format!(
-                "Input size ({} bytes) exceeds maximum allowed size ({} bytes)",
-                input.len(),
-                max_buffer_size
-            ),
-            source_opt,
-        )));
-    }
-
-    // Use SIMD parser
-    let quote = b'"'; // Default quote character
-    let (headers, field_data, actual_field_counts) =
-        simd::parse_csv_str_simd(input, delimiter, quote);
-
-    // Convert to JSON array of objects
-    let mut records = Vec::with_capacity(actual_field_counts.len());
-    let mut field_offset = 0usize;
-
-    for &actual_count in &actual_field_counts {
-        let mut record = serde_json::Map::with_capacity(headers.len());
-        for (i, header) in headers.iter().enumerate() {
-            let value = if i < actual_count {
-                &field_data[field_offset + i]
-            } else {
-                "" // Fill missing fields with empty string
-            };
-            record.insert(header.clone(), serde_json::json!(value));
-        }
-        records.push(serde_json::Value::Object(record));
-        field_offset += headers.len(); // Always advance by header count (flat format)
-    }
-
-    serde_json::to_string(&records).map_err(|e| {
-        wasm_bindgen::JsError::new(&error::format_error(
-            format!("Failed to serialize JSON: {}", e),
-            source_opt,
-        ))
-    })
 }
 
 // =============================================================================
@@ -631,7 +433,7 @@ pub fn scan_csv_bytes_streaming(input: &[u8], delimiter: u8, prev_in_quote: bool
         buffer.clear();
 
         // Create scanner and set previous quote state
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
         if prev_in_quote {
             scanner.set_in_quote(true);
         }
@@ -724,7 +526,7 @@ pub fn scan_csv_bytes_extended_streaming(
             flags_buffer.clear();
 
             // Create scanner and set previous quote state
-            let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+            let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
             if prev_in_quote {
                 scanner.set_in_quote(true);
             }
@@ -837,7 +639,7 @@ pub fn scan_csv_bytes_char_offsets_streaming(
         buffer.clear();
 
         // Create scanner and set previous quote state
-        let mut scanner = simd::SimdScanner::with_options(delimiter, b'"');
+        let mut scanner = parser::CsvScanner::with_options(delimiter, b'"');
         if prev_in_quote {
             scanner.set_in_quote(true);
         }
@@ -848,20 +650,23 @@ pub fn scan_csv_bytes_char_offsets_streaming(
         // Copy separators to persistent buffer
         buffer.extend_from_slice(&result.separators);
 
-        // Calculate processedBytes (find last LF and calculate bytes)
-        // Note: For char offset mode, we need to find the byte position of last LF
-        let processed_bytes = {
-            let mut bytes = 0u32;
-            let mut in_quote = if prev_in_quote { 1u32 } else { 0u32 };
-            for (i, &byte) in input.iter().enumerate() {
-                if byte == b'"' {
-                    in_quote ^= 1;
-                } else if in_quote == 0 && byte == b'\n' {
-                    bytes = (i as u32) + 1;
-                }
-            }
-            bytes
-        };
+        // Calculate processedBytes from scan result (avoid re-scanning)
+        // Find last LF separator and extract its byte offset
+        let processed_bytes = result
+            .separators
+            .iter()
+            .rev() // Start from end
+            .find(|&&sep| {
+                // Use correct bit mask: bit 31 only for type
+                let sep_type = sep >> 31;
+                sep_type == parser::scan::SEP_LF
+            })
+            .map(|&sep| {
+                // Use correct bit mask: bits 0-30 for offset (supports up to 2GB)
+                let offset = sep & 0x7FFF_FFFF;
+                offset + 1 // Include the LF byte itself
+            })
+            .unwrap_or(0);
 
         // Get WASM memory for zero-copy view
         let memory = wasm_bindgen::memory();

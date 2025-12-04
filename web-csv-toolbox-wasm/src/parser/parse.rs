@@ -1,12 +1,12 @@
-//! SIMD-accelerated CSV parser
+//! High-performance CSV parser
 //!
 //! This module provides a high-performance CSV parser that uses SIMD scanning
-//! for delimiter detection, providing ~3-5x speedup over the csv-core based parser.
+//! for delimiter detection, providing ~3-5x speedup.
 //!
 //! # Architecture
 //!
 //! The parser works in two phases:
-//! 1. **SIMD Scanning**: Quickly identify separator positions (delimiters and newlines)
+//! 1. **Scanning**: Quickly identify separator positions (delimiters and newlines)
 //!    while tracking quote state using XOR parity.
 //! 2. **Field Extraction**: Extract field content based on separator positions,
 //!    handling quote unescaping as needed.
@@ -18,7 +18,7 @@
 //! - `fieldData`: All field values in a flat array
 //! - `actualFieldCounts`: Per-record field counts (for sparse records)
 
-use super::scanner::{pack_separator, unescape_field, SimdScanner, SEP_LF};
+use super::scan::{pack_separator, unescape_field, CsvScanner, SEP_LF};
 
 /// Parse CSV bytes and return structured data
 ///
@@ -26,15 +26,17 @@ use super::scanner::{pack_separator, unescape_field, SimdScanner, SEP_LF};
 /// * `input` - CSV input bytes
 /// * `delimiter` - Field delimiter character
 /// * `quote` - Quote character
+/// * `max_field_count` - Maximum allowed number of fields per record
 ///
 /// # Returns
-/// Tuple of (headers, records, actual_field_counts)
-pub fn parse_csv_simd(
+/// Result containing tuple of (headers, records, actual_field_counts) or error message
+pub fn parse_csv(
     input: &[u8],
     delimiter: u8,
     quote: u8,
-) -> (Vec<String>, Vec<String>, Vec<usize>) {
-    let mut scanner = SimdScanner::with_options(delimiter, quote);
+    max_field_count: usize,
+) -> Result<(Vec<String>, Vec<String>, Vec<usize>), String> {
+    let mut scanner = CsvScanner::with_options(delimiter, quote);
     let scan_result = scanner.scan(input, 0);
 
     let mut headers: Vec<String> = Vec::new();
@@ -42,7 +44,12 @@ pub fn parse_csv_simd(
     let mut actual_field_counts: Vec<usize> = Vec::new();
 
     if scan_result.separators.is_empty() && input.is_empty() {
-        return (headers, field_data, actual_field_counts);
+        return Ok((headers, field_data, actual_field_counts));
+    }
+
+    // Check for unclosed quotes (invalid CSV syntax)
+    if scan_result.end_in_quote != 0 {
+        return Err("Unexpected EOF while parsing quoted field".to_string());
     }
 
     // Extract fields from separator positions
@@ -59,8 +66,8 @@ pub fn parse_csv_simd(
 
     // Iterate over separators without cloning, chaining virtual separator if needed
     for &packed in scan_result.separators.iter().chain(virtual_sep.iter()) {
-        let offset = super::scanner::unpack_offset(packed) as usize;
-        let sep_type = super::scanner::unpack_type(packed);
+        let offset = super::scan::unpack_offset(packed) as usize;
+        let sep_type = super::scan::unpack_type(packed);
 
         // Extract field bytes
         let field_end = offset.min(input.len());
@@ -89,19 +96,49 @@ pub fn parse_csv_simd(
                 // First row is headers
                 for field in &current_record {
                     let unescaped = unescape_field(field, quote);
-                    headers.push(String::from_utf8_lossy(&unescaped).into_owned());
+                    // Option A: Check UTF-8 validity first to avoid unnecessary cloning
+                    let field_str = match std::str::from_utf8(&unescaped) {
+                        Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
+                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                    };
+                    headers.push(field_str);
                 }
+
+                // Validate field count
+                if headers.len() > max_field_count {
+                    return Err(format!(
+                        "Field count ({}) exceeds maximum allowed ({})",
+                        headers.len(),
+                        max_field_count
+                    ));
+                }
+
                 is_header_row = false;
             } else {
                 // Data row
                 let actual_count = current_record.len();
+
+                // Validate field count to prevent memory exhaustion attacks
+                if actual_count > max_field_count {
+                    return Err(format!(
+                        "Data row field count ({}) exceeds maximum allowed ({})",
+                        actual_count,
+                        max_field_count
+                    ));
+                }
+
                 actual_field_counts.push(actual_count);
 
                 // Ensure we have header_len fields
                 for (i, field) in current_record.iter().enumerate() {
                     if i < headers.len() {
                         let unescaped = unescape_field(field, quote);
-                        field_data.push(String::from_utf8_lossy(&unescaped).into_owned());
+                        // Option A: Check UTF-8 validity first to avoid unnecessary cloning
+                        let field_str = match std::str::from_utf8(&unescaped) {
+                            Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
+                            Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                        };
+                        field_data.push(field_str);
                     }
                 }
 
@@ -120,16 +157,45 @@ pub fn parse_csv_simd(
         if is_header_row {
             for field in &current_record {
                 let unescaped = unescape_field(field, quote);
-                headers.push(String::from_utf8_lossy(&unescaped).into_owned());
+                // Option A: Check UTF-8 validity first to avoid unnecessary cloning
+                let field_str = match std::str::from_utf8(&unescaped) {
+                    Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
+                    Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                };
+                headers.push(field_str);
+            }
+
+            // Validate field count
+            if headers.len() > max_field_count {
+                return Err(format!(
+                    "Field count ({}) exceeds maximum allowed ({})",
+                    headers.len(),
+                    max_field_count
+                ));
             }
         } else {
             let actual_count = current_record.len();
+
+            // Validate field count to prevent memory exhaustion attacks
+            if actual_count > max_field_count {
+                return Err(format!(
+                    "Data row field count ({}) exceeds maximum allowed ({})",
+                    actual_count,
+                    max_field_count
+                ));
+            }
+
             actual_field_counts.push(actual_count);
 
             for (i, field) in current_record.iter().enumerate() {
                 if i < headers.len() {
                     let unescaped = unescape_field(field, quote);
-                    field_data.push(String::from_utf8_lossy(&unescaped).into_owned());
+                    // Option A: Check UTF-8 validity first to avoid unnecessary cloning
+                    let field_str = match std::str::from_utf8(&unescaped) {
+                        Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
+                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                    };
+                    field_data.push(field_str);
                 }
             }
 
@@ -139,16 +205,17 @@ pub fn parse_csv_simd(
         }
     }
 
-    (headers, field_data, actual_field_counts)
+    Ok((headers, field_data, actual_field_counts))
 }
 
 /// Parse CSV string and return structured data
-pub fn parse_csv_str_simd(
+pub fn parse_csv_str(
     input: &str,
     delimiter: u8,
     quote: u8,
-) -> (Vec<String>, Vec<String>, Vec<usize>) {
-    parse_csv_simd(input.as_bytes(), delimiter, quote)
+    max_field_count: usize,
+) -> Result<(Vec<String>, Vec<String>, Vec<usize>), String> {
+    parse_csv(input.as_bytes(), delimiter, quote, max_field_count)
 }
 
 #[cfg(test)]
@@ -158,7 +225,7 @@ mod tests {
     #[test]
     fn test_simple_csv() {
         let csv = "a,b,c\n1,2,3\n";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b", "c"]);
         assert_eq!(fields, vec!["1", "2", "3"]);
@@ -168,7 +235,7 @@ mod tests {
     #[test]
     fn test_quoted_fields() {
         let csv = "a,b\n\"hello, world\",test\n";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b"]);
         assert_eq!(fields, vec!["hello, world", "test"]);
@@ -178,7 +245,7 @@ mod tests {
     #[test]
     fn test_escaped_quotes() {
         let csv = "a,b\n\"hello \"\"world\"\"\",test\n";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b"]);
         assert_eq!(fields, vec!["hello \"world\"", "test"]);
@@ -188,7 +255,7 @@ mod tests {
     #[test]
     fn test_crlf() {
         let csv = "a,b\r\n1,2\r\n";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b"]);
         assert_eq!(fields, vec!["1", "2"]);
@@ -198,7 +265,7 @@ mod tests {
     #[test]
     fn test_sparse_record() {
         let csv = "a,b,c\n1,2\n";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b", "c"]);
         assert_eq!(fields, vec!["1", "2", ""]);
@@ -208,10 +275,24 @@ mod tests {
     #[test]
     fn test_no_trailing_newline() {
         let csv = "a,b\n1,2";
-        let (headers, fields, counts) = parse_csv_str_simd(csv, b',', b'"');
+        let (headers, fields, counts) = parse_csv_str(csv, b',', b'"', 1000).unwrap();
 
         assert_eq!(headers, vec!["a", "b"]);
         assert_eq!(fields, vec!["1", "2"]);
         assert_eq!(counts, vec![2]);
+    }
+
+    #[test]
+    fn test_max_field_count_validation() {
+        let csv = "a,b,c\n1,2,3\n";
+
+        // Should succeed with limit of 3
+        let result = parse_csv_str(csv, b',', b'"', 3);
+        assert!(result.is_ok());
+
+        // Should fail with limit of 2
+        let result = parse_csv_str(csv, b',', b'"', 2);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Field count (3) exceeds maximum allowed (2)"));
     }
 }

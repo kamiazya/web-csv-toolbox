@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("web-csv-toolbox-wasm", () => ({
-  parseStringToArraySyncJson: vi.fn(),
+  parseStringToArraySync: vi.fn(),
 }));
 
 vi.mock("@/wasm/loaders/wasmState.ts", () => ({
@@ -14,15 +14,17 @@ vi.mock("./parseStringToArraySyncWasm.shared.ts", async () => {
   const actual = await vi.importActual<
     typeof import("./parseStringToArraySyncWasm.shared.ts")
   >("./parseStringToArraySyncWasm.shared.ts");
+  const { fromFlatParseResult } = await import("@/parser/utils/flatToObjects.ts");
   return {
     ...actual,
-    parseWithWasm: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) =>
-      JSON.parse(wasmFn(csv, delim, buffer, source)),
-    ),
+    parseWithWasm: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) => {
+      const flatResult = wasmFn(csv, delim, buffer, maxFieldCount, source);
+      return fromFlatParseResult(flatResult);
+    }),
   };
 });
 
-import { parseStringToArraySyncJson as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
+import { parseStringToArraySync as wasmParseStringToArraySync } from "web-csv-toolbox-wasm";
 import { isInitialized } from "@/wasm/loaders/wasmState.ts";
 import { parseWithWasm } from "./parseStringToArraySyncWasm.shared.ts";
 import { parseStringToArraySyncWasm } from "./parseStringToArraySyncWasm.slim.ts";
@@ -84,9 +86,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
   describe("successful parsing when initialized", () => {
     it("should parse CSV correctly when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"name":"Alice","age":"30"}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["name", "age"],
+        fieldData: ["Alice", "30"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       const csv = "name,age\nAlice,30";
       const result = parseStringToArraySyncWasm(csv);
@@ -97,9 +103,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should parse CSV with custom delimiter when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"a":"1","b":"2"}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["a", "b"],
+        fieldData: ["1", "2"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       const csv = "a\tb\n1\t2";
       const result = parseStringToArraySyncWasm(csv, { delimiter: "\t" });
@@ -109,9 +119,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should parse CSV with header row when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"x":"1","y":"2"}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["x", "y"],
+        fieldData: ["1", "2"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       const csv = "x,y\n1,2";
       const result = parseStringToArraySyncWasm(csv);
@@ -121,7 +135,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should work for multiple calls when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue('[{"a":"1"}]');
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["a"],
+        fieldData: ["1"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 1,
+      });
 
       // Multiple calls should all succeed
       parseStringToArraySyncWasm("a\n1");
@@ -173,9 +193,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
   describe("integration with shared utilities", () => {
     it("should parse CSV with header from first row", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"col1":"1","col2":"2"}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["col1", "col2"],
+        fieldData: ["1", "2"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       const csv = "col1,col2\n1,2";
       parseStringToArraySyncWasm(csv);
@@ -193,7 +217,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should pass validated options to parseWithWasm", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: [],
+        fieldData: [],
+        actualFieldCounts: null,
+        recordCount: 0,
+        fieldCount: 0,
+      });
 
       const csv = "a;b\n1;2";
       parseStringToArraySyncWasm(csv, {
@@ -260,9 +290,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
       // 2. Then can call parseStringToArraySyncWasm()
 
       (isInitialized as Mock).mockReturnValue(true); // Simulates loadWasm() was called
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"a":"1","b":"2"}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["a", "b"],
+        fieldData: ["1", "2"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       // Now parsing should work
       const result = parseStringToArraySyncWasm("a,b\n1,2");
@@ -284,7 +318,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
   describe("edge cases when initialized", () => {
     it("should handle empty CSV when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: [],
+        fieldData: [],
+        actualFieldCounts: null,
+        recordCount: 0,
+        fieldCount: 0,
+      });
 
       const result = parseStringToArraySyncWasm("");
 
@@ -293,13 +333,18 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should handle large CSV when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      const largeResult = JSON.stringify(
-        Array.from({ length: 1000 }, (_, i) => ({
-          id: String(i),
-          value: String(i * 2),
-        })),
-      );
-      (wasmParseStringToArraySync as Mock).mockReturnValue(largeResult);
+      const largeHeaders = ["id", "value"];
+      const largeFieldData: string[] = [];
+      for (let i = 0; i < 1000; i++) {
+        largeFieldData.push(String(i), String(i * 2));
+      }
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: largeHeaders,
+        fieldData: largeFieldData,
+        actualFieldCounts: null,
+        recordCount: 1000,
+        fieldCount: 2,
+      });
 
       const csv =
         "id,value\n" +
@@ -311,9 +356,13 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
     it("should handle special characters when initialized", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue(
-        '[{"name":"O\'Reilly","desc":"Quote: \\"test\\""}]',
-      );
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["name", "desc"],
+        fieldData: ["O'Reilly", 'Quote: "test"'],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      });
 
       const csv = 'name,desc\n"O\'Reilly","Quote: ""test"""';
       const result = parseStringToArraySyncWasm(csv);
@@ -334,14 +383,26 @@ describe("parseStringToArraySyncWasm.slim - manual initialization", () => {
 
       // Second call: now initialized (loadWasm was called in between)
       (isInitialized as Mock).mockReturnValueOnce(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue('[{"a":"1"}]');
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: ["a"],
+        fieldData: ["1"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 1,
+      });
 
       expect(() => parseStringToArraySyncWasm("a\n1")).not.toThrow();
     });
 
     it("should check initialization state on every call", () => {
       (isInitialized as Mock).mockReturnValue(true);
-      (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
+      (wasmParseStringToArraySync as Mock).mockReturnValue({
+        headers: [],
+        fieldData: [],
+        actualFieldCounts: null,
+        recordCount: 0,
+        fieldCount: 0,
+      });
 
       parseStringToArraySyncWasm("");
       parseStringToArraySyncWasm("");

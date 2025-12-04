@@ -7,11 +7,11 @@ import {
   createCSVRecordAssembler,
   CSVRecordAssemblerTransformer,
   EnginePresets,
-  loadWASM,
+  loadWasm,
   parseBinary,
   parseString,
   parseStringStream,
-  parseStringToArraySyncWASM,
+  parseStringToArraySyncWasm,
   parseBinaryStream
 } from 'web-csv-toolbox';
 
@@ -129,7 +129,7 @@ export async function getAsBinaryStream() {
 // Load WASM module before benchmarks and track availability
 let wasmAvailable = false;
 try {
-  await loadWASM();
+  await loadWasm();
   wasmAvailable = true;
 } catch {
   console.warn('WASM module not available, WASM-dependent benchmarks will be skipped');
@@ -233,8 +233,8 @@ let bench = withCodSpeed(new Bench({
 
 // Conditionally add WASM benchmark
 if (wasmAvailable) {
-  bench = bench.add('parseStringToArraySyncWASM(50 rows)', () => {
-    parseStringToArraySyncWASM(stringCSV);
+  bench = bench.add('parseStringToArraySyncWasm(50 rows)', () => {
+    parseStringToArraySyncWasm(stringCSV);
   });
 }
 

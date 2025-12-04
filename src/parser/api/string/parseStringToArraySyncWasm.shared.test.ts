@@ -175,8 +175,14 @@ describe("parseStringToArraySyncWasm.shared", () => {
   });
 
   describe("parseWithWasm", () => {
-    it("should parse Wasm output as JSON", () => {
-      const mockWasmFunction = () => '[{"a":"1","b":"2"}]';
+    it("should convert FlatParseResult to array of objects", () => {
+      const mockWasmFunction = (() => ({
+        headers: ["a", "b"],
+        fieldData: ["1", "2"],
+        actualFieldCounts: null,
+        recordCount: 1,
+        fieldCount: 2,
+      })) as any;
       const result = parseWithWasm(
         "a,b\n1,2",
         44,
@@ -191,37 +197,65 @@ describe("parseStringToArraySyncWasm.shared", () => {
 
     it("should pass all parameters to Wasm function", () => {
       let capturedParams: any[] = [];
-      const mockWasmFunction = (...args: any[]) => {
+      const mockWasmFunction = ((...args: any[]) => {
         capturedParams = args;
-        return "[]";
-      };
+        return {
+          headers: [],
+          fieldData: [],
+          actualFieldCounts: null,
+          recordCount: 0,
+          fieldCount: 0,
+        };
+      }) as any;
 
       parseWithWasm("test csv", 59, 2048, 1000, "test.csv", mockWasmFunction);
 
-      expect(capturedParams).toEqual(["test csv", 59, 2048, "test.csv"]);
+      expect(capturedParams).toEqual(["test csv", 59, 2048, 1000, "test.csv"]);
     });
 
     it("should handle empty result", () => {
-      const mockWasmFunction = () => "[]";
+      const mockWasmFunction = (() => ({
+        headers: [],
+        fieldData: [],
+        actualFieldCounts: null,
+        recordCount: 0,
+        fieldCount: 0,
+      })) as any;
       const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
 
       expect(result).toEqual([]);
     });
 
-    it("should handle complex nested data", () => {
-      const mockWasmFunction = () =>
-        '[{"name":"Alice","address":{"city":"NYC"}}]';
+    it("should handle multiple records", () => {
+      const mockWasmFunction = (() => ({
+        headers: ["name", "age"],
+        fieldData: ["Alice", "30", "Bob", "25"],
+        actualFieldCounts: null,
+        recordCount: 2,
+        fieldCount: 2,
+      })) as any;
       const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
 
-      expect(result).toEqual([{ name: "Alice", address: { city: "NYC" } }]);
+      expect(result).toEqual([
+        { name: "Alice", age: "30" },
+        { name: "Bob", age: "25" },
+      ]);
     });
 
-    it("should propagate JSON parse errors", () => {
-      const mockWasmFunction = () => "invalid json";
+    it("should handle sparse records with actualFieldCounts", () => {
+      const mockWasmFunction = (() => ({
+        headers: ["a", "b", "c"],
+        fieldData: ["1", "2", "", "4", "5", "6"],
+        actualFieldCounts: [2, 3], // First record has 2 fields, second has 3
+        recordCount: 2,
+        fieldCount: 3,
+      })) as any;
+      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
 
-      expect(() =>
-        parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction),
-      ).toThrow(SyntaxError);
+      expect(result).toEqual([
+        { a: "1", b: "2", c: undefined },
+        { a: "4", b: "5", c: "6" },
+      ]);
     });
   });
 
@@ -248,16 +282,19 @@ describe("parseStringToArraySyncWasm.shared", () => {
       expect(csvToParse).toBe("a,b,c\n1,2,3");
 
       // Parse with Wasm
-      const mockWasmFunction = (input: string) => {
-        // Simulate Wasm parsing
+      const mockWasmFunction = ((input: string) => {
+        // Simulate Wasm parsing returning FlatParseResult
         const lines = input.split("\n");
         const headers = lines[0]!.split(",");
         const values = lines[1]!.split(",");
-        const record = Object.fromEntries(
-          headers.map((h, i) => [h, values[i]]),
-        );
-        return JSON.stringify([record]);
-      };
+        return {
+          headers,
+          fieldData: values,
+          actualFieldCounts: null,
+          recordCount: 1,
+          fieldCount: headers.length,
+        };
+      }) as any;
 
       const result = parseWithWasm(
         csvToParse,

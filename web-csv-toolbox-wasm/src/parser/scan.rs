@@ -134,7 +134,7 @@ pub struct ScanResultCharOffset {
 /// SIMD byte scanner for CSV data
 ///
 /// This struct maintains state across multiple scan calls for streaming support.
-pub struct SimdScanner {
+pub struct CsvScanner {
     /// Current quote state (0 = outside, 1 = inside)
     in_quote: u32,
     /// Delimiter character (default: comma)
@@ -143,7 +143,7 @@ pub struct SimdScanner {
     quote: u8,
 }
 
-impl SimdScanner {
+impl CsvScanner {
     /// Create a new SIMD scanner with default settings
     pub fn new() -> Self {
         Self {
@@ -1040,7 +1040,7 @@ impl SimdScanner {
     }
 }
 
-impl Default for SimdScanner {
+impl Default for CsvScanner {
     fn default() -> Self {
         Self::new()
     }
@@ -1162,7 +1162,7 @@ mod tests {
 
     #[test]
     fn test_scanner_simple_csv() {
-        let mut scanner = SimdScanner::new();
+        let mut scanner = CsvScanner::new();
         let csv = b"a,b,c\n1,2,3\n";
         let result = scanner.scan(csv, 0);
 
@@ -1179,7 +1179,7 @@ mod tests {
 
     #[test]
     fn test_scanner_quoted_field() {
-        let mut scanner = SimdScanner::new();
+        let mut scanner = CsvScanner::new();
         let csv = b"a,\"b,c\",d\n";
         let result = scanner.scan(csv, 0);
 
@@ -1193,7 +1193,7 @@ mod tests {
 
     #[test]
     fn test_scanner_escaped_quotes() {
-        let mut scanner = SimdScanner::new();
+        let mut scanner = CsvScanner::new();
         // CSV: a,"b""c",d\n - field with escaped quote inside
         let csv = b"a,\"b\"\"c\",d\n";
         let result = scanner.scan(csv, 0);
@@ -1204,7 +1204,7 @@ mod tests {
 
     #[test]
     fn test_scanner_streaming() {
-        let mut scanner = SimdScanner::new();
+        let mut scanner = CsvScanner::new();
 
         // First chunk ends mid-quote
         let chunk1 = b"a,\"b,c";
@@ -1220,7 +1220,7 @@ mod tests {
     #[test]
     fn test_extract_fields() {
         let csv = b"a,b,c\n1,2,3\n";
-        let mut scanner = SimdScanner::new();
+        let mut scanner = CsvScanner::new();
         let result = scanner.scan(csv, 0);
 
         let records = extract_fields(csv, &result.separators, 0);

@@ -14,11 +14,6 @@ crate-type = ["cdylib"]
 wasm-bindgen = "0.2.105"
 web-sys = { version = "0.3.82", features = ["console"] }
 js-sys = "0.3"
-csv-core = { version = "0.1", default-features = false }
-# For JSON output path (batch operations)
-csv = "1.4"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0"
 
 [dev-dependencies]
 criterion = "0.5"
@@ -35,6 +30,9 @@ debug = true
 [profile.release]
 opt-level = 3
 lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
 # SIMD is enabled via RUSTFLAGS="-C target-feature=+simd128" at build time
 
 [package.metadata.wasm-pack.profile.release]
