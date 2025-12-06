@@ -13,6 +13,13 @@ permissions: read-all
 
 jobs:
 
+  security_scan:
+    name: Security Scan
+    uses: ./.github/workflows/.security-scan.yaml
+    permissions:
+      contents: read
+      security-events: write
+
   static_tests:
     name: Static Tests
     uses: ./.github/workflows/.static-tests.yaml
@@ -26,6 +33,7 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     needs:
+      - security_scan
       - static_tests
 
   dynamic_tests:
@@ -62,6 +70,7 @@ jobs:
       id-token: write
       pages: write
     needs:
+      - security_scan
       - static_tests
       - build
       - dynamic_tests
