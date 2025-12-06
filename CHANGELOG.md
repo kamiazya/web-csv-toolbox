@@ -1,5 +1,191 @@
 # web-csv-toolbox
 
+## 0.15.0
+
+### Minor Changes
+
+- [#614](https://github.com/kamiazya/web-csv-toolbox/pull/614) [`25d49ee`](https://github.com/kamiazya/web-csv-toolbox/commit/25d49ee16f356ba87a552ff75324e1d7d88e1639) Thanks [@kamiazya](https://github.com/kamiazya)! - **BREAKING CHANGE**: Restrict `columnCountStrategy` options for object output to `fill`/`strict` only.
+
+  Object format now rejects `keep` and `truncate` strategies at runtime, as these strategies are incompatible with object output semantics. Users relying on `keep` or `truncate` with object format must either:
+
+  - Switch to `outputFormat: 'array'` to use these strategies, or
+  - Use `fill` (default) or `strict` for object output
+
+  This change improves API clarity by aligning strategy availability with format capabilities and documenting the purpose-driven strategy matrix (including sparse/header requirements).
+
+- [#616](https://github.com/kamiazya/web-csv-toolbox/pull/616) [`8adf5d9`](https://github.com/kamiazya/web-csv-toolbox/commit/8adf5d9e0300013efcc90493682f0103fb0ddb81) Thanks [@kamiazya](https://github.com/kamiazya)! - Add TypeScript 5.0 const type parameters to eliminate `as const` requirements
+
+  **New Features:**
+
+  - Add `CSVOutputFormat` type alias for `"object" | "array"` union type
+  - Implement const type parameters in factory functions for automatic literal type inference
+  - Add function overloads to factory functions for precise return type narrowing
+  - Users no longer need to write `as const` when specifying headers, delimiters, or other options
+
+  **Improvements:**
+
+  - Replace `import("@/...").XXX` patterns with standard import statements at file top
+  - Update factory function type signatures to use const type parameters:
+    - `createStringCSVParser` - automatically infers header, delimiter, quotation, and output format types
+    - `createBinaryCSVParser` - automatically infers header, delimiter, quotation, charset, and output format types
+    - `createCSVRecordAssembler` - automatically infers header and output format types
+  - Update type definitions to support const type parameters:
+    - `CSVRecordAssemblerCommonOptions` - add `OutputFormat` and `Strategy` type parameters
+    - `CSVProcessingOptions` - add `OutputFormat` type parameter
+    - `BinaryOptions` - add `Charset` type parameter
+  - Update JSDoc examples in factory functions to remove unnecessary `as const` annotations
+  - Update README.md examples to demonstrate simplified usage without `as const`
+
+  **Before:**
+
+  ```typescript
+  const parser = createStringCSVParser({
+    header: ["name", "age"] as const, // Required as const
+    outputFormat: "object",
+  });
+  ```
+
+  **After:**
+
+  ```typescript
+  const parser = createStringCSVParser({
+    header: ["name", "age"], // Automatically infers literal types
+    outputFormat: "object", // Return type properly narrowed
+  });
+  ```
+
+  **Technical Details:**
+
+  - Leverages TypeScript 5.0's const type parameters feature
+  - Uses function overloads to narrow return types based on `outputFormat` value:
+    - `outputFormat: "array"` → returns array parser
+    - `outputFormat: "object"` → returns object parser
+    - omitted → defaults to object parser
+    - dynamic value → returns union type
+  - All changes are 100% backward compatible
+  - Existing code using `as const` continues to work unchanged
+
+- [#614](https://github.com/kamiazya/web-csv-toolbox/pull/614) [`25d49ee`](https://github.com/kamiazya/web-csv-toolbox/commit/25d49ee16f356ba87a552ff75324e1d7d88e1639) Thanks [@kamiazya](https://github.com/kamiazya)! - ## Lexer API Changes
+
+  This release includes low-level Lexer API changes for performance optimization.
+
+  ### Breaking Changes (Low-level API only)
+
+  These changes only affect users of the low-level Lexer API. **High-level APIs (`parseString`, `parseBinary`, etc.) are unchanged.**
+
+  1. **Token type constants**: Changed from `Symbol` to numeric constants
+  2. **Location tracking**: Now disabled by default. Add `trackLocation: true` to Lexer options if you need token location information. Note: Error messages still include position information even when `trackLocation: false` (computed lazily only when errors occur).
+  3. **Struct of token objects**: Changed to improve performance. Token properties changed and reduce tokens by combining delimiter and newline information into a field.
+
+  ### Who is affected?
+
+  **Most users are NOT affected.** Only users who directly use `FlexibleStringCSVLexer` and rely on `token.location` or `Symbol`-based token type comparison need to update their code.
+
+- [#613](https://github.com/kamiazya/web-csv-toolbox/pull/613) [`2a7b22e`](https://github.com/kamiazya/web-csv-toolbox/commit/2a7b22edf20f9c4859a12b2609cc3075afcc316f) Thanks [@kamiazya](https://github.com/kamiazya)! - Add factory functions for stream-based CSV parsing APIs
+
+  **New Features:**
+
+  - Add `createStringCSVParserStream()` factory function for Mid-level string stream parsing
+  - Add `createBinaryCSVParserStream()` factory function for Mid-level binary stream parsing
+  - Add `createStringCSVLexerTransformer()` factory function for creating StringCSVLexerTransformer instances
+  - Add `createCSVRecordAssemblerTransformer()` factory function for creating CSVRecordAssemblerTransformer instances
+  - Add `StringCSVLexerOptions` type for lexer factory function options
+  - Add `StringCSVLexerTransformerStreamOptions` type for stream behavior options
+  - Add `CSVRecordAssemblerFactoryOptions` type for assembler factory function options
+  - Add `StringCSVParserFactoryOptions` type for string parser factory function options
+  - Add `BinaryCSVParserFactoryOptions` type for binary parser factory function options
+  - Update model factory functions (`createStringCSVLexer`, `createCSVRecordAssembler`, `createStringCSVParser`, `createBinaryCSVParser`) to accept engine options for future optimization support
+  - Update documentation with API level classification (High-level, Mid-level, Low-level)
+
+  **Breaking Changes:**
+
+  - Rename `CSVLexerTransformer` class to `StringCSVLexerTransformer` to clarify input type (string)
+  - Rename `createCSVLexerTransformer()` to `createStringCSVLexerTransformer()` for consistency
+  - Rename `CSVLexerTransformerStreamOptions` type to `StringCSVLexerTransformerStreamOptions` for naming consistency
+  - Remove unused `CSVLexerTransformerOptions` type
+
+  **Migration:**
+
+  ```typescript
+  // Before
+  import {
+    CSVLexerTransformer,
+    createCSVLexerTransformer,
+    type CSVLexerTransformerStreamOptions,
+  } from "web-csv-toolbox";
+  new CSVLexerTransformer(lexer);
+  createCSVLexerTransformer({ delimiter: "," });
+
+  // After
+  import {
+    StringCSVLexerTransformer,
+    createStringCSVLexerTransformer,
+    type StringCSVLexerTransformerStreamOptions,
+  } from "web-csv-toolbox";
+  new StringCSVLexerTransformer(lexer);
+  createStringCSVLexerTransformer({ delimiter: "," });
+  ```
+
+  These factory functions simplify the API by handling internal parser/lexer creation, reducing the impact of future internal changes on user code. This addresses the issue where CSVLexerTransformer constructor signature changed in v0.14.0 (#612).
+
+### Patch Changes
+
+- [#614](https://github.com/kamiazya/web-csv-toolbox/pull/614) [`25d49ee`](https://github.com/kamiazya/web-csv-toolbox/commit/25d49ee16f356ba87a552ff75324e1d7d88e1639) Thanks [@kamiazya](https://github.com/kamiazya)! - ## JavaScript Parser Performance Improvements
+
+  This release includes significant internal optimizations that improve JavaScript-based CSV parsing performance.
+
+  ### Before / After Comparison
+
+  | Metric                  | Before (v0.14) | After     | Improvement    |
+  | ----------------------- | -------------- | --------- | -------------- |
+  | 1,000 rows parsing      | 3.57 ms        | 1.42 ms   | **60% faster** |
+  | 5,000 rows parsing      | 19.47 ms       | 7.03 ms   | **64% faster** |
+  | Throughput (1,000 rows) | 24.3 MB/s      | 61.2 MB/s | **2.51x**      |
+  | Throughput (5,000 rows) | 24.5 MB/s      | 67.9 MB/s | **2.77x**      |
+
+  ### Optimization Summary
+
+  | Optimization                           | Target    | Improvement                        |
+  | -------------------------------------- | --------- | ---------------------------------- |
+  | Array copy method improvement          | Assembler | -8.7%                              |
+  | Quoted field parsing optimization      | Lexer     | Overhead eliminated                |
+  | Object assembler loop optimization     | Assembler | -5.4%                              |
+  | Regex removal for unquoted fields      | Lexer     | -14.8%                             |
+  | String comparison optimization         | Lexer     | ~10%                               |
+  | Object creation optimization           | Lexer     | ~20%                               |
+  | Non-destructive buffer reading         | GC        | -46%                               |
+  | Token type numeric conversion          | Lexer/GC  | -7% / -13%                         |
+  | Location tracking made optional        | Lexer     | -19% to -31%                       |
+  | Object.create(null) for records        | Assembler | -31%                               |
+  | Empty-row template cache               | Assembler | ~4% faster on sparse CSV           |
+  | Row buffer reuse (no per-record slice) | Assembler | ~6% faster array format            |
+  | Header-length builder preallocation    | Assembler | Capacity stays steady on wide CSV  |
+  | Object assembler row buffer pooling    | Assembler | Lower GC spikes on object output   |
+  | Lexer segment-buffer pooling           | Lexer     | Smoother GC for quoted-heavy input |
+
+  ### Final Performance Results (Pure JavaScript)
+
+  | Format                     | Throughput    |
+  | -------------------------- | ------------- |
+  | Object format (1,000 rows) | **61.2 MB/s** |
+  | Array format (1,000 rows)  | **87.6 MB/s** |
+  | Object format (5,000 rows) | **67.9 MB/s** |
+  | Array format (5,000 rows)  | **86.4 MB/s** |
+
+  Array format is approximately 43% faster (1.43× throughput) than Object format for the same data.
+
+- [#617](https://github.com/kamiazya/web-csv-toolbox/pull/617) [`eabb995`](https://github.com/kamiazya/web-csv-toolbox/commit/eabb9955a23ffe1299b860b6637680698b0819b8) Thanks [@kamiazya](https://github.com/kamiazya)! - ## Supply Chain Attack Defense
+
+  Added multi-layered protection against npm supply chain attacks (such as Shai-Hulud 2.0).
+
+  ### Defense Layers
+
+  1. **New Package Release Delay**: Blocks packages published within 48 hours via `minimumReleaseAge` setting
+  2. **Install Script Prevention**: Disables preinstall/postinstall scripts via `ignore-scripts=true`
+  3. **Continuous Vulnerability Scanning**: Integrates OSV-Scanner into CI/CD pipeline
+
+  These changes only affect the development environment and CI/CD configuration. No changes to library code.
+
 ## 0.14.0
 
 ### Minor Changes
