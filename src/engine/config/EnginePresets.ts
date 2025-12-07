@@ -69,10 +69,28 @@ export interface WorkerPresetOptions extends BasePresetOptions {
 }
 
 /**
- * Options for customizing engine presets.
- * @deprecated Use {@link MainThreadPresetOptions} or {@link WorkerPresetOptions} instead.
+ * Options for GPU-accelerated engine presets.
+ * Used by presets that utilize WebGPU acceleration.
  */
-export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions;
+export interface GPUPresetOptions extends BasePresetOptions {
+  /**
+   * Optional GPU device to reuse across multiple operations.
+   * If not provided, a device will be created and destroyed automatically.
+   */
+  gpuDevice?: GPUDevice;
+
+  /**
+   * Callback for fallback notifications.
+   * Called when GPU is unavailable and engine falls back to WASM/JS.
+   */
+  onFallback?: (info: EngineFallbackInfo) => void;
+}
+
+/**
+ * Options for customizing engine presets.
+ * @deprecated Use {@link MainThreadPresetOptions}, {@link WorkerPresetOptions}, or {@link GPUPresetOptions} instead.
+ */
+export type EnginePresetOptions = MainThreadPresetOptions | WorkerPresetOptions | GPUPresetOptions;
 
 /**
  * Predefined engine configuration presets optimized for specific performance characteristics.
@@ -322,6 +340,74 @@ export const EnginePresets = Object.freeze({
     worker: true,
     wasm: false,
     workerStrategy: "stream-transfer",
+    ...options,
+  }),
+
+  /**
+   * GPU-accelerated configuration.
+   *
+   * **Optimization target:** Large file streaming performance
+   *
+   * **Performance characteristics:**
+   * - Parse speed: ✅ Fast (1.44-1.50× faster than CPU streaming)
+   * - UI responsiveness: ✅ Non-blocking (async GPU execution)
+   * - Memory efficiency: Standard (2× file size)
+   * - Stability: ⚠️ Experimental (WebGPU API)
+   *
+   * **Trade-offs:**
+   * - ✅ Excellent for large files: 1.44-1.50× faster than CPU on files >100MB
+   * - ✅ Consistent throughput: ~12 MB/s regardless of file size
+   * - ✅ Non-blocking: Async GPU execution
+   * - ✅ Auto-fallback: GPU → WASM → Pure JS
+   * - ⚠️ GPU setup overhead: ~8ms (100× slower for files <1MB)
+   * - ⚠️ Limited browser support: Chrome 113+, Edge 113+ only
+   * - ❌ Not recommended for small files (<1MB)
+   * - ❌ Streaming overhead: 7× slower than sync APIs
+   *
+   * **Use when:**
+   * - Processing very large CSV files (>100MB)
+   * - Streaming is required (memory constrained)
+   * - Chrome/Edge browser environment
+   * - Consistent throughput is important
+   *
+   * **Browser support:**
+   * - Chrome 113+: ✅ Full support
+   * - Edge 113+: ✅ Full support
+   * - Firefox: ❌ Auto-fallback to WASM/JS
+   * - Safari: ❌ Auto-fallback to WASM/JS
+   *
+   * @param options - Configuration options
+   * @returns Engine configuration
+   *
+   * @example
+   * ```ts
+   * import { parseString, EnginePresets } from 'web-csv-toolbox';
+   *
+   * // GPU-accelerated parsing for large files
+   * for await (const record of parseString(largeCsv, {
+   *   engine: EnginePresets.gpuAccelerated()
+   * })) {
+   *   console.log(record);
+   * }
+   * ```
+   *
+   * @example With fallback callback
+   * ```ts
+   * for await (const record of parseString(csv, {
+   *   engine: EnginePresets.gpuAccelerated({
+   *     onFallback: (info) => {
+   *       console.log('GPU not available, using:', info.actualConfig);
+   *     }
+   *   })
+   * })) {
+   *   console.log(record);
+   * }
+   * ```
+   */
+  gpuAccelerated: (options?: GPUPresetOptions): EngineConfig => ({
+    gpu: true,
+    gpuDevice: options?.gpuDevice,
+    onFallback: options?.onFallback,
     ...options,
   }),
 } as const);

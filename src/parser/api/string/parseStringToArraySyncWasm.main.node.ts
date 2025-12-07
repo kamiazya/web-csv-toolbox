@@ -1,5 +1,5 @@
-import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loaders/loadWasm.js";
 import {
+  parseStringToArraySync as wasmParseStringToArraySync,
   isSyncInitialized,
   loadWasmSync,
 } from "#/wasm/loaders/loadWasmSync.js";

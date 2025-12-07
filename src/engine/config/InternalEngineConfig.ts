@@ -10,11 +10,12 @@ import type {
  * @internal
  */
 export enum EngineFlags {
-  WORKER = 1 << 0, // 0b000001 = 1
-  WASM = 1 << 1, // 0b000010 = 2
-  STREAM_TRANSFER = 1 << 2, // 0b000100 = 4
-  MESSAGE_STREAMING = 1 << 3, // 0b001000 = 8
-  STRICT = 1 << 4, // 0b010000 = 16
+  WORKER = 1 << 0, // 0b0000001 = 1
+  WASM = 1 << 1, // 0b0000010 = 2
+  STREAM_TRANSFER = 1 << 2, // 0b0000100 = 4
+  MESSAGE_STREAMING = 1 << 3, // 0b0001000 = 8
+  STRICT = 1 << 4, // 0b0010000 = 16
+  GPU = 1 << 5, // 0b0100000 = 32
 }
 
 /**
@@ -28,6 +29,7 @@ export class InternalEngineConfig {
   private bitmask = 0;
   readonly workerURL?: string | URL | undefined;
   readonly workerPool?: WorkerPool | undefined;
+  readonly gpuDevice?: GPUDevice | undefined;
   readonly onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
 
   constructor(config?: EngineConfig) {
@@ -36,6 +38,11 @@ export class InternalEngineConfig {
       if (config.worker) {
         this.workerURL = config.workerURL;
         this.workerPool = config.workerPool;
+        this.onFallback = config.onFallback;
+      }
+      // Extract GPU-specific properties if GPU is enabled
+      if ("gpu" in config && config.gpu) {
+        this.gpuDevice = config.gpuDevice;
         this.onFallback = config.onFallback;
       }
       this.parse(config);
@@ -52,6 +59,7 @@ export class InternalEngineConfig {
     bitmask: number,
     workerURL?: string | URL,
     workerPool?: WorkerPool,
+    gpuDevice?: GPUDevice,
     onFallback?: (info: EngineFallbackInfo) => void,
   ): InternalEngineConfig {
     const instance = Object.create(InternalEngineConfig.prototype);
@@ -60,6 +68,7 @@ export class InternalEngineConfig {
       workerURL;
     (instance as { workerPool?: WorkerPool | undefined }).workerPool =
       workerPool;
+    (instance as { gpuDevice?: GPUDevice | undefined }).gpuDevice = gpuDevice;
     (
       instance as {
         onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
@@ -106,6 +115,11 @@ export class InternalEngineConfig {
     // Parse WASM configuration
     if (config.wasm) {
       this.bitmask |= EngineFlags.WASM;
+    }
+
+    // Parse GPU configuration
+    if ("gpu" in config && config.gpu) {
+      this.bitmask |= EngineFlags.GPU;
     }
   }
 
@@ -180,6 +194,13 @@ export class InternalEngineConfig {
   }
 
   /**
+   * Check if GPU acceleration is enabled.
+   */
+  hasGPU(): boolean {
+    return this.hasFlag(EngineFlags.GPU);
+  }
+
+  /**
    * Get worker communication strategy.
    */
   getWorkerStrategy(): WorkerCommunicationStrategy | undefined {
@@ -215,6 +236,7 @@ export class InternalEngineConfig {
       fallbackBitmask,
       this.workerURL,
       this.workerPool,
+      this.gpuDevice,
       this.onFallback,
     );
   }
@@ -236,6 +258,35 @@ export class InternalEngineConfig {
       fallbackBitmask,
       this.workerURL,
       this.workerPool,
+      this.gpuDevice,
+      this.onFallback,
+    );
+  }
+
+  /**
+   * Create a fallback configuration for GPU.
+   *
+   * Disables GPU and optionally falls back to WASM.
+   * Fallback chain: GPU → WASM → Pure JS
+   */
+  createGPUFallbackConfig(): InternalEngineConfig {
+    let fallbackBitmask = this.bitmask;
+
+    // Disable GPU
+    if ((fallbackBitmask & EngineFlags.GPU) !== 0) {
+      fallbackBitmask &= ~EngineFlags.GPU;
+    }
+
+    // Enable WASM as fallback if not already enabled
+    if ((fallbackBitmask & EngineFlags.WASM) === 0) {
+      fallbackBitmask |= EngineFlags.WASM;
+    }
+
+    return InternalEngineConfig.fromBitmask(
+      fallbackBitmask,
+      this.workerURL,
+      this.workerPool,
+      undefined, // Clear GPU device on fallback
       this.onFallback,
     );
   }
@@ -246,6 +297,17 @@ export class InternalEngineConfig {
   toConfig(): EngineConfig {
     const hasWorker = this.hasWorker();
     const hasWasm = this.hasWasm();
+    const hasGPU = this.hasGPU();
+
+    // GPU configuration takes precedence (GPU is mutually exclusive with Worker)
+    if (hasGPU) {
+      return {
+        gpu: true,
+        gpuDevice: this.gpuDevice,
+        wasm: hasWasm,
+        onFallback: this.onFallback,
+      };
+    }
 
     if (hasWorker) {
       return {
@@ -278,6 +340,7 @@ export class InternalEngineConfig {
    */
   toString(): string {
     const parts: string[] = [];
+    if (this.hasGPU()) parts.push("gpu");
     if (this.hasWorker()) parts.push("worker");
     if (this.hasWasm()) parts.push("wasm");
     if (this.hasStreamTransfer()) parts.push("stream-transfer");

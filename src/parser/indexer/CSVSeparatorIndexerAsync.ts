@@ -1,76 +1,9 @@
 import type { CSVSeparatorIndexResult } from "../types/SeparatorIndexResult.ts";
 import { concatUint8Arrays } from "../utils/separatorUtils.ts";
+import type { CSVIndexerBackendAsync } from "./CSVSeparatorIndexer.ts";
 
-/**
- * Sync backend interface for CSV separator indexing (Wasm)
- *
- * This interface abstracts the underlying implementation (Wasm SIMD)
- * and can be extended in the future for other backends.
- */
-export interface CSVIndexerBackendSync {
-  /** Whether the backend is initialized and ready to use */
-  readonly isInitialized: boolean;
-
-  /**
-   * Get the maximum recommended chunk size for this backend
-   * @returns Maximum chunk size in bytes
-   */
-  getMaxChunkSize(): number;
-
-  /**
-   * Scan a chunk of CSV data and return separator positions
-   * @param chunk - CSV data as bytes
-   * @param prevInQuote - Quote state from previous chunk (false for first chunk)
-   * @returns CSVSeparatorIndexResult with separator positions and streaming metadata
-   */
-  scan(chunk: Uint8Array, prevInQuote: boolean): CSVSeparatorIndexResult;
-}
-
-/**
- * Async backend interface for CSV separator indexing (WebGPU)
- *
- * This interface abstracts asynchronous backends like WebGPU that require
- * async initialization and processing. All methods except getMaxChunkSize()
- * are async to accommodate GPU operations.
- *
- * @example
- * ```typescript
- * const backend = new GPUIndexerBackend(44); // comma delimiter
- * await backend.initialize();
- * const result = await backend.scan(chunk, false);
- * await backend.destroy(); // Clean up GPU resources
- * ```
- */
-export interface CSVIndexerBackendAsync {
-  /** Whether the backend is initialized and ready to use */
-  readonly isInitialized: boolean;
-
-  /**
-   * Initialize the backend (e.g., acquire GPU device, compile shaders)
-   * Must be called before scan()
-   */
-  initialize(): Promise<void>;
-
-  /**
-   * Get the maximum recommended chunk size for this backend
-   * @returns Maximum chunk size in bytes
-   */
-  getMaxChunkSize(): number;
-
-  /**
-   * Scan a chunk of CSV data and return separator positions asynchronously
-   * @param chunk - CSV data as bytes
-   * @param prevInQuote - Quote state from previous chunk (false for first chunk)
-   * @returns Promise resolving to CSVSeparatorIndexResult
-   */
-  scan(chunk: Uint8Array, prevInQuote: boolean): Promise<CSVSeparatorIndexResult>;
-
-  /**
-   * Destroy the backend and release resources (e.g., GPU buffers, device)
-   * Should be called when done to prevent resource leaks
-   */
-  destroy(): Promise<void>;
-}
+// Re-export for convenience
+export type { CSVIndexerBackendAsync };
 
 /**
  * Options for the index() method
@@ -93,78 +26,78 @@ export interface CSVSeparatorIndexerOptions {
 }
 
 /**
- * CSV Separator Indexer with streaming support
+ * Async CSV Separator Indexer with streaming support (for WebGPU)
  *
- * This class wraps a backend (Wasm, WebGPU, etc.) and provides:
+ * This class wraps an async backend (WebGPU, etc.) and provides:
  * - Leftover byte management for streaming
  * - Quote state tracking across chunks
- * - Unified interface for different backends
+ * - Unified interface for different async backends
  *
  * @example
  * ```typescript
- * const backend = new WasmIndexerBackend(44); // comma delimiter
+ * const backend = new GPUIndexerBackend(44); // comma delimiter
  * await backend.initialize();
  *
- * const indexer = new CSVSeparatorIndexer(backend);
+ * const indexer = new CSVSeparatorIndexerAsync(backend);
  *
  * // Streaming mode
  * for await (const chunk of stream) {
- *   const result = indexer.index(chunk, { stream: true });
+ *   const result = await indexer.index(chunk, { stream: true });
  *   processResult(result);
  * }
  * // Flush remaining data
- * const final = indexer.index();
+ * const final = await indexer.index();
  * processResult(final);
  * ```
  */
-export class CSVSeparatorIndexer {
+export class CSVSeparatorIndexerAsync {
   /** Leftover bytes from previous chunk (after last LF) */
   private leftover: Uint8Array = new Uint8Array(0);
 
   /** Quote state carried from previous chunk */
   private prevInQuote = false;
 
-  /** The backend implementation */
-  private readonly backend: CSVIndexerBackendSync;
+  /** The async backend implementation */
+  private readonly backend: CSVIndexerBackendAsync;
 
   /**
-   * Create a new CSVSeparatorIndexer
-   * @param backend - The backend to use for scanning (e.g., WasmIndexerBackend)
+   * Create a new CSVSeparatorIndexerAsync
+   * @param backend - The async backend to use for scanning (e.g., GPUIndexerBackend)
    */
-  constructor(backend: CSVIndexerBackendSync) {
+  constructor(backend: CSVIndexerBackendAsync) {
     this.backend = backend;
   }
 
   /**
-   * Index CSV separators with streaming support
+   * Index CSV separators with streaming support (async)
    *
    * @param chunk - Data chunk to process. Omit to flush remaining data.
    * @param options - Indexing options
-   * @returns CSVSeparatorIndexResult with separator positions and metadata
+   * @returns Promise resolving to CSVSeparatorIndexResult with separator positions and metadata
    *
    * @example Non-streaming (one-shot)
    * ```typescript
-   * const result = indexer.index(csvBytes);
+   * const result = await indexer.index(csvBytes);
    * ```
    *
    * @example Streaming
    * ```typescript
    * for (const chunk of chunks) {
-   *   const result = indexer.index(chunk, { stream: true });
+   *   const result = await indexer.index(chunk, { stream: true });
    *   // Process result.separators up to result.sepCount
    * }
-   * const final = indexer.index(); // Flush
+   * const final = await indexer.index(); // Flush
    * ```
    */
-  index(
+  async index(
     chunk?: Uint8Array,
     options: CSVSeparatorIndexerOptions = {},
-  ): CSVSeparatorIndexResult {
+  ): Promise<CSVSeparatorIndexResult> {
     const { stream = false } = options;
 
     // Flush mode: process remaining leftover
     if (chunk === undefined) {
-      return this.flush();
+      return await this.flush();
     }
 
     // Combine leftover with new chunk
@@ -173,8 +106,8 @@ export class CSVSeparatorIndexer {
         ? concatUint8Arrays(this.leftover, chunk)
         : chunk;
 
-    // Scan through backend
-    const result = this.backend.scan(combined, this.prevInQuote);
+    // Scan through backend (async)
+    const result = await this.backend.scan(combined, this.prevInQuote);
 
     if (stream) {
       // Save unprocessed bytes (after last LF)
@@ -243,11 +176,11 @@ export class CSVSeparatorIndexer {
   }
 
   /**
-   * Flush remaining data
+   * Flush remaining data (async)
    *
    * Process any leftover bytes as the final chunk (no trailing LF expected).
    */
-  private flush(): CSVSeparatorIndexResult {
+  private async flush(): Promise<CSVSeparatorIndexResult> {
     if (this.leftover.length === 0) {
       return {
         separators: new Uint32Array(0),
@@ -257,8 +190,8 @@ export class CSVSeparatorIndexer {
       };
     }
 
-    // Process leftover as final chunk
-    const result = this.backend.scan(this.leftover, this.prevInQuote);
+    // Process leftover as final chunk (async)
+    const result = await this.backend.scan(this.leftover, this.prevInQuote);
     const leftoverLength = this.leftover.length;
 
     // Clear state

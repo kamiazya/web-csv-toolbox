@@ -135,6 +135,17 @@ try {
   console.warn('WASM module not available, WASM-dependent benchmarks will be skipped');
 }
 
+// Check WebGPU availability
+let gpuAvailable = false;
+try {
+  if (typeof navigator !== 'undefined' && navigator.gpu) {
+    const adapter = await navigator.gpu.requestAdapter();
+    gpuAvailable = adapter !== null;
+  }
+} catch {
+  console.warn('WebGPU not available, GPU-dependent benchmarks will be skipped');
+}
+
 let binaryCSV: Uint8Array = await getAsBinary()
 let stringCSV: string = await getAsString();
 
@@ -212,6 +223,7 @@ console.log('  14. Engine comparison at scale - identifies optimal engine for da
 console.log('  15. Memory allocation patterns - compares allocation strategies');
 console.log('  16. Low-level API performance - measures lexer and assembler separately');
 console.log('  17. Binary vs Stream approach - determines optimal threshold for parseBlob');
+console.log('  18. GPU acceleration performance - GPU vs CPU streaming at different scales');
 console.log('\nNote: Any WASM initialization warnings can be safely ignored.');
 console.log('CodSpeed will use tinybench for local execution (this is expected behavior).');
 if (!isWorkerAvailable) {
@@ -221,6 +233,10 @@ if (!isWorkerAvailable) {
 if (!wasmAvailable) {
   console.log('\n⚠️  WASM module not available - WASM-dependent benchmarks will be skipped.');
   console.log('Run benchmarks with WASM support to test WASM performance.');
+}
+if (!gpuAvailable) {
+  console.log('\n⚠️  WebGPU not available - GPU-dependent benchmarks will be skipped.');
+  console.log('Run benchmarks in Chrome 113+ or Edge 113+ to test GPU acceleration.');
 }
 console.log();
 
@@ -766,6 +782,94 @@ bench = bench
     }
   });
 
+// GPU acceleration benchmarks
+// These tests compare GPU vs CPU streaming performance at different scales
+// to verify the 1.44-1.50× speedup documented in Report 48
+
+if (gpuAvailable) {
+  bench = bench
+    // GPU setup overhead test - demonstrates why GPU is not recommended for small files
+    .add('GPU overhead: tiny (10 rows) - mainThread', async () => {
+      for await (const _ of parseString(tinyCSV, { engine: EnginePresets.stable() })) {
+        // noop
+      }
+    })
+    .add('GPU overhead: tiny (10 rows) - GPU', async () => {
+      for await (const _ of parseString(tinyCSV, { engine: { gpu: true } })) {
+        // noop
+      }
+    })
+    // GPU vs CPU: small size (100 rows)
+    .add('GPU vs CPU: small (100 rows) - CPU streaming', async () => {
+      for await (const _ of parseString(smallWorkerCSV, { engine: EnginePresets.stable() })) {
+        // noop
+      }
+    })
+    .add('GPU vs CPU: small (100 rows) - GPU streaming', async () => {
+      for await (const _ of parseString(smallWorkerCSV, { engine: { gpu: true } })) {
+        // noop
+      }
+    })
+    // GPU vs CPU: medium size (1000 rows)
+    .add('GPU vs CPU: medium (1000 rows) - CPU streaming', async () => {
+      for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.stable() })) {
+        // noop
+      }
+    })
+    .add('GPU vs CPU: medium (1000 rows) - GPU streaming', async () => {
+      for await (const _ of parseString(mediumWorkerCSV, { engine: { gpu: true } })) {
+        // noop
+      }
+    })
+    // GPU vs CPU: large size (5000 rows) - optimal GPU use case
+    .add('GPU vs CPU: large (5000 rows) - CPU streaming', async () => {
+      for await (const _ of parseString(csv5000rows, { engine: EnginePresets.stable() })) {
+        // noop
+      }
+    })
+    .add('GPU vs CPU: large (5000 rows) - GPU streaming', async () => {
+      for await (const _ of parseString(csv5000rows, { engine: { gpu: true } })) {
+        // noop
+      }
+    })
+    // GPU vs CPU: very large size (10000 rows) - best GPU performance
+    .add('GPU vs CPU: very large (10000 rows) - CPU streaming', async () => {
+      for await (const _ of parseString(largeWorkerCSV, { engine: EnginePresets.stable() })) {
+        // noop
+      }
+    })
+    .add('GPU vs CPU: very large (10000 rows) - GPU streaming', async () => {
+      for await (const _ of parseString(largeWorkerCSV, { engine: { gpu: true } })) {
+        // noop
+      }
+    });
+
+  // GPU vs WASM comparison (if WASM is available)
+  if (wasmAvailable) {
+    bench = bench
+      .add('GPU vs WASM: medium (1000 rows) - WASM', async () => {
+        for await (const _ of parseString(mediumWorkerCSV, { engine: EnginePresets.fast() })) {
+          // noop
+        }
+      })
+      .add('GPU vs WASM: medium (1000 rows) - GPU', async () => {
+        for await (const _ of parseString(mediumWorkerCSV, { engine: { gpu: true } })) {
+          // noop
+        }
+      })
+      .add('GPU vs WASM: large (5000 rows) - WASM', async () => {
+        for await (const _ of parseString(csv5000rows, { engine: EnginePresets.fast() })) {
+          // noop
+        }
+      })
+      .add('GPU vs WASM: large (5000 rows) - GPU', async () => {
+        for await (const _ of parseString(csv5000rows, { engine: { gpu: true } })) {
+          // noop
+        }
+      });
+  }
+}
+
 await bench.run();
 
 console.log('\n=== Benchmark Results ===\n');
@@ -790,6 +894,9 @@ console.log('✓ Engine comparison at scale completed');
 console.log('✓ Memory allocation pattern tests completed');
 console.log('✓ Low-level API performance tests completed');
 console.log('✓ Binary vs Stream approach tests completed');
+if (gpuAvailable) {
+  console.log('✓ GPU acceleration tests completed');
+}
 console.log('\n=== Bottleneck Detection Guide ===');
 console.log('Review the benchmark results to identify bottlenecks:');
 console.log('  • Row count scaling: Check if performance degrades linearly (O(n))');
@@ -798,5 +905,10 @@ console.log('  • Quote ratio: Measure quote handling overhead');
 console.log('  • Engine comparison: Find optimal engine for your data size');
 console.log('  • Memory patterns: Compare allocation strategies');
 console.log('  • Binary vs Stream: Determine optimal threshold for parseBlob auto-selection');
+if (gpuAvailable) {
+  console.log('  • GPU acceleration: Verify 1.44-1.50× speedup over CPU streaming (large files only)');
+  console.log('    - Expect GPU overhead on small files (<1MB)');
+  console.log('    - Best GPU performance on files >100MB with streaming');
+}
 console.log('\nFor detailed analysis, review the ops/sec values in the table above.');
 console.log('Higher ops/sec = better performance\n');

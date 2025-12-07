@@ -12,6 +12,10 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { parseStringToIterableIterator } from "@/parser/api/string/parseStringToIterableIterator.ts";
 import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import {
+  isWebGPUAvailable,
+  parseStringInGPU,
+} from "@/parser/execution/gpu/parseStringInGPU.ts";
 import { parseStringInWasm } from "@/parser/execution/wasm/parseStringInWasm.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
@@ -37,6 +41,7 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * - **Main thread** (default): `engine: { worker: false }` - No overhead, good for small files
  * - **Worker thread**: `engine: { worker: true }` - Offloads parsing, good for large files
  * - **WebAssembly**: `engine: { wasm: true }` - Fast parsing, limited to UTF-8 and double-quotes
+ * - **WebGPU**: `engine: { gpu: true }` - GPU-accelerated (1.44-1.50× faster), optimal for files >100MB
  * - **Combined**: `engine: { worker: true, wasm: true }` - Worker + WASM for maximum performance
  *
  * Use {@link EnginePresets} for convenient configurations:
@@ -78,6 +83,19 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * })) {
  *   console.log(record);
  * }
+ * ```
+ *
+ * @example Using GPU acceleration for large files (>100MB)
+ * ```ts
+ * import { parseString } from 'web-csv-toolbox';
+ *
+ * // GPU-accelerated parsing (1.44-1.50× faster than CPU streaming)
+ * for await (const record of parseString(veryLargeCSV, {
+ *   engine: { gpu: true }
+ * })) {
+ *   console.log(record);
+ * }
+ * // Auto-fallback: GPU → WASM → Pure JS
  * ```
  */
 export function parseString<const CSVSource extends string>(
@@ -125,6 +143,78 @@ export async function* parseString<
   try {
     // Parse engine configuration
     const engineConfig = new InternalEngineConfig(options?.engine);
+
+    // GPU execution (highest priority if enabled)
+    if (engineConfig.hasGPU()) {
+      // Validate that array output format is not used with GPU
+      // @ts-ignore - Runtime check needed; type may be narrowed but runtime value could differ
+      if (options?.outputFormat === "array") {
+        throw new Error(
+          "Array output format is not supported with GPU execution. " +
+            "Use outputFormat: 'object' (default) or disable GPU (engine: { gpu: false }).",
+        );
+      }
+
+      // Check if WebGPU is available
+      const gpuAvailable = await isWebGPUAvailable();
+
+      if (gpuAvailable) {
+        try {
+          // GPU execution with automatic device management
+          yield* parseStringInGPU(
+            csv,
+            options,
+            engineConfig.gpuDevice,
+          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+          return; // Success, exit function
+        } catch (gpuError) {
+          // GPU failed, trigger fallback
+          if (engineConfig.onFallback) {
+            const fallbackConfig = engineConfig.createGPUFallbackConfig();
+            engineConfig.onFallback({
+              requestedConfig: engineConfig.toConfig(),
+              actualConfig: fallbackConfig.toConfig(),
+              reason: `GPU initialization failed: ${gpuError instanceof Error ? gpuError.message : String(gpuError)}`,
+              error: gpuError instanceof Error ? gpuError : undefined,
+            });
+          }
+          // Fall through to WASM/JS fallback
+        }
+      } else {
+        // WebGPU not available, trigger fallback
+        if (engineConfig.onFallback) {
+          const fallbackConfig = engineConfig.createGPUFallbackConfig();
+          engineConfig.onFallback({
+            requestedConfig: engineConfig.toConfig(),
+            actualConfig: fallbackConfig.toConfig(),
+            reason: "WebGPU is not supported in this environment",
+          });
+        }
+        // Fall through to WASM/JS fallback
+      }
+
+      // GPU fallback: try WASM first, then pure JS
+      if (engineConfig.hasWasm() || engineConfig.createGPUFallbackConfig().hasWasm()) {
+        // @ts-ignore - Runtime check needed; type may be narrowed but runtime value could differ
+        if (options?.outputFormat === "array") {
+          throw new Error(
+            "Array output format is not supported with WASM fallback. " +
+              "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+          );
+        }
+        yield* parseStringInWasm(csv, options) as AsyncIterableIterator<
+          InferCSVRecord<Header, Options>
+        >;
+        return;
+      }
+
+      // Final fallback: pure JS
+      const iterator = parseStringToIterableIterator(csv, options);
+      yield* convertIterableIteratorToAsync(
+        iterator,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      return;
+    }
 
     if (engineConfig.hasWorker()) {
       // Worker execution

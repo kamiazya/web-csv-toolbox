@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ParseBinaryOptions, ParseOptions } from "@/core/types.ts";
+import type { ParseBinaryOptions, ParseOptions, PartialEngineConfig } from "@/core/types.ts";
 import { serializeOptions } from "@/worker/utils/serializeOptions.ts";
 
 describe("serializeOptions", () => {
@@ -61,7 +61,7 @@ describe("serializeOptions", () => {
 
     it("should remove engine field", () => {
       const options = {
-        engine: { worker: true, wasm: true },
+        engine: { worker: true, wasm: true } satisfies PartialEngineConfig,
         delimiter: ",",
       };
       const result = serializeOptions(options);
@@ -75,7 +75,7 @@ describe("serializeOptions", () => {
         signal: controller.signal,
         workerPool: { maxWorkers: 4 } as any,
         workerURL: "/worker.js",
-        engine: { worker: true },
+        engine: { worker: true } satisfies PartialEngineConfig,
         delimiter: ",",
         quotation: '"',
       };
