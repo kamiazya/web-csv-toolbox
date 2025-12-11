@@ -5,7 +5,7 @@ group: Platform Usage
 
 # stdin/stdout
 
-> Note: For WASM-enabled features in Node, Node.js 20.6+ is recommended (the WASM loader uses `import.meta.resolve`). On older Node versions, pass an explicit URL/Buffer to `loadWASM()`.
+> Note: For WASM-enabled features in Node, Node.js 20.6+ is recommended (the WASM loader uses `import.meta.resolve`). On older Node versions, pass an explicit URL/Buffer to `loadWasm()`.
 
 Process CSV from stdin and output to stdout.
 

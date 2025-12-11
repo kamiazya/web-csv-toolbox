@@ -16,7 +16,7 @@ export const SECURITY_CONFIG = {
   maxFieldCount: 10000, // 10k fields/record
   maxRecordCount: 100000, // 100k records max
   maxErrorCount: 1000, // Stop after 1000 validation errors
-} as const;
+};
 
 const recordSchema = z.object({
   name: z.string().min(1).max(100),
@@ -121,7 +121,7 @@ export function createApp(pool: ReusableWorkerPool) {
         try {
           for await (const record of parseBinaryStream(csvStream, {
             signal,
-            engine: EnginePresets.balanced({ workerPool: pool }),
+            engine: EnginePresets.recommended({ workerPool: pool }),
             maxBufferSize: SECURITY_CONFIG.maxBufferSize,
             maxFieldCount: SECURITY_CONFIG.maxFieldCount,
           })) {

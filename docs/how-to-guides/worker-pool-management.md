@@ -70,7 +70,7 @@ app.post('/upload-csv', async (c) => {
   try {
     const records = [];
     for await (const record of parseRequest(c.req.raw, {
-      engine: EnginePresets.balanced({ workerPool: csvWorkerPool })
+      engine: EnginePresets.recommended({ workerPool: csvWorkerPool })
     })) {
       records.push(record);
     }
@@ -147,7 +147,7 @@ async function benchmarkPoolSize(csv: string, poolSize: number) {
     Array(10).fill(csv).map(async (c) => {
       const records = [];
       for await (const record of parseString(c, {
-        engine: EnginePresets.balanced({ workerPool: pool })
+        engine: EnginePresets.recommended({ workerPool: pool })
       })) {
         records.push(record);
       }
@@ -300,7 +300,7 @@ async function parseWithErrorHandling(csv: string) {
     const records = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.balanced({ workerPool: csvWorkerPool })
+      engine: EnginePresets.recommended({ workerPool: csvWorkerPool })
     })) {
       records.push(record);
     }
@@ -342,7 +342,7 @@ async function parseWithTimeout(csv: string, timeoutMs = 30000) {
     const records = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.balanced({ workerPool: csvWorkerPool }),
+      engine: EnginePresets.recommended({ workerPool: csvWorkerPool }),
       signal: controller.signal
     })) {
       records.push(record);

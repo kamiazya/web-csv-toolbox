@@ -5,8 +5,19 @@ import type {
   BinaryObjectCSVParser,
   ColumnCountStrategy,
 } from "@/core/types.ts";
+import { WasmIndexerBackend } from "@/parser/indexer/WasmIndexerBackend.ts";
 import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArrayCSVParser.ts";
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
+import { WasmBinaryArrayCSVParser } from "@/parser/models/WasmBinaryArrayCSVParser.ts";
+import { WasmBinaryObjectCSVParser } from "@/parser/models/WasmBinaryObjectCSVParser.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
+import {
+  isInitialized as isWasmInitialized,
+  loadWasmSync,
+  scanCsvBytesExtendedStreaming,
+  scanCsvBytesStreaming,
+  scanCsvBytesZeroCopy,
+} from "@/wasm/WasmInstance.main.web.ts";
 
 /**
  * Factory function to create the appropriate Binary CSV parser based on options.
@@ -163,6 +174,36 @@ export function createBinaryCSVParser<
     throw new Error("includeHeader option is only valid for array format");
   }
 
+  // Check if WASM engine is requested AND SIMD is available
+  const useWasm = options?.engine?.wasm === true;
+  if (useWasm && hasWasmSimd()) {
+    // Wasm path with SIMD support
+    if (!isWasmInitialized()) {
+      loadWasmSync();
+    }
+
+    const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+    const backend = new WasmIndexerBackend(delimiterCode);
+    backend.initializeWithModule({
+      scanCsvBytesExtendedStreaming,
+      scanCsvBytesStreaming,
+      scanCsvBytesZeroCopy,
+      isInitialized: isWasmInitialized,
+      loadWasmSync,
+    });
+
+    return format === "array"
+      ? (new WasmBinaryArrayCSVParser<Header>(
+          (options as any) ?? {},
+          backend,
+        ) as any)
+      : (new WasmBinaryObjectCSVParser<Header>(
+          (options as any) ?? {},
+          backend,
+        ) as any);
+  }
+
+  // JavaScript path (also SIMD fallback) - KEEP EXISTING CODE
   // Instantiate the appropriate class based on outputFormat
   // Each class explicitly implements its respective interface
   if (format === "array") {

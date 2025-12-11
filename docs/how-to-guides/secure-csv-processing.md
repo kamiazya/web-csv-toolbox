@@ -114,7 +114,7 @@ app.post('/validate-csv', async (c) => {
     let errorCount = 0;
 
     for await (const record of parseStringStream(csvStream, {
-      engine: EnginePresets.balanced({ workerPool: pool })
+      engine: EnginePresets.recommended({ workerPool: pool })
     })) {
       try {
         // Validate each record
@@ -244,7 +244,7 @@ app.post('/validate-csv', async (c) => {
       try {
         for await (const record of parseBinaryStream(csvStream, {
           signal,
-          engine: EnginePresets.balanced({ workerPool: pool }),
+          engine: EnginePresets.recommended({ workerPool: pool }),
           maxBufferSize: SECURITY_CONFIG.maxBufferSize,
           maxFieldCount: SECURITY_CONFIG.maxFieldCount,
         })) {

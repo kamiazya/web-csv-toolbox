@@ -20,28 +20,25 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 **Exports**:
 - All parsing functions (`parseString`, `parseBinary`, etc.)
 - Engine configuration (`EnginePresets`)
-  - `EnginePresets.stable()` - Stability optimized
-  - `EnginePresets.responsive()` - UI responsiveness optimized
-  - `EnginePresets.memoryEfficient()` - Memory efficiency optimized
-  - `EnginePresets.fast()` - Parse speed optimized
-  - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
-  - `EnginePresets.balanced()` - Balanced (general-purpose)
+  - `EnginePresets.stable()` - Maximum compatibility (main thread, JS only)
+  - `EnginePresets.recommended()` - UI responsiveness (worker + JS, non-blocking)
+  - `EnginePresets.turbo()` - Maximum speed (GPU + JS, automatic backend selection)
 - Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
   - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
   - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `StringCSVLexerTransformer` *(advanced: custom lexer injection)*, `CSVRecordAssemblerTransformer` *(advanced: custom assembler injection)*
   > **Note**: For `StringCSVLexerTransformer` and `CSVRecordAssemblerTransformer`, prefer factory functions (`createStringCSVLexerTransformer`, `createCSVRecordAssemblerTransformer`) unless injecting custom lexer/assembler implementations.
 - Worker management (`WorkerPool`, `WorkerSession`)
-- WASM utilities (`loadWASM`, `isWASMReady`, `parseStringToArraySyncWASM`)
+- WASM utilities (`loadWasm`, `isWasmReady`, `parseStringToArraySyncWasm`)
 
 **Characteristics**:
 - ✅ Automatic WASM initialization on first use (not at import time)
-- 💡 Optional preloading via `loadWASM()` reduces first‑parse latency
+- 💡 Optional preloading via `loadWasm()` reduces first‑parse latency
 - ⚠️ Larger bundle size (WASM embedded as base64)
 
 ### `web-csv-toolbox/slim` (Slim Entry - Smaller Bundle)
 
 ```typescript
-import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { parseString, loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
 ```
 
 **Resolves to**: platform-specific builds
@@ -54,24 +51,24 @@ import { parseString, loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolb
 - Low-level APIs (same as main)
 - Worker management (same as main)
 - WASM utilities with **manual initialization required**:
-  - `loadWASM()` - **Must be called before using WASM functions**
+  - `loadWasm()` - **Must be called before using WASM functions**
   - `isSyncInitialized()` - Check WASM initialization status
-  - `parseStringToArraySyncWASM()` - Synchronous WASM parsing
+  - `parseStringToArraySyncWasm()` - Synchronous WASM parsing
 
 **Characteristics**:
 - ✅ Smaller main bundle (WASM not embedded in JavaScript)
 - ✅ External WASM loading for better caching
-- ❌ Requires manual `loadWASM()` call before using WASM features
+- ❌ Requires manual `loadWasm()` call before using WASM features
 
 **Usage pattern**:
 ```typescript
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
 
 // Must initialize WASM before use
-await loadWASM();
+await loadWasm();
 
 // Now can use WASM functions
-const records = parseStringToArraySyncWASM(csv);
+const records = parseStringToArraySyncWasm(csv);
 ```
 
 ## Worker Export
@@ -129,10 +126,10 @@ Pre-compiled WebAssembly module for high-performance CSV parsing.
 **No, in most cases.** The library automatically loads the WASM module when you use WASM-enabled features:
 
 ```typescript
-import { parse, loadWASM } from 'web-csv-toolbox';
+import { parse, loadWasm } from 'web-csv-toolbox';
 
 // WASM module is automatically loaded
-await loadWASM();
+await loadWasm();
 
 // Just use the API - WASM file is handled internally
 for await (const record of parse(csv, {

@@ -4,6 +4,7 @@ import type {
   Delimiter,
   Newline,
 } from "@/core/constants.ts";
+import type { OptimizationHint } from "@/execution/OptimizationHint.ts";
 
 /**
  * Position object.
@@ -163,6 +164,62 @@ export type Token<TrackLocation extends boolean = false> =
  * @category Types
  */
 export type AnyToken = Token<true> | Token<false>;
+
+/**
+ * WASM-compatible field token.
+ *
+ * @remarks
+ * This token type is used by the WASM lexer implementation.
+ * It includes startIndex and endIndex for efficient string slicing in WASM.
+ *
+ * @category Types (WASM)
+ */
+export interface FieldToken {
+  type: "field";
+  value: string;
+  startIndex: number;
+  endIndex: number;
+}
+
+/**
+ * WASM-compatible field delimiter token.
+ *
+ * @remarks
+ * This token type is used by the WASM lexer implementation.
+ *
+ * @category Types (WASM)
+ */
+export interface FieldDelimiterToken {
+  type: "field-delimiter";
+  startIndex: number;
+  endIndex: number;
+}
+
+/**
+ * WASM-compatible record delimiter token.
+ *
+ * @remarks
+ * This token type is used by the WASM lexer implementation.
+ *
+ * @category Types (WASM)
+ */
+export interface RecordDelimiterToken {
+  type: "record-delimiter";
+  startIndex: number;
+  endIndex: number;
+}
+
+/**
+ * WASM token union type.
+ *
+ * @remarks
+ * This is the token type used by WASM lexer implementations.
+ * These tokens have a simpler structure than the main Token type
+ * for efficient WASM interoperability.
+ *
+ * @category Types (WASM)
+ */
+export type WasmToken = FieldToken | FieldDelimiterToken | RecordDelimiterToken;
 
 /**
  * AbortSignal Options.
@@ -1005,6 +1062,19 @@ interface BaseEngineConfig {
    * @experimental
    */
   queuingStrategy?: QueuingStrategyConfig | undefined;
+
+  /**
+   * Optimization hint for execution path selection.
+   *
+   * Influences backend and context priority during execution planning:
+   * - `speed`: Maximize throughput (GPU > WASM > JS, main thread preferred)
+   * - `consistency`: Predictable performance (WASM > JS > GPU, main thread preferred)
+   * - `balanced`: Balance speed and responsiveness (JS > WASM > GPU, worker preferred)
+   * - `responsive`: Minimize initial response time (JS > WASM > GPU, worker preferred)
+   *
+   * @default Varies by preset (stable: "responsive", recommended: "balanced", turbo: "speed")
+   */
+  optimizationHint?: OptimizationHint | undefined;
 }
 
 /**
@@ -1194,6 +1264,116 @@ export interface WorkerEngineConfig extends BaseEngineConfig {
 }
 
 /**
+ * Engine configuration for WebGPU acceleration.
+ *
+ * WebGPU provides GPU-accelerated CSV parsing with 1.44-1.50× speedup over CPU streaming
+ * for large files (>100MB). Requires WebGPU support (Chrome 113+, Edge 113+).
+ *
+ * @remarks
+ * Performance characteristics:
+ * - ✅ Files >100MB: 1.44-1.50× faster than CPU streaming (12.1 MB/s vs 8.4 MB/s)
+ * - ⚠️ Files 10-100MB: Marginal benefit
+ * - ❌ Files <1MB: Avoid (100× slower due to GPU setup overhead)
+ *
+ * Browser compatibility:
+ * - Chrome 113+, Edge 113+: Full support
+ * - Safari: Not yet supported (will auto-fallback to WASM/JS)
+ *
+ * Auto-fallback chain: GPU → WASM → Pure JS
+ *
+ * @category Types
+ *
+ * @example Basic GPU parsing
+ * ```ts
+ * parse(csv, {
+ *   engine: { gpu: true }
+ * })
+ * ```
+ *
+ * @example GPU with custom device
+ * ```ts
+ * const adapter = await navigator.gpu.requestAdapter();
+ * const device = await adapter.requestDevice();
+ *
+ * parse(csv, {
+ *   engine: {
+ *     gpu: true,
+ *     gpuDevice: device
+ *   }
+ * })
+ * ```
+ *
+ * @example GPU with fallback handling
+ * ```ts
+ * parse(csv, {
+ *   engine: {
+ *     gpu: true,
+ *     onFallback: (info) => {
+ *       console.warn(`GPU unavailable, using ${info.actualConfig}`);
+ *     }
+ *   }
+ * })
+ * ```
+ */
+export interface GPUEngineConfig extends BaseEngineConfig {
+  /**
+   * Execute in Worker thread.
+   *
+   * @default false - GPU execution runs on main thread (async)
+   */
+  worker?: false;
+
+  /**
+   * Enable GPU acceleration.
+   *
+   * When true, uses WebGPU for CSV parsing if available.
+   * Automatically falls back to WASM or pure JS if WebGPU is unavailable.
+   */
+  gpu: true;
+
+  /**
+   * Custom GPU device to use.
+   *
+   * If not provided, automatically requests a device from the default adapter.
+   * Useful for sharing a GPU device across multiple operations or for advanced GPU management.
+   *
+   * @example Share GPU device
+   * ```ts
+   * const adapter = await navigator.gpu.requestAdapter();
+   * const device = await adapter.requestDevice();
+   *
+   * // Use same device for multiple operations
+   * await parse(csv1, { engine: { gpu: true, gpuDevice: device } });
+   * await parse(csv2, { engine: { gpu: true, gpuDevice: device } });
+   * ```
+   */
+  gpuDevice?: GPUDevice | undefined;
+
+  /**
+   * Callback when GPU configuration fails and falls back to WASM/JS.
+   *
+   * Common fallback scenarios:
+   * - WebGPU not supported (Safari, older browsers)
+   * - GPU device acquisition failed
+   * - Shader compilation failed
+   *
+   * @example Track GPU fallback
+   * ```ts
+   * parse(csv, {
+   *   engine: {
+   *     gpu: true,
+   *     onFallback: (info) => {
+   *       console.warn(`GPU fallback: ${info.reason}`);
+   *       analytics.track('gpu-fallback', { reason: info.reason });
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+}
+
+/**
  * Common interface for worker pools.
  * Both ReusableWorkerPool and TransientWorkerPool implement this interface.
  *
@@ -1256,11 +1436,39 @@ export interface WorkerPool {
  * Engine configuration for CSV parsing.
  *
  * All parsing engine settings are unified in this type.
- * Use discriminated union to ensure type-safe configuration based on worker mode.
+ * Use discriminated union to ensure type-safe configuration based on execution mode.
+ *
+ * Execution modes:
+ * - {@link MainThreadEngineConfig}: Synchronous execution in main thread
+ * - {@link WorkerEngineConfig}: Asynchronous execution in Web Worker
+ * - {@link GPUEngineConfig}: GPU-accelerated execution with WebGPU
  *
  * @category Types
  */
-export type EngineConfig = MainThreadEngineConfig | WorkerEngineConfig;
+export type EngineConfig =
+  | MainThreadEngineConfig
+  | WorkerEngineConfig
+  | GPUEngineConfig;
+
+/**
+ * Partial engine configuration for testing or gradual configuration.
+ * Allows partial specification of engine properties.
+ *
+ * @category Types
+ * @internal
+ */
+export type PartialEngineConfig = Partial<
+  BaseEngineConfig & {
+    worker?: boolean;
+    gpu?: boolean;
+    workerURL?: string | URL;
+    workerPool?: WorkerPool;
+    workerStrategy?: WorkerCommunicationStrategy;
+    strict?: boolean;
+    gpuDevice?: GPUDevice;
+    onFallback?: (info: EngineFallbackInfo) => void;
+  }
+>;
 
 /**
  * Engine configuration options.
@@ -1298,6 +1506,54 @@ export interface EngineOptions {
    * ```
    */
   engine?: EngineConfig;
+}
+
+/**
+ * Engine configuration for factory functions.
+ *
+ * Factory functions only support main-thread execution modes.
+ * Worker execution is handled at the parse function level, not at the factory level.
+ *
+ * @category Types
+ *
+ * @remarks
+ * This type excludes worker-related options that are only meaningful for parse functions.
+ */
+export interface FactoryEngineConfig {
+  /**
+   * Use WASM implementation.
+   *
+   * WASM module is automatically initialized on first use.
+   * However, it is recommended to call {@link loadWASM} beforehand for better performance.
+   *
+   * @default false
+   */
+  wasm?: boolean | undefined;
+}
+
+/**
+ * Options for factory functions that accept engine configuration.
+ *
+ * @category Types
+ *
+ * @remarks
+ * Factory functions only support `wasm` option.
+ * Worker execution is not applicable for factory-created instances.
+ * Use parse functions (parseString, parseBinary, etc.) for worker support.
+ *
+ * @example WASM mode
+ * ```ts
+ * import { loadWASM, createStringCSVParser } from 'web-csv-toolbox';
+ *
+ * await loadWASM();
+ * const parser = createStringCSVParser({
+ *   header: ['name', 'age'] as const,
+ *   engine: { wasm: true }
+ * });
+ * ```
+ */
+export interface FactoryEngineOptions {
+  engine?: FactoryEngineConfig;
 }
 
 /**
@@ -1343,6 +1599,37 @@ export type InferCSVRecord<
   Header extends ReadonlyArray<string>,
   Options = Record<string, never>,
 > = CSVRecord<Header, InferFormat<Options>, InferStrategy<Options>>;
+
+/**
+ * Character encoding for JavaScript string inputs.
+ *
+ * @category Types
+ *
+ * @remarks
+ * This type defines the supported character encodings for string CSV parsing.
+ * Unlike binary parsing which supports many encodings, string parsing only supports:
+ * - `'utf-8'`: Standard UTF-8 encoding (default)
+ * - `'utf-16'`: Native JavaScript string encoding (UTF-16)
+ */
+export type StringCharset = "utf-8" | "utf-16";
+
+/**
+ * Encoding hint for JavaScript string inputs.
+ *
+ * @category Types
+ */
+export interface StringEncodingOptions {
+  /**
+   * Character encoding to assume when the CSV input is already a JavaScript string.
+   *
+   * @remarks
+   * - `'utf-8'` (default): Uses the existing TextEncoder/TextDecoder pipeline.
+   * - `'utf-16'`: Keeps the data in UTF-16 code units and skips encode/decode.
+   *
+   * @default "utf-8"
+   */
+  charset?: StringCharset;
+}
 
 /**
  * CSV processing specification options.
@@ -1399,6 +1686,26 @@ export interface CSVProcessingOptions<
     AbortSignalOptions {}
 
 /**
+ * CSV processing specification options for string data.
+ *
+ * @category Types
+ */
+export interface StringCSVProcessingOptions<
+  Header extends ReadonlyArray<string> = ReadonlyArray<string>,
+  Delimiter extends string = DEFAULT_DELIMITER,
+  Quotation extends string = DEFAULT_QUOTATION,
+  OutputFormat extends CSVOutputFormat = CSVOutputFormat,
+  Strategy extends ColumnCountStrategy = ColumnCountStrategy,
+> extends CSVProcessingOptions<
+      Header,
+      Delimiter,
+      Quotation,
+      OutputFormat,
+      Strategy
+    >,
+    StringEncodingOptions {}
+
+/**
  * Parse options for CSV string (high-level API).
  *
  * @category Types
@@ -1416,7 +1723,7 @@ export interface ParseOptions<
   Quotation extends string = DEFAULT_QUOTATION,
   OutputFormat extends CSVOutputFormat = CSVOutputFormat,
   Strategy extends ColumnCountStrategy = ColumnCountStrategy,
-> extends CSVProcessingOptions<
+> extends StringCSVProcessingOptions<
       Header,
       Delimiter,
       Quotation,
@@ -1436,7 +1743,7 @@ export interface StringCSVParserFactoryOptions<
   Quotation extends string = DEFAULT_QUOTATION,
   OutputFormat extends CSVOutputFormat = CSVOutputFormat,
   Strategy extends ColumnCountStrategy = ColumnCountStrategy,
-> extends CSVProcessingOptions<
+> extends StringCSVProcessingOptions<
       Header,
       Delimiter,
       Quotation,
@@ -1578,6 +1885,7 @@ export interface ParseBinaryOptions<
  */
 export type ColumnCountStrategy =
   | "fill"
+  | "pad"
   | "sparse"
   | "keep"
   | "strict"
@@ -1590,18 +1898,18 @@ export type ColumnCountStrategy =
  *
  * @remarks
  * Object format does not support 'sparse' strategy because objects cannot
- * have undefined values in a type-safe manner. Likewise, 'keep' and 'truncate'
- * would drop keys or change row shape, so object output only allows 'fill'
- * (default) or 'strict'.
+ * have undefined values in a type-safe manner. Likewise, 'keep'
+ * would drop keys or change row shape.
  *
  * - `'fill'`: Fill missing fields with empty string (default)
+ * - `'pad'`: Alias for 'fill' - pad missing fields with empty string
+ * - `'truncate'`: Truncate extra fields beyond header length
  * - `'keep'`: Not allowed (throws). Use array output if you need ragged rows.
  * - `'strict'`: Throw error if column count doesn't match header
- * - `'truncate'`: Not allowed (throws). Use array output to drop extra fields.
  */
 export type ObjectFormatColumnCountStrategy = Extract<
   ColumnCountStrategy,
-  "fill" | "strict"
+  "fill" | "pad" | "truncate" | "strict"
 >;
 
 /**

@@ -1,45 +1,45 @@
 /**
- * WASM instance management for slim version (Browser/Web optimized).
+ * Wasm instance management for slim version (Browser/Web optimized).
  *
  * **Key Differences from `WasmInstance.slim.node.ts`:**
- * - `loadWASM(input)`: `input` parameter is **required** (Web needs explicit WASM URL)
- * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/loadWASM.js` to `loadWASM.web.ts`
- * - WASM loader: Uses `loadWASM.web.ts` (streaming fetch)
+ * - `loadWasm(input)`: `input` parameter is **required** (Web needs explicit Wasm URL)
+ * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/loadWasm.js` to `loadWasm.web.ts`
+ * - Wasm loader: Uses `loadWasm.web.ts` (streaming fetch)
  *
  * **Why separate files are needed:**
  * - Different function signatures (required vs optional parameter)
- * - Environment-specific WASM loading strategies
+ * - Environment-specific Wasm loading strategies
  * - Build-time import path resolution based on file name
  */
 import type { InitInput } from "web-csv-toolbox-wasm";
 import {
-  loadWASM as internalLoadWASM,
+  loadWasm as internalLoadWasm,
   isInitialized,
-} from "#/wasm/loaders/loadWASM.js";
+} from "#/wasm/loaders/loadWasm.js";
 
 export * from "web-csv-toolbox-wasm";
 
-export { isInitialized, resetInit } from "#/wasm/loaders/loadWASM.js";
+export { isInitialized, resetInit } from "#/wasm/loaders/loadWasm.js";
 
 /**
  * Load and initialize the WebAssembly module using streaming (slim entry).
  *
- * You MUST call this function with a WASM URL before using WASM-based synchronous APIs
- * like `parseStringToArraySyncWASM`.
+ * You MUST call this function with a Wasm URL before using Wasm-based APIs
+ * with `{ engine: { wasm: true } }` option.
  *
- * @param input - WASM module URL (required for slim entry)
+ * @param input - Wasm module URL (required for slim entry)
  */
-export async function loadWASM(input: InitInput): Promise<void> {
+export async function loadWasm(input: InitInput): Promise<void> {
   if (isInitialized()) return;
-  await internalLoadWASM(input);
+  await internalLoadWasm(input);
 }
 
-export function isWASMReady(): boolean {
+export function isWasmReady(): boolean {
   return isInitialized();
 }
 
-export async function ensureWASMInitialized(input: InitInput): Promise<void> {
+export async function ensureWasmInitialized(input: InitInput): Promise<void> {
   if (!isInitialized()) {
-    await loadWASM(input);
+    await loadWasm(input);
   }
 }

@@ -56,4 +56,4 @@ The example includes a simple Vite configuration that:
 
 - Workers are automatically detected and imported by `web-csv-toolbox/worker`
 - WASM files are loaded dynamically from the same directory as the bundle
-- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.recommended()` / `responsiveFast()` are also available.

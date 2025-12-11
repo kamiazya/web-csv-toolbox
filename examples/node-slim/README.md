@@ -32,7 +32,7 @@ const rows = parseStringToArraySyncWASM(csv);
 import { parseString, EnginePresets } from 'web-csv-toolbox/slim';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast() // Worker + WASM
+  engine: EnginePresets.turbo() // Worker + WASM
 })) {
   // ...
 }

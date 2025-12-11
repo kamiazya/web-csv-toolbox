@@ -177,13 +177,13 @@ export function resolveImportsPlugin(): Plugin {
 
       // Map # imports to actual source files
       const importMap: Record<string, { node: string; web: string }> = {
-        "#/wasm/loaders/loadWASM.js": {
-          node: "/src/wasm/loaders/loadWASM.node.ts",
-          web: "/src/wasm/loaders/loadWASM.web.ts",
+        "#/wasm/loaders/loadWasm.js": {
+          node: "/src/wasm/loaders/loadWasm.node.ts",
+          web: "/src/wasm/loaders/loadWasm.web.ts",
         },
-        "#/wasm/loaders/loadWASMSync.js": {
-          node: "/src/wasm/loaders/loadWASMSync.node.ts",
-          web: "/src/wasm/loaders/loadWASMSync.web.ts",
+        "#/wasm/loaders/loadWasmSync.js": {
+          node: "/src/wasm/loaders/loadWasmSync.node.ts",
+          web: "/src/wasm/loaders/loadWasmSync.web.ts",
         },
         "#/worker/helpers/createWorker.js": {
           node: "/src/worker/helpers/createWorker.node.ts",
@@ -197,9 +197,9 @@ export function resolveImportsPlugin(): Plugin {
           node: "/src/utils/charset/getCharsetValidation.constants.node.ts",
           web: "/src/utils/charset/getCharsetValidation.constants.web.ts",
         },
-        "#/parser/api/string/parseStringToArraySyncWASM.main.js": {
-          node: "/src/parser/api/string/parseStringToArraySyncWASM.main.node.ts",
-          web: "/src/parser/api/string/parseStringToArraySyncWASM.main.web.ts",
+        "#/parser/api/string/parseStringToArraySyncWasm.main.js": {
+          node: "/src/parser/api/string/parseStringToArraySyncWasm.main.node.ts",
+          web: "/src/parser/api/string/parseStringToArraySyncWasm.main.web.ts",
         },
       };
 

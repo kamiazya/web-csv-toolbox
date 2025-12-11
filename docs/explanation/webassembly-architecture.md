@@ -11,6 +11,8 @@ This document explains the WebAssembly (WASM) implementation in web-csv-toolbox 
 
 web-csv-toolbox includes an optional WebAssembly module that provides improved CSV parsing performance compared to the JavaScript implementation. The WASM module is a compiled version of optimized parsing code that runs at near-native speed.
 
+**SIMD Acceleration**: The WASM module is built with SIMD support for enhanced performance. The library automatically detects SIMD availability at runtime and falls back to the JavaScript implementation if SIMD is not supported.
+
 The library provides two entry points for WASM functionality:
 - **Main entry point** (`web-csv-toolbox`): Automatic WASM initialization with embedded binary
 - **Slim entry point** (`web-csv-toolbox/slim`): Manual initialization with external WASM loading
@@ -39,9 +41,11 @@ The library provides two entry points for WASM functionality:
 
 **Key Points:**
 - WASM is optional (JavaScript fallback always available)
+- WASM module requires SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+- Runtime detection via `hasWasmSimd()` automatically falls back to JavaScript if SIMD unavailable
 - Initialization is automatic when using WASM-enabled features
 - Can be combined with Worker Threads for non-blocking parsing
-- Compiled from Rust code using LLVM optimization
+- Compiled from Rust code using LLVM optimization with SIMD128 target
 
 ---
 
@@ -116,12 +120,12 @@ WASM is opt-in rather than always-on because:
 ### Module Loading
 
 ```typescript
-// loadWASM.ts (conceptual)
+// loadWasm.ts (conceptual)
 import init, { type InitInput } from 'web-csv-toolbox-wasm';
 // In the web-csv-toolbox distribution, the WASM asset is exported as `web-csv-toolbox/csv.wasm`.
 import wasmUrl from 'web-csv-toolbox/csv.wasm';
 
-export async function loadWASM(input?: InitInput) {
+export async function loadWasm(input?: InitInput) {
   await init({ module_or_path: input ?? wasmUrl });
 }
 ```
@@ -129,18 +133,19 @@ export async function loadWASM(input?: InitInput) {
 **How it works:**
 1. The WASM binary is distributed as a separate asset (`csv.wasm`)
 2. `init()` loads and instantiates the module (via URL or Buffer)
-3. Module is cached globally for reuse
-4. Subsequent calls are instant (already initialized)
+3. Runtime checks for SIMD support via `hasWasmSimd()` before initialization
+4. Module is cached globally for reuse
+5. Subsequent calls are instant (already initialized)
 
 ---
 
 ### WASM Parsing Function
 
 ```typescript
-// parseStringToArraySyncWASM.ts
+// parseStringToArraySyncWasm.ts
 import { parseStringToArraySync } from "web-csv-toolbox-wasm";
 
-export function parseStringToArraySyncWASM<Header>(
+export function parseStringToArraySyncWasm<Header>(
   csv: string,
   options?: CommonOptions
 ): CSVRecord<Header>[] {
@@ -231,14 +236,15 @@ For measured performance in various scenarios, see [CodSpeed benchmarks](https:/
 
 ```typescript
 // First call - module loading
-await loadWASM();
+await loadWasm();
 
 // Subsequent calls - instant (module cached)
-await loadWASM();
+await loadWasm();
 ```
 
 **Considerations:**
 - Module loading adds initial overhead
+- SIMD support detection happens once at initialization
 - Once loaded, module is cached for subsequent use
 - Performance trade-offs depend on file size and parsing frequency
 - Benchmark your specific use case to determine the best approach
@@ -453,10 +459,11 @@ The execution router automatically falls back to JavaScript when WASM is unavail
 ```
 
 **Fallback scenarios:**
-1. WASM initialization failed or module could not be loaded
-2. Non-UTF-8 encoding specified
-3. Single-quote quotation character specified
-4. WASM not supported in runtime (rare)
+1. SIMD not supported in runtime (detected via `hasWasmSimd()`)
+2. WASM initialization failed or module could not be loaded
+3. Non-UTF-8 encoding specified
+4. Single-quote quotation character specified
+5. WASM not supported in runtime (rare)
 
 ---
 
@@ -497,12 +504,38 @@ const lexer = new FlexibleStringCSVLexer({ maxBufferSize: 10 * 1024 * 1024 }); /
 
 ## Runtime Requirements
 
-WASM features in this library depend on your runtime’s native WebAssembly support. Verify your environment before relying on WASM acceleration.
+WASM features in this library depend on your runtime's native WebAssembly support. Verify your environment before relying on WASM acceleration.
 
 - WebAssembly docs: [Can I Use](https://caniuse.com/wasm) · [MDN](https://developer.mozilla.org/en-US/docs/WebAssembly)
 - Library coverage and testing scope: [Supported Environments](../reference/supported-environments.md)
 
-If your runtime doesn’t support WebAssembly or you choose not to use it, the JavaScript parser remains available as a fallback.
+If your runtime doesn't support WebAssembly or you choose not to use it, the JavaScript parser remains available as a fallback.
+
+### Browser Compatibility
+
+#### SIMD Requirements
+
+The WASM module is built exclusively with SIMD support (no fallback within WASM itself). The library performs runtime checks using `hasWasmSimd()` to determine if SIMD is available:
+
+**SIMD Support by Platform:**
+
+| Browser/Runtime | Minimum Version | SIMD Support |
+|-----------------|----------------|--------------|
+| Chrome/Edge     | 91+            | ✅ |
+| Firefox         | 89+            | ✅ |
+| Safari          | 16.4+          | ✅ |
+| Node.js         | 16.4+          | ✅ |
+
+**Automatic Fallback:**
+- The library detects SIMD availability at runtime via `hasWasmSimd()`
+- If SIMD is not supported, parsing automatically falls back to the JavaScript implementation
+- No errors are thrown; the fallback is transparent to your application
+- The WASM binary itself requires SIMD - there is no non-SIMD WASM fallback
+
+**Why SIMD-only?**
+- SIMD provides significant performance improvements for CSV parsing
+- Building separate SIMD/non-SIMD WASM binaries would increase bundle size
+- JavaScript implementation provides excellent fallback for older environments
 
 ### Bundle Integration
 
@@ -513,10 +546,10 @@ web-csv-toolbox/
 ├── dist/
 │   ├── main.web.js / main.node.js            # Main entry points
 │   ├── slim.web.js / slim.node.js            # Slim entry points
-│   ├── csv.wasm                               # WASM binary (exported as web-csv-toolbox/csv.wasm)
+│   ├── csv.wasm                               # WASM binary (SIMD-enabled, exported as web-csv-toolbox/csv.wasm)
 │   ├── _virtual/                              # Build-time virtual modules for inlined WASM (main entry)
 │   └── wasm/
-│       └── loaders/                           # loadWASM / loadWASMSync loaders
+│       └── loaders/                           # loadWasm / loadWasmSync loaders
 ```
 
 **Bundler support:**
@@ -530,8 +563,8 @@ web-csv-toolbox/
 
 - **[Using WebAssembly Tutorial](../tutorials/using-webassembly.md)** - Getting started with WASM
 - **[WASM Performance Optimization](../how-to-guides/wasm-performance-optimization.md)** - Optimization techniques
-- **[loadWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWASM.html)** - WASM initialization
-- **[parseStringToArraySyncWASM API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWASM.html)** - Synchronous WASM parsing
+- **[loadWasm API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/loadWasm.html)** - WASM initialization
+- **[parseStringToArraySyncWasm API Reference](https://kamiazya.github.io/web-csv-toolbox/functions/parseStringToArraySyncWasm.html)** - Synchronous WASM parsing
 - **[Execution Strategies](./execution-strategies.md)** - Understanding execution modes
 
 ---

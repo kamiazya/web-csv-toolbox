@@ -57,9 +57,20 @@ export abstract class BaseBinaryCSVParser<
     }
 
     // Initialize string parser with the same options
+    // Filter out binary-specific charset since TextDecoder already handles it
+    // Only pass charset if it's a valid StringCharset for string parser
+    const charset = options?.charset;
+    const stringCharset: "utf-8" | "utf-16" | undefined =
+      charset === "utf-8" || charset === "utf-16" ? charset : undefined;
+
+    const stringParserOptions = {
+      ...options,
+      charset: stringCharset,
+    };
+
     // createStringCSVParser returns the correct type based on outputFormat in options
     this.stringParser = createStringCSVParser<Header>(
-      options,
+      stringParserOptions,
     ) as StringCSVParser<Header, Format>;
   }
 

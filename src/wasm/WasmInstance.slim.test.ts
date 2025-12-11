@@ -2,21 +2,21 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the internal loaders before importing WasmInstance.slim
-vi.mock("#/wasm/loaders/loadWASM.js", () => ({
-  loadWASM: vi.fn(),
+vi.mock("#/wasm/loaders/loadWasm.js", () => ({
+  loadWasm: vi.fn(),
   isInitialized: vi.fn(),
   resetInit: vi.fn(),
 }));
 
 // Import mocked modules to access their mock functions
-import * as loadWASMModule from "#/wasm/loaders/loadWASM.js";
+import * as loadWasmModule from "#/wasm/loaders/loadWasm.js";
 
 // Import module under test
 import {
-  ensureWASMInitialized,
+  ensureWasmInitialized,
   isInitialized,
-  isWASMReady,
-  loadWASM,
+  isWasmReady,
+  loadWasm,
   resetInit,
 } from "@/wasm/WasmInstance.slim.ts";
 
@@ -24,312 +24,312 @@ describe("WasmInstance.slim", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Reset all mock implementations to avoid test pollution
-    (loadWASMModule.loadWASM as Mock).mockReset();
-    (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+    (loadWasmModule.loadWasm as Mock).mockReset();
+    (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
   });
 
   describe("re-exports", () => {
-    it("should re-export isInitialized from loadWASM", () => {
-      expect(isInitialized).toBe(loadWASMModule.isInitialized);
+    it("should re-export isInitialized from loadWasm", () => {
+      expect(isInitialized).toBe(loadWasmModule.isInitialized);
     });
 
-    it("should re-export resetInit from loadWASM", () => {
-      expect(resetInit).toBe(loadWASMModule.resetInit);
+    it("should re-export resetInit from loadWasm", () => {
+      expect(resetInit).toBe(loadWasmModule.resetInit);
     });
   });
 
-  describe("loadWASM - manual initialization requirement", () => {
+  describe("loadWasm - manual initialization requirement", () => {
     it("should require InitInput parameter (URL)", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await loadWASM(mockInput);
+      await loadWasm(mockInput);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
     it("should require InitInput parameter (string)", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = "/path/to/csv.wasm";
 
-      await loadWASM(mockInput as any);
+      await loadWasm(mockInput as any);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
     it("should require InitInput parameter (ArrayBuffer)", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = new ArrayBuffer(100);
 
-      await loadWASM(mockInput as any);
+      await loadWasm(mockInput as any);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
-    it("should not call internal loadWASM when already initialized (idempotent)", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+    it("should not call internal loadWasm when already initialized (idempotent)", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await loadWASM(mockInput);
+      await loadWasm(mockInput);
 
-      expect(loadWASMModule.loadWASM).not.toHaveBeenCalled();
+      expect(loadWasmModule.loadWasm).not.toHaveBeenCalled();
     });
 
     it("should support multiple calls with same input (idempotent)", async () => {
-      (loadWASMModule.isInitialized as Mock)
+      (loadWasmModule.isInitialized as Mock)
         .mockReturnValueOnce(false)
         .mockReturnValueOnce(true)
         .mockReturnValueOnce(true);
 
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await loadWASM(mockInput);
-      await loadWASM(mockInput);
-      await loadWASM(mockInput);
+      await loadWasm(mockInput);
+      await loadWasm(mockInput);
+      await loadWasm(mockInput);
 
-      // Should only call internal loadWASM once (first call)
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      // Should only call internal loadWasm once (first call)
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
-    it("should forward errors from internal loadWASM", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      (loadWASMModule.loadWASM as Mock).mockRejectedValue(
-        new Error("Failed to fetch WASM"),
+    it("should forward errors from internal loadWasm", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.loadWasm as Mock).mockRejectedValue(
+        new Error("Failed to fetch Wasm"),
       );
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await expect(loadWASM(mockInput)).rejects.toThrow("Failed to fetch WASM");
+      await expect(loadWasm(mockInput)).rejects.toThrow("Failed to fetch Wasm");
     });
   });
 
-  describe("isWASMReady", () => {
-    it("should return true when WASM is initialized", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+  describe("isWasmReady", () => {
+    it("should return true when Wasm is initialized", () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      expect(isWASMReady()).toBe(true);
+      expect(isWasmReady()).toBe(true);
     });
 
-    it("should return false when WASM is not initialized", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+    it("should return false when Wasm is not initialized", () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
-      expect(isWASMReady()).toBe(false);
+      expect(isWasmReady()).toBe(false);
     });
 
     it("should reflect initialization state changes", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      expect(isWASMReady()).toBe(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      expect(isWasmReady()).toBe(false);
 
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
-      expect(isWASMReady()).toBe(true);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
+      expect(isWasmReady()).toBe(true);
     });
   });
 
-  describe("ensureWASMInitialized - requires input", () => {
-    it("should call loadWASM when not initialized", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+  describe("ensureWasmInitialized - requires input", () => {
+    it("should call loadWasm when not initialized", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await ensureWASMInitialized(mockInput);
+      await ensureWasmInitialized(mockInput);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
-    it("should not call loadWASM when already initialized", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+    it("should not call loadWasm when already initialized", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await ensureWASMInitialized(mockInput);
+      await ensureWasmInitialized(mockInput);
 
-      expect(loadWASMModule.loadWASM).not.toHaveBeenCalled();
+      expect(loadWasmModule.loadWasm).not.toHaveBeenCalled();
     });
 
     it("should support multiple calls (idempotent)", async () => {
-      // Track state: first call is false, then true after loadWASM completes
+      // Track state: first call is false, then true after loadWasm completes
       let initCount = 0;
-      (loadWASMModule.isInitialized as Mock).mockImplementation(() => {
+      (loadWasmModule.isInitialized as Mock).mockImplementation(() => {
         return initCount > 0;
       });
-      (loadWASMModule.loadWASM as Mock).mockImplementation(async () => {
+      (loadWasmModule.loadWasm as Mock).mockImplementation(async () => {
         initCount++;
       });
 
       const mockInput = new URL("https://example.com/csv.wasm");
 
-      await ensureWASMInitialized(mockInput);
-      await ensureWASMInitialized(mockInput);
-      await ensureWASMInitialized(mockInput);
+      await ensureWasmInitialized(mockInput);
+      await ensureWasmInitialized(mockInput);
+      await ensureWasmInitialized(mockInput);
 
-      // Should only call loadWASM once (first call)
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      // Should only call loadWasm once (first call)
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
     it("should require InitInput parameter", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = new ArrayBuffer(100);
 
-      await ensureWASMInitialized(mockInput as any);
+      await ensureWasmInitialized(mockInput as any);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
   });
 
   describe("slim entry characteristics", () => {
-    it("should verify loadWASM requires parameter", () => {
-      // TypeScript enforces that slim entry loadWASM requires InitInput
+    it("should verify loadWasm requires parameter", () => {
+      // TypeScript enforces that slim entry loadWasm requires InitInput
       // This is tested at compile time, but we can verify the function signature
-      expect(loadWASM).toBeDefined();
-      expect(typeof loadWASM).toBe("function");
-      expect(loadWASM.length).toBe(1); // Has 1 required parameter
+      expect(loadWasm).toBeDefined();
+      expect(typeof loadWasm).toBe("function");
+      expect(loadWasm.length).toBe(1); // Has 1 required parameter
     });
 
     it("should not have sync APIs (documented)", () => {
-      // Slim entry is documented to not have loadWASMSync, getWasmModule, etc.
+      // Slim entry is documented to not have loadWasmSync, getWasmModule, etc.
       // These are verified at TypeScript level - attempting to import them will fail
       // This test documents the behavior
-      expect(typeof loadWASM).toBe("function");
-      expect(typeof isWASMReady).toBe("function");
-      expect(typeof ensureWASMInitialized).toBe("function");
+      expect(typeof loadWasm).toBe("function");
+      expect(typeof isWasmReady).toBe("function");
+      expect(typeof ensureWasmInitialized).toBe("function");
       expect(typeof isInitialized).toBe("function");
       expect(typeof resetInit).toBe("function");
     });
   });
 
   describe("manual initialization workflow", () => {
-    it("should require explicit loadWASM call with URL", async () => {
+    it("should require explicit loadWasm call with URL", async () => {
       // Track initialization state
       let initialized = false;
-      (loadWASMModule.isInitialized as Mock).mockImplementation(
+      (loadWasmModule.isInitialized as Mock).mockImplementation(
         () => initialized,
       );
-      (loadWASMModule.loadWASM as Mock).mockImplementation(async () => {
+      (loadWasmModule.loadWasm as Mock).mockImplementation(async () => {
         initialized = true;
       });
 
       const wasmUrl = new URL("https://cdn.example.com/csv.wasm");
 
       // Before loading: not ready
-      expect(isWASMReady()).toBe(false);
+      expect(isWasmReady()).toBe(false);
 
-      // User must explicitly call loadWASM with URL
-      await loadWASM(wasmUrl);
+      // User must explicitly call loadWasm with URL
+      await loadWasm(wasmUrl);
 
       // After loading: ready
-      expect(isWASMReady()).toBe(true);
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(wasmUrl);
+      expect(isWasmReady()).toBe(true);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(wasmUrl);
     });
 
     it("should support npm package workflow", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
       // Simulating: import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
       const wasmUrl = new URL("https://example.com/csv.wasm");
 
-      await loadWASM(wasmUrl);
+      await loadWasm(wasmUrl);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(wasmUrl);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(wasmUrl);
     });
 
     it("should support custom CDN workflow", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
       const cdnUrl = new URL(
         "https://cdn.jsdelivr.net/npm/web-csv-toolbox@latest/csv.wasm",
       );
 
-      await loadWASM(cdnUrl);
+      await loadWasm(cdnUrl);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(cdnUrl);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(cdnUrl);
     });
   });
 
   describe("error handling", () => {
     it("should propagate initialization errors", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      (loadWASMModule.loadWASM as Mock).mockRejectedValue(
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.loadWasm as Mock).mockRejectedValue(
         new Error("Network error: Failed to fetch"),
       );
 
       const wasmUrl = new URL("https://example.com/csv.wasm");
 
-      await expect(loadWASM(wasmUrl)).rejects.toThrow(
+      await expect(loadWasm(wasmUrl)).rejects.toThrow(
         "Network error: Failed to fetch",
       );
     });
 
-    it("should propagate ensureWASMInitialized errors", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      (loadWASMModule.loadWASM as Mock).mockRejectedValue(
-        new Error("Invalid WASM module"),
+    it("should propagate ensureWasmInitialized errors", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.loadWasm as Mock).mockRejectedValue(
+        new Error("Invalid Wasm module"),
       );
 
       const wasmUrl = new URL("https://example.com/csv.wasm");
 
-      await expect(ensureWASMInitialized(wasmUrl)).rejects.toThrow(
-        "Invalid WASM module",
+      await expect(ensureWasmInitialized(wasmUrl)).rejects.toThrow(
+        "Invalid Wasm module",
       );
     });
   });
 
   describe("state coordination", () => {
-    it("should coordinate isWASMReady with isInitialized", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      expect(isWASMReady()).toBe(isInitialized());
+    it("should coordinate isWasmReady with isInitialized", () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      expect(isWasmReady()).toBe(isInitialized());
 
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
-      expect(isWASMReady()).toBe(isInitialized());
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
+      expect(isWasmReady()).toBe(isInitialized());
     });
 
     it("should maintain consistent state across multiple checks", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      expect(isWASMReady()).toBe(true);
+      expect(isWasmReady()).toBe(true);
       expect(isInitialized()).toBe(true);
-      expect(isWASMReady()).toBe(true);
+      expect(isWasmReady()).toBe(true);
 
       // All should return the same value
-      expect(isWASMReady()).toBe(isInitialized());
+      expect(isWasmReady()).toBe(isInitialized());
     });
   });
 
   describe("comparison with main version", () => {
     it("should have different initialization requirements", () => {
-      // Slim entry loadWASM signature requires InitInput
-      // Main version loadWASM signature has optional InitInput
+      // Slim entry loadWasm signature requires InitInput
+      // Main version loadWasm signature has optional InitInput
       // This is enforced by TypeScript types
-      const slimLoadWASM: (input: any) => Promise<void> = loadWASM;
+      const slimLoadWasm: (input: any) => Promise<void> = loadWasm;
 
-      expect(slimLoadWASM).toBeDefined();
-      expect(slimLoadWASM.length).toBe(1); // Expects 1 required parameter
+      expect(slimLoadWasm).toBeDefined();
+      expect(slimLoadWasm.length).toBe(1); // Expects 1 required parameter
     });
 
     it("should not auto-initialize without explicit call", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
-      // In slim entry, WASM is NOT automatically initialized
-      // User must call loadWASM explicitly
-      expect(isWASMReady()).toBe(false);
+      // In slim entry, Wasm is NOT automatically initialized
+      // User must call loadWasm explicitly
+      expect(isWasmReady()).toBe(false);
 
       // No automatic initialization happened
-      expect(loadWASMModule.loadWASM).not.toHaveBeenCalled();
+      expect(loadWasmModule.loadWasm).not.toHaveBeenCalled();
     });
 
-    it("should provide smaller bundle size (no inlined WASM)", () => {
+    it("should provide smaller bundle size (no inlined Wasm)", () => {
       // This test documents the key benefit of slim entry:
-      // It doesn't include base64-inlined WASM (smaller main bundle)
+      // It doesn't include base64-inlined Wasm (smaller main bundle)
 
       // Slim entry doesn't import #/csv.wasm
-      // Instead, users must provide WASM URL themselves
+      // Instead, users must provide Wasm URL themselves
 
       // Should have manual initialization APIs
-      expect(typeof loadWASM).toBe("function");
-      expect(typeof ensureWASMInitialized).toBe("function");
+      expect(typeof loadWasm).toBe("function");
+      expect(typeof ensureWasmInitialized).toBe("function");
 
-      // LoadWASM requires a parameter (URL/buffer)
-      expect(loadWASM.length).toBe(1);
-      expect(ensureWASMInitialized.length).toBe(1);
+      // LoadWasm requires a parameter (URL/buffer)
+      expect(loadWasm.length).toBe(1);
+      expect(ensureWasmInitialized.length).toBe(1);
     });
   });
 });

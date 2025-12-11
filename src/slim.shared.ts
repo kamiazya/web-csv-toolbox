@@ -30,4 +30,4 @@ export * from "@/worker/helpers/WorkerSession.ts";
 // ============================================================================
 // Slim-specific: Manual WASM initialization
 // ============================================================================
-export { parseStringToArraySyncWASM } from "@/parser/api/string/parseStringToArraySyncWASM.slim.ts";
+export { parseStringToArraySyncWasm } from "@/parser/api/string/parseStringToArraySyncWasm.slim.ts";

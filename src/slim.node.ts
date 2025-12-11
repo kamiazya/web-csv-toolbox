@@ -1,7 +1,7 @@
 /**
  * Slim entry point for web-csv-toolbox with manual initialization (Node.js version).
  *
- * This version requires manual WASM initialization via `loadWASM()`,
+ * This version requires manual WASM initialization via `loadWasm()`,
  * providing smaller bundle size by fetching WASM at runtime,
  * optimized for Node.js environment.
  *
@@ -9,7 +9,7 @@
  * - Common exports are in `slim.shared.ts`
  * - This file only contains Node.js-specific exports
  * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports based on entry file name
- * - WASM loader selection: `.node.ts` → uses `loadWASM.node.ts` (fs.readFile)
+ * - WASM loader selection: `.node.ts` → uses `loadWasm.node.ts` (fs.readFile)
  *
  * @packageDocumentation
  */
@@ -33,12 +33,12 @@ export * from "@/worker/helpers/ReusableWorkerPool.node.ts";
  * WASM initialization functions (Node.js optimized)
  *
  * The slim version requires manual WASM initialization.
- * Call loadWASM() before using WASM-powered functions like parseStringToArraySyncWASM.
+ * Call loadWasm() before using WASM-powered functions like parseStringToArraySyncWasm.
  */
 export {
-  ensureWASMInitialized,
-  isWASMReady,
-  loadWASM,
+  ensureWasmInitialized,
+  isWasmReady,
+  loadWasm,
   resetInit,
 } from "@/wasm/WasmInstance.slim.node.ts";
 
