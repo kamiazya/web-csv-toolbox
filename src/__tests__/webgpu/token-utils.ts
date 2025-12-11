@@ -5,8 +5,8 @@
  * for use in property-based tests and other GPU-related test scenarios.
  */
 
-import type { GPUToken } from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 import type { Token } from "@/core/types.ts";
+import type { GPUToken } from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 
 /**
  * Normalized token format for comparison

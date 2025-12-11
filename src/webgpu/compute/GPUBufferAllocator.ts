@@ -117,14 +117,15 @@ export class GPUBufferAllocator {
       // GPU buffer allocation failed - likely due to memory pressure
       // Throw a specific error type that can be caught by upper layers
       // to trigger fallback to WASM/JavaScript
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new GPUMemoryError(
         `Failed to allocate GPU buffer '${name}' (${config.size} bytes): ${errorMessage}`,
         {
           requestedSize: config.size,
           bufferName: name,
           cause: error instanceof Error ? error : undefined,
-        }
+        },
       );
     }
   }
@@ -210,14 +211,15 @@ export class GPUBufferAllocator {
     } catch (error) {
       // GPU buffer reallocation failed - likely due to memory pressure
       // Note: Old buffer has been destroyed, so this allocator is now in an inconsistent state
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       throw new GPUMemoryError(
         `Failed to reallocate GPU buffer '${name}' to ${requiredSize} bytes: ${errorMessage}`,
         {
           requestedSize: requiredSize,
           bufferName: name,
           cause: error instanceof Error ? error : undefined,
-        }
+        },
       );
     }
   }

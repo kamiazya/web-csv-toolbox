@@ -69,22 +69,24 @@ export class EnvironmentCapabilities {
    * @returns Promise resolving to EnvironmentCapabilities instance
    */
   static async getInstance(): Promise<EnvironmentCapabilities> {
-    if (this.instance) {
-      return this.instance;
+    if (EnvironmentCapabilities.instance) {
+      return EnvironmentCapabilities.instance;
     }
 
-    if (this.instancePromise) {
-      return this.instancePromise;
+    if (EnvironmentCapabilities.instancePromise) {
+      return EnvironmentCapabilities.instancePromise;
     }
 
-    this.instancePromise = (async () => {
-      const capabilities = await this.detectCapabilities();
-      this.instance = new EnvironmentCapabilities(capabilities);
-      this.initialized = true;
-      return this.instance;
+    EnvironmentCapabilities.instancePromise = (async () => {
+      const capabilities = await EnvironmentCapabilities.detectCapabilities();
+      EnvironmentCapabilities.instance = new EnvironmentCapabilities(
+        capabilities,
+      );
+      EnvironmentCapabilities.initialized = true;
+      return EnvironmentCapabilities.instance;
     })();
 
-    return this.instancePromise;
+    return EnvironmentCapabilities.instancePromise;
   }
 
   /**
@@ -99,14 +101,16 @@ export class EnvironmentCapabilities {
    * @returns EnvironmentCapabilities instance
    */
   static getInstanceSync(): EnvironmentCapabilities {
-    if (this.instance) {
-      return this.instance;
+    if (EnvironmentCapabilities.instance) {
+      return EnvironmentCapabilities.instance;
     }
 
-    const capabilities = this.detectCapabilitiesSync();
-    this.instance = new EnvironmentCapabilities(capabilities);
-    this.initialized = true;
-    return this.instance;
+    const capabilities = EnvironmentCapabilities.detectCapabilitiesSync();
+    EnvironmentCapabilities.instance = new EnvironmentCapabilities(
+      capabilities,
+    );
+    EnvironmentCapabilities.initialized = true;
+    return EnvironmentCapabilities.instance;
   }
 
   /**
@@ -115,16 +119,16 @@ export class EnvironmentCapabilities {
    * @returns True if getInstance() or getInstanceSync() has been called
    */
   static isInitialized(): boolean {
-    return this.initialized;
+    return EnvironmentCapabilities.initialized;
   }
 
   /**
    * Reset singleton instance (for testing)
    */
   static reset(): void {
-    this.instance = null;
-    this.instancePromise = null;
-    this.initialized = false;
+    EnvironmentCapabilities.instance = null;
+    EnvironmentCapabilities.instancePromise = null;
+    EnvironmentCapabilities.initialized = false;
   }
 
   /**
@@ -132,16 +136,17 @@ export class EnvironmentCapabilities {
    * @deprecated Use reset() instead
    */
   static resetInstance(): void {
-    this.reset();
+    EnvironmentCapabilities.reset();
   }
 
   /**
    * Detect environment capabilities (async - performs GPU adapter request)
    */
   private static async detectCapabilities(): Promise<Capabilities> {
-    const wasm = this.detectWasm();
-    const transferableStreams = this.detectTransferableStreams();
-    const worker = this.detectWorker();
+    const wasm = EnvironmentCapabilities.detectWasm();
+    const transferableStreams =
+      EnvironmentCapabilities.detectTransferableStreams();
+    const worker = EnvironmentCapabilities.detectWorker();
 
     // Async GPU detection - actually try to get an adapter with timeout
     let gpu = false;
@@ -151,7 +156,7 @@ export class EnvironmentCapabilities {
         const adapter = await Promise.race([
           navigator.gpu.requestAdapter(),
           new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error("GPU detection timeout")), 3000)
+            setTimeout(() => reject(new Error("GPU detection timeout")), 3000),
           ),
         ]);
         gpu = adapter !== null;
@@ -173,13 +178,13 @@ export class EnvironmentCapabilities {
    * Detect environment capabilities (sync - conservative GPU check)
    */
   private static detectCapabilitiesSync(): Capabilities {
-    const wasm = this.detectWasm();
-    const transferableStreams = this.detectTransferableStreams();
-    const worker = this.detectWorker();
+    const wasm = EnvironmentCapabilities.detectWasm();
+    const transferableStreams =
+      EnvironmentCapabilities.detectTransferableStreams();
+    const worker = EnvironmentCapabilities.detectWorker();
 
     // Conservative GPU check - only check if navigator.gpu exists
-    const gpu =
-      typeof navigator !== "undefined" && navigator.gpu !== undefined;
+    const gpu = typeof navigator !== "undefined" && navigator.gpu !== undefined;
 
     return {
       gpu,
@@ -211,11 +216,11 @@ export class EnvironmentCapabilities {
       // Check if ReadableStream is transferable
       // This is a heuristic - we check if the stream has a transfer method
       return (
-        typeof ReadableStream !== "undefined" &&
-        typeof ReadableStream.prototype !== "undefined" &&
-        // Check for transferability by attempting to access the property
-        // Modern browsers that support transferable streams will have this
-        "transfer" in ReadableStream.prototype ||
+        (typeof ReadableStream !== "undefined" &&
+          typeof ReadableStream.prototype !== "undefined" &&
+          // Check for transferability by attempting to access the property
+          // Modern browsers that support transferable streams will have this
+          "transfer" in ReadableStream.prototype) ||
         // Fallback: check for structure clone algorithm support
         typeof structuredClone === "function"
       );
@@ -284,8 +289,8 @@ export class EnvironmentCapabilities {
  */
 export class WorkerEnvironmentCapabilities {
   private static instance: WorkerEnvironmentCapabilities | null = null;
-  private static instancePromise: Promise<WorkerEnvironmentCapabilities> |
-    null = null;
+  private static instancePromise: Promise<WorkerEnvironmentCapabilities> | null =
+    null;
   private static initialized = false;
 
   // Public readonly properties
@@ -301,45 +306,48 @@ export class WorkerEnvironmentCapabilities {
    * Get singleton instance (async)
    */
   static async getInstance(): Promise<WorkerEnvironmentCapabilities> {
-    if (this.instance) {
-      return this.instance;
+    if (WorkerEnvironmentCapabilities.instance) {
+      return WorkerEnvironmentCapabilities.instance;
     }
 
-    if (this.instancePromise) {
-      return this.instancePromise;
+    if (WorkerEnvironmentCapabilities.instancePromise) {
+      return WorkerEnvironmentCapabilities.instancePromise;
     }
 
-    this.instancePromise = (async () => {
-      const capabilities = await this.detectCapabilities();
-      this.instance = new WorkerEnvironmentCapabilities(capabilities);
-      this.initialized = true;
-      return this.instance;
+    WorkerEnvironmentCapabilities.instancePromise = (async () => {
+      const capabilities =
+        await WorkerEnvironmentCapabilities.detectCapabilities();
+      WorkerEnvironmentCapabilities.instance =
+        new WorkerEnvironmentCapabilities(capabilities);
+      WorkerEnvironmentCapabilities.initialized = true;
+      return WorkerEnvironmentCapabilities.instance;
     })();
 
-    return this.instancePromise;
+    return WorkerEnvironmentCapabilities.instancePromise;
   }
 
   /**
    * Check if instance has been initialized
    */
   static isInitialized(): boolean {
-    return this.initialized;
+    return WorkerEnvironmentCapabilities.initialized;
   }
 
   /**
    * Reset singleton instance (for testing)
    */
   static reset(): void {
-    this.instance = null;
-    this.instancePromise = null;
-    this.initialized = false;
+    WorkerEnvironmentCapabilities.instance = null;
+    WorkerEnvironmentCapabilities.instancePromise = null;
+    WorkerEnvironmentCapabilities.initialized = false;
   }
 
   private static async detectCapabilities(): Promise<
     Omit<Capabilities, "worker">
   > {
-    const wasm = this.detectWasm();
-    const transferableStreams = this.detectTransferableStreams();
+    const wasm = WorkerEnvironmentCapabilities.detectWasm();
+    const transferableStreams =
+      WorkerEnvironmentCapabilities.detectTransferableStreams();
 
     // Async GPU detection in worker context with timeout
     let gpu = false;
@@ -349,7 +357,7 @@ export class WorkerEnvironmentCapabilities {
         const adapter = await Promise.race([
           navigator.gpu.requestAdapter(),
           new Promise<null>((_, reject) =>
-            setTimeout(() => reject(new Error("GPU detection timeout")), 3000)
+            setTimeout(() => reject(new Error("GPU detection timeout")), 3000),
           ),
         ]);
         gpu = adapter !== null;
@@ -390,7 +398,9 @@ export class WorkerEnvironmentCapabilities {
     }
   }
 
-  getCapabilities(): Readonly<Omit<Capabilities, "worker" | "transferableStreams">> {
+  getCapabilities(): Readonly<
+    Omit<Capabilities, "worker" | "transferableStreams">
+  > {
     return {
       gpu: this.gpu,
       wasm: this.wasm,

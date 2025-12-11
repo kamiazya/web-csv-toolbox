@@ -54,9 +54,7 @@ export function contextsToPreferredStrategies(
  * @returns True if the context is a worker context
  */
 export function isWorkerContext(context: ContextType): boolean {
-  return (
-    context === "worker-stream-transfer" || context === "worker-message"
-  );
+  return context === "worker-stream-transfer" || context === "worker-message";
 }
 
 /**

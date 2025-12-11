@@ -22,9 +22,9 @@ import {
 import wasmBuffer from "#/csv.wasm";
 
 import {
+  hasWasmSimd,
   isWasmInitialized,
   markWasmInitialized,
-  hasWasmSimd,
   resetWasmState,
 } from "./wasmState.js";
 

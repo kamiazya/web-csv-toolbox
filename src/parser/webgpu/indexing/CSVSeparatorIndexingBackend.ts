@@ -31,12 +31,12 @@ import {
   sortSeparatorsByOffset,
 } from "@/parser/webgpu/utils/separator-utils.ts";
 import { GPUBufferAllocator } from "@/webgpu/compute/GPUBufferAllocator.ts";
-import { GPUMemoryError } from "@/webgpu/compute/GPUMemoryError.ts";
 import type {
   ComputeDispatchResult,
   ComputeTiming,
   GPUComputeBackend,
 } from "@/webgpu/compute/GPUComputeBackend.ts";
+import { GPUMemoryError } from "@/webgpu/compute/GPUMemoryError.ts";
 import { alignToU32 } from "@/webgpu/utils/alignToU32.ts";
 import { padToU32Aligned } from "@/webgpu/utils/padToU32Aligned.ts";
 import {
@@ -528,125 +528,128 @@ export class CSVSeparatorIndexingBackend
     }
 
     try {
+      // Create input buffer
+      this.bufferAllocator.create(BUFFER_NAMES.INPUT, {
+        size: alignedSize,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        label: "Input Buffer",
+      });
 
-    // Create input buffer
-    this.bufferAllocator.create(BUFFER_NAMES.INPUT, {
-      size: alignedSize,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      label: "Input Buffer",
-    });
+      // Create separator indices buffer
+      const actualMaxSeparators = Math.max(
+        this.config.maxSeparators,
+        alignedSize,
+      );
+      this.bufferAllocator.create(BUFFER_NAMES.SEP_INDICES, {
+        size: actualMaxSeparators * 4,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+        label: "Separator Indices Buffer",
+      });
 
-    // Create separator indices buffer
-    const actualMaxSeparators = Math.max(
-      this.config.maxSeparators,
-      alignedSize,
-    );
-    this.bufferAllocator.create(BUFFER_NAMES.SEP_INDICES, {
-      size: actualMaxSeparators * 4,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-      label: "Separator Indices Buffer",
-    });
+      // Create atomic counter buffer
+      this.bufferAllocator.create(BUFFER_NAMES.ATOMIC_INDEX, {
+        size: 4,
+        usage:
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_SRC |
+          GPUBufferUsage.COPY_DST,
+        label: "Atomic Index Buffer",
+      });
 
-    // Create atomic counter buffer
-    this.bufferAllocator.create(BUFFER_NAMES.ATOMIC_INDEX, {
-      size: 4,
-      usage:
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_SRC |
-        GPUBufferUsage.COPY_DST,
-      label: "Atomic Index Buffer",
-    });
+      // Create uniforms buffer
+      this.bufferAllocator.create(BUFFER_NAMES.UNIFORMS, {
+        size: 16,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        label: "Uniforms Buffer",
+      });
 
-    // Create uniforms buffer
-    this.bufferAllocator.create(BUFFER_NAMES.UNIFORMS, {
-      size: 16,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      label: "Uniforms Buffer",
-    });
+      // Create result metadata buffer
+      this.bufferAllocator.create(BUFFER_NAMES.RESULT_META, {
+        size: 16,
+        usage:
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_SRC |
+          GPUBufferUsage.COPY_DST,
+        label: "Result Meta Buffer",
+      });
 
-    // Create result metadata buffer
-    this.bufferAllocator.create(BUFFER_NAMES.RESULT_META, {
-      size: 16,
-      usage:
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_SRC |
-        GPUBufferUsage.COPY_DST,
-      label: "Result Meta Buffer",
-    });
+      // Create workgroup XORs buffer
+      const maxWorkgroups = Math.ceil(alignedSize / this.workgroupSize);
+      this.bufferAllocator.create(BUFFER_NAMES.WORKGROUP_XORS, {
+        size: Math.max(4, maxWorkgroups * 4),
+        usage:
+          GPUBufferUsage.STORAGE |
+          GPUBufferUsage.COPY_SRC |
+          GPUBufferUsage.COPY_DST,
+        label: "Workgroup XORs Buffer",
+      });
 
-    // Create workgroup XORs buffer
-    const maxWorkgroups = Math.ceil(alignedSize / this.workgroupSize);
-    this.bufferAllocator.create(BUFFER_NAMES.WORKGROUP_XORS, {
-      size: Math.max(4, maxWorkgroups * 4),
-      usage:
-        GPUBufferUsage.STORAGE |
-        GPUBufferUsage.COPY_SRC |
-        GPUBufferUsage.COPY_DST,
-      label: "Workgroup XORs Buffer",
-    });
-
-    // Create bind groups
-    this.pass1BindGroup = this.device.createBindGroup({
-      label: "CSV Indexer Pass 1 Bind Group",
-      layout: this.pass1BindGroupLayout!,
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.INPUT) },
-        },
-        {
-          binding: 1,
-          resource: {
-            buffer: this.bufferAllocator.get(BUFFER_NAMES.WORKGROUP_XORS),
+      // Create bind groups
+      this.pass1BindGroup = this.device.createBindGroup({
+        label: "CSV Indexer Pass 1 Bind Group",
+        layout: this.pass1BindGroupLayout!,
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.INPUT) },
           },
-        },
-        {
-          binding: 2,
-          resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS) },
-        },
-      ],
-    });
+          {
+            binding: 1,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.WORKGROUP_XORS),
+            },
+          },
+          {
+            binding: 2,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS),
+            },
+          },
+        ],
+      });
 
-    this.pass2BindGroup = this.device.createBindGroup({
-      label: "CSV Indexer Pass 2 Bind Group",
-      layout: this.pass2BindGroupLayout!,
-      entries: [
-        {
-          binding: 0,
-          resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.INPUT) },
-        },
-        {
-          binding: 1,
-          resource: {
-            buffer: this.bufferAllocator.get(BUFFER_NAMES.SEP_INDICES),
+      this.pass2BindGroup = this.device.createBindGroup({
+        label: "CSV Indexer Pass 2 Bind Group",
+        layout: this.pass2BindGroupLayout!,
+        entries: [
+          {
+            binding: 0,
+            resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.INPUT) },
           },
-        },
-        {
-          binding: 2,
-          resource: {
-            buffer: this.bufferAllocator.get(BUFFER_NAMES.ATOMIC_INDEX),
+          {
+            binding: 1,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.SEP_INDICES),
+            },
           },
-        },
-        {
-          binding: 3,
-          resource: { buffer: this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS) },
-        },
-        {
-          binding: 4,
-          resource: {
-            buffer: this.bufferAllocator.get(BUFFER_NAMES.RESULT_META),
+          {
+            binding: 2,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.ATOMIC_INDEX),
+            },
           },
-        },
-        {
-          binding: 5,
-          resource: {
-            buffer: this.bufferAllocator.get(BUFFER_NAMES.WORKGROUP_XORS),
+          {
+            binding: 3,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS),
+            },
           },
-        },
-      ],
-    });
+          {
+            binding: 4,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.RESULT_META),
+            },
+          },
+          {
+            binding: 5,
+            resource: {
+              buffer: this.bufferAllocator.get(BUFFER_NAMES.WORKGROUP_XORS),
+            },
+          },
+        ],
+      });
 
-    this.currentBufferSize = alignedSize;
+      this.currentBufferSize = alignedSize;
     } catch (error) {
       // GPU buffer allocation failed - propagate memory error for fallback handling
       if (error instanceof GPUMemoryError) {
@@ -658,7 +661,7 @@ export class CSVSeparatorIndexingBackend
         {
           requestedSize: alignedSize,
           cause: error instanceof Error ? error : undefined,
-        }
+        },
       );
     }
   }

@@ -8,7 +8,6 @@ import type { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.
 import { MessageStreamingStrategy } from "@/engine/strategies/MessageStreamingStrategy.ts";
 import { TransferableStreamStrategy } from "@/engine/strategies/TransferableStreamStrategy.ts";
 import type { WorkerStrategy } from "@/engine/strategies/WorkerStrategy.ts";
-import type { WorkerStrategyName } from "@/execution/utils/contextToStrategy.ts";
 import type { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -20,8 +19,11 @@ export interface StrategyExecutionOptions {
   /**
    * Preferred worker strategies in priority order.
    * If specified, tries each strategy in order until one succeeds.
+   *
+   * Note: While WorkerStrategyName provides known strategy names,
+   * this accepts any string to allow for custom strategy implementations.
    */
-  preferredStrategies?: WorkerStrategyName[];
+  preferredStrategies?: string[];
 }
 
 /**
@@ -189,7 +191,7 @@ export class WorkerStrategySelector {
       | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
-    preferredStrategies: WorkerStrategyName[],
+    preferredStrategies: string[],
   ): AsyncIterableIterator<T> {
     let lastError: Error | undefined;
 

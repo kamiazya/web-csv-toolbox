@@ -82,7 +82,11 @@ describe("WorkerStrategySelector", () => {
     });
 
     it("should fallback to second strategy when first fails", async () => {
-      const strategy1 = new MockStrategy("strategy-1", true, "Strategy 1 failed");
+      const strategy1 = new MockStrategy(
+        "strategy-1",
+        true,
+        "Strategy 1 failed",
+      );
       const strategy2 = new MockStrategy("strategy-2");
       selector.register(strategy1);
       selector.register(strategy2);
@@ -268,6 +272,8 @@ describe("WorkerStrategySelector", () => {
         name = "failing-strategy";
 
         async *execute(): AsyncIterableIterator<any> {
+          // biome-ignore lint/correctness/noConstantCondition: test code needs to satisfy generator requirements
+          if (false) yield undefined;
           throw new CustomError("Custom failure");
         }
       }
@@ -299,6 +305,8 @@ describe("WorkerStrategySelector", () => {
         name = "throwing-strategy";
 
         async *execute(): AsyncIterableIterator<any> {
+          // biome-ignore lint/correctness/noConstantCondition: test code needs to satisfy generator requirements
+          if (false) yield undefined;
           throw "String error";
         }
       }
@@ -323,7 +331,9 @@ describe("WorkerStrategySelector", () => {
         records.push(record);
       }
 
-      expect(records).toEqual([{ strategy: "success-strategy", success: true }]);
+      expect(records).toEqual([
+        { strategy: "success-strategy", success: true },
+      ]);
       expect(onFallbackSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           reason: 'Strategy "throwing-strategy" failed: String error',
@@ -407,7 +417,11 @@ describe("WorkerStrategySelector", () => {
       selector.register(low);
 
       const execOptions: StrategyExecutionOptions = {
-        preferredStrategies: ["high-priority", "medium-priority", "low-priority"],
+        preferredStrategies: [
+          "high-priority",
+          "medium-priority",
+          "low-priority",
+        ],
       };
 
       const records = [];
@@ -482,12 +496,7 @@ describe("WorkerStrategySelector", () => {
       selector.register(validStrategy);
 
       const execOptions: StrategyExecutionOptions = {
-        preferredStrategies: [
-          "invalid-1",
-          "invalid-2",
-          "valid",
-          "invalid-3",
-        ],
+        preferredStrategies: ["invalid-1", "invalid-2", "valid", "invalid-3"],
       };
 
       const records = [];

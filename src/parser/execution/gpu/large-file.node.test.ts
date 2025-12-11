@@ -11,8 +11,8 @@ import {
   skipIfNoWebGPU,
   test,
 } from "@/__tests__/webgpu/webgpu-fixture.ts";
-import { parseBinaryStreamInGPU } from "./parseBinaryStreamInGPU.ts";
 import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
+import { parseBinaryStreamInGPU } from "./parseBinaryStreamInGPU.ts";
 
 /**
  * Generate large CSV data for testing
@@ -66,7 +66,9 @@ describe("Large File GPU Parsing Tests", () => {
       const csv = generateLargeCSV(rows, cols);
       const sizeInMB = csv.length / (1024 * 1024);
 
-      console.log(`  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`);
+      console.log(
+        `  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`,
+      );
 
       // Parse with GPU
       const gpuStartTime = performance.now();
@@ -78,7 +80,9 @@ describe("Large File GPU Parsing Tests", () => {
       const gpuTime = gpuEndTime - gpuStartTime;
 
       console.log(`  GPU parsing time: ${gpuTime.toFixed(2)}ms`);
-      console.log(`  GPU throughput: ${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s`);
+      console.log(
+        `  GPU throughput: ${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s`,
+      );
 
       // Verify record count
       expect(gpuRecords.length).toBe(rows);
@@ -87,7 +91,7 @@ describe("Large File GPU Parsing Tests", () => {
       expect(gpuRecords[0]).toHaveProperty("col0");
       expect(gpuRecords[0]).toHaveProperty("col9");
       expect(gpuRecords[0]?.col0).toBe("value0");
-    }
+    },
   );
 
   test(
@@ -108,7 +112,9 @@ describe("Large File GPU Parsing Tests", () => {
       const csv = generateLargeCSV(rows, cols);
       const sizeInMB = csv.length / (1024 * 1024);
 
-      console.log(`  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`);
+      console.log(
+        `  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`,
+      );
 
       // Parse with GPU
       const gpuStartTime = performance.now();
@@ -132,8 +138,12 @@ describe("Large File GPU Parsing Tests", () => {
       const cpuEndTime = performance.now();
       const cpuTime = cpuEndTime - cpuStartTime;
 
-      console.log(`  GPU parsing time: ${gpuTime.toFixed(2)}ms (${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s)`);
-      console.log(`  CPU parsing time: ${cpuTime.toFixed(2)}ms (${(sizeInMB / (cpuTime / 1000)).toFixed(2)} MB/s)`);
+      console.log(
+        `  GPU parsing time: ${gpuTime.toFixed(2)}ms (${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s)`,
+      );
+      console.log(
+        `  CPU parsing time: ${cpuTime.toFixed(2)}ms (${(sizeInMB / (cpuTime / 1000)).toFixed(2)} MB/s)`,
+      );
       console.log(`  Speedup: ${(cpuTime / gpuTime).toFixed(2)}x`);
 
       // Verify both parsers produce same number of records
@@ -143,7 +153,7 @@ describe("Large File GPU Parsing Tests", () => {
       // GPU should be faster for large files (expected 1.4-1.5x speedup)
       // Note: This is a performance assertion, may vary by hardware
       expect(gpuTime).toBeLessThan(cpuTime);
-    }
+    },
   );
 
   test(
@@ -164,7 +174,9 @@ describe("Large File GPU Parsing Tests", () => {
       const csv = generateLargeCSV(rows, cols);
       const sizeInMB = csv.length / (1024 * 1024);
 
-      console.log(`  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`);
+      console.log(
+        `  Generated CSV: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`,
+      );
 
       // Parse with GPU (streaming - don't collect all records)
       const gpuStartTime = performance.now();
@@ -183,7 +195,9 @@ describe("Large File GPU Parsing Tests", () => {
       const gpuTime = gpuEndTime - gpuStartTime;
 
       console.log(`  GPU streaming time: ${gpuTime.toFixed(2)}ms`);
-      console.log(`  GPU throughput: ${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s`);
+      console.log(
+        `  GPU throughput: ${(sizeInMB / (gpuTime / 1000)).toFixed(2)} MB/s`,
+      );
       console.log(`  Records processed: ${recordCount}`);
 
       // Verify record count
@@ -194,7 +208,7 @@ describe("Large File GPU Parsing Tests", () => {
       expect(lastRecord).not.toBeNull();
       expect(firstRecord?.col0).toBe("value0");
       expect(lastRecord?.col0).toBe("value0");
-    }
+    },
   );
 
   test(
@@ -215,7 +229,9 @@ describe("Large File GPU Parsing Tests", () => {
       const cols = 5;
       const longValue = "x".repeat(100000); // 100KB field
 
-      const header = Array.from({ length: cols }, (_, i) => `col${i}`).join(",");
+      const header = Array.from({ length: cols }, (_, i) => `col${i}`).join(
+        ",",
+      );
       const dataRow = Array.from({ length: cols }, () => longValue).join(",");
 
       const lines = [header];
@@ -226,7 +242,9 @@ describe("Large File GPU Parsing Tests", () => {
       const csv = lines.join("\n");
       const sizeInMB = csv.length / (1024 * 1024);
 
-      console.log(`  Generated CSV with long fields: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`);
+      console.log(
+        `  Generated CSV with long fields: ${rows} rows, ${cols} cols, ~${sizeInMB.toFixed(1)}MB`,
+      );
 
       // Parse with GPU
       const gpuStartTime = performance.now();
@@ -245,6 +263,6 @@ describe("Large File GPU Parsing Tests", () => {
       // Verify field values
       expect(gpuRecords[0]?.col0).toBe(longValue);
       expect(gpuRecords[0]?.col0?.length).toBe(100000);
-    }
+    },
   );
 });

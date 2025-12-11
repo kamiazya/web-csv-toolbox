@@ -11,13 +11,13 @@
  * by the optimization hint's priority.
  */
 
+import type { EnvironmentCapabilities } from "./EnvironmentCapabilities.ts";
 import type {
   BackendType,
   ContextType,
   ExecutionPlan,
   InputType,
 } from "./ExecutionPlan.ts";
-import type { EnvironmentCapabilities } from "./EnvironmentCapabilities.ts";
 import {
   BACKEND_PRIORITY,
   CONTEXT_PRIORITY,

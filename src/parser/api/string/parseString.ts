@@ -17,8 +17,8 @@ import {
   parseStringInGPU,
 } from "@/parser/execution/gpu/parseStringInGPU.ts";
 import { parseStringInWasm } from "@/parser/execution/wasm/parseStringInWasm.ts";
-import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -190,14 +190,10 @@ export async function* parseString<
         simdAvailable &&
         (engineConfig.hasWasm() || gpuFallbackConfig.hasWasm());
 
-      if (
-        engineConfig.hasWasm() ||
-        gpuFallbackConfig.hasWasm()
-      ) {
+      if (engineConfig.hasWasm() || gpuFallbackConfig.hasWasm()) {
         if (!wasmAllowedForGpuFallback) {
           if (engineConfig.onFallback) {
-            const fallbackConfig =
-              gpuFallbackConfig.createWasmFallbackConfig();
+            const fallbackConfig = gpuFallbackConfig.createWasmFallbackConfig();
             engineConfig.onFallback({
               requestedConfig: engineConfig.toConfig(),
               actualConfig: fallbackConfig.toConfig(),

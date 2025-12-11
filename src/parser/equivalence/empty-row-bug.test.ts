@@ -5,8 +5,8 @@
 
 import { describe, expect, test } from "vitest";
 import {
-  skipIfNoWebGPU,
   test as gpuTest,
+  skipIfNoWebGPU,
 } from "@/__tests__/webgpu/webgpu-fixture.ts";
 import { parseBinaryStream } from "@/parser/api/binary/parseBinaryStream.ts";
 import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
@@ -55,50 +55,44 @@ g,h,i`;
     expect(wasmRecords).toEqual(cpuRecords);
   });
 
-  gpuTest(
-    "GPU vs CPU: empty row in headerless mode",
-    async ({ gpu, skip }) => {
-      skipIfNoWebGPU(gpu, skip);
+  gpuTest("GPU vs CPU: empty row in headerless mode", async ({ gpu, skip }) => {
+    skipIfNoWebGPU(gpu, skip);
 
-      Object.defineProperty(globalThis, "navigator", {
-        value: { gpu },
-        writable: true,
-        configurable: true,
-      });
+    Object.defineProperty(globalThis, "navigator", {
+      value: { gpu },
+      writable: true,
+      configurable: true,
+    });
 
-      const csv = `a,b,c
+    const csv = `a,b,c
 d,e,f
 
 g,h,i`;
 
-      // JS/CPU
-      const cpuRecords: string[][] = [];
-      for await (const record of parseBinaryStream(stringToStream(csv), {
-        engine: { wasm: false, gpu: false },
-        header: [] as const,
-        outputFormat: "array",
-      })) {
-        cpuRecords.push(record as unknown as string[]);
-      }
+    // JS/CPU
+    const cpuRecords: string[][] = [];
+    for await (const record of parseBinaryStream(stringToStream(csv), {
+      engine: { wasm: false, gpu: false },
+      header: [] as const,
+      outputFormat: "array",
+    })) {
+      cpuRecords.push(record as unknown as string[]);
+    }
 
-      // GPU
-      const gpuRecords: string[][] = [];
-      for await (const record of parseBinaryStreamInGPU(
-        stringToStream(csv),
-        {
-          header: [] as const,
-          outputFormat: "array",
-        },
-      )) {
-        gpuRecords.push(record as unknown as string[]);
-      }
+    // GPU
+    const gpuRecords: string[][] = [];
+    for await (const record of parseBinaryStreamInGPU(stringToStream(csv), {
+      header: [] as const,
+      outputFormat: "array",
+    })) {
+      gpuRecords.push(record as unknown as string[]);
+    }
 
-      console.log("JS/CPU records:", cpuRecords);
-      console.log("GPU records:", gpuRecords);
+    console.log("JS/CPU records:", cpuRecords);
+    console.log("GPU records:", gpuRecords);
 
-      expect(gpuRecords).toEqual(cpuRecords);
-    },
-  );
+    expect(gpuRecords).toEqual(cpuRecords);
+  });
 
   test("Simplified: single empty row", async () => {
     // Just an empty row

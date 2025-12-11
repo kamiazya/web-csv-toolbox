@@ -69,10 +69,12 @@ const complexFieldArbitrary = fc.string({ minLength: 0, maxLength: 100 });
 /**
  * Unicode field generator (multibyte characters)
  */
-const unicodeFieldArbitrary = fc.string({
-  minLength: 0,
-  maxLength: 30,
-}).filter((s) => !s.includes(",") && !s.includes("\n") && !s.includes("\r"));
+const unicodeFieldArbitrary = fc
+  .string({
+    minLength: 0,
+    maxLength: 30,
+  })
+  .filter((s) => !s.includes(",") && !s.includes("\n") && !s.includes("\r"));
 
 /**
  * Header generator (unique, non-empty strings)
@@ -451,7 +453,9 @@ describe("All Parser Implementations Equivalence (JS/CPU, WASM, GPU)", () => {
               numRows,
             );
 
-            const csvData = rows.map((r) => r.map(escapeField).join(",")).join(eol);
+            const csvData = rows
+              .map((r) => r.map(escapeField).join(","))
+              .join(eol);
 
             // JS/CPU
             const cpuRecords: string[][] = [];

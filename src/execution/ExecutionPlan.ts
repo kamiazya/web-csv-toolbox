@@ -31,11 +31,7 @@ export type ContextType = "main" | "worker-stream-transfer" | "worker-message";
  * - `string-stream`: ReadableStream<string> input (streaming)
  * - `binary-stream`: ReadableStream<Uint8Array> input (streaming)
  */
-export type InputType =
-  | "string"
-  | "binary"
-  | "string-stream"
-  | "binary-stream";
+export type InputType = "string" | "binary" | "string-stream" | "binary-stream";
 
 /**
  * GPU backend configuration

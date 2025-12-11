@@ -20,11 +20,14 @@ export class GPUMemoryError extends Error {
    */
   readonly cause?: Error;
 
-  constructor(message: string, options?: {
-    requestedSize: number;
-    bufferName?: string;
-    cause?: Error;
-  }) {
+  constructor(
+    message: string,
+    options?: {
+      requestedSize: number;
+      bufferName?: string;
+      cause?: Error;
+    },
+  ) {
     super(message);
     this.name = "GPUMemoryError";
     this.requestedSize = options?.requestedSize ?? 0;
