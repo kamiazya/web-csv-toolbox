@@ -194,7 +194,7 @@ export function separatorsToTokens(
     startColumn: initialColumn = 1,
     startOffset: initialOffset = 0,
     decoder = new TextDecoder("utf-8"),
-    delimiter = ",",
+    delimiter: _delimiter = ",",
     quotation = '"',
   } = options;
 
@@ -237,7 +237,7 @@ export function separatorsToTokens(
     // Update position for field end
     const fieldEndLine = line;
     const fieldEndColumn = column + (sepOffset - fieldStart);
-    const fieldEndPos: Position = {
+    const _fieldEndPos: Position = {
       line: fieldEndLine,
       column: fieldEndColumn,
       offset: globalOffset + sepOffset,
@@ -364,7 +364,7 @@ export function* separatorsToTokensGenerator(
     startColumn: initialColumn = 1,
     startOffset: initialOffset = 0,
     decoder = new TextDecoder("utf-8"),
-    delimiter = ",",
+    delimiter: _delimiter = ",",
     quotation = '"',
   } = options;
 
@@ -401,7 +401,7 @@ export function* separatorsToTokensGenerator(
 
     const fieldEndLine = line;
     const fieldEndColumn = column + (sepOffset - fieldStart);
-    const fieldEndPos: Position = {
+    const _fieldEndPos: Position = {
       line: fieldEndLine,
       column: fieldEndColumn,
       offset: globalOffset + sepOffset,

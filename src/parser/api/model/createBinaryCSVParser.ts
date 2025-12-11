@@ -10,6 +10,7 @@ import { FlexibleBinaryArrayCSVParser } from "@/parser/models/FlexibleBinaryArra
 import { FlexibleBinaryObjectCSVParser } from "@/parser/models/FlexibleBinaryObjectCSVParser.ts";
 import { WasmBinaryArrayCSVParser } from "@/parser/models/WasmBinaryArrayCSVParser.ts";
 import { WasmBinaryObjectCSVParser } from "@/parser/models/WasmBinaryObjectCSVParser.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import {
   isInitialized as isWasmInitialized,
   loadWasmSync,
@@ -17,7 +18,6 @@ import {
   scanCsvBytesStreaming,
   scanCsvBytesZeroCopy,
 } from "@/wasm/WasmInstance.main.web.ts";
-import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 
 /**
  * Factory function to create the appropriate Binary CSV parser based on options.

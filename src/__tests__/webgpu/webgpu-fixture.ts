@@ -29,14 +29,12 @@ const isBrowser =
   typeof window !== "undefined" && typeof navigator !== "undefined";
 
 // Import webgpu package for Node.js WebGPU support
-// @ts-expect-error - webgpu package types not available, but handled gracefully at runtime
 let webgpuModule: typeof import("webgpu") | null = null;
 let globalsInstalled = false;
 
 /**
  * Lazily loads the webgpu module and installs globals (Node.js only)
  */
-// @ts-expect-error - webgpu package types not available, but handled gracefully at runtime
 async function loadWebGPUModule(): Promise<typeof import("webgpu") | null> {
   if (isBrowser) {
     // In browser, we don't need the webgpu npm package
@@ -48,7 +46,6 @@ async function loadWebGPUModule(): Promise<typeof import("webgpu") | null> {
   }
 
   try {
-    // @ts-expect-error - webgpu package types not available, but handled gracefully at runtime
     webgpuModule = await import("webgpu");
 
     // Install WebGPU globals (GPUBufferUsage, GPUMapMode, etc.)

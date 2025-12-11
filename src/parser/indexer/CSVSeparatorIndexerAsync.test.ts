@@ -8,8 +8,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { CSVSeparatorIndexResult } from "../types/SeparatorIndexResult.ts";
 import {
-  CSVSeparatorIndexerAsync,
   type CSVIndexerBackendAsync,
+  CSVSeparatorIndexerAsync,
 } from "./CSVSeparatorIndexerAsync.ts";
 
 const encoder = new TextEncoder();

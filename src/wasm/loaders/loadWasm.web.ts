@@ -1,5 +1,9 @@
 import init, { type InitInput } from "web-csv-toolbox-wasm";
-import { isWasmInitialized, markWasmInitialized } from "./wasmState.js";
+import {
+  hasWasmSimd,
+  isWasmInitialized,
+  markWasmInitialized,
+} from "./wasmState.js";
 
 /**
  * Re-export all Wasm functions from this module to ensure they share the same Wasm instance.
@@ -35,6 +39,15 @@ export { isInitialized, resetInit } from "./wasmState.js";
  */
 export async function loadWasm(input?: InitInput): Promise<void> {
   if (isWasmInitialized()) {
+    return;
+  }
+
+  // Check SIMD support before attempting to load WASM module
+  // The WASM module is built with -C target-feature=+simd128 and requires SIMD support
+  if (!hasWasmSimd()) {
+    console.warn(
+      "[web-csv-toolbox] WebAssembly SIMD is not supported; skipping Wasm init and falling back to JavaScript.",
+    );
     return;
   }
 

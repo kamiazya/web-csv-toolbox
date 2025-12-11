@@ -46,8 +46,15 @@ declare module "#/utils/charset/getCharsetValidation.constants.js" {
 }
 
 declare module "#/parser/api/string/parseStringToArraySyncWasm.main.js" {
-  import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
-  import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";
+  import type {
+    DEFAULT_DELIMITER,
+    DEFAULT_QUOTATION,
+  } from "@/core/constants.ts";
+  import type {
+    CommonOptions,
+    CSVRecord,
+    PickCSVHeader,
+  } from "@/core/types.ts";
 
   export function parseStringToArraySyncWasm<
     const CSVSource extends string,

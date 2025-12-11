@@ -28,7 +28,9 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
 
     it("should work with default maxBufferSize (10MB)", () => {
       // Default maxBufferSize should be sufficient for most use cases
-      const csv = "x,y\n" + Array.from({ length: 1000 }, (_, i) => `${i},${i * 2}`).join("\n");
+      const csv =
+        "x,y\n" +
+        Array.from({ length: 1000 }, (_, i) => `${i},${i * 2}`).join("\n");
 
       const result = parseStringToArraySyncWasm(csv);
 
@@ -41,9 +43,11 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
       // Test with ~500KB CSV (similar to benchmark data)
       const rows = 5000;
       const cols = 10;
-      const headerRow = Array.from({ length: cols }, (_, i) => `col${i}`).join(",");
+      const headerRow = Array.from({ length: cols }, (_, i) => `col${i}`).join(
+        ",",
+      );
       const dataRows = Array.from({ length: rows }, (_, i) =>
-        Array.from({ length: cols }, (_, j) => `value_${i}_${j}`).join(",")
+        Array.from({ length: cols }, (_, j) => `value_${i}_${j}`).join(","),
       ).join("\n");
       const csv = `${headerRow}\n${dataRows}`;
 
@@ -106,10 +110,14 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
       const csvSemicolon = "col1;col2;col3\nval1;val2;val3";
 
       const resultTab = parseStringToArraySyncWasm(csvTab, { delimiter: "\t" });
-      const resultSemicolon = parseStringToArraySyncWasm(csvSemicolon, { delimiter: ";" });
+      const resultSemicolon = parseStringToArraySyncWasm(csvSemicolon, {
+        delimiter: ";",
+      });
 
       expect(resultTab).toEqual([{ col1: "val1", col2: "val2", col3: "val3" }]);
-      expect(resultSemicolon).toEqual([{ col1: "val1", col2: "val2", col3: "val3" }]);
+      expect(resultSemicolon).toEqual([
+        { col1: "val1", col2: "val2", col3: "val3" },
+      ]);
     });
   });
 
@@ -117,9 +125,11 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
     it("should handle benchmark-like string→Array scenario", () => {
       // Simulate benchmark scenario: large CSV parsed synchronously
       const rows = 1000;
-      const csv = "id,name,value,status\n" +
-        Array.from({ length: rows }, (_, i) =>
-          `${i},item_${i},${i * 1.5},active`
+      const csv =
+        "id,name,value,status\n" +
+        Array.from(
+          { length: rows },
+          (_, i) => `${i},item_${i},${i * 1.5},active`,
         ).join("\n");
 
       const result = parseStringToArraySyncWasm(csv, {
@@ -148,8 +158,8 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
       const result = parseStringToArraySyncWasm(csv);
 
       expect(result).toEqual([
-        { "名前": "太郎", "年齢": "30" },
-        { "名前": "花子", "年齢": "25" },
+        { 名前: "太郎", 年齢: "30" },
+        { 名前: "花子", 年齢: "25" },
       ]);
     });
 
@@ -171,7 +181,7 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
       const tooSmallBuffer = 10; // Intentionally too small
 
       expect(() =>
-        parseStringToArraySyncWasm(csv, { maxBufferSize: tooSmallBuffer })
+        parseStringToArraySyncWasm(csv, { maxBufferSize: tooSmallBuffer }),
       ).toThrow();
     });
 
@@ -179,7 +189,7 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
       const csv = "a,b\n1,2";
 
       expect(() =>
-        parseStringToArraySyncWasm(csv, { delimiter: ",," as any })
+        parseStringToArraySyncWasm(csv, { delimiter: ",," as any }),
       ).toThrow(/Invalid delimiter/);
     });
 
@@ -188,7 +198,7 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
 
       // WASM only supports double-quote
       expect(() =>
-        parseStringToArraySyncWasm(csv, { quotation: "'" as any })
+        parseStringToArraySyncWasm(csv, { quotation: "'" as any }),
       ).toThrow(/Invalid quotation/);
     });
   });
@@ -207,15 +217,19 @@ describe("parseStringToArraySyncWasm - Regression Tests (Report 52)", () => {
 
     it("should handle wide CSV (many columns)", () => {
       const cols = 100;
-      const headerRow = Array.from({ length: cols }, (_, i) => `col${i}`).join(",");
-      const dataRow = Array.from({ length: cols }, (_, i) => `val${i}`).join(",");
+      const headerRow = Array.from({ length: cols }, (_, i) => `col${i}`).join(
+        ",",
+      );
+      const dataRow = Array.from({ length: cols }, (_, i) => `val${i}`).join(
+        ",",
+      );
       const csv = `${headerRow}\n${dataRow}`;
 
       const result = parseStringToArraySyncWasm(csv);
 
       expect(result).toHaveLength(1);
       expect(Object.keys(result[0]!)).toHaveLength(cols);
-      expect(result[0]!["col0"]).toBe("val0");
+      expect(result[0]!.col0).toBe("val0");
       expect(result[0]![`col${cols - 1}`]).toBe(`val${cols - 1}`);
     });
   });

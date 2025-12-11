@@ -7,7 +7,7 @@ group: How-to Guides
 
 This guide helps you select the appropriate API for your CSV parsing needs in web-csv-toolbox.
 
-> **Note for Bundler Users**: When using Worker-based engines (e.g., `EnginePresets.responsive()`), you must specify the `workerURL` option with bundlers. See [How to Use with Bundlers](./using-with-bundlers.md).
+> **Note for Bundler Users**: When using Worker-based engines (e.g., `EnginePresets.recommended()`), you must specify the `workerURL` option with bundlers. See [How to Use with Bundlers](./using-with-bundlers.md).
 
 ## Quick Decision Tree
 
@@ -308,7 +308,7 @@ console.log(`Total: ${records.length} records`);
 | **Worker + WASM** | ❌ No | ⚠️ Yes (data transfer) | ✅ Stable | Browser, non-blocking, UTF-8 only |
 
 **Recommendation:**
-- **Browser applications:** Use Worker-based execution (`EnginePresets.responsive()`) for non-blocking UI
+- **Browser applications:** Use Worker-based execution (`EnginePresets.recommended()`) for non-blocking UI
 - **Server-side:** Use main thread or WASM for optimal performance
 - **Performance-critical:** Benchmark your specific use case to determine the best approach
 
@@ -761,7 +761,7 @@ async function processLargeFile(filePath: string) {
   const webStream = Readable.toWeb(nodeStream) as ReadableStream<string>;
 
   for await (const record of parseStringStream(webStream, {
-    engine: EnginePresets.balanced(),
+    engine: EnginePresets.recommended(),
   })) {
     await processRecord(record);
   }
@@ -936,7 +936,7 @@ for await (const record of parseString(csv, {
 // Non-blocking execution with compiled WASM code
 await loadWasm();
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -950,7 +950,7 @@ for await (const record of parseString(csv, {
 - **Limitations:** UTF-8 only, double-quote only
 - **Use case:** Browser applications requiring non-blocking parsing of UTF-8 CSV files
 
-**Note:** This preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI).
+**Note:** This preset prioritizes UI responsiveness over raw execution speed. For fastest execution time, use `EnginePresets.turbo()` on the main thread (blocks UI).
 
 **Performance Note:**
 Actual performance depends on many factors including CSV structure, file size, runtime environment, and system capabilities. Benchmark your specific use case to determine the best approach. See [CodSpeed benchmarks](https://codspeed.io/kamiazya/web-csv-toolbox) for measured performance across different scenarios.
@@ -1187,7 +1187,7 @@ for await (const record of parseResponse(response)) {
 5. **File uploads:** Use `parseFile()` for automatic error tracking, or `parseBlob()` for generic Blob support
 6. **Edge environments:** Use `parseBlob()` with manual `source` option (Cloudflare Workers compatibility)
 7. **Large files:** Use streaming APIs (`parseStringStream()`, `parseBinaryStream()`)
-8. **Non-blocking parsing:** Use Worker-based execution (e.g., `{ engine: { worker: true } }` or `EnginePresets.responsive()`) for UI responsiveness in browser applications
+8. **Non-blocking parsing:** Use Worker-based execution (e.g., `{ engine: { worker: true } }` or `EnginePresets.recommended()`) for UI responsiveness in browser applications
 9. **Non-UTF-8:** Use `parseBinary()` or `parseBinaryStream()` with `charset` option
 10. **Error tracking:** Always specify `source` option or use `parseFile()` for automatic tracking
 

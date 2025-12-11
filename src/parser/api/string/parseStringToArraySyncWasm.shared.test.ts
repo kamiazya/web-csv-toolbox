@@ -221,7 +221,14 @@ describe("parseStringToArraySyncWasm.shared", () => {
         recordCount: 0,
         fieldCount: 0,
       })) as any;
-      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
+      const result = parseWithWasm(
+        "",
+        44,
+        10485760,
+        1000,
+        "",
+        mockWasmFunction,
+      );
 
       expect(result).toEqual([]);
     });
@@ -234,7 +241,14 @@ describe("parseStringToArraySyncWasm.shared", () => {
         recordCount: 2,
         fieldCount: 2,
       })) as any;
-      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
+      const result = parseWithWasm(
+        "",
+        44,
+        10485760,
+        1000,
+        "",
+        mockWasmFunction,
+      );
 
       expect(result).toEqual([
         { name: "Alice", age: "30" },
@@ -250,7 +264,14 @@ describe("parseStringToArraySyncWasm.shared", () => {
         recordCount: 2,
         fieldCount: 3,
       })) as any;
-      const result = parseWithWasm("", 44, 10485760, 1000, "", mockWasmFunction);
+      const result = parseWithWasm(
+        "",
+        44,
+        10485760,
+        1000,
+        "",
+        mockWasmFunction,
+      );
 
       expect(result).toEqual([
         { a: "1", b: "2", c: undefined },

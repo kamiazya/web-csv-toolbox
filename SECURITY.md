@@ -86,7 +86,7 @@ app.post('/validate-csv', async (c) => {
 
     for await (const record of parseStringStream(csvStream, {
       signal,
-      engine: EnginePresets.balanced({ workerPool: pool }),
+      engine: EnginePresets.recommended({ workerPool: pool }),
       maxBufferSize: 10 * 1024 * 1024,  // 10M chars
       maxFieldCount: 100_000,             // 100k fields
     })) {

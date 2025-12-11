@@ -166,9 +166,9 @@ import { parse, loadWasm, EnginePresets } from 'web-csv-toolbox';
 
 await loadWasm();
 
-// Use 'fast' preset (main thread WASM)
+// Use 'turbo' preset (main thread + GPU/WASM)
 for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -194,9 +194,9 @@ import { parse, loadWasm, EnginePresets } from 'web-csv-toolbox';
 
 await loadWasm();
 
-// Use 'responsiveFast' preset (Worker + WASM)
+// Use 'turbo' preset (main thread + GPU/WASM)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -224,7 +224,7 @@ async function fetchAndParseCSV(url: string) {
   const response = await fetch(url);
 
   for await (const record of parseResponse(response, {
-    engine: EnginePresets.responsiveFast()
+    engine: EnginePresets.turbo()
   })) {
     console.log(record);
   }
@@ -425,7 +425,7 @@ async function handleFileUpload(file: File) {
   const csv = await file.text();
 
   for await (const record of parse(csv, {
-    engine: EnginePresets.responsiveFast()
+    engine: EnginePresets.turbo()
   })) {
     console.log(record);
   }
@@ -553,7 +553,7 @@ You've learned how to:
 **Solution:**
 - WASM has initialization overhead - benchmark your specific use case
 - Worker + WASM adds worker communication overhead - may be slower than main thread WASM
-- For fastest execution time, use `EnginePresets.fast()` on the main thread (blocks UI)
+- For fastest execution time, use `EnginePresets.turbo()` on the main thread (blocks UI)
 - For non-blocking UI, accept the worker communication overhead trade-off
 - Optionally call `loadWasm()` once at startup to avoid repeated initialization overhead (auto-initialization works but adds latency on first use)
 

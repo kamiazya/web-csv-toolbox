@@ -1,7 +1,7 @@
 import {
-  parseStringToArraySync as wasmParseStringToArraySync,
   isSyncInitialized,
   loadWasmSync,
+  parseStringToArraySync as wasmParseStringToArraySync,
 } from "#/wasm/loaders/loadWasmSync.js";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { CommonOptions, CSVRecord, PickCSVHeader } from "@/core/types.ts";

@@ -15,13 +15,17 @@ vi.mock("./parseStringToArraySyncWasm.shared.ts", async () => {
   const actual = await vi.importActual<
     typeof import("./parseStringToArraySyncWasm.shared.ts")
   >("./parseStringToArraySyncWasm.shared.ts");
-  const { fromFlatParseResult } = await import("@/parser/utils/flatToObjects.ts");
+  const { fromFlatParseResult } = await import(
+    "@/parser/utils/flatToObjects.ts"
+  );
   return {
     ...actual,
-    parseWithWasm: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) => {
-      const flatResult = wasmFn(csv, delim, buffer, maxFieldCount, source);
-      return fromFlatParseResult(flatResult);
-    }),
+    parseWithWasm: vi.fn(
+      (csv, delim, buffer, maxFieldCount, source, wasmFn) => {
+        const flatResult = wasmFn(csv, delim, buffer, maxFieldCount, source);
+        return fromFlatParseResult(flatResult);
+      },
+    ),
   };
 });
 

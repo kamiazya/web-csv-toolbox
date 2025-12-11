@@ -121,7 +121,7 @@ export function createApp(pool: ReusableWorkerPool) {
         try {
           for await (const record of parseBinaryStream(csvStream, {
             signal,
-            engine: EnginePresets.balanced({ workerPool: pool }),
+            engine: EnginePresets.recommended({ workerPool: pool }),
             maxBufferSize: SECURITY_CONFIG.maxBufferSize,
             maxFieldCount: SECURITY_CONFIG.maxFieldCount,
           })) {

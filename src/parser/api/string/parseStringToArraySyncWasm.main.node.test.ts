@@ -2,33 +2,34 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
-vi.mock("#/wasm/loaders/loadWasm.js", () => ({
-  parseStringToArraySync: vi.fn(),
-}));
-
 vi.mock("#/wasm/loaders/loadWasmSync.js", () => ({
   loadWasmSync: vi.fn(),
   isSyncInitialized: vi.fn(),
+  parseStringToArraySync: vi.fn(),
 }));
 
 vi.mock("./parseStringToArraySyncWasm.shared.ts", async () => {
   const actual = await vi.importActual<
     typeof import("./parseStringToArraySyncWasm.shared.ts")
   >("./parseStringToArraySyncWasm.shared.ts");
-  const { fromFlatParseResult } = await import("@/parser/utils/flatToObjects.ts");
+  const { fromFlatParseResult } = await import(
+    "@/parser/utils/flatToObjects.ts"
+  );
   return {
     ...actual,
-    parseWithWasm: vi.fn((csv, delim, buffer, maxFieldCount, source, wasmFn) => {
-      const flatResult = wasmFn(csv, delim, buffer, maxFieldCount, source);
-      return fromFlatParseResult(flatResult);
-    }),
+    parseWithWasm: vi.fn(
+      (csv, delim, buffer, maxFieldCount, source, wasmFn) => {
+        const flatResult = wasmFn(csv, delim, buffer, maxFieldCount, source);
+        return fromFlatParseResult(flatResult);
+      },
+    ),
   };
 });
 
-import { parseStringToArraySync as wasmParseStringToArraySync } from "#/wasm/loaders/loadWasm.js";
 import {
   isSyncInitialized,
   loadWasmSync,
+  parseStringToArraySync as wasmParseStringToArraySync,
 } from "#/wasm/loaders/loadWasmSync.js";
 import { parseStringToArraySyncWasm } from "./parseStringToArraySyncWasm.main.node.ts";
 import { parseWithWasm } from "./parseStringToArraySyncWasm.shared.ts";

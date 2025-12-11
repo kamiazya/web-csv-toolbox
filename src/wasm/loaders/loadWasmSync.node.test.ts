@@ -13,6 +13,7 @@ vi.mock("#/csv.wasm", () => ({
 
 // Mock wasmState
 vi.mock("./wasmState.js", () => ({
+  hasWasmSimd: vi.fn(() => true),
   isWasmInitialized: vi.fn(),
   markWasmInitialized: vi.fn(),
   isInitialized: vi.fn(),
@@ -37,6 +38,7 @@ const mockInitSync = initSync as unknown as Mock;
 describe("loadWasmSync.node", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (wasmState.hasWasmSimd as Mock).mockReturnValue(true);
     (wasmState.isWasmInitialized as Mock).mockReturnValue(false);
     // Reset the module state between tests
     resetSyncInit();
@@ -68,6 +70,19 @@ describe("loadWasmSync.node", () => {
       // Should only initialize once
       expect(mockInitSync).toHaveBeenCalledTimes(1);
       expect(wasmState.markWasmInitialized).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("SIMD capability", () => {
+    it("should skip initialization when SIMD is not supported", () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      (wasmState.hasWasmSimd as Mock).mockReturnValue(false);
+
+      expect(() => loadWasmSync()).not.toThrow();
+
+      expect(mockInitSync).not.toHaveBeenCalled();
+      expect(wasmState.markWasmInitialized).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

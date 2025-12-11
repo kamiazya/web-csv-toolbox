@@ -20,12 +20,9 @@ import { parseString, EnginePresets, /* ... */ } from 'web-csv-toolbox';
 **Exports**:
 - All parsing functions (`parseString`, `parseBinary`, etc.)
 - Engine configuration (`EnginePresets`)
-  - `EnginePresets.stable()` - Stability optimized
-  - `EnginePresets.responsive()` - UI responsiveness optimized
-  - `EnginePresets.memoryEfficient()` - Memory efficiency optimized
-  - `EnginePresets.fast()` - Parse speed optimized
-  - `EnginePresets.responsiveFast()` - UI responsiveness + parse speed optimized
-  - `EnginePresets.balanced()` - Balanced (general-purpose)
+  - `EnginePresets.stable()` - Maximum compatibility (main thread, JS only)
+  - `EnginePresets.recommended()` - UI responsiveness (worker + JS, non-blocking)
+  - `EnginePresets.turbo()` - Maximum speed (GPU + JS, automatic backend selection)
 - Low-level APIs (see [Low-level API Reference](#low-level-api-reference) below)
   - **Parser Models (Tier 1)**: `FlexibleStringObjectCSVParser`, `FlexibleStringArrayCSVParser`, `FlexibleBinaryObjectCSVParser`, `FlexibleBinaryArrayCSVParser`, `createStringCSVParser`, `createBinaryCSVParser`, `StringCSVParserStream`, `BinaryCSVParserStream`
   - **Lexer + Assembler (Tier 2)**: `FlexibleStringCSVLexer`, `createStringCSVLexer`, `FlexibleCSVRecordAssembler`, `createCSVRecordAssembler`, `StringCSVLexerTransformer` *(advanced: custom lexer injection)*, `CSVRecordAssemblerTransformer` *(advanced: custom assembler injection)*

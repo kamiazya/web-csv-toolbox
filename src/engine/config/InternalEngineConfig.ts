@@ -31,6 +31,9 @@ export class InternalEngineConfig {
   readonly workerPool?: WorkerPool | undefined;
   readonly gpuDevice?: GPUDevice | undefined;
   readonly onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
+  readonly optimizationHint?:
+    | import("@/execution/OptimizationHint.ts").OptimizationHint
+    | undefined;
 
   constructor(config?: EngineConfig) {
     if (config) {
@@ -45,6 +48,14 @@ export class InternalEngineConfig {
         this.gpuDevice = config.gpuDevice;
         this.onFallback = config.onFallback;
       }
+      // Extract optimization hint
+      (
+        this as {
+          optimizationHint?:
+            | import("@/execution/OptimizationHint.ts").OptimizationHint
+            | undefined;
+        }
+      ).optimizationHint = config.optimizationHint;
       this.parse(config);
     }
 
@@ -61,6 +72,7 @@ export class InternalEngineConfig {
     workerPool?: WorkerPool,
     gpuDevice?: GPUDevice,
     onFallback?: (info: EngineFallbackInfo) => void,
+    optimizationHint?: import("@/execution/OptimizationHint.ts").OptimizationHint,
   ): InternalEngineConfig {
     const instance = Object.create(InternalEngineConfig.prototype);
     instance.bitmask = bitmask;
@@ -74,6 +86,13 @@ export class InternalEngineConfig {
         onFallback?: ((info: EngineFallbackInfo) => void) | undefined;
       }
     ).onFallback = onFallback;
+    (
+      instance as {
+        optimizationHint?:
+          | import("@/execution/OptimizationHint.ts").OptimizationHint
+          | undefined;
+      }
+    ).optimizationHint = optimizationHint;
     return instance;
   }
 
@@ -201,6 +220,16 @@ export class InternalEngineConfig {
   }
 
   /**
+   * Check if GPU acceleration is enabled (alias for hasGPU).
+   *
+   * @remarks
+   * This method exists for compatibility with ExecutionPathResolver.
+   */
+  hasGpu(): boolean {
+    return this.hasFlag(EngineFlags.GPU);
+  }
+
+  /**
    * Get worker communication strategy.
    */
   getWorkerStrategy(): WorkerCommunicationStrategy | undefined {
@@ -238,6 +267,7 @@ export class InternalEngineConfig {
       this.workerPool,
       this.gpuDevice,
       this.onFallback,
+      this.optimizationHint,
     );
   }
 
@@ -260,6 +290,7 @@ export class InternalEngineConfig {
       this.workerPool,
       this.gpuDevice,
       this.onFallback,
+      this.optimizationHint,
     );
   }
 
@@ -288,6 +319,7 @@ export class InternalEngineConfig {
       this.workerPool,
       undefined, // Clear GPU device on fallback
       this.onFallback,
+      this.optimizationHint,
     );
   }
 

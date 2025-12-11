@@ -2,7 +2,7 @@
  * Integration test for parseString with GPU execution
  *
  * Tests that the public parseString API correctly routes to WebGPU
- * when EnginePresets.gpuAccelerated() is used.
+ * when EnginePresets.turbo() is used.
  */
 
 import { describe } from "vitest";
@@ -11,7 +11,7 @@ import { EnginePresets, parseString } from "@/main.shared.ts";
 
 import { expect, skipIfNoWebGPU, test } from "./webgpu-fixture.ts";
 
-describe("parseString with EnginePresets.gpuAccelerated()", () => {
+describe("parseString with EnginePresets.turbo()", () => {
   test("should parse simple CSV via GPU", async ({ gpu, skip }) => {
     skipIfNoWebGPU(gpu, skip);
 
@@ -26,7 +26,7 @@ describe("parseString with EnginePresets.gpuAccelerated()", () => {
     const records: Array<{ name: string; age: string }> = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.gpuAccelerated(),
+      engine: EnginePresets.turbo(),
     })) {
       records.push(record as { name: string; age: string });
     }
@@ -49,7 +49,7 @@ describe("parseString with EnginePresets.gpuAccelerated()", () => {
     const records: Array<{ name: string; description: string }> = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.gpuAccelerated(),
+      engine: EnginePresets.turbo(),
     })) {
       records.push(record as { name: string; description: string });
     }
@@ -72,7 +72,7 @@ describe("parseString with EnginePresets.gpuAccelerated()", () => {
     const records: Array<{ text: string }> = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.gpuAccelerated(),
+      engine: EnginePresets.turbo(),
     })) {
       records.push(record as { text: string });
     }
@@ -98,7 +98,7 @@ describe("parseString with EnginePresets.gpuAccelerated()", () => {
     const records: Array<{ name: string; data: string }> = [];
 
     for await (const record of parseString(csv, {
-      engine: EnginePresets.gpuAccelerated(),
+      engine: EnginePresets.turbo(),
     })) {
       records.push(record as { name: string; data: string });
     }

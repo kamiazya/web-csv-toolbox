@@ -24,6 +24,7 @@ import wasmBuffer from "#/csv.wasm";
 import {
   isWasmInitialized,
   markWasmInitialized,
+  hasWasmSimd,
   resetWasmState,
 } from "./wasmState.js";
 
@@ -94,6 +95,13 @@ let wasmModule: InitOutput | undefined;
  */
 export function loadWasmSync(input?: SyncInitInput): void {
   if (isWasmInitialized()) {
+    return;
+  }
+
+  if (!hasWasmSimd()) {
+    console.warn(
+      "[web-csv-toolbox] WebAssembly SIMD is not supported; skipping Wasm init and falling back to JavaScript.",
+    );
     return;
   }
 

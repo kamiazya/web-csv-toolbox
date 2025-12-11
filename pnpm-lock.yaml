@@ -144,6 +144,9 @@ importers:
       webdriverio:
         specifier: ^9.20.0
         version: 9.20.0
+      webgpu:
+        specifier: 0.3.8
+        version: 0.3.8
 
   benchmark:
     dependencies:
@@ -4338,6 +4341,9 @@ packages:
     peerDependenciesMeta:
       puppeteer-core:
         optional: true
+
+  webgpu@0.3.8:
+    resolution: {integrity: sha512-g2YwfCvzHoQHwSEY3fS95sVKdo/JVLL9AnicJyRQBPwWm4j7zISHvk6P85HaWP0LhtBV+aopsShKIaDi4smECg==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -8869,6 +8875,13 @@ snapshots:
       - react-native-b4a
       - supports-color
       - utf-8-validate
+
+  webgpu@0.3.8:
+    dependencies:
+      '@webgpu/types': 0.1.67
+      debug: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
 
   webidl-conversions@3.0.1: {}
 

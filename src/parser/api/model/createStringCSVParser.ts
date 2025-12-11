@@ -12,13 +12,13 @@ import { WasmStringUtf8ArrayCSVParser } from "@/parser/models/WasmStringUtf8Arra
 import { WasmStringUtf8ObjectCSVParser } from "@/parser/models/WasmStringUtf8ObjectCSVParser.ts";
 import { WasmStringUtf16ArrayCSVParser } from "@/parser/models/WasmStringUtf16ArrayCSVParser.ts";
 import { WasmStringUtf16ObjectCSVParser } from "@/parser/models/WasmStringUtf16ObjectCSVParser.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import {
   isInitialized as isWasmInitialized,
   loadWasmSync,
   scanCsvBytesStreaming,
   scanCsvBytesZeroCopy,
 } from "@/wasm/WasmInstance.main.web.ts";
-import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 
 /**
  * Determines whether UTF-16 encoding should be preferred for string parsing.
@@ -36,7 +36,7 @@ import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
  * - or any engine-specific UTF-16 preference flags
  */
 function prefersUtf16(
-  options?: StringCSVParserFactoryOptions<any, any, any, any, any>,
+  _options?: StringCSVParserFactoryOptions<any, any, any, any, any>,
 ): boolean {
   // Future: Check options.charset when it's added to StringCSVParserFactoryOptions
   // const charset = options?.charset ?? "utf-8";

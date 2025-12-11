@@ -8,18 +8,18 @@ import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { WasmIndexerBackend } from "@/parser/indexer/WasmIndexerBackend.ts";
-import { WasmStringUtf16ObjectCSVParser } from "@/parser/models/WasmStringUtf16ObjectCSVParser.ts";
 import { WasmStringUtf8ObjectCSVParser } from "@/parser/models/WasmStringUtf8ObjectCSVParser.ts";
+import { WasmStringUtf16ObjectCSVParser } from "@/parser/models/WasmStringUtf16ObjectCSVParser.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
 import { StringCSVParserStream } from "@/parser/stream/StringCSVParserStream.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import {
   isInitialized as isWasmInitialized,
   loadWasmSync,
   scanCsvBytesStreaming,
   scanCsvBytesZeroCopy,
 } from "@/wasm/WasmInstance.main.web.ts";
-import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 
 export function parseStringStreamToStream<
   const CSVSource extends ReadableStream<string>,

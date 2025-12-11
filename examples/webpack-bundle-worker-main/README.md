@@ -66,4 +66,4 @@ The example includes a Webpack configuration that:
 - Workers are automatically detected and imported via `web-csv-toolbox/worker`
 - **Larger bundle**: Main worker bundle includes embedded WASM
 - **Trade-off**: Faster initialization but larger bundle size compared to slim entry
-- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.responsive()` / `responsiveFast()` are also available.
+- Prefer `using` if your environment supports Explicit Resource Management; otherwise call `pool.terminate()` explicitly. Engine presets like `EnginePresets.recommended()` / `responsiveFast()` are also available.

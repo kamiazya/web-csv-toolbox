@@ -20,7 +20,7 @@ Alice,30,New York
 Bob,25,London`;
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsive({ workerURL: workerUrl })
+  engine: EnginePresets.recommended({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -36,7 +36,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 const workerUrl = new URL('web-csv-toolbox/worker', import.meta.url);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsive({ workerURL: workerUrl })
+  engine: EnginePresets.recommended({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -81,7 +81,7 @@ import { loadWasm, parseString, EnginePresets } from 'web-csv-toolbox';
 await loadWasm('/csv.wasm');
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast()  // Uses WASM + Worker
+  engine: EnginePresets.turbo()  // Uses WASM + Worker
 })) {
   console.log(record);
 }
@@ -106,7 +106,7 @@ import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 await loadWasm(wasmUrl);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -233,7 +233,7 @@ module.exports = {
 
 ### Worker + WASM Combined
 
-When using both Workers and WASM (via `EnginePresets.responsiveFast()`), you need to configure **both**.
+When using both Workers and WASM (via `EnginePresets.turbo()`), you need to configure **both**.
 
 #### Main Variant (Auto-initialization)
 
@@ -246,7 +246,7 @@ import wasmUrl from 'web-csv-toolbox/csv.wasm?url';
 await loadWasm(wasmUrl);
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.responsiveFast({ workerURL: workerUrl })
+  engine: EnginePresets.turbo({ workerURL: workerUrl })
 })) {
   console.log(record);
 }
@@ -325,7 +325,7 @@ await Promise.all(
   files.map(async (csv) => {
     let count = 0;
     for await (const record of parseString(csv, {
-      engine: EnginePresets.responsive({ workerPool: pool })
+      engine: EnginePresets.recommended({ workerPool: pool })
     })) {
       // Process record
       count++;

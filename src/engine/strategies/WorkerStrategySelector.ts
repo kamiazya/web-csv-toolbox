@@ -8,7 +8,21 @@ import type { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.
 import { MessageStreamingStrategy } from "@/engine/strategies/MessageStreamingStrategy.ts";
 import { TransferableStreamStrategy } from "@/engine/strategies/TransferableStreamStrategy.ts";
 import type { WorkerStrategy } from "@/engine/strategies/WorkerStrategy.ts";
+import type { WorkerStrategyName } from "@/execution/utils/contextToStrategy.ts";
 import type { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
+
+/**
+ * Options for strategy execution.
+ *
+ * @internal
+ */
+export interface StrategyExecutionOptions {
+  /**
+   * Preferred worker strategies in priority order.
+   * If specified, tries each strategy in order until one succeeds.
+   */
+  preferredStrategies?: WorkerStrategyName[];
+}
 
 /**
  * Worker strategy selector.
@@ -41,6 +55,7 @@ export class WorkerStrategySelector {
    * @param options - Parse options
    * @param session - Worker session (can be null)
    * @param engineConfig - Engine configuration
+   * @param execOptions - Strategy execution options (optional)
    * @returns Async iterable iterator of parsed records
    */
   async *execute<
@@ -56,7 +71,21 @@ export class WorkerStrategySelector {
       | undefined,
     session: WorkerSession | null,
     engineConfig: InternalEngineConfig,
+    execOptions?: StrategyExecutionOptions,
   ): AsyncIterableIterator<T> {
+    // If preferred strategies are specified, use priority-based execution
+    if (execOptions?.preferredStrategies?.length) {
+      yield* this.executeWithPriority(
+        input,
+        options,
+        session,
+        engineConfig,
+        execOptions.preferredStrategies,
+      );
+      return;
+    }
+
+    // Legacy execution path (existing code below)
     // Determine which strategy to use
     const requestedStrategy = engineConfig.hasStreamTransfer()
       ? "stream-transfer"
@@ -132,6 +161,71 @@ export class WorkerStrategySelector {
       // No fallback available, re-throw
       throw error;
     }
+  }
+
+  /**
+   * Execute with priority-based strategy selection.
+   *
+   * Tries each preferred strategy in order until one succeeds.
+   * Notifies via onFallback when falling back to next strategy (except for last).
+   *
+   * @param input - Input data
+   * @param options - Parse options
+   * @param session - Worker session
+   * @param engineConfig - Engine configuration
+   * @param preferredStrategies - Strategies to try in order
+   * @returns Async iterable iterator of parsed records
+   */
+  private async *executeWithPriority<
+    T,
+    Header extends ReadonlyArray<string> = readonly string[],
+    Delimiter extends string = DEFAULT_DELIMITER,
+    Quotation extends string = DEFAULT_QUOTATION,
+  >(
+    input: string | CSVBinary | ReadableStream<string>,
+    options:
+      | ParseOptions<Header, Delimiter, Quotation>
+      | ParseBinaryOptions<Header, Delimiter, Quotation>
+      | undefined,
+    session: WorkerSession | null,
+    engineConfig: InternalEngineConfig,
+    preferredStrategies: WorkerStrategyName[],
+  ): AsyncIterableIterator<T> {
+    let lastError: Error | undefined;
+
+    for (const strategyName of preferredStrategies) {
+      const strategy = this.strategies.get(strategyName);
+      if (!strategy) {
+        continue; // Strategy not available, try next
+      }
+
+      try {
+        // Try to execute with this strategy
+        yield* strategy.execute(input, options, session, engineConfig);
+        return; // Success - exit
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        // Notify about fallback (except for the last strategy)
+        const isLastStrategy =
+          preferredStrategies.indexOf(strategyName) ===
+          preferredStrategies.length - 1;
+        if (!isLastStrategy && engineConfig.onFallback) {
+          engineConfig.onFallback({
+            requestedConfig: engineConfig.toConfig(),
+            actualConfig: engineConfig.toConfig(),
+            reason: `Strategy "${strategyName}" failed: ${lastError.message}`,
+            error: lastError,
+          });
+        }
+        // Continue to next strategy
+      }
+    }
+
+    // All strategies failed
+    throw (
+      lastError || new Error("No worker strategies available or all failed")
+    );
   }
 }
 

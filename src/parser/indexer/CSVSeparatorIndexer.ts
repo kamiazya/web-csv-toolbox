@@ -63,7 +63,10 @@ export interface CSVIndexerBackendAsync {
    * @param prevInQuote - Quote state from previous chunk (false for first chunk)
    * @returns Promise resolving to CSVSeparatorIndexResult
    */
-  scan(chunk: Uint8Array, prevInQuote: boolean): Promise<CSVSeparatorIndexResult>;
+  scan(
+    chunk: Uint8Array,
+    prevInQuote: boolean,
+  ): Promise<CSVSeparatorIndexResult>;
 
   /**
    * Destroy the backend and release resources (e.g., GPU buffers, device)

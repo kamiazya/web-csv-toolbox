@@ -8,6 +8,7 @@ vi.mock("web-csv-toolbox-wasm", () => ({
 
 // Mock wasmState
 vi.mock("./wasmState.js", () => ({
+  hasWasmSimd: vi.fn(() => true), // Mock SIMD support as available by default
   isWasmInitialized: vi.fn(),
   markWasmInitialized: vi.fn(),
   isInitialized: vi.fn(),
@@ -43,6 +44,7 @@ describe("loadWasm.node", () => {
     mockFileURLToPath = vi.mocked(nodeUrl.fileURLToPath);
 
     vi.clearAllMocks();
+    (wasmState.hasWasmSimd as Mock).mockReturnValue(true);
     (wasmState.isWasmInitialized as Mock).mockReturnValue(false);
   });
 
@@ -75,6 +77,19 @@ describe("loadWasm.node", () => {
       // Should only initialize once
       expect(mockInit).toHaveBeenCalledTimes(1);
       expect(wasmState.markWasmInitialized).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("SIMD capability", () => {
+    it("should skip initialization when SIMD is not supported", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      (wasmState.hasWasmSimd as Mock).mockReturnValue(false);
+
+      await expect(loadWasm()).resolves.not.toThrow();
+
+      expect(mockInit).not.toHaveBeenCalled();
+      expect(wasmState.markWasmInitialized).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

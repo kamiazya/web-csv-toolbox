@@ -7,8 +7,8 @@
 
 #[cfg(test)]
 mod tests {
+    use crate::parser::scan::{pack_separator, unpack_offset, unpack_type, SEP_DELIMITER, SEP_LF};
     use crate::parser::{parse_csv, parse_csv_str};
-    use crate::parser::scan::{pack_separator, unpack_offset, unpack_type, SEP_LF, SEP_DELIMITER};
 
     // =========================================================================
     // Issue #1: max_field_count enforcement on data rows
@@ -19,7 +19,10 @@ mod tests {
         // Header with more fields than max_field_count should fail
         let input = "a,b,c,d,e,f";
         let result = parse_csv_str(input, b',', b'"', 3);
-        assert!(result.is_err(), "Header exceeding max_field_count should fail");
+        assert!(
+            result.is_err(),
+            "Header exceeding max_field_count should fail"
+        );
         assert!(result.unwrap_err().contains("exceeds maximum"));
     }
 
@@ -28,10 +31,19 @@ mod tests {
         // Data row with more fields than max_field_count should fail
         let input = "a,b\n1,2,3,4,5";
         let result = parse_csv_str(input, b',', b'"', 3);
-        assert!(result.is_err(), "Data row exceeding max_field_count should fail");
+        assert!(
+            result.is_err(),
+            "Data row exceeding max_field_count should fail"
+        );
         let err_msg = result.unwrap_err();
-        assert!(err_msg.contains("Data row"), "Error should mention data row");
-        assert!(err_msg.contains("exceeds maximum"), "Error should mention limit");
+        assert!(
+            err_msg.contains("Data row"),
+            "Error should mention data row"
+        );
+        assert!(
+            err_msg.contains("exceeds maximum"),
+            "Error should mention limit"
+        );
     }
 
     #[test]

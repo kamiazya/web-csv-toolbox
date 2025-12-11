@@ -17,6 +17,7 @@ import {
   parseStringInGPU,
 } from "@/parser/execution/gpu/parseStringInGPU.ts";
 import { parseStringInWasm } from "@/parser/execution/wasm/parseStringInWasm.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -48,9 +49,9 @@ import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
  * ```ts
  * import { parseString, EnginePresets } from 'web-csv-toolbox';
  *
- * // Use UI responsiveness + parse speed optimized execution method
+ * // Use maximum performance execution method
  * for await (const record of parseString(csv, {
- *   engine: EnginePresets.responsiveFast()
+ *   engine: EnginePresets.turbo()
  * })) {
  *   console.log(record);
  * }
@@ -143,29 +144,19 @@ export async function* parseString<
   try {
     // Parse engine configuration
     const engineConfig = new InternalEngineConfig(options?.engine);
+    const simdAvailable = hasWasmSimd();
 
     // GPU execution (highest priority if enabled)
     if (engineConfig.hasGPU()) {
-      // Validate that array output format is not used with GPU
-      // @ts-ignore - Runtime check needed; type may be narrowed but runtime value could differ
-      if (options?.outputFormat === "array") {
-        throw new Error(
-          "Array output format is not supported with GPU execution. " +
-            "Use outputFormat: 'object' (default) or disable GPU (engine: { gpu: false }).",
-        );
-      }
-
       // Check if WebGPU is available
       const gpuAvailable = await isWebGPUAvailable();
 
       if (gpuAvailable) {
         try {
           // GPU execution with automatic device management
-          yield* parseStringInGPU(
-            csv,
-            options,
-            engineConfig.gpuDevice,
-          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+          yield* parseStringInGPU(csv, options) as AsyncIterableIterator<
+            InferCSVRecord<Header, Options>
+          >;
           return; // Success, exit function
         } catch (gpuError) {
           // GPU failed, trigger fallback
@@ -194,8 +185,33 @@ export async function* parseString<
       }
 
       // GPU fallback: try WASM first, then pure JS
-      if (engineConfig.hasWasm() || engineConfig.createGPUFallbackConfig().hasWasm()) {
-        // @ts-ignore - Runtime check needed; type may be narrowed but runtime value could differ
+      const gpuFallbackConfig = engineConfig.createGPUFallbackConfig();
+      const wasmAllowedForGpuFallback =
+        simdAvailable &&
+        (engineConfig.hasWasm() || gpuFallbackConfig.hasWasm());
+
+      if (
+        engineConfig.hasWasm() ||
+        gpuFallbackConfig.hasWasm()
+      ) {
+        if (!wasmAllowedForGpuFallback) {
+          if (engineConfig.onFallback) {
+            const fallbackConfig =
+              gpuFallbackConfig.createWasmFallbackConfig();
+            engineConfig.onFallback({
+              requestedConfig: engineConfig.toConfig(),
+              actualConfig: fallbackConfig.toConfig(),
+              reason: "WebAssembly SIMD is not supported in this environment",
+            });
+          }
+
+          const iterator = parseStringToIterableIterator(csv, options);
+          yield* convertIterableIteratorToAsync(
+            iterator,
+          ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+          return;
+        }
+
         if (options?.outputFormat === "array") {
           throw new Error(
             "Array output format is not supported with WASM fallback. " +
@@ -210,18 +226,32 @@ export async function* parseString<
 
       // Final fallback: pure JS
       const iterator = parseStringToIterableIterator(csv, options);
-      yield* convertIterableIteratorToAsync(
-        iterator,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
       return;
     }
 
-    if (engineConfig.hasWorker()) {
+    const wasmEnabled = engineConfig.hasWasm() && simdAvailable;
+    const runtimeEngineConfig = wasmEnabled
+      ? engineConfig
+      : engineConfig.createWasmFallbackConfig();
+
+    if (engineConfig.hasWasm() && !simdAvailable && engineConfig.onFallback) {
+      const fallbackConfig = engineConfig.createWasmFallbackConfig();
+      engineConfig.onFallback({
+        requestedConfig: engineConfig.toConfig(),
+        actualConfig: fallbackConfig.toConfig(),
+        reason: "WebAssembly SIMD is not supported in this environment",
+      });
+    }
+
+    if (runtimeEngineConfig.hasWorker()) {
       // Worker execution
-      const session = engineConfig.workerPool
+      const session = runtimeEngineConfig.workerPool
         ? await WorkerSession.create({
-            workerPool: engineConfig.workerPool,
-            workerURL: engineConfig.workerURL,
+            workerPool: runtimeEngineConfig.workerPool,
+            workerURL: runtimeEngineConfig.workerURL,
           })
         : null;
 
@@ -230,14 +260,14 @@ export async function* parseString<
           csv,
           options,
           session,
-          engineConfig,
+          runtimeEngineConfig,
         ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
       } finally {
         session?.[Symbol.dispose]();
       }
     } else {
       // Main thread execution
-      if (engineConfig.hasWasm()) {
+      if (wasmEnabled) {
         // Validate that array output format is not used with WASM
         if (options?.outputFormat === "array") {
           throw new Error(

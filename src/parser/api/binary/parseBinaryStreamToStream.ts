@@ -8,13 +8,13 @@ import { WasmBinaryObjectCSVParser } from "@/parser/models/WasmBinaryObjectCSVPa
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
 import { StringCSVLexerTransformer } from "@/parser/stream/StringCSVLexerTransformer.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import {
   isInitialized as isWasmInitialized,
   loadWasmSync,
   scanCsvBytesStreaming,
   scanCsvBytesZeroCopy,
 } from "@/wasm/WasmInstance.main.web.ts";
-import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 
 export function parseBinaryStreamToStream<
   Header extends readonly string[],

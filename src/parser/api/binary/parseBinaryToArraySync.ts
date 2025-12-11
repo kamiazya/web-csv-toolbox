@@ -40,7 +40,10 @@ export function parseBinaryToArraySync<
     // Extract only CSV processing options (not binary-specific ones)
     // Binary options (charset, decompression, etc.) were already handled by convertBinaryToString
     const csvOptions = options as ParseOptions<Header> | undefined;
-    return parseStringToArraySync(csv, csvOptions) as InferCSVRecord<Header, Options>[];
+    return parseStringToArraySync(csv, csvOptions) as InferCSVRecord<
+      Header,
+      Options
+    >[];
   } catch (error) {
     commonParseErrorHandling(error);
   }

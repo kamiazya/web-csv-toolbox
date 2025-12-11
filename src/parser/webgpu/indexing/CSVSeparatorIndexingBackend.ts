@@ -31,6 +31,7 @@ import {
   sortSeparatorsByOffset,
 } from "@/parser/webgpu/utils/separator-utils.ts";
 import { GPUBufferAllocator } from "@/webgpu/compute/GPUBufferAllocator.ts";
+import { GPUMemoryError } from "@/webgpu/compute/GPUMemoryError.ts";
 import type {
   ComputeDispatchResult,
   ComputeTiming,
@@ -506,6 +507,8 @@ export class CSVSeparatorIndexingBackend
 
   /**
    * Create or resize buffers for processing
+   *
+   * @throws GPUMemoryError if buffer allocation fails due to memory pressure
    */
   private ensureBuffers(requiredSize: number): void {
     if (!this.device || !this.bufferAllocator) {
@@ -523,6 +526,8 @@ export class CSVSeparatorIndexingBackend
       this.bufferAllocator.destroyAll();
       this.bufferAllocator = new GPUBufferAllocator(this.device);
     }
+
+    try {
 
     // Create input buffer
     this.bufferAllocator.create(BUFFER_NAMES.INPUT, {
@@ -642,6 +647,20 @@ export class CSVSeparatorIndexingBackend
     });
 
     this.currentBufferSize = alignedSize;
+    } catch (error) {
+      // GPU buffer allocation failed - propagate memory error for fallback handling
+      if (error instanceof GPUMemoryError) {
+        throw error;
+      }
+      // Unexpected error - wrap it as GPUMemoryError
+      throw new GPUMemoryError(
+        `Failed to allocate GPU buffers for CSV parsing (${alignedSize} bytes): ${error instanceof Error ? error.message : String(error)}`,
+        {
+          requestedSize: alignedSize,
+          cause: error instanceof Error ? error : undefined,
+        }
+      );
+    }
   }
 
   /**

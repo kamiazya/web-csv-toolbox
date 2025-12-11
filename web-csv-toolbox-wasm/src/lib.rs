@@ -15,9 +15,6 @@ fn format_error(message: String, source: Option<&str>) -> String {
     }
 }
 
-#[cfg(test)]
-mod tests;
-
 // =============================================================================
 // Zero-Copy WASM Memory Approach
 // =============================================================================
@@ -338,9 +335,8 @@ pub fn parse_string_to_array_sync(
     // Parse CSV
     let quote = b'"'; // Default quote character
     let (headers, field_data, actual_field_counts) =
-        parser::parse_csv_str(input, delimiter, quote, max_field_count).map_err(|e| {
-            wasm_bindgen::JsError::new(&format_error(e, source_opt))
-        })?;
+        parser::parse_csv_str(input, delimiter, quote, max_field_count)
+            .map_err(|e| wasm_bindgen::JsError::new(&format_error(e, source_opt)))?;
 
     // Create JS arrays for headers
     let headers_array = js_sys::Array::new();

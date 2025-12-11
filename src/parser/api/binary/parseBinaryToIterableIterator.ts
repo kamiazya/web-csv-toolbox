@@ -37,7 +37,9 @@ export function parseBinaryToIterableIterator<
     // Extract only CSV processing options (not binary-specific ones)
     // Binary options (charset, decompression, etc.) were already handled by convertBinaryToString
     const csvOptions = options as ParseOptions<Header> | undefined;
-    return parseStringToIterableIterator(csv, csvOptions) as IterableIterator<InferCSVRecord<Header, Options>>;
+    return parseStringToIterableIterator(csv, csvOptions) as IterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } catch (error) {
     commonParseErrorHandling(error);
   }

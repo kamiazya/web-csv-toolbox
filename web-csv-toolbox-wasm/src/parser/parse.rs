@@ -98,8 +98,8 @@ pub fn parse_csv(
                     let unescaped = unescape_field(field, quote);
                     // Option A: Check UTF-8 validity first to avoid unnecessary cloning
                     let field_str = match std::str::from_utf8(&unescaped) {
-                        Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
-                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                        Ok(s) => s.to_string(), // Valid UTF-8 - single allocation
+                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(), // Invalid - fallback
                     };
                     headers.push(field_str);
                 }
@@ -122,8 +122,7 @@ pub fn parse_csv(
                 if actual_count > max_field_count {
                     return Err(format!(
                         "Data row field count ({}) exceeds maximum allowed ({})",
-                        actual_count,
-                        max_field_count
+                        actual_count, max_field_count
                     ));
                 }
 
@@ -135,8 +134,8 @@ pub fn parse_csv(
                         let unescaped = unescape_field(field, quote);
                         // Option A: Check UTF-8 validity first to avoid unnecessary cloning
                         let field_str = match std::str::from_utf8(&unescaped) {
-                            Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
-                            Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                            Ok(s) => s.to_string(), // Valid UTF-8 - single allocation
+                            Err(_) => String::from_utf8_lossy(&unescaped).into_owned(), // Invalid - fallback
                         };
                         field_data.push(field_str);
                     }
@@ -159,8 +158,8 @@ pub fn parse_csv(
                 let unescaped = unescape_field(field, quote);
                 // Option A: Check UTF-8 validity first to avoid unnecessary cloning
                 let field_str = match std::str::from_utf8(&unescaped) {
-                    Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
-                    Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                    Ok(s) => s.to_string(), // Valid UTF-8 - single allocation
+                    Err(_) => String::from_utf8_lossy(&unescaped).into_owned(), // Invalid - fallback
                 };
                 headers.push(field_str);
             }
@@ -180,8 +179,7 @@ pub fn parse_csv(
             if actual_count > max_field_count {
                 return Err(format!(
                     "Data row field count ({}) exceeds maximum allowed ({})",
-                    actual_count,
-                    max_field_count
+                    actual_count, max_field_count
                 ));
             }
 
@@ -192,8 +190,8 @@ pub fn parse_csv(
                     let unescaped = unescape_field(field, quote);
                     // Option A: Check UTF-8 validity first to avoid unnecessary cloning
                     let field_str = match std::str::from_utf8(&unescaped) {
-                        Ok(s) => s.to_string(),  // Valid UTF-8 - single allocation
-                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(),  // Invalid - fallback
+                        Ok(s) => s.to_string(), // Valid UTF-8 - single allocation
+                        Err(_) => String::from_utf8_lossy(&unescaped).into_owned(), // Invalid - fallback
                     };
                     field_data.push(field_str);
                 }
@@ -293,6 +291,8 @@ mod tests {
         // Should fail with limit of 2
         let result = parse_csv_str(csv, b',', b'"', 2);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Field count (3) exceeds maximum allowed (2)"));
+        assert!(result
+            .unwrap_err()
+            .contains("Field count (3) exceeds maximum allowed (2)"));
     }
 }

@@ -3,8 +3,8 @@ import type {
   DEFAULT_QUOTATION,
   Delimiter,
   Newline,
-  TokenType,
 } from "@/core/constants.ts";
+import type { OptimizationHint } from "@/execution/OptimizationHint.ts";
 
 /**
  * Position object.
@@ -1062,6 +1062,19 @@ interface BaseEngineConfig {
    * @experimental
    */
   queuingStrategy?: QueuingStrategyConfig | undefined;
+
+  /**
+   * Optimization hint for execution path selection.
+   *
+   * Influences backend and context priority during execution planning:
+   * - `speed`: Maximize throughput (GPU > WASM > JS, main thread preferred)
+   * - `consistency`: Predictable performance (WASM > JS > GPU, main thread preferred)
+   * - `balanced`: Balance speed and responsiveness (JS > WASM > GPU, worker preferred)
+   * - `responsive`: Minimize initial response time (JS > WASM > GPU, worker preferred)
+   *
+   * @default Varies by preset (stable: "responsive", recommended: "balanced", turbo: "speed")
+   */
+  optimizationHint?: OptimizationHint | undefined;
 }
 
 /**
@@ -1432,7 +1445,10 @@ export interface WorkerPool {
  *
  * @category Types
  */
-export type EngineConfig = MainThreadEngineConfig | WorkerEngineConfig | GPUEngineConfig;
+export type EngineConfig =
+  | MainThreadEngineConfig
+  | WorkerEngineConfig
+  | GPUEngineConfig;
 
 /**
  * Partial engine configuration for testing or gradual configuration.
@@ -1441,16 +1457,18 @@ export type EngineConfig = MainThreadEngineConfig | WorkerEngineConfig | GPUEngi
  * @category Types
  * @internal
  */
-export type PartialEngineConfig = Partial<BaseEngineConfig & {
-  worker?: boolean;
-  gpu?: boolean;
-  workerURL?: string | URL;
-  workerPool?: WorkerPool;
-  workerStrategy?: WorkerCommunicationStrategy;
-  strict?: boolean;
-  gpuDevice?: GPUDevice;
-  onFallback?: (info: EngineFallbackInfo) => void;
-}>;
+export type PartialEngineConfig = Partial<
+  BaseEngineConfig & {
+    worker?: boolean;
+    gpu?: boolean;
+    workerURL?: string | URL;
+    workerPool?: WorkerPool;
+    workerStrategy?: WorkerCommunicationStrategy;
+    strict?: boolean;
+    gpuDevice?: GPUDevice;
+    onFallback?: (info: EngineFallbackInfo) => void;
+  }
+>;
 
 /**
  * Engine configuration options.

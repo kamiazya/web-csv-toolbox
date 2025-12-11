@@ -216,14 +216,25 @@ export async function* parse<
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   if (typeof csv === "string") {
     // Filter binary-specific options for string parsing
-    const stringOptions = options ? {
-      ...options,
-      // Remove charset if it's not a valid StringCharset
-      ...(options.charset && options.charset !== "utf-8" && options.charset !== "utf-16" ? { charset: undefined } : {})
-    } : options;
-    yield* parseString(csv, stringOptions as ParseOptions<Header> | undefined) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const stringOptions = options
+      ? {
+          ...options,
+          // Remove charset if it's not a valid StringCharset
+          ...(options.charset &&
+          options.charset !== "utf-8" &&
+          options.charset !== "utf-16"
+            ? { charset: undefined }
+            : {}),
+        }
+      : options;
+    yield* parseString(
+      csv,
+      stringOptions as ParseOptions<Header> | undefined,
+    ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
   } else if (csv instanceof ArrayBuffer || ArrayBuffer.isView(csv)) {
-    yield* parseBinary(csv, options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    yield* parseBinary(csv, options) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   } else if (csv instanceof ReadableStream) {
     const [branch1, branch2] = csv.tee();
     const reader1 = branch1.getReader();
@@ -231,31 +242,63 @@ export async function* parse<
     reader1.releaseLock();
     if (typeof firstChunk === "string") {
       // Filter binary-specific options for string parsing
-      const stringOptions = options ? {
-        ...options,
-        // Remove charset if it's not a valid StringCharset
-        ...(options.charset && options.charset !== "utf-8" && options.charset !== "utf-16" ? { charset: undefined } : {})
-      } : options;
-      yield* parseStringStream(branch2 as ReadableStream<string>, stringOptions as ParseOptions<Header> | undefined) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      const stringOptions = options
+        ? {
+            ...options,
+            // Remove charset if it's not a valid StringCharset
+            ...(options.charset &&
+            options.charset !== "utf-8" &&
+            options.charset !== "utf-16"
+              ? { charset: undefined }
+              : {}),
+          }
+        : options;
+      yield* parseStringStream(
+        branch2 as ReadableStream<string>,
+        stringOptions as ParseOptions<Header> | undefined,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } else if (firstChunk instanceof Uint8Array) {
-      yield* parseBinaryStream(branch2 as ReadableStream<Uint8Array>, options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      yield* parseBinaryStream(
+        branch2 as ReadableStream<Uint8Array>,
+        options,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     }
   } else if (csv instanceof Response) {
     // Filter binary-specific options - Response might decode to string internally
-    const responseOptions = options ? {
-      ...options,
-      ...(options.charset && options.charset !== "utf-8" && options.charset !== "utf-16" ? { charset: undefined } : {})
-    } : options;
-    yield* parseResponse(csv, responseOptions as ParseOptions<Header> | undefined) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const responseOptions = options
+      ? {
+          ...options,
+          ...(options.charset &&
+          options.charset !== "utf-8" &&
+          options.charset !== "utf-16"
+            ? { charset: undefined }
+            : {}),
+        }
+      : options;
+    yield* parseResponse(
+      csv,
+      responseOptions as ParseOptions<Header> | undefined,
+    ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
   } else if (csv instanceof Request) {
     // Filter binary-specific options - Request might decode to string internally
-    const requestOptions = options ? {
-      ...options,
-      ...(options.charset && options.charset !== "utf-8" && options.charset !== "utf-16" ? { charset: undefined } : {})
-    } : options;
-    yield* parseRequest(csv, requestOptions as ParseOptions<Header> | undefined) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    const requestOptions = options
+      ? {
+          ...options,
+          ...(options.charset &&
+          options.charset !== "utf-8" &&
+          options.charset !== "utf-16"
+            ? { charset: undefined }
+            : {}),
+        }
+      : options;
+    yield* parseRequest(
+      csv,
+      requestOptions as ParseOptions<Header> | undefined,
+    ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
   } else if (csv instanceof Blob) {
-    yield* parseBlob(csv, options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+    yield* parseBlob(csv, options) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   }
 }
 

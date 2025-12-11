@@ -5,6 +5,8 @@
  * Provides a clean interface for buffer operations.
  */
 
+import { GPUMemoryError } from "./GPUMemoryError.ts";
+
 /**
  * Configuration for a GPU buffer
  */
@@ -86,6 +88,7 @@ export class GPUBufferAllocator {
    * @param config - Buffer configuration
    * @returns Created GPU buffer
    * @throws Error if name already exists or allocator is destroyed
+   * @throws GPUMemoryError if buffer allocation fails due to memory pressure
    */
   create(name: string, config: GPUBufferConfig): GPUBuffer {
     this.assertNotDestroyed();
@@ -94,21 +97,36 @@ export class GPUBufferAllocator {
       throw new Error(`Buffer '${name}' already exists`);
     }
 
-    const buffer = this.device.createBuffer({
-      size: config.size,
-      usage: config.usage,
-      label: config.label,
-      mappedAtCreation: config.mappedAtCreation,
-    });
+    try {
+      const buffer = this.device.createBuffer({
+        size: config.size,
+        usage: config.usage,
+        label: config.label,
+        mappedAtCreation: config.mappedAtCreation,
+      });
 
-    this.buffers.set(name, {
-      buffer,
-      size: config.size,
-      usage: config.usage,
-      label: config.label,
-    });
+      this.buffers.set(name, {
+        buffer,
+        size: config.size,
+        usage: config.usage,
+        label: config.label,
+      });
 
-    return buffer;
+      return buffer;
+    } catch (error) {
+      // GPU buffer allocation failed - likely due to memory pressure
+      // Throw a specific error type that can be caught by upper layers
+      // to trigger fallback to WASM/JavaScript
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new GPUMemoryError(
+        `Failed to allocate GPU buffer '${name}' (${config.size} bytes): ${errorMessage}`,
+        {
+          requestedSize: config.size,
+          bufferName: name,
+          cause: error instanceof Error ? error : undefined,
+        }
+      );
+    }
   }
 
   /**
@@ -161,6 +179,7 @@ export class GPUBufferAllocator {
    * @param name - Buffer name
    * @param requiredSize - Minimum required size in bytes
    * @returns GPU buffer (may be new instance if resized)
+   * @throws GPUMemoryError if buffer reallocation fails due to memory pressure
    */
   ensureSize(name: string, requiredSize: number): GPUBuffer {
     this.assertNotDestroyed();
@@ -177,16 +196,30 @@ export class GPUBufferAllocator {
     // Destroy old buffer and create new one
     managed.buffer.destroy();
 
-    const newBuffer = this.device.createBuffer({
-      size: requiredSize,
-      usage: managed.usage,
-      label: managed.label,
-    });
+    try {
+      const newBuffer = this.device.createBuffer({
+        size: requiredSize,
+        usage: managed.usage,
+        label: managed.label,
+      });
 
-    managed.buffer = newBuffer;
-    managed.size = requiredSize;
+      managed.buffer = newBuffer;
+      managed.size = requiredSize;
 
-    return newBuffer;
+      return newBuffer;
+    } catch (error) {
+      // GPU buffer reallocation failed - likely due to memory pressure
+      // Note: Old buffer has been destroyed, so this allocator is now in an inconsistent state
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new GPUMemoryError(
+        `Failed to reallocate GPU buffer '${name}' to ${requiredSize} bytes: ${errorMessage}`,
+        {
+          requestedSize: requiredSize,
+          bufferName: name,
+          cause: error instanceof Error ? error : undefined,
+        }
+      );
+    }
   }
 
   /**
