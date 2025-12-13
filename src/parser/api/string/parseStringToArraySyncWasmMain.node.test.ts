@@ -41,7 +41,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
   describe("auto-initialization behavior", () => {
     it("should auto-initialize Wasm when not initialized", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["a", "b"],
         fieldData: ["1", "2"],
@@ -75,7 +77,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
     });
 
     it("should call isSyncInitialized before attempting initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: [],
         fieldData: [],
@@ -189,7 +193,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
   describe("successful parsing after auto-initialization", () => {
     it("should parse CSV correctly after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["name", "age"],
@@ -207,7 +213,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
     });
 
     it("should parse CSV with custom delimiter after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["a", "b"],
@@ -225,7 +233,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
     });
 
     it("should parse CSV with header row after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["x", "y"],
@@ -245,7 +255,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
   describe("integration with shared utilities", () => {
     it("should validate options before initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
 
       // Invalid delimiter should throw before attempting initialization
       expect(() =>
@@ -313,7 +325,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
   describe("comparison with slim entry", () => {
     it("should auto-initialize (unlike slim entry)", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
 
@@ -327,7 +341,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
     it("should auto-initialize on first use for convenience", () => {
       // Main version auto-initializes for developer convenience
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue("[]");
 
@@ -359,7 +375,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
     it("should work with automatic pattern (convenient)", () => {
       // Convenient: User doesn't call loadWasm(), auto-initialized on first use
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["a", "b"],
@@ -379,7 +397,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
   describe("edge cases", () => {
     it("should handle empty CSV after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: [],
@@ -396,7 +416,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
     });
 
     it("should handle large CSV after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       const largeHeaders = ["id", "value"];
       const largeFieldData: string[] = [];
@@ -421,7 +443,9 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
     });
 
     it("should handle special characters in CSV after auto-initialization", () => {
-      (isSyncInitialized as Mock).mockReturnValue(false);
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false)
+        .mockReturnValueOnce(true);
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue({
         headers: ["name", "desc"],
@@ -442,7 +466,10 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
   describe("state consistency", () => {
     it("should maintain consistent state across multiple parses", () => {
       // First parse: auto-initialize
-      (isSyncInitialized as Mock).mockReturnValueOnce(false);
+      // First check: not initialized, then after loadWasmSync: initialized
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false) // Initial check
+        .mockReturnValueOnce(true); // Check after loadWasmSync
       (loadWasmSync as Mock).mockImplementation(() => {}); // Success
       (wasmParseStringToArraySync as Mock).mockReturnValue('[{"a":"1"}]');
 
@@ -483,6 +510,26 @@ describe("parseStringToArraySyncWasm.main - auto-initialization", () => {
 
       // Should have tried to initialize both times
       expect(loadWasmSync).toHaveBeenCalledTimes(2);
+    });
+
+    it("should throw clear error when SIMD is not supported", () => {
+      // Simulate SIMD not supported: loadWasmSync returns without error
+      // but initialization still fails
+      (isSyncInitialized as Mock)
+        .mockReturnValueOnce(false) // Initial check (1st call)
+        .mockReturnValueOnce(false) // Still not initialized after loadWasmSync (1st call)
+        .mockReturnValueOnce(false) // Initial check (2nd call)
+        .mockReturnValueOnce(false); // Still not initialized after loadWasmSync (2nd call)
+      (loadWasmSync as Mock).mockImplementation(() => {
+        // loadWasmSync returns silently when SIMD not supported
+      });
+
+      expect(() => {
+        parseStringToArraySyncWasm("a,b\n1,2");
+      }).toThrow(/WebAssembly SIMD128 is not supported/);
+      expect(() => {
+        parseStringToArraySyncWasm("a,b\n1,2");
+      }).toThrow(/Please use the JavaScript parser instead/);
     });
   });
 });

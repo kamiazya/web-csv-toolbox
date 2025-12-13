@@ -24,12 +24,14 @@ function createMockEngineConfig(options: {
 function createMockCapabilities(options: {
   gpu?: boolean;
   wasm?: boolean;
+  wasmSimd?: boolean;
   worker?: boolean;
   transferableStreams?: boolean;
 }) {
   return {
     gpu: options.gpu ?? false,
     wasm: options.wasm ?? true,
+    wasmSimd: options.wasmSimd ?? true, // Default to true for tests
     worker: options.worker ?? true,
     transferableStreams: options.transferableStreams ?? true,
   } as EnvironmentCapabilities;
@@ -574,6 +576,71 @@ describe("ExecutionPathResolver", () => {
         expect(plan.gpuConfig?.workgroupSize).toBeGreaterThan(0);
         expect(plan.gpuConfig?.devicePreference).toBeDefined();
       }
+    });
+  });
+
+  describe("SIMD requirement", () => {
+    it("should exclude WASM backend when SIMD is not available", () => {
+      const ctx: ResolverContext = {
+        inputType: "binary-stream",
+        outputFormat: "object",
+        engineConfig: createMockEngineConfig({
+          wasm: true,
+          worker: false,
+        }),
+        capabilities: createMockCapabilities({
+          wasm: true,
+          wasmSimd: false, // SIMD not supported
+        }),
+      };
+
+      const plan = resolver.resolve(ctx);
+      // WASM should be excluded, only JS should be available
+      expect(plan.backends).toEqual(["js"]);
+      expect(plan.backends).not.toContain("wasm");
+    });
+
+    it("should include WASM backend when SIMD is available", () => {
+      const ctx: ResolverContext = {
+        inputType: "binary-stream",
+        outputFormat: "object",
+        engineConfig: createMockEngineConfig({
+          wasm: true,
+          worker: false,
+        }),
+        capabilities: createMockCapabilities({
+          wasm: true,
+          wasmSimd: true, // SIMD supported
+        }),
+      };
+
+      const plan = resolver.resolve(ctx);
+      // Both WASM and JS should be available
+      expect(plan.backends).toContain("wasm");
+      expect(plan.backends).toContain("js");
+    });
+
+    it("should fallback to JS in Safari < 16.4 environment", () => {
+      // Simulates Safari < 16.4 where WebAssembly is available but SIMD is not
+      const ctx: ResolverContext = {
+        inputType: "string",
+        outputFormat: "object",
+        engineConfig: createMockEngineConfig({
+          wasm: true,
+          gpu: false,
+          worker: false,
+        }),
+        capabilities: createMockCapabilities({
+          wasm: true, // WebAssembly API exists
+          wasmSimd: false, // But SIMD128 is not supported
+          gpu: false,
+        }),
+      };
+
+      const plan = resolver.resolve(ctx);
+      // Should only have JS backend, preventing runtime crash
+      expect(plan.backends).toEqual(["js"]);
+      expect(plan.backends).not.toContain("wasm");
     });
   });
 });

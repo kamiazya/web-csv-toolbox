@@ -4,11 +4,14 @@
  * Detects available features in the current environment:
  * - WebGPU support
  * - WebAssembly support
+ * - WebAssembly SIMD128 support
  * - Transferable streams support
  * - Worker support
  *
  * Used by ExecutionPathResolver to determine which execution paths are available.
  */
+
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 
 /**
  * Environment capabilities
@@ -23,6 +26,15 @@ export interface Capabilities {
    * Whether WebAssembly is supported
    */
   wasm: boolean;
+
+  /**
+   * Whether WebAssembly SIMD128 is supported
+   *
+   * IMPORTANT: Our WASM build requires SIMD128 support.
+   * Even if `wasm` is true, the WASM backend cannot be used
+   * unless `wasmSimd` is also true.
+   */
+  wasmSimd: boolean;
 
   /**
    * Whether transferable streams are supported
@@ -50,12 +62,14 @@ export class EnvironmentCapabilities {
   // Public readonly properties
   readonly gpu: boolean;
   readonly wasm: boolean;
+  readonly wasmSimd: boolean;
   readonly transferableStreams: boolean;
   readonly worker: boolean;
 
   private constructor(capabilities: Capabilities) {
     this.gpu = capabilities.gpu;
     this.wasm = capabilities.wasm;
+    this.wasmSimd = capabilities.wasmSimd;
     this.transferableStreams = capabilities.transferableStreams;
     this.worker = capabilities.worker;
   }
@@ -144,6 +158,7 @@ export class EnvironmentCapabilities {
    */
   private static async detectCapabilities(): Promise<Capabilities> {
     const wasm = EnvironmentCapabilities.detectWasm();
+    const wasmSimd = EnvironmentCapabilities.detectWasmSimd();
     const transferableStreams =
       EnvironmentCapabilities.detectTransferableStreams();
     const worker = EnvironmentCapabilities.detectWorker();
@@ -169,6 +184,7 @@ export class EnvironmentCapabilities {
     return {
       gpu,
       wasm,
+      wasmSimd,
       transferableStreams,
       worker,
     };
@@ -179,6 +195,7 @@ export class EnvironmentCapabilities {
    */
   private static detectCapabilitiesSync(): Capabilities {
     const wasm = EnvironmentCapabilities.detectWasm();
+    const wasmSimd = EnvironmentCapabilities.detectWasmSimd();
     const transferableStreams =
       EnvironmentCapabilities.detectTransferableStreams();
     const worker = EnvironmentCapabilities.detectWorker();
@@ -189,6 +206,7 @@ export class EnvironmentCapabilities {
     return {
       gpu,
       wasm,
+      wasmSimd,
       transferableStreams,
       worker,
     };
@@ -206,6 +224,13 @@ export class EnvironmentCapabilities {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Detect WebAssembly SIMD128 support
+   */
+  private static detectWasmSimd(): boolean {
+    return hasWasmSimd();
   }
 
   /**
@@ -247,6 +272,7 @@ export class EnvironmentCapabilities {
     return {
       gpu: this.gpu,
       wasm: this.wasm,
+      wasmSimd: this.wasmSimd,
       transferableStreams: this.transferableStreams,
       worker: this.worker,
     };
@@ -264,6 +290,13 @@ export class EnvironmentCapabilities {
    */
   hasWasm(): boolean {
     return this.wasm;
+  }
+
+  /**
+   * Check if WebAssembly SIMD128 is available (method version for compatibility)
+   */
+  hasWasmSimd(): boolean {
+    return this.wasmSimd;
   }
 
   /**
@@ -296,10 +329,14 @@ export class WorkerEnvironmentCapabilities {
   // Public readonly properties
   readonly gpu: boolean;
   readonly wasm: boolean;
+  readonly wasmSimd: boolean;
 
-  private constructor(capabilities: Omit<Capabilities, "worker">) {
+  private constructor(
+    capabilities: Omit<Capabilities, "worker" | "transferableStreams">,
+  ) {
     this.gpu = capabilities.gpu;
     this.wasm = capabilities.wasm;
+    this.wasmSimd = capabilities.wasmSimd;
   }
 
   /**
@@ -343,11 +380,10 @@ export class WorkerEnvironmentCapabilities {
   }
 
   private static async detectCapabilities(): Promise<
-    Omit<Capabilities, "worker">
+    Omit<Capabilities, "worker" | "transferableStreams">
   > {
     const wasm = WorkerEnvironmentCapabilities.detectWasm();
-    const transferableStreams =
-      WorkerEnvironmentCapabilities.detectTransferableStreams();
+    const wasmSimd = WorkerEnvironmentCapabilities.detectWasmSimd();
 
     // Async GPU detection in worker context with timeout
     let gpu = false;
@@ -370,7 +406,7 @@ export class WorkerEnvironmentCapabilities {
     return {
       gpu,
       wasm,
-      transferableStreams,
+      wasmSimd,
     };
   }
 
@@ -385,17 +421,8 @@ export class WorkerEnvironmentCapabilities {
     }
   }
 
-  private static detectTransferableStreams(): boolean {
-    try {
-      return (
-        typeof ReadableStream !== "undefined" &&
-        typeof ReadableStream.prototype !== "undefined" &&
-        ("transfer" in ReadableStream.prototype ||
-          typeof structuredClone === "function")
-      );
-    } catch {
-      return false;
-    }
+  private static detectWasmSimd(): boolean {
+    return hasWasmSimd();
   }
 
   getCapabilities(): Readonly<
@@ -404,6 +431,7 @@ export class WorkerEnvironmentCapabilities {
     return {
       gpu: this.gpu,
       wasm: this.wasm,
+      wasmSimd: this.wasmSimd,
     };
   }
 
@@ -413,5 +441,9 @@ export class WorkerEnvironmentCapabilities {
 
   hasWasm(): boolean {
     return this.wasm;
+  }
+
+  hasWasmSimd(): boolean {
+    return this.wasmSimd;
   }
 }

@@ -144,6 +144,16 @@ export function parseStringToArraySyncWasm<
           "Try: Check browser/runtime supports WebAssembly, verify bundler settings, or use async loadWasm() for better error details.",
       );
     }
+
+    // CRITICAL: Check if initialization succeeded
+    // loadWasmSync() may return silently without initializing if SIMD is not supported
+    if (!isSyncInitialized()) {
+      throw new RangeError(
+        "WebAssembly SIMD128 is not supported in this environment. " +
+          "This WASM build requires SIMD128 support (available in Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+). " +
+          "Please use the JavaScript parser instead: import { parseStringToArraySync } from 'web-csv-toolbox'.",
+      );
+    }
   }
 
   // Parse using Wasm

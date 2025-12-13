@@ -166,6 +166,11 @@ export class ExecutionPathResolver {
           if (!engineConfig.hasWasm() || !capabilities.wasm) {
             return false;
           }
+          // CRITICAL: Our WASM build requires SIMD128 support
+          // Prevent runtime crashes in environments without SIMD (e.g., Safari < 16.4)
+          if (!capabilities.wasmSimd) {
+            return false;
+          }
           // WASM doesn't support array output format
           if (outputFormat === "array") {
             return false;
