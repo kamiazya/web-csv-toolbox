@@ -26,7 +26,7 @@ catalogs:
     serve: ^14.2.4
 
     # Benchmarking
-    tinybench: ^2.6.0
+    tinybench: ^6.0.0
     tsx: ^4.7.1
     '@codspeed/tinybench-plugin': ^3.1.0
 
