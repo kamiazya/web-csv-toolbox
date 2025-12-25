@@ -42,6 +42,16 @@ export class MemoryIndexStore implements IndexStore {
 			meta: artifact.meta ? { ...artifact.meta } : undefined,
 		};
 
+		// Freeze して不変性を保証（shallow freeze）
+		// 参照を握られても書き換えられないようにする
+		Object.freeze(cloned);
+		Object.freeze(cloned.sourceIdentity);
+		Object.freeze(cloned.limits);
+		Object.freeze(cloned.core);
+		if (cloned.meta) {
+			Object.freeze(cloned.meta);
+		}
+
 		this.store.set(key, cloned);
 	}
 

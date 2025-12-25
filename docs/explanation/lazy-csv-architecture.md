@@ -63,7 +63,7 @@ class CustomHTTPByteSource implements AsyncByteSource {
 
 ## アーキテクチャ図
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │                  CsvStore                        │
 │  (ステートフル・Disposable)                       │
@@ -289,6 +289,59 @@ const limits: Limits = {
 - ソースサイズ
 - ETag（HTTP Response の場合）
 - Last-Modified
+
+### SourceIdentity の衝突耐性
+
+`SourceIdentity` は「弱いID」と「強い検証情報」の組み合わせで設計されています：
+
+- **id**: 軽量な識別子（キャッシュキー用途）
+  - StringByteSource: 先頭1000文字のハッシュ + 長さ
+  - **注意**: 同長でN文字以降が異なるケースは衝突の可能性あり
+- **検証情報**: size/etag/lastModifiedMs/contentHashHex
+  - IndexStore永続化時に必ず検証
+  - 不一致の場合はインデックスを再構築
+
+**推奨**: OPFS/IndexedDB など永続化を使う場合は `contentHashHex` の設定を検討してください。
+
+## 技術要件
+
+### 対応環境
+
+Lazy CSV Architecture は以下の環境で動作します：
+
+#### ブラウザ
+
+- **Chrome/Edge**: 90+ (BigInt, BigUint64Array サポート)
+- **Firefox**: 90+ (BigInt, BigUint64Array サポート)
+- **Safari**: 14.1+ (BigInt, BigUint64Array サポート)
+
+#### Node.js
+
+- **Node.js**: 20.0+ (BigInt ネイティブサポート、crypto.randomUUID())
+
+#### 必須機能
+
+- **BigInt サポート**: 4GB超のファイルに対応するため必須
+- **BigUint64Array サポート**: インデックス構造で使用
+- **Crypto API**: セッションID生成にCSPRNGを使用
+  - ブラウザ: `crypto.randomUUID()` または `crypto.getRandomValues()`
+  - Node.js: `crypto.randomUUID()` (node:crypto)
+
+#### IndexStore 永続化のシリアライズ
+
+インデックスを永続化する際、`BigUint64Array` は以下のように処理されます：
+
+```typescript
+// 保存時: ArrayBuffer として保存
+const buffer = indexCore.recordStart64.buffer;
+await storage.put(key, buffer);
+
+// 読み込み時: BigUint64Array に復元
+const buffer = await storage.get(key);
+const recordStart64 = new BigUint64Array(buffer);
+```
+
+**バージョニング**: `IndexArtifact.formatVersion` で互換性を管理
 
 ## 将来の拡張
 

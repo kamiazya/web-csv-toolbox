@@ -108,7 +108,11 @@ export class CsvStoreImpl implements CsvStore {
 	 * インデックスを生成（チャンク単位）
 	 */
 	private async generateIndex(signal?: AbortSignal): Promise<void> {
-		const sessionId = `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+		// セキュアな乱数生成器を使用（環境に応じて自動選択）
+		const { generateSessionId } = await import(
+			"#/lazy/utils/generateSessionId.js"
+		);
+		const sessionId = await generateSessionId();
 		const epoch = 0;
 
 		const sourceSize = this._identity?.size
@@ -142,6 +146,16 @@ export class CsvStoreImpl implements CsvStore {
 			chunks.map((chunk) => this.backend.submitChunk(chunk)),
 		);
 
+		// チャンク結果の検証（session/epoch/chunkId の整合性チェック）
+		// メインスレッドが single source of truth: 古いセッション/キャンセル後の結果は破棄
+		for (const result of chunkResults) {
+			if (result.sessionId !== sessionId || result.epoch !== epoch) {
+				throw new Error(
+					`Invalid chunk result: session/epoch mismatch (expected: ${sessionId}/${epoch}, got: ${result.sessionId}/${result.epoch})`,
+				);
+			}
+		}
+
 		// Pass2: 確定境界を作成（簡略化のため、finalizeChunkを呼ばずに直接結合）
 		// 実際には prefixState を計算して finalizeChunk を呼ぶ
 		const recordStart64List: bigint[] = [];
@@ -168,7 +182,20 @@ export class CsvStoreImpl implements CsvStore {
 
 			const finalizeResult = await this.backend.finalizeChunk(finalizeRequest);
 
-			// append-only でインデックスを構築
+			// 結果の検証（session/epoch/chunkId の整合性チェック）
+			if (
+				finalizeResult.sessionId !== sessionId ||
+				finalizeResult.epoch !== epoch ||
+				finalizeResult.chunkId !== result.chunkId
+			) {
+				// 不正な結果は破棄（Worker/キャンセル後の古い結果など）
+				console.warn(
+					`Discarding invalid finalize result: session/epoch/chunkId mismatch`,
+				);
+				continue;
+			}
+
+			// append-only でインデックスを構築（chunkId 順にcommitすることで整合を保つ）
 			if (finalizeResult.append.recordStart64) {
 				for (const offset of finalizeResult.append.recordStart64) {
 					recordStart64List.push(offset);
