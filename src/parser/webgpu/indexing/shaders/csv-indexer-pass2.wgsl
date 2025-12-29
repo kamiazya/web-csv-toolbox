@@ -84,13 +84,16 @@ fn workgroupPrefixXOR(localId: u32) {
     var step = 1u;
     for (var i = 0u; i < {{LOG_ITERATIONS}}u; i++) {
         workgroupBarrier();
-
+        // IMPORTANT: Two-phase update (read -> barrier -> write).
+        // An in-place scan without this can read values that were updated
+        // earlier in the same iteration, causing nondeterministic quote states
+        // and dropped separators on larger inputs.
+        var nextValue = sharedScanTemp[localId];
         if (localId >= step) {
-            let prev = sharedScanTemp[localId - step];
-            sharedScanTemp[localId] ^= prev;
+            nextValue ^= sharedScanTemp[localId - step];
         }
-
         workgroupBarrier();
+        sharedScanTemp[localId] = nextValue;
         step = step << 1u;
     }
 
