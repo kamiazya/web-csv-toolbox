@@ -31,11 +31,16 @@ export type DEFAULT_QUOTATION = typeof DEFAULT_QUOTATION;
  * Files smaller than this use `blob.arrayBuffer()` (faster),
  * files equal or larger use `blob.stream()` (memory-efficient).
  *
- * This value is determined by benchmarks.
+ * This value is determined by benchmarks (Report 55).
  *
+ * **Performance Characteristics:**
+ * - `< 5MB`: arrayBuffer mode (~70 MB/s) - 20x faster than stream
+ * - `≥ 5MB`: stream mode (~3 MB/s) - memory-safe for large files
+ *
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/benchmark/reports/55-browser-performance/STREAM-UNIFIED-RESULTS.md}
  * @category Constants
  */
-export const DEFAULT_ARRAY_BUFFER_THRESHOLD = 1 * 1024 * 1024; // 1MB
+export const DEFAULT_ARRAY_BUFFER_THRESHOLD = 5 * 1024 * 1024; // 5MB
 
 /**
  * Default maximum buffer size for CSV lexer in characters (UTF-16 code units).

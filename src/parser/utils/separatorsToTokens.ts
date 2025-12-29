@@ -26,6 +26,7 @@ import {
   SEP_TYPE_LF,
 } from "@/parser/types/SeparatorIndexResult.ts";
 import { unpackSeparator } from "@/parser/utils/separatorUtils.ts";
+import { unescapeQuotes } from "@/parser/utils/unescapeQuotes.ts";
 
 /**
  * Options for separatorsToTokens
@@ -112,37 +113,6 @@ export interface SeparatorsToTokensResult {
    * State for continuation
    */
   state: SeparatorsToTokensState;
-}
-
-/**
- * Unescape quotes in a field value.
- *
- * Handles:
- * - Removing surrounding quotes from quoted fields
- * - Converting escaped quotes (doubled quotes) to single quotes
- *
- * @param value - The raw field value
- * @param quotation - The quotation character (default: '"')
- * @returns The unescaped field value
- */
-function unescapeQuotes(value: string, quotation = '"'): string {
-  if (value.length < 2) {
-    return value;
-  }
-
-  // Check if the field is quoted
-  if (value.startsWith(quotation) && value.endsWith(quotation)) {
-    // Remove surrounding quotes and unescape internal quotes
-    const escaped = quotation + quotation;
-    return value
-      .slice(1, -1)
-      .replace(
-        new RegExp(escaped.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"),
-        quotation,
-      );
-  }
-
-  return value;
 }
 
 /**

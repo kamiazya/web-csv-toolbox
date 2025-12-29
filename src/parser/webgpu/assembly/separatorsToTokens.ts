@@ -18,11 +18,12 @@
  * }
  * ```
  */
-
-import { TokenType } from "@/core/constants.ts";
-import type { Position, TokenLocation } from "@/core/types.ts";
-import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "@/parser/webgpu/indexing/types.ts";
-import { unpackSeparator } from "@/parser/webgpu/utils/separator-utils.ts";
+/** biome-ignore-all assist/source/organizeImports: not to break */
+import type { Position, TokenLocation } from "@/core/types.js";
+import { unescapeQuotes } from "@/parser/utils/unescapeQuotes.js";
+import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "../indexing/types.js";
+import { unpackSeparator } from "../utils/separator-utils.js";
+import { TokenType } from "@/core/constants.js";
 
 /**
  * GPU-specific token format (type-based, different from main branch Token type)
@@ -325,30 +326,6 @@ export function separatorsToTokens(
       offset: globalOffset + data.length,
     },
   };
-}
-
-/**
- * Unescape double quotes in a field value.
- *
- * Handles:
- * - Removing surrounding quotes from quoted fields
- * - Converting escaped quotes ("") to single quotes (")
- *
- * @param value - The raw field value
- * @returns The unescaped field value
- */
-function unescapeQuotes(value: string): string {
-  if (value.length < 2) {
-    return value;
-  }
-
-  // Check if the field is quoted
-  if (value.startsWith('"') && value.endsWith('"')) {
-    // Remove surrounding quotes and unescape internal quotes
-    return value.slice(1, -1).replace(/""/g, '"');
-  }
-
-  return value;
 }
 
 /**

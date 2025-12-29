@@ -107,4 +107,53 @@ describe("parseString with EnginePresets.turbo()", () => {
     expect(records[0]).toEqual({ name: "Test", data: longText });
     expect(records[1]).toEqual({ name: "End", data: "short" });
   });
+
+  test("should not skip rows on medium CSV via GPU (regression)", async ({
+    gpu,
+    skip,
+  }) => {
+    skipIfNoWebGPU(gpu, skip);
+
+    Object.defineProperty(globalThis, "navigator", {
+      value: { gpu },
+      writable: true,
+      configurable: true,
+    });
+
+    const rows = 200;
+    const cols = 10;
+    const lines: string[] = [];
+
+    lines.push(Array.from({ length: cols }, (_, i) => `col${i}`).join(","));
+
+    for (let i = 0; i < rows; i++) {
+      const row = Array.from({ length: cols }, (_, j) => {
+        const needsComma = (i * 10 + j) % 2 === 0;
+        const value = needsComma ? `val${i}_${j},data` : `val${i}_${j}`;
+        return value.includes(",") ? `"${value}"` : value;
+      });
+      lines.push(row.join(","));
+    }
+
+    let csv = lines.join("\r\n");
+    if (!csv.endsWith("\r\n")) {
+      csv += "\r\n";
+    }
+
+    // Run multiple times to catch nondeterministic separator dropping.
+    for (let trial = 0; trial < 10; trial++) {
+      const records: Array<Record<string, string>> = [];
+      for await (const record of parseString(csv, {
+        engine: EnginePresets.turbo(),
+        maxBufferSize: Number.POSITIVE_INFINITY,
+      })) {
+        records.push(record as Record<string, string>);
+      }
+
+      expect(records).toHaveLength(rows);
+      for (let i = 0; i < rows; i++) {
+        expect(records[i]?.col0).toBe(`val${i}_0,data`);
+      }
+    }
+  });
 });
