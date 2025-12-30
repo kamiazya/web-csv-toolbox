@@ -11,7 +11,8 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
-import { parseBinaryInWasm } from "@/parser/execution/wasm/parseBinaryInWasm.ts";
+import { createBinaryExecutionSelector } from "@/parser/execution/ExecutionStrategySelector.ts";
+import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
 import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
@@ -53,6 +54,7 @@ export async function* parseBinary<
     ? engineConfig
     : engineConfig.createWasmFallbackConfig();
 
+  // Notify about WASM SIMD unavailability if WASM was requested
   if (engineConfig.hasWasm() && !simdAvailable && engineConfig.onFallback) {
     const fallbackConfig = engineConfig.createWasmFallbackConfig();
     engineConfig.onFallback({
@@ -86,24 +88,39 @@ export async function* parseBinary<
     }
   } else {
     // Main thread execution
-    if (wasmEnabled) {
-      // Validate that array output format is not used with WASM
-      if (options?.outputFormat === "array") {
-        throw new Error(
-          "Array output format is not supported with WASM execution. " +
-            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-        );
-      }
-      yield* parseBinaryInWasm(
-        bytes,
-        options as ParseBinaryOptions<Header> | undefined,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } else {
-      const iterator = parseBinaryToIterableIterator(bytes, options);
-      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
-        InferCSVRecord<Header, Options>
-      >;
-    }
+    // Create execution selector with GPU and JavaScript executors
+    const selector = createBinaryExecutionSelector<Header, Options>(
+      // GPU executor
+      (async function* (bytes: BufferSource, options: Options | undefined) {
+        // Convert BufferSource to ReadableStream for GPU processing
+        const binaryStream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            const uint8Array = bytes instanceof Uint8Array
+              ? bytes
+              : new Uint8Array(
+                  bytes instanceof ArrayBuffer
+                    ? bytes
+                    : bytes.buffer.slice(
+                        bytes.byteOffset,
+                        bytes.byteOffset + bytes.byteLength,
+                      ),
+                );
+            controller.enqueue(uint8Array);
+            controller.close();
+          },
+        });
+
+        // GPU execution with automatic device management
+        yield* parseBinaryStreamInGPU(binaryStream, options);
+      }) as any,
+      // JavaScript executor (sync)
+      (bytes, options) => parseBinaryToIterableIterator(bytes, options),
+    );
+
+    // Execute with automatic fallback: GPU → WASM → JavaScript
+    yield* selector.execute(bytes, options, engineConfig) as AsyncIterableIterator<
+      InferCSVRecord<Header, Options>
+    >;
   }
 }
 

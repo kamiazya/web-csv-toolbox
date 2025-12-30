@@ -1,7 +1,6 @@
-import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
 import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
-import { parseStringToStream } from "@/parser/api/string/parseStringToStream.ts";
+import { parseBinaryStreamToStream } from "@/parser/api/binary/parseBinaryStreamToStream.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
 /**
@@ -13,6 +12,10 @@ import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling
  * @throws {RangeError} If the binary size exceeds maxBinarySize limit.
  * @throws {TypeError} If the encoded data is not valid.
  * @throws {ParseError} When an error occurs while parsing the CSV data.
+ *
+ * @remarks
+ * This function now uses GPU/WASM acceleration when available through `parseBinaryStreamToStream`.
+ * The execution priority is: WebGPU > WASM > JavaScript.
  */
 export function parseBinaryToStream<
   Header extends ReadonlyArray<string>,
@@ -28,10 +31,30 @@ export function parseBinaryToStream<
   options?: Options,
 ): ReadableStream<InferCSVRecord<Header, Options>> {
   try {
-    const csv = convertBinaryToString(binary, options ?? {});
-    return parseStringToStream(csv, options as any) as ReadableStream<
-      InferCSVRecord<Header, Options>
-    >;
+    // Convert BufferSource to ReadableStream
+    const binaryStream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        // Convert BufferSource to Uint8Array if needed
+        const uint8Array = binary instanceof Uint8Array
+          ? binary
+          : new Uint8Array(
+              binary instanceof ArrayBuffer
+                ? binary
+                : binary.buffer.slice(
+                    binary.byteOffset,
+                    binary.byteOffset + binary.byteLength,
+                  ),
+            );
+        controller.enqueue(uint8Array);
+        controller.close();
+      },
+    });
+
+    // Use parseBinaryStreamToStream which has GPU/WASM support
+    return parseBinaryStreamToStream<Header, Delimiter, Quotation, Options>(
+      binaryStream,
+      options,
+    );
   } catch (error) {
     commonParseErrorHandling(error);
   }

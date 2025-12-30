@@ -4,6 +4,7 @@ import { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
 import { createCSVRecordAssembler } from "@/parser/api/model/createCSVRecordAssembler.ts";
 import { createStringCSVLexer } from "@/parser/api/model/createStringCSVLexer.ts";
 import { WasmIndexerBackend } from "@/parser/indexer/WasmIndexerBackend.ts";
+import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
 import { WasmBinaryObjectCSVParser } from "@/parser/models/WasmBinaryObjectCSVParser.ts";
 import { BinaryCSVParserStream } from "@/parser/stream/BinaryCSVParserStream.ts";
 import { CSVRecordAssemblerTransformer } from "@/parser/stream/CSVRecordAssemblerTransformer.ts";
@@ -31,8 +32,43 @@ export function parseBinaryStreamToStream<
 ): ReadableStream<InferCSVRecord<Header, Options>> {
   const { charset, fatal, ignoreBOM, decompression } = options ?? {};
 
-  // Check if WASM engine is requested AND SIMD is available
+  // Check execution engine priority: WebGPU > WASM > JS
   const engineConfig = new InternalEngineConfig(options?.engine);
+
+  // WebGPU path: Use GPU-accelerated separator detection with streaming assembly
+  // Note: parseBinaryStreamInGPU returns AsyncIterableIterator, which we convert
+  // to ReadableStream manually for maximum compatibility (ReadableStream.from not universally available)
+  if (engineConfig.hasGPU()) {
+    const sourceStream = decompression
+      ? stream.pipeThrough(
+          new DecompressionStream(decompression) as unknown as TransformStream<
+            Uint8Array,
+            Uint8Array
+          >,
+        )
+      : stream;
+
+    // Use dedicated GPU streaming parser (handles backend initialization internally)
+    // This approach processes chunks through GPU and yields records as they're assembled
+    return new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const record of parseBinaryStreamInGPU<
+            Header,
+            Delimiter,
+            Quotation
+          >(sourceStream, options)) {
+            controller.enqueue(
+              record as unknown as InferCSVRecord<Header, Options>,
+            );
+          }
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
+    }) as ReadableStream<InferCSVRecord<Header, Options>>;
+  }
 
   if (engineConfig.hasWasm() && hasWasmSimd()) {
     // Wasm SIMD path: Use optimized binary parser with direct separator detection
