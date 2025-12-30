@@ -7,22 +7,22 @@
  * Large chunks are automatically split to stay within GPU dispatch limits.
  */
 
-import { TokenType } from "@/core/constants.ts";
+import { Delimiter } from "@/core/constants.ts";
 import type {
   CSVRecord,
   ParseBinaryOptions,
   ParseOptions,
+  Token,
 } from "@/core/types.ts";
 import {
   GPUBinaryCSVLexer,
   type GPUBinaryCSVLexerConfig,
 } from "@/parser/models/GPUBinaryCSVLexer.ts";
-import type { GPUToken } from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 import { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
 
 /**
  * Simple GPU token assembler for CSV records.
- * Processes type-based tokens from GPU lexer directly without conversion.
+ * Processes unified field tokens from the GPU lexer directly without conversion.
  * Supports both object and array output formats.
  */
 class GPUTokenAssembler<Header extends ReadonlyArray<string>> {
@@ -48,62 +48,54 @@ class GPUTokenAssembler<Header extends ReadonlyArray<string>> {
     this.#outputFormat = outputFormat;
   }
 
-  *processToken(token: GPUToken): IterableIterator<CSVRecord<Header>> {
-    if (token.type === TokenType.FieldDelimiter) {
+  *processToken(token: Token<true>): IterableIterator<CSVRecord<Header>> {
+    // Unified token: always a field token, with delimiter metadata.
+    if (token.value !== "") {
+      this.#hasNonEmptyField = true;
+    }
+    this.#row[this.#fieldIndex] = token.value;
+    this.#dirty = true;
+
+    if (token.delimiter === Delimiter.Field) {
       // Field delimiter: move to next field
-      if (this.#row[this.#fieldIndex] === undefined) {
-        this.#row[this.#fieldIndex] = "";
-      }
       this.#fieldIndex++;
-      this.#dirty = true;
-    } else if (token.type === TokenType.RecordDelimiter) {
-      // Record delimiter: complete the record
-      // Only add empty field if we've seen any content (dirty === true)
-      if (this.#dirty && this.#row[this.#fieldIndex] === undefined) {
-        this.#row[this.#fieldIndex] = "";
-      }
+      return;
+    }
 
-      // Optimized empty row detection using offset-based tracking
-      // Check if row has all empty fields - treat as empty row to match CPU/WASM behavior
-      // This handles cases like:
-      // - "\n" → [] (no fields)
-      // - ",,\n" → [] (all fields empty)
-      // But keeps: ",e,\n" → ['', 'e', ''] (some non-empty fields)
-      // Uses #hasNonEmptyField flag set during Field token processing (zero overhead)
-      const isEmptyRow = this.#row.length === 0 || !this.#hasNonEmptyField;
-      if (isEmptyRow) {
-        this.#row = [];
-        this.#dirty = false;
-      }
+    if (token.delimiter !== Delimiter.Record) {
+      throw new Error(`Unexpected token delimiter: ${token.delimiter}`);
+    }
 
-      if (this.#header === undefined) {
-        // First row is header
-        this.#header = this.#row as unknown as Header;
-      } else {
-        // Yield record
-        if (this.#dirty || !this.#skipEmptyLines) {
-          yield this.#assembleRecord();
-        }
-      }
+    // Record delimiter (including EOF delimiterLength=0): complete the record
 
-      // Reset for next record
-      this.#fieldIndex = 0;
+    // Optimized empty row detection using offset-based tracking
+    // Check if row has all empty fields - treat as empty row to match CPU/WASM behavior
+    // This handles cases like:
+    // - "\n" → [] (no fields)
+    // - ",,\n" → [] (all fields empty)
+    // But keeps: ",e,\n" → ['', 'e', ''] (some non-empty fields)
+    // Uses #hasNonEmptyField flag set during Field token processing (zero overhead)
+    const isEmptyRow = this.#row.length === 0 || !this.#hasNonEmptyField;
+    if (isEmptyRow) {
       this.#row = [];
       this.#dirty = false;
-      this.#hasNonEmptyField = false; // Reset empty field tracker
-    } else {
-      // Field token (TokenType.Field)
-      // Track non-empty fields by checking decoded value
-      // This is more efficient than Array.every() as it's done incrementally
-      // Note: Cannot use offset-based check because quoted empty strings (e.g., "")
-      // have non-zero byte length but decode to empty string
-      if (token.value !== "") {
-        this.#hasNonEmptyField = true;
-      }
-
-      this.#row[this.#fieldIndex] = token.value;
-      this.#dirty = true;
     }
+
+    if (this.#header === undefined) {
+      // First row is header
+      this.#header = this.#row as unknown as Header;
+    } else {
+      // Yield record
+      if (this.#dirty || !this.#skipEmptyLines) {
+        yield this.#assembleRecord();
+      }
+    }
+
+    // Reset for next record
+    this.#fieldIndex = 0;
+    this.#row = [];
+    this.#dirty = false;
+    this.#hasNonEmptyField = false; // Reset empty field tracker
   }
 
   *flush(): IterableIterator<CSVRecord<Header>> {
@@ -193,13 +185,15 @@ export async function* parseBinaryStreamInGPU<
 
   try {
     // Create backend (device will be acquired automatically by backend)
-    backend = new CSVSeparatorIndexingBackend();
+    backend = new CSVSeparatorIndexingBackend({
+      quotation: options?.quotation ?? '"',
+      delimiter: options?.delimiter ?? ",",
+    });
     await backend.initialize();
 
-    // Create lexer
+    // Create lexer (delimiter is read from backend)
     const lexerConfig: GPUBinaryCSVLexerConfig = {
       backend,
-      delimiter: options?.delimiter ?? ",",
     };
     const lexer = new GPUBinaryCSVLexer(lexerConfig);
 
@@ -221,9 +215,7 @@ export async function* parseBinaryStreamInGPU<
         // Lex chunk to GPU tokens
         for await (const token of lexer.lex(chunk, { stream: true })) {
           // Process GPU token and yield records
-          for (const record of assembler.processToken(
-            token as unknown as GPUToken,
-          )) {
+          for (const record of assembler.processToken(token)) {
             yield record;
           }
         }
@@ -231,9 +223,7 @@ export async function* parseBinaryStreamInGPU<
 
       // Flush lexer
       for await (const token of lexer.lex()) {
-        for (const record of assembler.processToken(
-          token as unknown as GPUToken,
-        )) {
+        for (const record of assembler.processToken(token)) {
           yield record;
         }
       }

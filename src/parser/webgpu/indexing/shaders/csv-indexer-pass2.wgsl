@@ -13,8 +13,8 @@
 struct ParseUniforms {
     chunkSize: u32,
     prevInQuote: u32,  // 0: false, 1: true
-    maxWorkgroups: u32, // Number of workgroups (for bounds checking)
-    _padding: u32,
+    quotation: u32,    // ASCII code of quotation character
+    delimiter: u32,    // ASCII code of field delimiter character
 }
 
 struct ResultMeta {
@@ -40,12 +40,10 @@ struct ResultMeta {
 // ============================================================================
 
 const WORKGROUP_SIZE: u32 = {{WORKGROUP_SIZE}}u;
-const QUOTE: u32 = 34u;      // '"'
-const COMMA: u32 = 44u;      // ','
 const LF: u32 = 10u;         // '\n'
 const CR: u32 = 13u;         // '\r'
 
-const SEP_TYPE_COMMA: u32 = 0u;
+const SEP_TYPE_COMMA: u32 = 0u;  // Field delimiter (not necessarily comma)
 const SEP_TYPE_LF: u32 = 1u;
 
 // ============================================================================
@@ -168,9 +166,9 @@ fn main(
     if (isValid) {
         byte = getByte(globalIndex);
 
-        if (byte == QUOTE) {
+        if (byte == uniforms.quotation) {
             isQuote = 1u;
-        } else if (byte == COMMA) {
+        } else if (byte == uniforms.delimiter) {
             isComma = 1u;
         } else if (byte == LF) {
             isLF = 1u;
@@ -196,9 +194,8 @@ fn main(
 
     // Apply workgroup prefix XOR (computed by CPU from Pass 1 results)
     // This enables correct quote propagation across workgroup boundaries
-    if (workgroupId.x < uniforms.maxWorkgroups) {
-        inQuote ^= workgroupPrefixXORs[workgroupId.x];
-    }
+    // No bounds check needed: dispatchWorkgroups() ensures workgroupId.x is within range
+    inQuote ^= workgroupPrefixXORs[workgroupId.x];
 
     // Account for current position's quote
     inQuote ^= isQuote;

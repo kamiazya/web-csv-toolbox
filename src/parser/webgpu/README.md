@@ -1,6 +1,6 @@
 # WebGPU CSV Parser
 
-High-throughput CSV indexing built on WebGPU. This folder contains the GPU compute backend (`indexing/`), lexer (`lexer/`), and assembly utilities (`assembly/`) that convert separator indices into structured records.
+High-throughput CSV indexing built on WebGPU. This folder contains the GPU compute backend (`indexing/`) and utility functions (`utils/`) for separator manipulation.
 
 ## Overview
 
@@ -15,12 +15,11 @@ High-throughput CSV indexing built on WebGPU. This folder contains the GPU compu
 |-----------|----------|-------------|
 | `CSVSeparatorIndexingBackend` | `indexing/CSVSeparatorIndexingBackend.ts` | Orchestrates the two-pass compute dispatch, CPU prefix XOR, buffer management, and result reads. |
 | `CSVSeparatorIndexer` | `indexing/CSVSeparatorIndexer.ts` | Stateful streaming wrapper for the backend with leftover handling. |
-| `GPUBinaryCSVLexer` | `lexer/GPUBinaryCSVLexer.ts` | High-level AsyncBinaryCSVLexer implementation using GPU acceleration. |
-| `BinaryCSVLexerTransformer` | `lexer/BinaryCSVLexerTransformer.ts` | TransformStream wrapper for pipeline integration. |
+| `GPUBinaryCSVLexer` | `../models/GPUBinaryCSVLexer.ts` | High-level AsyncBinaryCSVLexer implementation using GPU acceleration. |
 | Pass 1 shader | `indexing/shaders/csv-indexer-pass1.wgsl` | Emits one XOR parity per 256-byte workgroup. |
 | Pass 2 shader | `indexing/shaders/csv-indexer-pass2.wgsl` | Applies CPU prefixes, masks separators, writes packed indices, and records `endInQuote`. |
+| Separator utilities | `utils/separator-utils.ts` | Pack/unpack separators, sort by offset, and extract valid separators. |
 | Public types | `indexing/types.ts` | Shared structs for uniforms, metadata, separators, and streaming state. |
-| Token conversion | `assembly/separatorsToTokens.ts` | Converts GPU separator indices into Token stream for record assemblers. |
 
 See `TWO_PASS_ALGORITHM.md` for a deep dive into the workgroup parity hand-off.
 

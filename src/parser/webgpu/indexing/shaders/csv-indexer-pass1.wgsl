@@ -12,8 +12,8 @@
 struct ParseUniforms {
     chunkSize: u32,
     prevInQuote: u32,
-    _padding1: u32,
-    _padding2: u32,
+    quotation: u32,
+    delimiter: u32,  // Field delimiter (unused in Pass 1, but kept for struct uniformity)
 }
 
 // ============================================================================
@@ -29,7 +29,6 @@ struct ParseUniforms {
 // ============================================================================
 
 const WORKGROUP_SIZE: u32 = {{WORKGROUP_SIZE}}u;
-const QUOTE: u32 = 34u;  // '"'
 
 // ============================================================================
 // Shared Memory
@@ -85,7 +84,7 @@ fn main(
     var isQuote = 0u;
     if (isValid) {
         let byte = getByte(globalIndex);
-        if (byte == QUOTE) {
+        if (byte == uniforms.quotation) {
             isQuote = 1u;
         }
     }

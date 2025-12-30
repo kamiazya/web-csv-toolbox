@@ -4,12 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 // CSV-specific buffer utilities
-import { adjustForCRLF } from "@/parser/webgpu/utils/adjustForCRLF.ts";
-import { decodeUTF8 } from "@/parser/webgpu/utils/decodeUTF8.ts";
-import { hasBOM } from "@/parser/webgpu/utils/hasBOM.ts";
-import { isCR } from "@/parser/webgpu/utils/isCR.ts";
-import { isLF } from "@/parser/webgpu/utils/isLF.ts";
-import { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
+import { hasBOM, stripBOM } from "@/utils/binary/bom.ts";
 // Generic WebGPU buffer utilities
 import { alignToU32 } from "@/webgpu/utils/alignToU32.ts";
 import { BufferPool } from "@/webgpu/utils/BufferPool.ts";
@@ -75,68 +70,6 @@ describe("buffer-utils", () => {
       const buffer = new Uint8Array([0xef, 0xbb, 0xbf, 0x48, 0x69]);
       const result = stripBOM(buffer);
       expect(result.buffer).toBe(buffer.buffer);
-    });
-  });
-
-  describe("isCR", () => {
-    it("should return true for carriage return", () => {
-      expect(isCR(0x0d)).toBe(true);
-    });
-
-    it("should return false for other bytes", () => {
-      expect(isCR(0x0a)).toBe(false); // LF
-      expect(isCR(0x20)).toBe(false); // Space
-    });
-  });
-
-  describe("isLF", () => {
-    it("should return true for line feed", () => {
-      expect(isLF(0x0a)).toBe(true);
-    });
-
-    it("should return false for other bytes", () => {
-      expect(isLF(0x0d)).toBe(false); // CR
-      expect(isLF(0x20)).toBe(false); // Space
-    });
-  });
-
-  describe("adjustForCRLF", () => {
-    it("should adjust position for CRLF", () => {
-      const buffer = new Uint8Array([0x48, 0x69, 0x0d, 0x0a]); // Hi\r\n
-      const adjusted = adjustForCRLF(buffer, 3); // LF at position 3
-      expect(adjusted).toBe(2); // Should exclude CR at position 2
-    });
-
-    it("should not adjust for plain LF", () => {
-      const buffer = new Uint8Array([0x48, 0x69, 0x0a]); // Hi\n
-      const adjusted = adjustForCRLF(buffer, 2); // LF at position 2
-      expect(adjusted).toBe(2); // No CR before, no adjustment
-    });
-
-    it("should handle LF at position 0", () => {
-      const buffer = new Uint8Array([0x0a, 0x48, 0x69]); // \nHi
-      const adjusted = adjustForCRLF(buffer, 0);
-      expect(adjusted).toBe(0);
-    });
-  });
-
-  describe("decodeUTF8", () => {
-    it("should decode UTF-8 string", () => {
-      const buffer = new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // Hello
-      const result = decodeUTF8(buffer, 0, 5);
-      expect(result).toBe("Hello");
-    });
-
-    it("should decode partial buffer", () => {
-      const buffer = new Uint8Array([0x48, 0x65, 0x6c, 0x6c, 0x6f]); // Hello
-      const result = decodeUTF8(buffer, 0, 2);
-      expect(result).toBe("He");
-    });
-
-    it("should decode UTF-8 multibyte characters", () => {
-      const buffer = new Uint8Array([0xe3, 0x81, 0x82]); // あ (hiragana A)
-      const result = decodeUTF8(buffer, 0, 3);
-      expect(result).toBe("あ");
     });
   });
 

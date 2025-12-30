@@ -6,19 +6,15 @@
  */
 
 import fc from "fast-check";
-import { beforeAll, describe } from "vitest";
-import {
-  convertGPUTokensToTokenFormat,
-  normalizeToken,
-} from "@/__tests__/webgpu/token-utils.ts";
+import { describe } from "vitest";
 import {
   expect,
   skipIfNoWebGPU,
   test,
 } from "@/__tests__/webgpu/webgpu-fixture.ts";
+import type { AnyToken } from "@/core/types.ts";
 import { WasmBinaryCSVLexer } from "@/parser/api/model/WasmBinaryCSVLexer.ts";
 import { WasmIndexerBackend } from "@/parser/indexer/WasmIndexerBackend.ts";
-import type { GPUToken } from "@/parser/webgpu/assembly/separatorsToTokens.ts";
 import { CSVSeparatorIndexingBackend } from "@/parser/webgpu/indexing/CSVSeparatorIndexingBackend.ts";
 import * as WasmModule from "@/wasm/WasmInstance.main.web.ts";
 import { GPUBinaryCSVLexer } from "./GPUBinaryCSVLexer.ts";
@@ -96,14 +92,15 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
               const csvBytes = new TextEncoder().encode(csvData);
 
               // Create GPU backend
-              const gpuBackend = new CSVSeparatorIndexingBackend();
+              const gpuBackend = new CSVSeparatorIndexingBackend({
+                delimiter: ",",
+              });
               await gpuBackend.initialize();
 
               try {
-                // Create GPU lexer
+                // Create GPU lexer (delimiter is read from backend)
                 const gpuLexer = new GPUBinaryCSVLexer({
                   backend: gpuBackend,
-                  delimiter: ",",
                 });
 
                 // Create WASM backend
@@ -117,27 +114,26 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 });
 
                 // Collect GPU tokens
-                const rawGpuTokens: Array<{ type: number; value: string }> = [];
+                const gpuTokens: Array<AnyToken> = [];
                 for await (const token of gpuLexer.lex(csvBytes)) {
-                  rawGpuTokens.push(
-                    normalizeToken(token as unknown as GPUToken),
-                  );
+                  gpuTokens.push(token);
                 }
-                // Convert GPU tokens to Token format (merge Field + Delimiter)
-                const gpuTokens = convertGPUTokensToTokenFormat(rawGpuTokens);
 
                 // Collect WASM tokens
-                const wasmTokens: Array<{ type: number; value: string }> = [];
+                const wasmTokens: Array<AnyToken> = [];
                 for (const token of wasmLexer.lex(csvBytes)) {
-                  wasmTokens.push(normalizeToken(token));
+                  wasmTokens.push(token);
                 }
 
                 // Compare token counts
                 expect(gpuTokens.length).toBe(wasmTokens.length);
 
-                // Compare each token
+                // Compare each token (value and delimiter only, ignoring location metadata)
                 for (let i = 0; i < gpuTokens.length; i++) {
-                  expect(gpuTokens[i]).toEqual(wasmTokens[i]);
+                  expect(gpuTokens[i]!.value).toBe(wasmTokens[i]!.value);
+                  expect(gpuTokens[i]!.delimiter).toBe(
+                    wasmTokens[i]!.delimiter,
+                  );
                 }
 
                 return true;
@@ -180,14 +176,15 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
               const csvBytes = new TextEncoder().encode(csvData);
 
               // Create GPU backend
-              const gpuBackend = new CSVSeparatorIndexingBackend();
+              const gpuBackend = new CSVSeparatorIndexingBackend({
+                delimiter: ",",
+              });
               await gpuBackend.initialize();
 
               try {
-                // Create GPU lexer
+                // Create GPU lexer (delimiter is read from backend)
                 const gpuLexer = new GPUBinaryCSVLexer({
                   backend: gpuBackend,
-                  delimiter: ",",
                 });
 
                 // Create WASM backend
@@ -201,26 +198,24 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 });
 
                 // Collect GPU tokens
-                const rawGpuTokens2: Array<{ type: number; value: string }> =
-                  [];
+                const gpuTokens: Array<AnyToken> = [];
                 for await (const token of gpuLexer.lex(csvBytes)) {
-                  rawGpuTokens2.push(
-                    normalizeToken(token as unknown as GPUToken),
-                  );
+                  gpuTokens.push(token);
                 }
-                // Convert GPU tokens to Token format (merge Field + Delimiter)
-                const gpuTokens = convertGPUTokensToTokenFormat(rawGpuTokens2);
 
                 // Collect WASM tokens
-                const wasmTokens: Array<{ type: number; value: string }> = [];
+                const wasmTokens: Array<AnyToken> = [];
                 for (const token of wasmLexer.lex(csvBytes)) {
-                  wasmTokens.push(normalizeToken(token));
+                  wasmTokens.push(token);
                 }
 
                 // Compare
                 expect(gpuTokens.length).toBe(wasmTokens.length);
                 for (let i = 0; i < gpuTokens.length; i++) {
-                  expect(gpuTokens[i]).toEqual(wasmTokens[i]);
+                  expect(gpuTokens[i]!.value).toBe(wasmTokens[i]!.value);
+                  expect(gpuTokens[i]!.delimiter).toBe(
+                    wasmTokens[i]!.delimiter,
+                  );
                 }
 
                 return true;
@@ -276,13 +271,14 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
               }
 
               // Create GPU backend
-              const gpuBackend = new CSVSeparatorIndexingBackend();
+              const gpuBackend = new CSVSeparatorIndexingBackend({
+                delimiter: ",",
+              });
               await gpuBackend.initialize();
 
               try {
                 const gpuLexer = new GPUBinaryCSVLexer({
                   backend: gpuBackend,
-                  delimiter: ",",
                 });
 
                 // Create WASM backend
@@ -295,36 +291,29 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 });
 
                 // Collect GPU tokens (streaming)
-                const rawGpuTokens3: Array<{ type: number; value: string }> =
-                  [];
+                const gpuTokens: Array<AnyToken> = [];
                 for (const chunk of chunks) {
                   for await (const token of gpuLexer.lex(chunk, {
                     stream: true,
                   })) {
-                    rawGpuTokens3.push(
-                      normalizeToken(token as unknown as GPUToken),
-                    );
+                    gpuTokens.push(token);
                   }
                 }
                 // Flush
                 for await (const token of gpuLexer.lex()) {
-                  rawGpuTokens3.push(
-                    normalizeToken(token as unknown as GPUToken),
-                  );
+                  gpuTokens.push(token);
                 }
-                // Convert GPU tokens to Token format (merge Field + Delimiter)
-                const gpuTokens = convertGPUTokensToTokenFormat(rawGpuTokens3);
 
                 // Collect WASM tokens (streaming)
-                const wasmTokens: Array<{ type: number; value: string }> = [];
+                const wasmTokens: Array<AnyToken> = [];
                 for (const chunk of chunks) {
                   for (const token of wasmLexer.lex(chunk, { stream: true })) {
-                    wasmTokens.push(normalizeToken(token));
+                    wasmTokens.push(token);
                   }
                 }
                 // Flush
                 for (const token of wasmLexer.lex()) {
-                  wasmTokens.push(normalizeToken(token));
+                  wasmTokens.push(token);
                 }
 
                 // Compare
@@ -338,13 +327,15 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 }
                 expect(gpuTokens.length).toBe(wasmTokens.length);
                 for (let i = 0; i < gpuTokens.length; i++) {
+                  const gpuToken = gpuTokens[i]!;
+                  const wasmToken = wasmTokens[i]!;
                   if (
-                    JSON.stringify(gpuTokens[i]) !==
-                    JSON.stringify(wasmTokens[i])
+                    gpuToken.value !== wasmToken.value ||
+                    gpuToken.delimiter !== wasmToken.delimiter
                   ) {
                     console.error(`Token mismatch at index ${i}:`);
-                    console.error(`  GPU:`, gpuTokens[i]);
-                    console.error(`  WASM:`, wasmTokens[i]);
+                    console.error(`  GPU:`, gpuToken);
+                    console.error(`  WASM:`, wasmToken);
                     console.error(
                       `  Context (GPU ${Math.max(0, i - 2)} to ${Math.min(gpuTokens.length - 1, i + 2)}):`,
                       gpuTokens.slice(
@@ -360,7 +351,8 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                       ),
                     );
                   }
-                  expect(gpuTokens[i]).toEqual(wasmTokens[i]);
+                  expect(gpuToken.value).toBe(wasmToken.value);
+                  expect(gpuToken.delimiter).toBe(wasmToken.delimiter);
                 }
 
                 return true;
@@ -408,13 +400,14 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
               const csvBytes = new TextEncoder().encode(csvData);
 
               // Create GPU backend
-              const gpuBackend = new CSVSeparatorIndexingBackend();
+              const gpuBackend = new CSVSeparatorIndexingBackend({
+                delimiter: ",",
+              });
               await gpuBackend.initialize();
 
               try {
                 const gpuLexer = new GPUBinaryCSVLexer({
                   backend: gpuBackend,
-                  delimiter: ",",
                 });
 
                 // Create WASM backend
@@ -427,19 +420,14 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 });
 
                 // Collect tokens
-                const rawGpuTokens4: Array<{ type: number; value: string }> =
-                  [];
+                const gpuTokens: Array<AnyToken> = [];
                 for await (const token of gpuLexer.lex(csvBytes)) {
-                  rawGpuTokens4.push(
-                    normalizeToken(token as unknown as GPUToken),
-                  );
+                  gpuTokens.push(token);
                 }
-                // Convert GPU tokens to Token format (merge Field + Delimiter)
-                const gpuTokens = convertGPUTokensToTokenFormat(rawGpuTokens4);
 
-                const wasmTokens: Array<{ type: number; value: string }> = [];
+                const wasmTokens: Array<AnyToken> = [];
                 for (const token of wasmLexer.lex(csvBytes)) {
-                  wasmTokens.push(normalizeToken(token));
+                  wasmTokens.push(token);
                 }
 
                 // Compare
@@ -453,13 +441,15 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                 }
                 expect(gpuTokens.length).toBe(wasmTokens.length);
                 for (let i = 0; i < gpuTokens.length; i++) {
+                  const gpuToken = gpuTokens[i]!;
+                  const wasmToken = wasmTokens[i]!;
                   if (
-                    JSON.stringify(gpuTokens[i]) !==
-                    JSON.stringify(wasmTokens[i])
+                    gpuToken.value !== wasmToken.value ||
+                    gpuToken.delimiter !== wasmToken.delimiter
                   ) {
                     console.error(`Token mismatch at index ${i}:`);
-                    console.error(`  GPU:`, gpuTokens[i]);
-                    console.error(`  WASM:`, wasmTokens[i]);
+                    console.error(`  GPU:`, gpuToken);
+                    console.error(`  WASM:`, wasmToken);
                     console.error(
                       `  Context (GPU ${Math.max(0, i - 2)} to ${Math.min(gpuTokens.length - 1, i + 2)}):`,
                       gpuTokens.slice(
@@ -475,7 +465,8 @@ describe.skipIf(!WasmModule.isInitialized() && !WasmModule.isSyncInitialized())(
                       ),
                     );
                   }
-                  expect(gpuTokens[i]).toEqual(wasmTokens[i]);
+                  expect(gpuToken.value).toBe(wasmToken.value);
+                  expect(gpuToken.delimiter).toBe(wasmToken.delimiter);
                 }
 
                 return true;

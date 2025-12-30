@@ -34,8 +34,9 @@ import { concatUint8Arrays } from "@/webgpu/utils/concatUint8Arrays.ts";
  * Defines the minimal interface required from a backend.
  * This allows for dependency injection and testing with mock backends.
  */
-export interface CSVSeparatorIndexingBackendInterface {
+export interface CSVSeparatorIndexingBackend {
   readonly isInitialized: boolean;
+  readonly delimiter: string;
   getMaxChunkSize(): number;
   run(
     chunk: Uint8Array,
@@ -64,7 +65,7 @@ export interface CSVSeparatorIndexerConfig {
    * The backend to use for GPU computation.
    * Must be initialized before calling index().
    */
-  backend: CSVSeparatorIndexingBackendInterface;
+  backend: CSVSeparatorIndexingBackend;
 }
 
 /**
@@ -74,7 +75,7 @@ export interface CSVSeparatorIndexerConfig {
  * similar to StringCSVLexer's `lex(chunk, { stream: true })` pattern.
  */
 export class CSVSeparatorIndexer {
-  private readonly backend: CSVSeparatorIndexingBackendInterface;
+  private readonly backend: CSVSeparatorIndexingBackend;
   private leftover: Uint8Array = new Uint8Array(0);
   private prevInQuote = false;
 

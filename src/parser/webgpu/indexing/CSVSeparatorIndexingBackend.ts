@@ -6,6 +6,7 @@
  */
 
 // Import WGSL shader templates
+import { DEFAULT_QUOTATION } from "@/core/constants.ts";
 import pass1ShaderTemplate from "@/parser/webgpu/indexing/shaders/csv-indexer-pass1.wgsl?raw";
 import pass2ShaderTemplate from "@/parser/webgpu/indexing/shaders/csv-indexer-pass2.wgsl?raw";
 import type {
@@ -109,6 +110,22 @@ export interface CSVSeparatorIndexingBackendConfig {
    * @default auto (selects optimal size based on GPU limits)
    */
   workgroupSize?: WorkgroupSize;
+
+  /**
+   * Quotation character used for escaping field values.
+   * Must be a single ASCII character (code 0-127).
+   * @default '"' (double quote, ASCII 34)
+   */
+  quotation?: string;
+
+  /**
+   * Field delimiter character used for CSV parsing.
+   * Must be a single ASCII character (code 0-127).
+   * Must not be CR (13) or LF (10) - reserved for line endings.
+   * Must not match quotation character.
+   * @default ',' (comma, ASCII 44)
+   */
+  delimiter?: string;
 }
 
 /**
@@ -220,11 +237,16 @@ export class CSVSeparatorIndexingBackend
   private pass2BindGroup: GPUBindGroup | null = null;
 
   private readonly config: Required<
-    Omit<CSVSeparatorIndexingBackendConfig, "gpu" | "device" | "workgroupSize">
+    Omit<
+      CSVSeparatorIndexingBackendConfig,
+      "gpu" | "device" | "workgroupSize" | "quotation" | "delimiter"
+    >
   > & {
     gpu?: GPU;
     device?: GPUDevice;
     workgroupSize?: WorkgroupSize; // undefined means "auto"
+    quotation: string; // quotation character
+    delimiter: string; // field delimiter character
   };
   private resolvedWorkgroupSize: WorkgroupSize | null = null;
   private readonly ownDevice: boolean;
@@ -233,6 +255,46 @@ export class CSVSeparatorIndexingBackend
 
   constructor(config: CSVSeparatorIndexingBackendConfig = {}) {
     const chunkSize = config.chunkSize || DEFAULT_CHUNK_SIZE;
+    const quotation = config.quotation ?? DEFAULT_QUOTATION;
+    const delimiter = config.delimiter ?? ",";
+
+    // Validate quotation character
+    if (quotation.length !== 1) {
+      throw new Error(
+        `Quotation must be a single character, got: ${quotation}`,
+      );
+    }
+    const quotationCode = quotation.charCodeAt(0);
+    if (quotationCode < 0 || quotationCode > 127) {
+      throw new Error(
+        `Quotation must be an ASCII character (0-127), got: "${quotation}" (code: ${quotationCode})`,
+      );
+    }
+
+    // Validate delimiter character
+    if (delimiter.length !== 1) {
+      throw new Error(
+        `Delimiter must be a single character, got: ${delimiter}`,
+      );
+    }
+    const delimiterCode = delimiter.charCodeAt(0);
+    if (delimiterCode < 0 || delimiterCode > 127) {
+      throw new Error(
+        `Delimiter must be an ASCII character (0-127), got: "${delimiter}" (code: ${delimiterCode})`,
+      );
+    }
+    if (delimiterCode === 13 || delimiterCode === 10) {
+      throw new Error(
+        `Delimiter must not be CR (13) or LF (10), got: "${delimiter}" (code: ${delimiterCode})`,
+      );
+    }
+
+    // Validate delimiter and quotation do not conflict
+    if (delimiter === quotation) {
+      throw new Error(
+        `Delimiter and quotation must be different characters, both are: "${delimiter}"`,
+      );
+    }
 
     // Validate workgroup size if specified
     if (config.workgroupSize !== undefined) {
@@ -246,6 +308,8 @@ export class CSVSeparatorIndexingBackend
       device: config.device,
       enableTiming: config.enableTiming ?? false,
       workgroupSize: config.workgroupSize, // undefined means "auto"
+      quotation,
+      delimiter,
     };
     this.ownDevice = !config.device;
   }
@@ -304,6 +368,13 @@ export class CSVSeparatorIndexingBackend
    */
   get isInitialized(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * Get the field delimiter character
+   */
+  get delimiter(): string {
+    return this.config.delimiter;
   }
 
   /**
@@ -670,6 +741,9 @@ export class CSVSeparatorIndexingBackend
    * Dispatch a compute operation
    *
    * Executes the two-pass GPU compute to find separators in CSV data.
+   *
+   * @throws {Error} If backend is not initialized
+   * @throws {RangeError} If input size exceeds GPU device limits (getMaxChunkSize())
    */
   async dispatch(
     input: Uint8Array,
@@ -692,6 +766,40 @@ export class CSVSeparatorIndexingBackend
     };
 
     const startTime = performance.now();
+
+    // Handle empty chunks early - no GPU work or buffer allocation needed
+    if (input.length === 0) {
+      return {
+        data: {
+          sepIndices: new Uint32Array(0),
+          endInQuote: uniforms.prevInQuote,
+          sepCount: 0,
+        },
+        timing: this.config.enableTiming
+          ? {
+              totalMs: performance.now() - startTime,
+              phases: {
+                pass1Gpu: 0,
+                gpuToCpu: 0,
+                cpuCompute: 0,
+                cpuToGpu: 0,
+                pass2Gpu: 0,
+                resultRead: 0,
+              },
+            }
+          : undefined,
+      };
+    }
+
+    // Validate chunk size before buffer allocation
+    const maxChunkSize = this.getMaxChunkSize();
+    if (input.length > maxChunkSize) {
+      throw new RangeError(
+        `Chunk size (${input.length} bytes) exceeds maximum supported size (${maxChunkSize} bytes). ` +
+          `Maximum is determined by GPU limit: maxComputeWorkgroupsPerDimension (${this.device?.limits.maxComputeWorkgroupsPerDimension ?? 65535}) × workgroupSize (${this.workgroupSize}). ` +
+          `Please split the input into smaller chunks using CSVSeparatorIndexer for streaming processing.`,
+      );
+    }
 
     // Pad input to u32 alignment
     const paddedInput = padToU32Aligned(input);
@@ -719,8 +827,8 @@ export class CSVSeparatorIndexingBackend
     const pass1UniformsData = new Uint32Array([
       actualSize,
       uniforms.prevInQuote,
-      0,
-      0,
+      uniforms.quotation,
+      uniforms.delimiter,
     ]);
     this.device.queue.writeBuffer(
       this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS),
@@ -819,8 +927,8 @@ export class CSVSeparatorIndexingBackend
     const pass2UniformsData = new Uint32Array([
       actualSize,
       uniforms.prevInQuote,
-      workgroupCount,
-      0,
+      uniforms.quotation,
+      uniforms.delimiter,
     ]);
     this.device.queue.writeBuffer(
       this.bufferAllocator.get(BUFFER_NAMES.UNIFORMS),
@@ -951,25 +1059,31 @@ export class CSVSeparatorIndexingBackend
   }
 
   /**
-   * Run separator detection on a chunk of CSV data
+   * Run separator detection on a single chunk of CSV data
    *
-   * This is the simplified interface for CSV separator indexing.
-   * It wraps the `dispatch()` method and returns a unified result
-   * with sorted separators and processedBytes for streaming.
+   * Processes the given chunk through GPU-accelerated separator detection.
+   * Note: This method does not handle leftover bytes - that is managed by CSVSeparatorIndexer.
    *
-   * @param chunk - Input bytes to process
-   * @param prevInQuote - Quote state from previous chunk (false: outside, true: inside)
-   * @returns Result with sorted separators and processedBytes for streaming boundary
+   * @param chunk - Chunk of CSV data to process (must not exceed getMaxChunkSize())
+   * @param prevInQuote - Quote state at the start of this chunk (false = outside quotes, true = inside quotes)
+   * @returns Promise resolving to separator detection result with separators, counts, and ending quote state
+   *
+   * @throws {Error} If backend is not initialized (call initialize() first)
+   * @throws {RangeError} If chunk size exceeds GPU device limits (getMaxChunkSize())
+   * @throws {GPUMemoryError} If GPU buffer allocation fails
    *
    * @example
    * ```ts
-   * const backend = new CSVSeparatorIndexingBackend();
+   * const backend = new CSVSeparatorIndexingBackend({ gpu });
    * await backend.initialize();
    *
-   * const result = await backend.run(csvBytes, 0);
-   * // result.separators: sorted separator indices
-   * // result.processedBytes: bytes up to last LF
-   * // result.endInQuote: quote state at end
+   * const encoder = new TextEncoder();
+   * const csvBytes = encoder.encode("a,b,c\nd,e,f\n");
+   *
+   * // Process chunk starting outside quotes
+   * const result = await backend.run(csvBytes, false);
+   * console.log(result.sepCount); // Number of separators found
+   * console.log(result.endInQuote); // Quote state at chunk end
    *
    * await backend.destroy();
    * ```
@@ -981,6 +1095,8 @@ export class CSVSeparatorIndexingBackend
     const result = await this.dispatch(chunk, {
       chunkSize: chunk.length,
       prevInQuote: prevInQuote ? 1 : 0,
+      quotation: this.config.quotation.charCodeAt(0),
+      delimiter: this.config.delimiter.charCodeAt(0),
     });
 
     const processedBytes = getProcessedBytesCount(

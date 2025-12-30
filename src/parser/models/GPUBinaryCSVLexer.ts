@@ -27,17 +27,16 @@
  * ```
  */
 
-import type { CSVLexerLexOptions } from "@/core/types.ts";
+import type { CSVLexerLexOptions, Token } from "@/core/types.ts";
 import {
-  type GPUToken,
   type SeparatorsToTokensState,
   separatorsToTokensGenerator,
-} from "@/parser/webgpu/assembly/separatorsToTokens.ts";
+} from "@/parser/utils/separatorsToTokens.ts";
 import {
   CSVSeparatorIndexer,
-  type CSVSeparatorIndexingBackendInterface,
+  type CSVSeparatorIndexingBackend,
 } from "@/parser/webgpu/indexing/CSVSeparatorIndexer.ts";
-import { stripBOM } from "@/parser/webgpu/utils/stripBOM.ts";
+import { stripBOM } from "@/utils/binary/bom.ts";
 
 /**
  * Configuration for GPUBinaryCSVLexer
@@ -46,14 +45,9 @@ export interface GPUBinaryCSVLexerConfig {
   /**
    * The backend to use for GPU computation.
    * Must be initialized before calling lex().
+   * The delimiter configured in the backend will be used.
    */
-  backend: CSVSeparatorIndexingBackendInterface;
-
-  /**
-   * The field delimiter character used in the CSV.
-   * @default ","
-   */
-  delimiter?: string;
+  backend: CSVSeparatorIndexingBackend;
 }
 
 /**
@@ -77,7 +71,7 @@ export class GPUBinaryCSVLexer {
 
   constructor(config: GPUBinaryCSVLexerConfig) {
     this.indexer = new CSVSeparatorIndexer({ backend: config.backend });
-    this.delimiter = config.delimiter ?? ",";
+    this.delimiter = config.backend.delimiter;
     this.decoder = new TextDecoder("utf-8");
 
     // Initialize token state
@@ -100,7 +94,7 @@ export class GPUBinaryCSVLexer {
   async *lex(
     chunk?: Uint8Array,
     options?: CSVLexerLexOptions,
-  ): AsyncIterableIterator<GPUToken> {
+  ): AsyncIterableIterator<Token<true>> {
     const stream = options?.stream ?? false;
 
     if (chunk === undefined) {
@@ -196,7 +190,7 @@ export class GPUBinaryCSVLexer {
     separators: Uint32Array,
     sepCount: number,
     data: Uint8Array,
-  ): Generator<GPUToken, void, void> {
+  ): Generator<Token<true>, void, void> {
     const generator = separatorsToTokensGenerator(separators, sepCount, data, {
       rowNumber: this.tokenState.rowNumber,
       startLine: this.tokenState.line,
@@ -222,7 +216,7 @@ export class GPUBinaryCSVLexer {
   /**
    * Flush remaining data and yield final tokens.
    */
-  private async *flush(): AsyncIterableIterator<GPUToken> {
+  private async *flush(): AsyncIterableIterator<Token<true>> {
     // Get leftover data BEFORE flushing (indexer clears it after flush)
     const leftoverData = this.indexer.getLeftover();
 

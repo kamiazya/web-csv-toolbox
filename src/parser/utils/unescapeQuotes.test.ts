@@ -151,7 +151,10 @@ describe("unescapeQuotes", () => {
       fc.assert(
         fc.property(FC.field(), FC.quotation(), (field, quotation) => {
           // Construct a properly escaped field: "field with ""escaped"" quotes"
-          const escapedField = field.replaceAll(quotation, quotation + quotation);
+          const escapedField = field.replaceAll(
+            quotation,
+            quotation + quotation,
+          );
           const quotedValue = `${quotation}${escapedField}${quotation}`;
 
           const optimized = unescapeQuotes(quotedValue, quotation);
@@ -236,7 +239,10 @@ describe("unescapeQuotes", () => {
         fc.property(FC.quotation(), fc.nat({ max: 10 }), (quotation, count) => {
           // Create a field with exactly 'count' quotation marks
           const field = new Array(count).fill(quotation).join("");
-          const escapedField = field.replaceAll(quotation, quotation + quotation);
+          const escapedField = field.replaceAll(
+            quotation,
+            quotation + quotation,
+          );
           const quotedValue = `${quotation}${escapedField}${quotation}`;
 
           const optimized = unescapeQuotes(quotedValue, quotation);

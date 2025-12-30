@@ -9,7 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 import { packSeparator } from "@/parser/webgpu/utils/separator-utils.ts";
 import {
   CSVSeparatorIndexer,
-  type CSVSeparatorIndexingBackendInterface,
+  type CSVSeparatorIndexingBackend,
 } from "./CSVSeparatorIndexer.ts";
 import type { CSVSeparatorIndexResult } from "./types.ts";
 import { SEP_TYPE_COMMA, SEP_TYPE_LF } from "./types.ts";
@@ -24,9 +24,10 @@ function createMockBackend(
     chunk: Uint8Array,
     prevInQuote: boolean,
   ) => Promise<CSVSeparatorIndexResult>,
-): CSVSeparatorIndexingBackendInterface {
+): CSVSeparatorIndexingBackend {
   return {
     isInitialized: true,
+    delimiter: ",",
     getMaxChunkSize: () => 1024 * 1024,
     run:
       runImpl ??
@@ -72,7 +73,7 @@ function simpleCSVParser(
     const sep = separators[i]!;
     if (sep >>> 31 === 1) {
       // It's a LF
-      processedBytes = (sep & 0x7fffffff) + 1;
+      processedBytes = (sep & 0x3fffffff) + 1;
       break;
     }
   }
@@ -257,8 +258,9 @@ describe("CSVSeparatorIndexer", () => {
     it("should split chunks larger than maxChunkSize", async () => {
       const runCalls: Array<{ chunkSize: number; prevInQuote: boolean }> = [];
 
-      const backend: CSVSeparatorIndexingBackendInterface = {
+      const backend: CSVSeparatorIndexingBackend = {
         isInitialized: true,
+        delimiter: ",",
         getMaxChunkSize: () => 100, // Small max size for testing
         run: async (chunk, prevInQuote) => {
           runCalls.push({ chunkSize: chunk.length, prevInQuote });
@@ -287,8 +289,9 @@ describe("CSVSeparatorIndexer", () => {
     it("should propagate quote state across split chunks", async () => {
       const runCalls: Array<{ prevInQuote: boolean }> = [];
 
-      const backend: CSVSeparatorIndexingBackendInterface = {
+      const backend: CSVSeparatorIndexingBackend = {
         isInitialized: true,
+        delimiter: ",",
         getMaxChunkSize: () => 10,
         run: async (chunk, prevInQuote) => {
           runCalls.push({ prevInQuote });

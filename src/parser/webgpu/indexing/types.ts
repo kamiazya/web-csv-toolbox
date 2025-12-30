@@ -79,6 +79,10 @@ export interface ParseUniforms {
   chunkSize: number;
   /** Quote state from previous chunk (0: false, 1: true) */
   prevInQuote: number;
+  /** Quotation character ASCII code (default: 34 for '"') */
+  quotation: number;
+  /** Field delimiter character ASCII code (default: 44 for ',') */
+  delimiter: number;
 }
 
 /**
