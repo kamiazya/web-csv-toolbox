@@ -1,0 +1,43 @@
+name: Security Scan
+
+on:
+  workflow_call:
+
+jobs:
+  osv-scanner:
+    name: Scan dependencies for vulnerabilities
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@b77c075a1235514558f0eb88dbd31e22c45e0cd2 # v2.3.0
+        with:
+          scan-args: |-
+            --lockfile=pnpm-lock.yaml
+            --format=json
+            --output=osv-results.json
+        continue-on-error: true
+
+      - name: Upload OSV-Scanner results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: osv-results.json
+        continue-on-error: true
+
+      - name: Check for vulnerabilities
+        run: |
+          if [ -f osv-results.json ]; then
+            echo "OSV-Scanner results:"
+            cat osv-results.json
+            # Fail the job if vulnerabilities are found
+            if grep -q '"vulns"' osv-results.json; then
+              echo "⚠️ Vulnerabilities detected in dependencies"
+              exit 1
+            fi
+          fi
