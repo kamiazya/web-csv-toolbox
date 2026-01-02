@@ -189,7 +189,7 @@ Worker execution works across different JavaScript runtimes with platform-specif
 import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // UI stays responsive!
@@ -205,7 +205,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Worker threads are used automatically
 for await (const record of parseString(csv, {
-  engine: EnginePresets.balanced()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
@@ -238,7 +238,7 @@ import { parseString, EnginePresets } from 'web-csv-toolbox';
 
 // Request stream-transfer strategy
 for await (const record of parseString(csv, {
-  engine: EnginePresets.memoryEfficient()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
 }
@@ -277,8 +277,7 @@ For more details on the `strict` option, refer to the [`EngineConfig`](https://k
 - **Browser**: UI responsiveness is critical (non-blocking parsing required)
 - **Server**: Processing multiple files concurrently
 - **Server**: Spare CPU cores available for parallel processing
-- Need stable non-blocking execution (`worker` preset)
-- Accept experimental API with stable fallback (`balanced` preset)
+- Need stable non-blocking execution with automatic fallback (`recommended` preset)
 
 ❌ **Skip workers when:**
 - **Stability is highest priority**: Use `mainThread` preset instead
@@ -293,17 +292,17 @@ For more details on the `strict` option, refer to the [`EngineConfig`](https://k
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
-// Worker with message streaming (Safari compatible)
+// Worker with stream transfer (auto-fallback to message streaming on Safari)
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsive()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // UI stays responsive!
 }
 
-// Worker with stream transfer (best for Chrome/Firefox/Edge)
+// Same preset - uses stream-transfer on Chrome/Firefox/Edge
 for await (const record of parse(response, {
-  engine: EnginePresets.memoryEfficient()
+  engine: EnginePresets.recommended()
 })) {
   console.log(record);
   // Zero-copy streaming!
@@ -351,7 +350,12 @@ async function processRecord(record) {
 
 ### How It Works
 
-Parsing uses pre-compiled WebAssembly code for improved performance compared to JavaScript.
+Parsing uses pre-compiled WebAssembly code with SIMD acceleration for improved performance compared to JavaScript.
+
+**SIMD Requirements:**
+- WASM module is built with SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+- Runtime automatically detects SIMD availability via `hasWasmSimd()`
+- Automatically falls back to JavaScript implementation if SIMD is not supported
 
 - **In Browsers**: Generally faster than JavaScript, but still occupies the main thread
 - **On Servers**: Potentially faster parsing with lower CPU usage, but still occupies the event loop
@@ -374,33 +378,37 @@ function parseCSV(text) {
 
 **WebAssembly:**
 ```wasm
-;; Pre-compiled to machine code
+;; Pre-compiled to machine code with SIMD128
 (func $parse_csv
   ;; Optimized low-level operations
   ;; Direct memory access
+  ;; SIMD parallel processing
   ;; Efficient memory operations
 )
 ```
 
 **Performance Characteristics:**
-- Generally faster parsing (actual speedup varies by workload)
+- Generally faster parsing with SIMD acceleration (actual speedup varies by workload)
 - Lower CPU usage in many scenarios
 - More efficient memory access
+- SIMD parallel data processing
 - Performance depends on data size, complexity, and runtime
 
 ### Characteristics
 
 **Advantages:**
-- ✅ Generally faster than JavaScript (speedup varies by workload)
+- ✅ Generally faster than JavaScript with SIMD acceleration (speedup varies by workload)
 - ✅ Lower CPU usage in many scenarios
 - ✅ Predictable performance characteristics
-- ✅ Small binary size (~82KB WASM module)
+- ✅ Small binary size (~82KB WASM module with SIMD support)
 
 **Disadvantages:**
+- ❌ Requires SIMD support (Chrome 91+, Firefox 89+, Safari 16.4+, Node.js 16.4+)
+  - Automatically falls back to JavaScript if SIMD not available
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Still occupies main thread/event loop
-- ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
+- ⚠️ First-time initialization can be a bottleneck (recommended to call `loadWasm()` beforehand)
 
 ### Limitations
 
@@ -443,42 +451,25 @@ parse("a,'b,c',d", {
 - Non-UTF-8 encoding (e.g., Shift-JIS, EUC-JP)
 - Custom quotation characters
 - Broad format support needed
-- First-time initialization latency is critical (unless you pre-load with `loadWASM()`)
+- First-time initialization latency is critical (unless you pre-load with `loadWasm()`)
 
 ### Example
 
-#### Recommended: Pre-load WASM for better performance
-
-```typescript
-import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
-
-// Recommended: Load WASM module once at startup
-// This prevents initialization overhead on first parse
-await loadWASM();
-
-// Parse with WASM
-for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
-})) {
-  console.log(record);
-}
-```
-
-#### Alternative: Automatic initialization (slower on first use)
+#### GPU-Accelerated Parsing
 
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
-// WASM is automatically initialized on first use
-// However, this can cause a noticeable delay on the first parse
+// GPU auto-initializes on first use
+// Automatically falls back: GPU → WASM → JS
 for await (const record of parse(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
 ```
 
-**Note:** The first WASM parse without pre-loading can take longer due to module initialization. Pre-loading with `loadWASM()` is recommended to avoid this bottleneck, especially in performance-critical applications.
+**Note:** The turbo preset uses GPU acceleration when available, with automatic fallback to WASM or JavaScript if GPU is unavailable. No pre-initialization required.
 
 ---
 
@@ -537,7 +528,7 @@ Combines the benefits of both strategies:
 - ❌ UTF-8 encoding only
 - ❌ Double-quote (`"`) only
 - ❌ Worker + WASM initialization overhead
-- ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWASM()` beforehand)
+- ⚠️ First-time WASM initialization can be a bottleneck (recommended to call `loadWasm()` beforehand)
 
 ### When to Use Combined
 
@@ -555,36 +546,22 @@ Combines the benefits of both strategies:
 
 ### Example
 
-#### Recommended: Pre-load WASM for better performance
-
-```typescript
-import { parse, EnginePresets, loadWASM } from 'web-csv-toolbox';
-
-// Recommended: Load WASM module once at startup
-await loadWASM();
-
-// Best of both worlds: Worker + WASM + stream-transfer
-for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
-})) {
-  console.log(record);
-  // Fast + non-blocking!
-}
-```
-
-#### Alternative: Automatic initialization (slower on first use)
+#### Maximum Throughput with GPU
 
 ```typescript
 import { parse, EnginePresets } from 'web-csv-toolbox';
 
-// WASM is automatically initialized on first use
-// However, this can cause a delay on the first parse
+// GPU acceleration with automatic fallback chain
+// GPU → WASM → JS
 for await (const record of parse(csv, {
-  engine: EnginePresets.responsiveFast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
+  // Maximum performance!
 }
 ```
+
+**Note:** The turbo preset provides maximum throughput with GPU acceleration, automatically falling back to WASM or JavaScript if GPU is unavailable. No pre-initialization required.
 
 ---
 
@@ -640,63 +617,63 @@ Memory: O(1) - constant per record (streaming)
 
 ```mermaid
 graph TD
-    Start{File Size} --> |< 100KB| MainThread[mainThread]
+    Start{File Size} --> |< 100KB| Stable[stable]
     Start --> |100KB-1MB| Choice1{Browser?}
-    Choice1 --> |Yes| Worker1[worker]
-    Choice1 --> |No| MainThread
+    Choice1 --> |Yes| Recommended1[recommended]
+    Choice1 --> |No| Stable
 
-    Start --> |1MB-10MB| Balanced[balanced<br/>worker + stream]
+    Start --> |1MB-10MB| Recommended[recommended<br/>worker + stream]
 
-    Start --> |10MB-100MB| UTF8{UTF-8?}
-    UTF8 --> |Yes| Fastest[fastest<br/>worker + wasm + stream]
-    UTF8 --> |No| Balanced2[balanced<br/>any encoding]
+    Start --> |10MB-100MB| GPU{GPU Available?}
+    GPU --> |Yes| Turbo[turbo<br/>GPU acceleration]
+    GPU --> |No| Recommended2[recommended<br/>worker fallback]
 
-    Start --> |> 100MB| Stream[balanced<br/>with streaming input]
+    Start --> |> 100MB| Stream[recommended<br/>with streaming input]
 
-    style MainThread fill:#e1f5ff
-    style Worker1 fill:#ccffcc
-    style Balanced fill:#ccffcc
-    style Fastest fill:#ffffcc
-    style Balanced2 fill:#ccffcc
+    style Stable fill:#e1f5ff
+    style Recommended1 fill:#ccffcc
+    style Recommended fill:#ccffcc
+    style Turbo fill:#ffffcc
+    style Recommended2 fill:#ccffcc
     style Stream fill:#ccffcc
 ```
 
 ### By Requirements
 
 **Browser - Need UI responsiveness?**
-→ Use worker (`balanced`, `worker`, `fastest`)
+→ Use worker (`recommended`)
 
 **Server - Need high throughput?**
-→ Use worker with pool (`balanced`, `fastest`)
+→ Use worker with pool (`recommended`) or GPU (`turbo`)
 
 **Need maximum speed?**
-→ Use WASM (`wasm`, `fastest`)
+→ Use GPU acceleration (`turbo`)
 
-**Need broad format support (non-UTF-8, custom quotes)?**
-→ Avoid WASM (`balanced`, `worker`, `mainThread`)
+**Need broad format support (all encodings)?**
+→ Use `recommended` or `stable`
 
 **Browser - Safari support required?**
-→ Use message-streaming (`worker`, not `workerStreamTransfer`)
+→ Use `recommended` (auto-fallback to message-streaming)
 
 **Need maximum compatibility?**
-→ Use `mainThread` (works everywhere)
+→ Use `stable` (works everywhere)
 
 ### By Environment
 
 **Browser (UI-critical):**
-→ `balanced` or `fastest` (keep UI responsive)
+→ `recommended` (keep UI responsive)
 
 **Node.js/Deno/Bun (server-side):**
-→ `balanced` with `WorkerPool` (concurrent processing)
+→ `recommended` with `WorkerPool` (concurrent processing) or `turbo` (maximum throughput)
 
 **Safari:**
-→ `worker` or `balanced` (auto-fallback to message-streaming)
+→ `recommended` (auto-fallback to message-streaming)
 
 **Chrome/Firefox/Edge:**
-→ `fastest` or `workerStreamTransfer` (zero-copy streams)
+→ `turbo` (GPU acceleration) or `recommended` (zero-copy streams)
 
 **CLI tools / Scripts:**
-→ `mainThread` or `wasm` (no worker overhead)
+→ `stable` (no worker overhead) or `turbo` (maximum speed)
 
 ---
 

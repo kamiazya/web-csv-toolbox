@@ -1,4 +1,3 @@
-import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import type {
   CSVRecord,
@@ -11,7 +10,9 @@ import { executeWithWorkerStrategy } from "@/engine/strategies/WorkerStrategySel
 import { parseBinaryToArraySync } from "@/parser/api/binary/parseBinaryToArraySync.ts";
 import { parseBinaryToIterableIterator } from "@/parser/api/binary/parseBinaryToIterableIterator.ts";
 import { parseBinaryToStream } from "@/parser/api/binary/parseBinaryToStream.ts";
-import { parseBinaryInWASM } from "@/parser/execution/wasm/parseBinaryInWASM.ts";
+import { createBinaryExecutionSelector } from "@/parser/execution/ExecutionStrategySelector.ts";
+import { parseBinaryStreamInGPU } from "@/parser/execution/gpu/parseBinaryStreamInGPU.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
 import { WorkerSession } from "@/worker/helpers/WorkerSession.ts";
 
 /**
@@ -46,13 +47,28 @@ export async function* parseBinary<
 ): AsyncIterableIterator<InferCSVRecord<Header, Options>> {
   // Parse engine configuration
   const engineConfig = new InternalEngineConfig(options?.engine);
+  const simdAvailable = hasWasmSimd();
+  const wasmEnabled = engineConfig.hasWasm() && simdAvailable;
+  const runtimeEngineConfig = wasmEnabled
+    ? engineConfig
+    : engineConfig.createWasmFallbackConfig();
 
-  if (engineConfig.hasWorker()) {
+  // Notify about WASM SIMD unavailability if WASM was requested
+  if (engineConfig.hasWasm() && !simdAvailable && engineConfig.onFallback) {
+    const fallbackConfig = engineConfig.createWasmFallbackConfig();
+    engineConfig.onFallback({
+      requestedConfig: engineConfig.toConfig(),
+      actualConfig: fallbackConfig.toConfig(),
+      reason: "WebAssembly SIMD is not supported in this environment",
+    });
+  }
+
+  if (runtimeEngineConfig.hasWorker()) {
     // Worker execution
-    const session = engineConfig.workerPool
+    const session = runtimeEngineConfig.workerPool
       ? await WorkerSession.create({
-          workerPool: engineConfig.workerPool,
-          workerURL: engineConfig.workerURL,
+          workerPool: runtimeEngineConfig.workerPool,
+          workerURL: runtimeEngineConfig.workerURL,
         })
       : null;
 
@@ -64,31 +80,49 @@ export async function* parseBinary<
           | ParseBinaryOptions<Header>
           | undefined,
         session,
-        engineConfig,
+        runtimeEngineConfig,
       ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     } finally {
       session?.[Symbol.dispose]();
     }
   } else {
     // Main thread execution
-    if (engineConfig.hasWasm()) {
-      // Validate that array output format is not used with WASM
-      if (options?.outputFormat === "array") {
-        throw new Error(
-          "Array output format is not supported with WASM execution. " +
-            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
-        );
-      }
-      yield* parseBinaryInWASM(
-        bytes,
-        options as ParseBinaryOptions<Header> | undefined,
-      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
-    } else {
-      const iterator = parseBinaryToIterableIterator(bytes, options);
-      yield* convertIterableIteratorToAsync(iterator) as AsyncIterableIterator<
-        InferCSVRecord<Header, Options>
-      >;
-    }
+    // Create execution selector with GPU and JavaScript executors
+    const selector = createBinaryExecutionSelector<Header, Options>(
+      // GPU executor
+      async function* (bytes: BufferSource, options: Options | undefined) {
+        // Convert BufferSource to ReadableStream for GPU processing
+        const binaryStream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            const uint8Array =
+              bytes instanceof Uint8Array
+                ? bytes
+                : new Uint8Array(
+                    bytes instanceof ArrayBuffer
+                      ? bytes
+                      : bytes.buffer.slice(
+                          bytes.byteOffset,
+                          bytes.byteOffset + bytes.byteLength,
+                        ),
+                  );
+            controller.enqueue(uint8Array);
+            controller.close();
+          },
+        });
+
+        // GPU execution with automatic device management
+        yield* parseBinaryStreamInGPU(binaryStream, options);
+      } as any,
+      // JavaScript executor (sync)
+      (bytes, options) => parseBinaryToIterableIterator(bytes, options),
+    );
+
+    // Execute with automatic fallback: GPU → WASM → JavaScript
+    yield* selector.execute(
+      bytes,
+      options,
+      engineConfig,
+    ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
   }
 }
 

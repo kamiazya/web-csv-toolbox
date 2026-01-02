@@ -31,11 +31,16 @@ export type DEFAULT_QUOTATION = typeof DEFAULT_QUOTATION;
  * Files smaller than this use `blob.arrayBuffer()` (faster),
  * files equal or larger use `blob.stream()` (memory-efficient).
  *
- * This value is determined by benchmarks.
+ * This value is determined by benchmarks (Report 55).
  *
+ * **Performance Characteristics:**
+ * - `< 5MB`: arrayBuffer mode (~70 MB/s) - 20x faster than stream
+ * - `≥ 5MB`: stream mode (~3 MB/s) - memory-safe for large files
+ *
+ * @see {@link https://github.com/kamiazya/web-csv-toolbox/blob/main/benchmark/reports/55-browser-performance/STREAM-UNIFIED-RESULTS.md}
  * @category Constants
  */
-export const DEFAULT_ARRAY_BUFFER_THRESHOLD = 1 * 1024 * 1024; // 1MB
+export const DEFAULT_ARRAY_BUFFER_THRESHOLD = 5 * 1024 * 1024; // 5MB
 
 /**
  * Default maximum buffer size for CSV lexer in characters (UTF-16 code units).
@@ -115,3 +120,41 @@ export enum Delimiter {
   // /** End of file/stream */
   // EOF = 2,
 }
+
+/**
+ * Token type enumeration for CSV lexer (WASM-compatible).
+ *
+ * Uses numeric values for zero-overhead WASM interoperability.
+ * Values must match the Rust enum in `web-csv-toolbox-wasm/src/lib.rs`.
+ *
+ * @category Constants
+ */
+export enum TokenType {
+  /** Field token - represents a CSV field value */
+  Field = 0,
+  /** Field delimiter token - represents a comma or custom delimiter */
+  FieldDelimiter = 1,
+  /** Record delimiter token - represents a newline (CR, LF, or CRLF) */
+  RecordDelimiter = 2,
+}
+
+/**
+ * Field token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.Field` instead. Will be removed in next major version.
+ */
+export const Field = TokenType.Field;
+
+/**
+ * FieldDelimiter token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.FieldDelimiter` instead. Will be removed in next major version.
+ */
+export const FieldDelimiter = TokenType.FieldDelimiter;
+
+/**
+ * RecordDelimiter token type value.
+ * @category Constants
+ * @deprecated Use `TokenType.RecordDelimiter` instead. Will be removed in next major version.
+ */
+export const RecordDelimiter = TokenType.RecordDelimiter;

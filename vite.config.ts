@@ -17,8 +17,8 @@ export default defineConfig(({ command }) => ({
       // Aliases for dev server only - build uses resolve-imports plugin
       ...(command === "serve"
         ? {
-            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
-            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
+            "#/wasm/loaders/loadWasm.js": "/src/wasm/loaders/loadWasm.web.ts",
+            "#/wasm/loaders/loadWasmSync.js": "/src/wasm/loaders/loadWasmSync.web.ts",
             "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
             "#/utils/response/getOptionsFromResponse.constants.js":
               "/src/utils/response/getOptionsFromResponse.constants.web.ts",
@@ -37,21 +37,23 @@ export default defineConfig(({ command }) => ({
         "main.node": "src/main.node.ts", // Node.js version
         "slim.web": "src/slim.web.ts", // Browser/Web version
         "slim.node": "src/slim.node.ts", // Node.js version
-        "wasm/loaders/loadWASM.web": "src/wasm/loaders/loadWASM.web.ts",
-        "wasm/loaders/loadWASM.node": "src/wasm/loaders/loadWASM.node.ts",
-        "wasm/loaders/loadWASMSync.web": "src/wasm/loaders/loadWASMSync.web.ts",
-        "wasm/loaders/loadWASMSync.node": "src/wasm/loaders/loadWASMSync.node.ts",
+        "wasm/loaders/loadWasm.web": "src/wasm/loaders/loadWasm.web.ts",
+        "wasm/loaders/loadWasm.node": "src/wasm/loaders/loadWasm.node.ts",
+        "wasm/loaders/loadWasmSync.web": "src/wasm/loaders/loadWasmSync.web.ts",
+        "wasm/loaders/loadWasmSync.node": "src/wasm/loaders/loadWasmSync.node.ts",
+        "parser/api/string/parseStringToArraySyncWasm.main.web": "src/parser/api/string/parseStringToArraySyncWasm.main.web.ts",
+        "parser/api/string/parseStringToArraySyncWasm.main.node": "src/parser/api/string/parseStringToArraySyncWasm.main.node.ts",
         "worker.web": "src/worker.web.ts",
         "worker.node": "src/worker.node.ts",
         "worker/helpers/createWorker.web": "src/worker/helpers/createWorker.web.ts",
         "worker/helpers/createWorker.node": "src/worker/helpers/createWorker.node.ts",
         "parser/execution/worker/parseStringInWorker": "src/parser/execution/worker/parseStringInWorker.ts",
-        "parser/execution/worker/parseStringInWorkerWASM": "src/parser/execution/worker/parseStringInWorkerWASM.ts",
+        "parser/execution/worker/parseStringInWorkerWasm": "src/parser/execution/worker/parseStringInWorkerWasm.ts",
         "parser/execution/worker/parseBinaryInWorker": "src/parser/execution/worker/parseBinaryInWorker.ts",
-        "parser/execution/worker/parseBinaryInWorkerWASM": "src/parser/execution/worker/parseBinaryInWorkerWASM.ts",
+        "parser/execution/worker/parseBinaryInWorkerWasm": "src/parser/execution/worker/parseBinaryInWorkerWasm.ts",
         "parser/execution/worker/parseStreamInWorker": "src/parser/execution/worker/parseStreamInWorker.ts",
         "parser/execution/worker/parseBinaryStreamInWorker": "src/parser/execution/worker/parseBinaryStreamInWorker.ts",
-        "parser/execution/worker/parseBinaryStreamInWorkerWASM": "src/parser/execution/worker/parseBinaryStreamInWorkerWASM.ts",
+        "parser/execution/worker/parseBinaryStreamInWorkerWasm": "src/parser/execution/worker/parseBinaryStreamInWorkerWasm.ts",
         "utils/response/getOptionsFromResponse.constants.web": "src/utils/response/getOptionsFromResponse.constants.web.ts",
         "utils/response/getOptionsFromResponse.constants.node": "src/utils/response/getOptionsFromResponse.constants.node.ts",
         "utils/charset/getCharsetValidation.constants.web": "src/utils/charset/getCharsetValidation.constants.web.ts",
@@ -241,8 +243,8 @@ export default bytes.buffer || bytes;
         resolve: {
           alias: {
             "@": "/src",
-            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
-            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/wasm/loaders/loadWasm.js": "/src/wasm/loaders/loadWasm.node.ts",
+            "#/wasm/loaders/loadWasmSync.js": "/src/wasm/loaders/loadWasmSync.node.ts",
             "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
             "#/utils/response/getOptionsFromResponse.constants.js":
               "/src/utils/response/getOptionsFromResponse.constants.node.ts",
@@ -282,8 +284,8 @@ export default bytes.buffer || bytes;
         resolve: {
           alias: {
             "@": "/src",
-            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.web.ts",
-            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.web.ts",
+            "#/wasm/loaders/loadWasm.js": "/src/wasm/loaders/loadWasm.web.ts",
+            "#/wasm/loaders/loadWasmSync.js": "/src/wasm/loaders/loadWasmSync.web.ts",
             "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.web.ts",
             "#/utils/response/getOptionsFromResponse.constants.js":
               "/src/utils/response/getOptionsFromResponse.constants.web.ts",
@@ -305,8 +307,8 @@ export default bytes.buffer || bytes;
         resolve: {
           alias: {
             "@": "/src",
-            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
-            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/wasm/loaders/loadWasm.js": "/src/wasm/loaders/loadWasm.node.ts",
+            "#/wasm/loaders/loadWasmSync.js": "/src/wasm/loaders/loadWasmSync.node.ts",
             "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
             "#/utils/response/getOptionsFromResponse.constants.js":
               "/src/utils/response/getOptionsFromResponse.constants.node.ts",
@@ -326,8 +328,8 @@ export default bytes.buffer || bytes;
         resolve: {
           alias: {
             "@": "/src",
-            "#/wasm/loaders/loadWASM.js": "/src/wasm/loaders/loadWASM.node.ts",
-            "#/wasm/loaders/loadWASMSync.js": "/src/wasm/loaders/loadWASMSync.node.ts",
+            "#/wasm/loaders/loadWasm.js": "/src/wasm/loaders/loadWasm.node.ts",
+            "#/wasm/loaders/loadWasmSync.js": "/src/wasm/loaders/loadWasmSync.node.ts",
             "#/worker/helpers/createWorker.js": "/src/worker/helpers/createWorker.node.ts",
             "#/utils/response/getOptionsFromResponse.constants.js":
               "/src/utils/response/getOptionsFromResponse.constants.node.ts",

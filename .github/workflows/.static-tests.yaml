@@ -43,4 +43,4 @@ jobs:
       - name: Run clippy
         run: cargo clippy --manifest-path=./web-csv-toolbox-wasm/Cargo.toml --all-targets --all-features
         env:
-          RUSTFLAGS: -D warnings
+          RUSTFLAGS: "-C target-feature=+simd128 -D warnings"

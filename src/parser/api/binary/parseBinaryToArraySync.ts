@@ -1,5 +1,9 @@
 import { convertBinaryToString } from "@/converters/binary/convertBinaryToString.ts";
-import type { InferCSVRecord, ParseBinaryOptions } from "@/core/types.ts";
+import type {
+  InferCSVRecord,
+  ParseBinaryOptions,
+  ParseOptions,
+} from "@/core/types.ts";
 import { parseStringToArraySync } from "@/parser/api/string/parseStringToArraySync.ts";
 import { commonParseErrorHandling } from "@/utils/error/commonParseErrorHandling.ts";
 
@@ -33,7 +37,13 @@ export function parseBinaryToArraySync<
 >(binary: BufferSource, options?: Options): InferCSVRecord<Header, Options>[] {
   try {
     const csv = convertBinaryToString(binary, options ?? {});
-    return parseStringToArraySync(csv, options);
+    // Extract only CSV processing options (not binary-specific ones)
+    // Binary options (charset, decompression, etc.) were already handled by convertBinaryToString
+    const csvOptions = options as ParseOptions<Header> | undefined;
+    return parseStringToArraySync(csv, csvOptions) as InferCSVRecord<
+      Header,
+      Options
+    >[];
   } catch (error) {
     commonParseErrorHandling(error);
   }

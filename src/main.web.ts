@@ -7,7 +7,7 @@
  * - Common exports are in `main.shared.ts`
  * - This file only contains Web-specific exports
  * - Build-time resolution: Vite plugin resolves `#/wasm/loaders/*` imports based on entry file name
- * - WASM loader selection: `.web.ts` → uses `loadWASM.web.ts` (Uint8Array.fromBase64 + fetch)
+ * - WASM loader selection: `.web.ts` → uses `loadWasm.web.ts` (Uint8Array.fromBase64 + fetch)
  *
  * @packageDocumentation
  */
@@ -21,7 +21,7 @@ export * from "@/main.shared.ts";
 // ============================================================================
 // Web-specific: WASM functions
 // ============================================================================
-export * from "@/parser/api/string/parseStringToArraySyncWASM.main.web.ts";
+export * from "@/parser/api/string/parseStringToArraySyncWasm.main.web.ts";
 export * from "@/wasm/WasmInstance.main.web.ts";
 
 // ============================================================================

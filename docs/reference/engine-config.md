@@ -25,11 +25,13 @@ The `engine` option controls how CSV parsing is executed. It allows you to:
 interface EngineConfig {
   worker?: boolean;
   wasm?: boolean;
+  gpu?: boolean;
   workerStrategy?: 'message-streaming' | 'stream-transfer';
   workerPool?: WorkerPool;
   workerURL?: string;
   strict?: boolean;
   arrayBufferThreshold?: number;
+  optimizationHint?: 'speed' | 'consistency' | 'balanced' | 'responsive';
   backpressureCheckInterval?: {
     lexer?: number;
     assembler?: number;
@@ -40,6 +42,7 @@ interface EngineConfig {
     assemblerWritable?: QueuingStrategy<Token>;
     assemblerReadable?: QueuingStrategy<CSVRecord<any>>;
   };
+  onFallback?: (info: EngineFallbackInfo) => void;
 }
 ```
 
@@ -88,14 +91,14 @@ for await (const record of parseString(csv, {
 Enable WebAssembly-based parsing for improved performance.
 
 **Initialization:**
-- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWASM()`.
-- `web-csv-toolbox/slim` (slim entry): You must call `loadWASM()`. With bundlers, you may need to pass a `wasmUrl` to `loadWASM()`.
+- `web-csv-toolbox` (main entry): Auto-initializes on first use. For better first-parse latency, we recommend preloading via `loadWasm()`.
+- `web-csv-toolbox/slim` (slim entry): You must call `loadWasm()`. With bundlers, you may need to pass a `wasmUrl` to `loadWasm()`.
 
 **Example:**
 ```typescript
-import { parseString, loadWASM } from 'web-csv-toolbox';
+import { parseString, loadWasm } from 'web-csv-toolbox';
 
-await loadWASM();
+await loadWasm();
 
 for await (const record of parseString(csv, {
   engine: { wasm: true }
@@ -254,6 +257,161 @@ Strict mode prevents the automatic fallback (`stream-transfer` → `message-stre
   strict: true  // throws on Safari where stream transfer is unsupported
 }
 ```
+
+---
+
+### `gpu`
+
+**Type:** `boolean`
+**Default:** `false`
+
+Enable WebGPU-based parsing for maximum performance.
+
+**Initialization:**
+- GPU auto-initializes on first use
+- No explicit initialization required
+
+**Example:**
+```typescript
+import { parseString } from 'web-csv-toolbox';
+
+for await (const record of parseString(csv, {
+  engine: { gpu: true }
+})) {
+  console.log(record);
+}
+```
+
+**Performance:**
+- ✅ Fastest parsing for large datasets
+- ✅ Automatic fallback chain: GPU → WASM → JS
+- ✅ Lower memory usage than JavaScript
+
+**Automatic Fallback:**
+- Falls back to WASM if GPU unavailable
+- Falls back to JavaScript if WASM unavailable
+- Uses `onFallback` callback to track fallbacks
+
+**Browser Support:**
+- ✅ Chrome 113+
+- ✅ Edge 113+
+- ❌ Firefox (in development)
+- ❌ Safari (no support)
+
+**When to Use GPU:**
+
+✅ **Use GPU when:**
+- Maximum throughput is critical
+- Large datasets (> 10MB)
+- WebGPU is available in target environment
+- Server-side with GPU hardware
+
+❌ **Skip GPU when:**
+- Target environment doesn't support WebGPU
+- File size < 1MB (overhead not worth it)
+- Maximum compatibility needed
+
+---
+
+### `optimizationHint`
+
+**Type:** `'speed' | 'consistency' | 'balanced' | 'responsive'`
+**Default:** Varies by preset
+
+Fine-tune execution path selection without changing the base engine configuration.
+
+**Available Hints:**
+
+- **`speed`**: Maximize throughput (GPU > WASM > JS, main thread preferred)
+- **`consistency`**: Predictable performance (WASM > JS > GPU, main thread preferred)
+- **`balanced`**: Balance speed and responsiveness (JS > WASM > GPU, worker preferred)
+- **`responsive`**: Minimize initial response time (JS > WASM > GPU, worker preferred)
+
+**Backend Priority:**
+
+| Hint | Backend Priority | Use Case |
+|------|-----------------|----------|
+| `speed` | GPU > WASM > JS | Maximum throughput |
+| `consistency` | WASM > JS > GPU | Predictable performance |
+| `balanced` | JS > WASM > GPU | General-purpose |
+| `responsive` | JS > WASM > GPU | Fast initialization |
+
+**Context Priority:**
+
+| Hint | Context Priority | Use Case |
+|------|-----------------|----------|
+| `speed` | main > worker-stream-transfer > worker-message | Lowest overhead |
+| `consistency` | main > worker-stream-transfer > worker-message | Simpler execution |
+| `balanced` | worker-stream-transfer > main > worker-message | Balance responsiveness |
+| `responsive` | worker-stream-transfer > worker-message > main | Keep UI responsive |
+
+**GPU Configuration:**
+
+| Hint | Workgroup Size | Device Preference |
+|------|----------------|-------------------|
+| `speed` | 128 | high-performance |
+| `consistency` | 64 | low-power |
+| `balanced` | 64 | balanced |
+| `responsive` | 64 | balanced |
+
+**Example:**
+```typescript
+import { parseString } from 'web-csv-toolbox';
+
+// Optimize for maximum throughput
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    gpu: true,
+    optimizationHint: 'speed'
+  }
+})) {
+  console.log(record);
+}
+
+// Optimize for predictable performance
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    wasm: true,
+    optimizationHint: 'consistency'
+  }
+})) {
+  console.log(record);
+}
+
+// Optimize for responsiveness
+for await (const record of parseString(csv, {
+  engine: {
+    worker: true,
+    optimizationHint: 'responsive'
+  }
+})) {
+  console.log(record);
+}
+```
+
+**Use Cases:**
+
+**Speed Hint:**
+- Batch processing with maximum throughput
+- Server-side parsing with GPU available
+- Large datasets where performance is critical
+
+**Consistency Hint:**
+- Predictable execution time requirements
+- Battery-powered devices (prefer low-power GPU)
+- Environments where GC pauses are problematic
+
+**Balanced Hint:**
+- General-purpose CSV processing
+- Browser applications with interactive UI
+- Balance between speed and responsiveness
+
+**Responsive Hint:**
+- UI-critical applications
+- Fast initial response time required
+- Keep main thread responsive
 
 ---
 
@@ -502,6 +660,58 @@ Adjusting `highWaterMark` values affects the balance between memory usage and bu
 
 ---
 
+### `onFallback`
+
+**Type:** `(info: EngineFallbackInfo) => void`
+
+Callback invoked when automatic fallback occurs.
+
+**EngineFallbackInfo:**
+```typescript
+interface EngineFallbackInfo {
+  requestedConfig: EngineConfig;
+  actualConfig: EngineConfig;
+  reason: string;
+  error?: Error;
+}
+```
+
+**Example:**
+```typescript
+import { parseString } from 'web-csv-toolbox';
+
+for await (const record of parseString(csv, {
+  engine: {
+    gpu: true,
+    onFallback: (info) => {
+      console.log('Fallback occurred:', info.reason);
+      console.log('Requested:', info.requestedConfig);
+      console.log('Actual:', info.actualConfig);
+      if (info.error) {
+        console.error('Error:', info.error);
+      }
+    }
+  }
+})) {
+  console.log(record);
+}
+```
+
+**Common Fallback Scenarios:**
+
+1. **GPU → WASM:** WebGPU not supported
+2. **WASM → JS:** WebAssembly not supported
+3. **stream-transfer → message-streaming:** Transferable Streams not supported (Safari)
+4. **worker → main:** Worker initialization failed
+
+**Use Cases:**
+- Monitoring execution strategy in production
+- Debugging performance issues
+- Tracking browser compatibility
+- Logging for analytics
+
+---
+
 ## Configuration Patterns
 
 ### Production (Secure User Uploads)
@@ -511,49 +721,49 @@ import { ReusableWorkerPool, EnginePresets } from 'web-csv-toolbox';
 
 const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   workerPool: pool
 });
 ```
 
 **Why:**
 - ✅ Resource protection with WorkerPool
-- ✅ Broad encoding support (no WASM limitation)
+- ✅ Broad encoding support
 - ✅ Automatic fallback on Safari
+- ✅ Memory efficient with stream-transfer
 
-### Maximum Performance (UTF-8)
+### Maximum Performance
 
 ```typescript
-import { EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { EnginePresets } from 'web-csv-toolbox';
 
-await loadWASM();
-
-const config = EnginePresets.responsiveFast();
+const config = EnginePresets.turbo();
 ```
 
 **Why:**
-- ✅ WASM acceleration (improves parsing speed)
-- ✅ Zero-copy streams
-- ✅ Non-blocking UI
+- ✅ GPU acceleration for maximum throughput
+- ✅ Automatic fallback chain (GPU → WASM → JS)
+- ✅ No worker overhead
 
 ### Maximum Compatibility
 
 ```typescript
-const config = EnginePresets.responsive();
+const config = EnginePresets.stable();
 ```
 
 **Why:**
-- ✅ Works on all browsers
+- ✅ Works everywhere
 - ✅ All encodings supported
-- ✅ Reliable message-streaming
+- ✅ Uses only standard JavaScript APIs
 
 ### Advanced Performance Tuning 🧪
 
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   arrayBufferThreshold: 2 * 1024 * 1024,  // 2MB threshold
+  optimizationHint: 'speed',  // Prioritize GPU > WASM > JS
   backpressureCheckInterval: {
     lexer: 50,      // Check every 50 tokens (more responsive)
     assembler: 5    // Check every 5 records (more responsive)
@@ -570,6 +780,7 @@ const config = EnginePresets.balanced({
 
 **Configuration:**
 - ✅ Custom blob reading threshold
+- ✅ Speed-optimized execution path
 - ✅ Adjusted backpressure checking frequency
 - ✅ Larger queuing buffers throughout pipeline
 
@@ -580,8 +791,9 @@ const config = EnginePresets.balanced({
 ```typescript
 import { EnginePresets } from 'web-csv-toolbox';
 
-const config = EnginePresets.balanced({
+const config = EnginePresets.recommended({
   arrayBufferThreshold: 0,  // Always use streaming
+  optimizationHint: 'responsive',  // Prioritize worker contexts
   backpressureCheckInterval: {
     lexer: 10,      // Check every 10 tokens (frequent checks)
     assembler: 5    // Check every 5 records (frequent checks)
@@ -759,10 +971,10 @@ try {
 ### WASM Not Loaded
 
 ```typescript
-import { parseString, loadWASM } from 'web-csv-toolbox';
+import { parseString, loadWasm } from 'web-csv-toolbox';
 
 try {
-  await loadWASM();
+  await loadWasm();
 } catch (error) {
   console.error('WASM failed to load:', error);
   // Use non-WASM config

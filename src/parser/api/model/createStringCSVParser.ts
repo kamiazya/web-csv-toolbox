@@ -5,8 +5,45 @@ import type {
   StringCSVParserFactoryOptions,
   StringObjectCSVParser,
 } from "@/core/types.ts";
+import { WasmIndexerBackend } from "@/parser/indexer/WasmIndexerBackend.ts";
 import { FlexibleStringArrayCSVParser } from "@/parser/models/FlexibleStringArrayCSVParser.ts";
 import { FlexibleStringObjectCSVParser } from "@/parser/models/FlexibleStringObjectCSVParser.ts";
+import { WasmStringUtf8ArrayCSVParser } from "@/parser/models/WasmStringUtf8ArrayCSVParser.ts";
+import { WasmStringUtf8ObjectCSVParser } from "@/parser/models/WasmStringUtf8ObjectCSVParser.ts";
+import { WasmStringUtf16ArrayCSVParser } from "@/parser/models/WasmStringUtf16ArrayCSVParser.ts";
+import { WasmStringUtf16ObjectCSVParser } from "@/parser/models/WasmStringUtf16ObjectCSVParser.ts";
+import { hasWasmSimd } from "@/wasm/loaders/wasmState.ts";
+import {
+  isInitialized as isWasmInitialized,
+  loadWasmSync,
+  scanCsvBytesStreaming,
+  scanCsvBytesZeroCopy,
+} from "@/wasm/WasmInstance.main.web.ts";
+
+/**
+ * Determines whether UTF-16 encoding should be preferred for string parsing.
+ *
+ * @param options - Parser options
+ * @returns true if UTF-16 encoding should be used, false otherwise
+ *
+ * @remarks
+ * Currently, StringCSVParserFactoryOptions does not include a charset field.
+ * This function is designed for future extensibility when charset support
+ * may be added to string parsers. For now, it always returns false (UTF-8).
+ *
+ * When charset support is added, this function should check:
+ * - options.charset for values like "utf-16", "utf-16le", "utf-16be"
+ * - or any engine-specific UTF-16 preference flags
+ */
+function prefersUtf16(
+  _options?: StringCSVParserFactoryOptions<any, any, any, any, any>,
+): boolean {
+  // Future: Check options.charset when it's added to StringCSVParserFactoryOptions
+  // const charset = options?.charset ?? "utf-8";
+  // return charset.toLowerCase().includes("utf-16") ||
+  //        charset.toLowerCase().includes("utf16");
+  return false;
+}
 
 /**
  * Factory function to create the appropriate String CSV parser based on options.
@@ -149,6 +186,49 @@ export function createStringCSVParser<
     throw new Error("includeHeader option is only valid for array format");
   }
 
+  // Check if WASM engine is requested AND SIMD is available
+  const useWasm = options?.engine?.wasm === true;
+  if (useWasm && hasWasmSimd()) {
+    // Wasm path with SIMD support
+    if (!isWasmInitialized()) {
+      loadWasmSync();
+    }
+
+    const preferUtf16 = prefersUtf16(options);
+
+    if (preferUtf16) {
+      // UTF-16 path: Use direct UTF-16 parsers (no backend needed)
+      return format === "array"
+        ? (new WasmStringUtf16ArrayCSVParser<Header>(
+            (options as any) ?? {},
+          ) as any)
+        : (new WasmStringUtf16ObjectCSVParser<Header>(
+            (options as any) ?? {},
+          ) as any);
+    } else {
+      // UTF-8 path: Use UTF-8 parsers with WasmIndexerBackend
+      const delimiterCode = (options?.delimiter ?? ",").charCodeAt(0);
+      const backend = new WasmIndexerBackend(delimiterCode);
+      backend.initializeWithModule({
+        scanCsvBytesStreaming,
+        scanCsvBytesZeroCopy,
+        isInitialized: isWasmInitialized,
+        loadWasmSync,
+      });
+
+      return format === "array"
+        ? (new WasmStringUtf8ArrayCSVParser<Header>(
+            (options as any) ?? {},
+            backend,
+          ) as any)
+        : (new WasmStringUtf8ObjectCSVParser<Header>(
+            (options as any) ?? {},
+            backend,
+          ) as any);
+    }
+  }
+
+  // JavaScript path (also SIMD fallback) - KEEP EXISTING CODE
   // Instantiate the appropriate class based on outputFormat
   // Each class explicitly implements its respective interface
   if (format === "array") {

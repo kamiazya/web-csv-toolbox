@@ -2,33 +2,33 @@ import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the internal loaders before importing WasmInstance.main
-vi.mock("#/wasm/loaders/loadWASM.js", () => ({
-  loadWASM: vi.fn(),
+vi.mock("#/wasm/loaders/loadWasm.js", () => ({
+  loadWasm: vi.fn(),
   isInitialized: vi.fn(),
   resetInit: vi.fn(),
 }));
 
-vi.mock("#/wasm/loaders/loadWASMSync.js", () => ({
-  loadWASMSync: vi.fn(),
+vi.mock("#/wasm/loaders/loadWasmSync.js", () => ({
+  loadWasmSync: vi.fn(),
   isSyncInitialized: vi.fn(),
   resetSyncInit: vi.fn(),
   getWasmModule: vi.fn(),
 }));
 
 // Import mocked modules to access their mock functions
-import * as loadWASMModule from "#/wasm/loaders/loadWASM.js";
-import * as loadWASMSyncModule from "#/wasm/loaders/loadWASMSync.js";
+import * as loadWasmModule from "#/wasm/loaders/loadWasm.js";
+import * as loadWasmSyncModule from "#/wasm/loaders/loadWasmSync.js";
 
 // Import module under test
 // Note: Using .node.ts variant since this test runs in Node.js environment
 import {
-  ensureWASMInitialized,
+  ensureWasmInitialized,
   getWasmModule,
   isInitialized,
   isSyncInitialized,
-  isWASMReady,
-  loadWASM,
-  loadWASMSync,
+  isWasmReady,
+  loadWasm,
+  loadWasmSync,
   resetInit,
   resetSyncInit,
 } from "@/wasm/WasmInstance.main.node.ts";
@@ -39,173 +39,173 @@ describe("WasmInstance.main", () => {
   });
 
   describe("re-exports", () => {
-    it("should re-export isInitialized from loadWASM", () => {
-      expect(isInitialized).toBe(loadWASMModule.isInitialized);
+    it("should re-export isInitialized from loadWasm", () => {
+      expect(isInitialized).toBe(loadWasmModule.isInitialized);
     });
 
-    it("should re-export resetInit from loadWASM", () => {
-      expect(resetInit).toBe(loadWASMModule.resetInit);
+    it("should re-export resetInit from loadWasm", () => {
+      expect(resetInit).toBe(loadWasmModule.resetInit);
     });
 
-    it("should re-export isSyncInitialized from loadWASMSync", () => {
-      expect(isSyncInitialized).toBe(loadWASMSyncModule.isSyncInitialized);
+    it("should re-export isSyncInitialized from loadWasmSync", () => {
+      expect(isSyncInitialized).toBe(loadWasmSyncModule.isSyncInitialized);
     });
 
-    it("should re-export resetSyncInit from loadWASMSync", () => {
-      expect(resetSyncInit).toBe(loadWASMSyncModule.resetSyncInit);
+    it("should re-export resetSyncInit from loadWasmSync", () => {
+      expect(resetSyncInit).toBe(loadWasmSyncModule.resetSyncInit);
     });
 
-    it("should re-export getWasmModule from loadWASMSync", () => {
-      expect(getWasmModule).toBe(loadWASMSyncModule.getWasmModule);
+    it("should re-export getWasmModule from loadWasmSync", () => {
+      expect(getWasmModule).toBe(loadWasmSyncModule.getWasmModule);
     });
   });
 
-  describe("loadWASM", () => {
-    it("should call internal loadWASM when not initialized", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+  describe("loadWasm", () => {
+    it("should call internal loadWasm when not initialized", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
-      await loadWASM();
+      await loadWasm();
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(undefined);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(undefined);
     });
 
-    it("should not call internal loadWASM when already initialized (idempotent)", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+    it("should not call internal loadWasm when already initialized (idempotent)", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      await loadWASM();
+      await loadWasm();
 
-      expect(loadWASMModule.loadWASM).not.toHaveBeenCalled();
+      expect(loadWasmModule.loadWasm).not.toHaveBeenCalled();
     });
 
-    it("should forward input parameter to internal loadWASM", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+    it("should forward input parameter to internal loadWasm", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
       const mockInput = { url: "https://example.com/csv.wasm" };
 
-      await loadWASM(mockInput);
+      await loadWasm(mockInput);
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledWith(mockInput);
     });
 
     it("should support multiple calls (idempotent)", async () => {
-      (loadWASMModule.isInitialized as Mock)
+      (loadWasmModule.isInitialized as Mock)
         .mockReturnValueOnce(false)
         .mockReturnValueOnce(true)
         .mockReturnValueOnce(true);
 
-      await loadWASM();
-      await loadWASM();
-      await loadWASM();
+      await loadWasm();
+      await loadWasm();
+      await loadWasm();
 
-      // Should only call internal loadWASM once (first call)
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
+      // Should only call internal loadWasm once (first call)
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("loadWASMSync", () => {
-    it("should call internal loadWASMSync when not initialized", () => {
-      (loadWASMSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
+  describe("loadWasmSync", () => {
+    it("should call internal loadWasmSync when not initialized", () => {
+      (loadWasmSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
 
-      loadWASMSync();
+      loadWasmSync();
 
-      expect(loadWASMSyncModule.loadWASMSync).toHaveBeenCalledTimes(1);
-      expect(loadWASMSyncModule.loadWASMSync).toHaveBeenCalledWith(undefined);
+      expect(loadWasmSyncModule.loadWasmSync).toHaveBeenCalledTimes(1);
+      expect(loadWasmSyncModule.loadWasmSync).toHaveBeenCalledWith(undefined);
     });
 
-    it("should not call internal loadWASMSync when already initialized (idempotent)", () => {
-      (loadWASMSyncModule.isSyncInitialized as Mock).mockReturnValue(true);
+    it("should not call internal loadWasmSync when already initialized (idempotent)", () => {
+      (loadWasmSyncModule.isSyncInitialized as Mock).mockReturnValue(true);
 
-      loadWASMSync();
+      loadWasmSync();
 
-      expect(loadWASMSyncModule.loadWASMSync).not.toHaveBeenCalled();
+      expect(loadWasmSyncModule.loadWasmSync).not.toHaveBeenCalled();
     });
 
-    it("should forward input parameter to internal loadWASMSync", () => {
-      (loadWASMSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
+    it("should forward input parameter to internal loadWasmSync", () => {
+      (loadWasmSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
       // Use a simple object as mockInput since we're just testing parameter forwarding
       const mockInput = { custom: "input" } as any;
 
-      loadWASMSync(mockInput);
+      loadWasmSync(mockInput);
 
-      expect(loadWASMSyncModule.loadWASMSync).toHaveBeenCalledWith(mockInput);
+      expect(loadWasmSyncModule.loadWasmSync).toHaveBeenCalledWith(mockInput);
     });
 
     it("should support multiple calls (idempotent)", () => {
-      (loadWASMSyncModule.isSyncInitialized as Mock)
+      (loadWasmSyncModule.isSyncInitialized as Mock)
         .mockReturnValueOnce(false)
         .mockReturnValueOnce(true)
         .mockReturnValueOnce(true);
 
-      loadWASMSync();
-      loadWASMSync();
-      loadWASMSync();
+      loadWasmSync();
+      loadWasmSync();
+      loadWasmSync();
 
-      // Should only call internal loadWASMSync once (first call)
-      expect(loadWASMSyncModule.loadWASMSync).toHaveBeenCalledTimes(1);
+      // Should only call internal loadWasmSync once (first call)
+      expect(loadWasmSyncModule.loadWasmSync).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("isWASMReady", () => {
-    it("should return true when WASM is initialized", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+  describe("isWasmReady", () => {
+    it("should return true when Wasm is initialized", () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      expect(isWASMReady()).toBe(true);
+      expect(isWasmReady()).toBe(true);
     });
 
-    it("should return false when WASM is not initialized", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+    it("should return false when Wasm is not initialized", () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
-      expect(isWASMReady()).toBe(false);
+      expect(isWasmReady()).toBe(false);
     });
   });
 
-  describe("ensureWASMInitialized", () => {
-    it("should call loadWASM when not initialized", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
+  describe("ensureWasmInitialized", () => {
+    it("should call loadWasm when not initialized", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
 
-      await ensureWASMInitialized();
+      await ensureWasmInitialized();
 
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
     });
 
-    it("should not call loadWASM when already initialized", async () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+    it("should not call loadWasm when already initialized", async () => {
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      await ensureWASMInitialized();
+      await ensureWasmInitialized();
 
-      expect(loadWASMModule.loadWASM).not.toHaveBeenCalled();
+      expect(loadWasmModule.loadWasm).not.toHaveBeenCalled();
     });
 
     it("should support multiple calls (idempotent)", async () => {
-      // Track state: first call is false, then true after loadWASM completes
+      // Track state: first call is false, then true after loadWasm completes
       let initCount = 0;
-      (loadWASMModule.isInitialized as Mock).mockImplementation(() => {
+      (loadWasmModule.isInitialized as Mock).mockImplementation(() => {
         return initCount > 0;
       });
-      (loadWASMModule.loadWASM as Mock).mockImplementation(async () => {
+      (loadWasmModule.loadWasm as Mock).mockImplementation(async () => {
         initCount++;
       });
 
-      await ensureWASMInitialized();
-      await ensureWASMInitialized();
-      await ensureWASMInitialized();
+      await ensureWasmInitialized();
+      await ensureWasmInitialized();
+      await ensureWasmInitialized();
 
-      // Should only call loadWASM once (first call)
-      expect(loadWASMModule.loadWASM).toHaveBeenCalledTimes(1);
+      // Should only call loadWasm once (first call)
+      expect(loadWasmModule.loadWasm).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("integration behavior", () => {
     it("should coordinate async and sync initialization checks", () => {
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(false);
-      (loadWASMSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(false);
+      (loadWasmSyncModule.isSyncInitialized as Mock).mockReturnValue(false);
 
-      expect(isWASMReady()).toBe(false);
+      expect(isWasmReady()).toBe(false);
       expect(isInitialized()).toBe(false);
 
-      (loadWASMModule.isInitialized as Mock).mockReturnValue(true);
+      (loadWasmModule.isInitialized as Mock).mockReturnValue(true);
 
-      expect(isWASMReady()).toBe(true);
+      expect(isWasmReady()).toBe(true);
       expect(isInitialized()).toBe(true);
     });
   });

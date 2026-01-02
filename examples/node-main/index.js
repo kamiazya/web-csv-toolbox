@@ -1,7 +1,7 @@
-import { parseString, parseStringToArraySyncWASM } from 'web-csv-toolbox';
+import { parseString, parseStringToArraySyncWasm } from 'web-csv-toolbox';
 
 console.log('🚀 Node.js Main Version Test');
-console.log('Features: Auto WASM initialization\n');
+console.log('Features: Auto Wasm initialization\n');
 
 const csv = 'name,age\nAlice,30\nBob,25\nCharlie,35';
 
@@ -23,11 +23,11 @@ async function testJavaScriptEngine() {
   console.log();
 }
 
-async function testWASM() {
-  console.log('Test 2: WASM (auto-initialized)');
+async function testWasm() {
+  console.log('Test 2: Wasm (auto-initialized)');
   console.log('----------------------------------------');
 
-  const result = parseStringToArraySyncWASM(csv);
+  const result = parseStringToArraySyncWasm(csv);
 
   console.log('✅ Parsed Result:');
   console.log(JSON.stringify(result, null, 2));
@@ -36,7 +36,7 @@ async function testWASM() {
 
 try {
   await testJavaScriptEngine();
-  await testWASM();
+  await testWasm();
   console.log('✨ Success! All tests passed in Node.js Main version');
 } catch (error) {
   console.error('❌ Error:', error);

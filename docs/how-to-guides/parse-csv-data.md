@@ -252,7 +252,7 @@ const textStream = response.body
 if (textStream) {
   // Non-blocking parsing in worker thread
   for await (const record of parseStringStream(textStream, {
-    engine: EnginePresets.balanced()
+    engine: EnginePresets.recommended()
   })) {
     console.log(record);
     // UI stays responsive!
@@ -311,14 +311,14 @@ try {
 **For UTF-8 files with double-quotes:**
 
 ```typescript
-import { parseString, EnginePresets, loadWASM } from 'web-csv-toolbox';
+import { parseString, EnginePresets, loadWasm } from 'web-csv-toolbox';
 
 // Optional: Pre-load WASM for better first-parse performance
-await loadWASM();
+await loadWasm();
 
 // Fast parsing with WASM
 for await (const record of parseString(csv, {
-  engine: EnginePresets.fast()
+  engine: EnginePresets.turbo()
 })) {
   console.log(record);
 }
@@ -342,7 +342,7 @@ const pool = new ReusableWorkerPool({ maxWorkers: 4 });
 app.post('/upload', async (c) => {
   try {
     for await (const record of parseRequest(c.req.raw, {
-      engine: EnginePresets.balanced({ workerPool: pool })
+      engine: EnginePresets.recommended({ workerPool: pool })
     })) {
       // Process record
       console.log(record);
@@ -388,7 +388,7 @@ engine: EnginePresets.stable()
 
 **UI Responsiveness (Non-Blocking):**
 ```typescript
-engine: EnginePresets.responsive()
+engine: EnginePresets.recommended()
 // ✅ Non-blocking worker execution
 // ✅ Supports all encodings and quotation characters
 // ✅ Works on Safari
@@ -397,7 +397,7 @@ engine: EnginePresets.responsive()
 
 **Memory Efficiency:**
 ```typescript
-engine: EnginePresets.memoryEfficient()
+engine: EnginePresets.recommended()
 // ✅ Zero-copy stream transfer (when supported)
 // ✅ Constant memory usage for streaming
 // ⚠️ Experimental (auto-fallback on Safari)
@@ -405,7 +405,7 @@ engine: EnginePresets.memoryEfficient()
 
 **Parse Speed (UTF-8 only):**
 ```typescript
-engine: EnginePresets.fast()
+engine: EnginePresets.turbo()
 // ✅ WASM-accelerated parsing
 // ❌ Blocks main thread
 // ❌ UTF-8 and double-quote only
@@ -413,7 +413,7 @@ engine: EnginePresets.fast()
 
 **Balanced (General-Purpose):**
 ```typescript
-engine: EnginePresets.balanced()
+engine: EnginePresets.recommended()
 // ✅ Non-blocking + memory efficient
 // ✅ Supports all encodings and quotation characters
 // ✅ Auto-fallback on Safari
@@ -422,7 +422,7 @@ engine: EnginePresets.balanced()
 
 **Non-Blocking + Fast (UTF-8 only):**
 ```typescript
-engine: EnginePresets.responsiveFast()
+engine: EnginePresets.turbo()
 // ✅ Worker + WASM
 // ✅ Non-blocking UI
 // ❌ UTF-8 and double-quote only
@@ -494,7 +494,7 @@ try {
 - **Set appropriate resource limits** (`maxBufferSize`, `maxFieldCount`)
 - **Handle errors with try-catch** and check error types
 - **Use AbortSignal for timeouts** on long-running operations
-- **Pre-load WASM once at startup** with `loadWASM()` for best performance
+- **Pre-load WASM once at startup** with `loadWasm()` for best performance
 - **Use WorkerPool for multiple files** to reuse workers efficiently
 - **Choose engine presets** based on your requirements
 
@@ -503,7 +503,7 @@ try {
 - **Don't use `toArray()` for large files** (> 100MB) - causes OOM
 - **Don't ignore error handling** - always use try-catch
 - **Don't create workers per request** - use WorkerPool instead
-- **Don't forget `loadWASM()` when using WASM presets** - reduces first-parse latency
+- **Don't forget `loadWasm()` when using WASM presets** - reduces first-parse latency
 - **Don't use WASM for non-UTF-8** - it only supports UTF-8
 - **Don't block main thread in UI apps** - use worker-based presets
 
@@ -523,9 +523,9 @@ try {
 **Symptoms:** Parsing takes too long
 
 **Solutions:**
-1. Use WASM for UTF-8 files: `EnginePresets.fast()`
-2. Use workers for non-blocking: `EnginePresets.balanced()`
-3. Pre-load WASM at startup: `await loadWASM()`
+1. Use WASM for UTF-8 files: `EnginePresets.turbo()`
+2. Use workers for non-blocking: `EnginePresets.recommended()`
+3. Pre-load WASM at startup: `await loadWasm()`
 4. Use WorkerPool for multiple files
 
 ### Issue: UI Freezing
@@ -533,7 +533,7 @@ try {
 **Symptoms:** Browser becomes unresponsive during parsing
 
 **Solutions:**
-1. Use worker-based presets: `EnginePresets.responsive()` or `EnginePresets.balanced()`
+1. Use worker-based presets: `EnginePresets.recommended()` or `EnginePresets.recommended()`
 2. Process in smaller chunks with AbortSignal timeouts
 
 ### Issue: Encoding Errors
@@ -550,7 +550,7 @@ try {
 **Symptoms:** WASM presets fall back to JavaScript
 
 **Solutions:**
-1. Call `await loadWASM()` at application startup
+1. Call `await loadWasm()` at application startup
 2. For bundlers, see [Using with Bundlers](./using-with-bundlers.md)
 3. Check browser console for errors
 

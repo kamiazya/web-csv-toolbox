@@ -21,10 +21,14 @@ test("parseBinaryToStream", async () => {
   );
 });
 
-test("throws an error if the binary is invalid", () => {
-  expect(() =>
-    parseBinaryToStream(new Uint8Array([0x80]), {
-      fatal: true,
-    }),
-  ).toThrowError(TypeError); // NOTE: Error messages vary depending on the execution environment.
+test("throws an error if the binary is invalid", async () => {
+  // Note: After refactoring to use parseBinaryStreamToStream, errors are thrown asynchronously
+  // when the stream is consumed, not when the stream is created
+  const stream = parseBinaryToStream(new Uint8Array([0x80]), {
+    fatal: true,
+  });
+
+  // Consume the stream to trigger the error
+  const reader = stream.getReader();
+  await expect(reader.read()).rejects.toThrow(); // Error occurs during stream consumption
 });

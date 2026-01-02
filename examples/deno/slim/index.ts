@@ -1,7 +1,7 @@
-import { loadWASM, parseStringToArraySyncWASM } from 'web-csv-toolbox/slim';
+import { loadWasm, parseStringToArraySyncWasm } from 'web-csv-toolbox/slim';
 
 console.log('🦕 Deno Slim Entry Test');
-console.log('Features: Manual WASM initialization via npm: prefix, smaller JS bundle\n');
+console.log('Features: Manual Wasm initialization via npm: prefix, smaller JS bundle\n');
 
 try {
   const csv = 'name,age\nAlice,30\nBob,25\nCharlie,35';
@@ -10,15 +10,15 @@ try {
   console.log(csv);
   console.log();
 
-  // Slim entry: Must initialize WASM manually
-  // For local development, specify the WASM file path explicitly
-  console.log('⏳ Initializing WASM...');
+  // Slim entry: Must initialize Wasm manually
+  // For local development, specify the Wasm file path explicitly
+  console.log('⏳ Initializing Wasm...');
   const wasmPath = new URL('../../../dist/csv.wasm', import.meta.url);
-  await loadWASM(wasmPath);
-  console.log('✅ WASM initialized\n');
+  await loadWasm(wasmPath);
+  console.log('✅ Wasm initialized\n');
 
-  // Now we can use sync WASM APIs
-  const result = parseStringToArraySyncWASM(csv);
+  // Now we can use sync Wasm APIs
+  const result = parseStringToArraySyncWasm(csv);
 
   console.log('✅ Parsed Result:');
   console.log(JSON.stringify(result, null, 2));
