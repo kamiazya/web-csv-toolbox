@@ -1,4 +1,3 @@
-import type { DEFAULT_DELIMITER, DEFAULT_QUOTATION } from "@/core/constants.ts";
 import type {
   CSVRecord,
   InferCSVRecord,
@@ -37,7 +36,10 @@ export interface ExecutionStrategy<TInput, TOutput> {
    */
   execute(
     input: TInput,
-    options: ParseOptions<readonly string[]> | ParseBinaryOptions<readonly string[]> | undefined,
+    options:
+      | ParseOptions<readonly string[]>
+      | ParseBinaryOptions<readonly string[]>
+      | undefined,
   ): AsyncIterableIterator<TOutput> | AsyncGenerator<TOutput>;
 }
 
@@ -74,7 +76,10 @@ export class ExecutionStrategySelector<TInput, TOutput> {
    */
   async *execute(
     input: TInput,
-    options: ParseOptions<readonly string[]> | ParseBinaryOptions<readonly string[]> | undefined,
+    options:
+      | ParseOptions<readonly string[]>
+      | ParseBinaryOptions<readonly string[]>
+      | undefined,
     engineConfig: InternalEngineConfig,
   ): AsyncIterableIterator<TOutput> {
     // Determine requested engines based on configuration
@@ -103,9 +108,10 @@ export class ExecutionStrategySelector<TInput, TOutput> {
       if (!isAvailable) {
         // Notify about unavailability
         if (engineConfig.onFallback && engineType !== "javascript") {
-          const fallbackConfig = engineType === "gpu"
-            ? engineConfig.createGPUFallbackConfig()
-            : engineConfig.createWasmFallbackConfig();
+          const fallbackConfig =
+            engineType === "gpu"
+              ? engineConfig.createGPUFallbackConfig()
+              : engineConfig.createWasmFallbackConfig();
 
           engineConfig.onFallback({
             requestedConfig: engineConfig.toConfig(),
@@ -127,9 +133,10 @@ export class ExecutionStrategySelector<TInput, TOutput> {
         const isLastEngine =
           requestedEngines.indexOf(engineType) === requestedEngines.length - 1;
         if (!isLastEngine && engineConfig.onFallback) {
-          const fallbackConfig = engineType === "gpu"
-            ? engineConfig.createGPUFallbackConfig()
-            : engineConfig.createWasmFallbackConfig();
+          const fallbackConfig =
+            engineType === "gpu"
+              ? engineConfig.createGPUFallbackConfig()
+              : engineConfig.createWasmFallbackConfig();
 
           engineConfig.onFallback({
             requestedConfig: engineConfig.toConfig(),
@@ -156,10 +163,21 @@ export function createStringExecutionSelector<
   Header extends ReadonlyArray<string>,
   Options extends ParseOptions<Header>,
 >(
-  gpuExecutor: (csv: string, options?: Options) => AsyncIterableIterator<InferCSVRecord<Header, Options>> | AsyncGenerator<InferCSVRecord<Header, Options>>,
-  jsExecutor: (csv: string, options?: Options) => IterableIterator<InferCSVRecord<Header, Options>>,
+  gpuExecutor: (
+    csv: string,
+    options?: Options,
+  ) =>
+    | AsyncIterableIterator<InferCSVRecord<Header, Options>>
+    | AsyncGenerator<InferCSVRecord<Header, Options>>,
+  jsExecutor: (
+    csv: string,
+    options?: Options,
+  ) => IterableIterator<InferCSVRecord<Header, Options>>,
 ): ExecutionStrategySelector<string, InferCSVRecord<Header, Options>> {
-  const selector = new ExecutionStrategySelector<string, InferCSVRecord<Header, Options>>();
+  const selector = new ExecutionStrategySelector<
+    string,
+    InferCSVRecord<Header, Options>
+  >();
 
   // GPU strategy
   selector.register({
@@ -168,7 +186,9 @@ export function createStringExecutionSelector<
       return await isWebGPUAvailable();
     },
     execute(input: string, options) {
-      return gpuExecutor(input, options as Options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      return gpuExecutor(input, options as Options) as AsyncIterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
     },
   });
 
@@ -179,7 +199,10 @@ export function createStringExecutionSelector<
       return hasWasmSimd();
     },
     execute(input: string, options) {
-      return parseStringInWasm(input, options as Options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      return parseStringInWasm(
+        input,
+        options as Options,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     },
   });
 
@@ -209,10 +232,21 @@ export function createBinaryExecutionSelector<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header>,
 >(
-  gpuExecutor: (bytes: BufferSource, options?: Options) => AsyncIterableIterator<InferCSVRecord<Header, Options>> | AsyncGenerator<InferCSVRecord<Header, Options>>,
-  jsExecutor: (bytes: BufferSource, options?: Options) => IterableIterator<InferCSVRecord<Header, Options>>,
+  gpuExecutor: (
+    bytes: BufferSource,
+    options?: Options,
+  ) =>
+    | AsyncIterableIterator<InferCSVRecord<Header, Options>>
+    | AsyncGenerator<InferCSVRecord<Header, Options>>,
+  jsExecutor: (
+    bytes: BufferSource,
+    options?: Options,
+  ) => IterableIterator<InferCSVRecord<Header, Options>>,
 ): ExecutionStrategySelector<BufferSource, InferCSVRecord<Header, Options>> {
-  const selector = new ExecutionStrategySelector<BufferSource, InferCSVRecord<Header, Options>>();
+  const selector = new ExecutionStrategySelector<
+    BufferSource,
+    InferCSVRecord<Header, Options>
+  >();
 
   // GPU strategy
   selector.register({
@@ -221,7 +255,9 @@ export function createBinaryExecutionSelector<
       return await isWebGPUAvailable();
     },
     execute(input: BufferSource, options) {
-      return gpuExecutor(input, options as Options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      return gpuExecutor(input, options as Options) as AsyncIterableIterator<
+        InferCSVRecord<Header, Options>
+      >;
     },
   });
 
@@ -235,10 +271,13 @@ export function createBinaryExecutionSelector<
       if ((options as ParseBinaryOptions<Header>)?.outputFormat === "array") {
         throw new Error(
           "Array output format is not supported with WASM execution. " +
-          "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
+            "Use outputFormat: 'object' (default) or disable WASM (engine: { wasm: false }).",
         );
       }
-      return parseBinaryInWasm(input, options as Options) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
+      return parseBinaryInWasm(
+        input,
+        options as Options,
+      ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
     },
   });
 
@@ -268,10 +307,19 @@ export function createStreamExecutionSelector<
   Header extends ReadonlyArray<string>,
   Options extends ParseBinaryOptions<Header>,
 >(
-  gpuExecutor: (stream: ReadableStream<Uint8Array>, options?: Options) => AsyncIterableIterator<CSVRecord<Header>>,
-  jsExecutor: (stream: ReadableStream<Uint8Array>, options?: Options) => AsyncIterableIterator<CSVRecord<Header>>,
+  gpuExecutor: (
+    stream: ReadableStream<Uint8Array>,
+    options?: Options,
+  ) => AsyncIterableIterator<CSVRecord<Header>>,
+  jsExecutor: (
+    stream: ReadableStream<Uint8Array>,
+    options?: Options,
+  ) => AsyncIterableIterator<CSVRecord<Header>>,
 ): ExecutionStrategySelector<ReadableStream<Uint8Array>, CSVRecord<Header>> {
-  const selector = new ExecutionStrategySelector<ReadableStream<Uint8Array>, CSVRecord<Header>>();
+  const selector = new ExecutionStrategySelector<
+    ReadableStream<Uint8Array>,
+    CSVRecord<Header>
+  >();
 
   // GPU strategy
   selector.register({
@@ -290,7 +338,10 @@ export function createStreamExecutionSelector<
     async isAvailable() {
       return false; // WASM stream processing not yet implemented
     },
-    async *execute(_input: ReadableStream<Uint8Array>, _options) {
+    execute(
+      _input: ReadableStream<Uint8Array>,
+      _options,
+    ): AsyncIterableIterator<CSVRecord<Header>> {
       throw new Error("WASM stream processing not yet implemented");
     },
   });

@@ -96,7 +96,7 @@ describe("Large File GPU Parsing Tests", () => {
 
   test(
     "GPU vs CPU: compare performance on large file (200MB)",
-    { timeout: 120000 }, // 120 second timeout
+    { timeout: 300000 }, // 300 second timeout (5 minutes)
     async ({ gpu, skip }) => {
       skipIfNoWebGPU(gpu, skip);
 

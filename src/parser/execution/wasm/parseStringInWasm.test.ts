@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { CSVRecord } from "@/core/types.ts";
 import { parseStringInWasm } from "@/parser/execution/wasm/parseStringInWasm.ts";
+import {
+  isSyncInitialized,
+  loadWasmSync,
+} from "@/wasm/loaders/loadWasmSync.node.ts";
 
-describe("parseStringInWasm", () => {
+// Initialize WASM before tests
+loadWasmSync();
+
+describe.skipIf(!isSyncInitialized())("parseStringInWasm", () => {
   it("should parse simple CSV string", async () => {
     const csv = "name,age\nAlice,30\nBob,25";
     const records: CSVRecord<["name", "age"]>[] = [];

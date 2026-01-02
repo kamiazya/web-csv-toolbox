@@ -75,7 +75,11 @@ export function parseStringToStream<
         async start(controller) {
           try {
             // Execute with automatic fallback: GPU → WASM → JavaScript
-            for await (const record of selector.execute(csv, options, engineConfig) as AsyncIterableIterator<InferCSVRecord<Header, Options>>) {
+            for await (const record of selector.execute(
+              csv,
+              options,
+              engineConfig,
+            ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>) {
               controller.enqueue(record);
             }
             controller.close();

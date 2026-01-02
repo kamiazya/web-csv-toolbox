@@ -9,7 +9,8 @@ import {
 } from "@/wasm/loaders/loadWasmSync.node.ts";
 
 // Try to initialize WASM, skip tests if SIMD is not supported
-describe.skipIf(!isSyncInitialized() && (loadWasmSync(), !isSyncInitialized()))(
+loadWasmSync();
+describe.skipIf(!isSyncInitialized())(
   "parseStringToArraySyncWasm",
   async () => {
     it("should parse CSV string to record of arrays", async () => {

@@ -1,4 +1,3 @@
-import { convertIterableIteratorToAsync } from "@/converters/iterators/convertIterableIteratorToAsync.ts";
 import * as internal from "@/converters/iterators/convertThisAsyncIterableIteratorToArray.ts";
 import type {
   CSVRecord,
@@ -91,20 +90,21 @@ export async function* parseBinary<
     // Create execution selector with GPU and JavaScript executors
     const selector = createBinaryExecutionSelector<Header, Options>(
       // GPU executor
-      (async function* (bytes: BufferSource, options: Options | undefined) {
+      async function* (bytes: BufferSource, options: Options | undefined) {
         // Convert BufferSource to ReadableStream for GPU processing
         const binaryStream = new ReadableStream<Uint8Array>({
           start(controller) {
-            const uint8Array = bytes instanceof Uint8Array
-              ? bytes
-              : new Uint8Array(
-                  bytes instanceof ArrayBuffer
-                    ? bytes
-                    : bytes.buffer.slice(
-                        bytes.byteOffset,
-                        bytes.byteOffset + bytes.byteLength,
-                      ),
-                );
+            const uint8Array =
+              bytes instanceof Uint8Array
+                ? bytes
+                : new Uint8Array(
+                    bytes instanceof ArrayBuffer
+                      ? bytes
+                      : bytes.buffer.slice(
+                          bytes.byteOffset,
+                          bytes.byteOffset + bytes.byteLength,
+                        ),
+                  );
             controller.enqueue(uint8Array);
             controller.close();
           },
@@ -112,15 +112,17 @@ export async function* parseBinary<
 
         // GPU execution with automatic device management
         yield* parseBinaryStreamInGPU(binaryStream, options);
-      }) as any,
+      } as any,
       // JavaScript executor (sync)
       (bytes, options) => parseBinaryToIterableIterator(bytes, options),
     );
 
     // Execute with automatic fallback: GPU → WASM → JavaScript
-    yield* selector.execute(bytes, options, engineConfig) as AsyncIterableIterator<
-      InferCSVRecord<Header, Options>
-    >;
+    yield* selector.execute(
+      bytes,
+      options,
+      engineConfig,
+    ) as AsyncIterableIterator<InferCSVRecord<Header, Options>>;
   }
 }
 

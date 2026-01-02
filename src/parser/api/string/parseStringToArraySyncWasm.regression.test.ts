@@ -13,7 +13,8 @@ import { parseStringToArraySyncWasm } from "./parseStringToArraySyncWasm.main.no
  * 2. maxBufferSize handling with large finite values
  * 3. Integration with parseString async iterator using WASM engine
  */
-describe.skipIf(!isSyncInitialized() && (loadWasmSync(), !isSyncInitialized()))(
+loadWasmSync();
+describe.skipIf(!isSyncInitialized())(
   "parseStringToArraySyncWasm - Regression Tests (Report 52)",
   () => {
     describe("Issue #1: maxBufferSize handling", () => {

@@ -35,16 +35,17 @@ export function parseBinaryToStream<
     const binaryStream = new ReadableStream<Uint8Array>({
       start(controller) {
         // Convert BufferSource to Uint8Array if needed
-        const uint8Array = binary instanceof Uint8Array
-          ? binary
-          : new Uint8Array(
-              binary instanceof ArrayBuffer
-                ? binary
-                : binary.buffer.slice(
-                    binary.byteOffset,
-                    binary.byteOffset + binary.byteLength,
-                  ),
-            );
+        const uint8Array =
+          binary instanceof Uint8Array
+            ? binary
+            : new Uint8Array(
+                binary instanceof ArrayBuffer
+                  ? binary
+                  : binary.buffer.slice(
+                      binary.byteOffset,
+                      binary.byteOffset + binary.byteLength,
+                    ),
+              );
         controller.enqueue(uint8Array);
         controller.close();
       },

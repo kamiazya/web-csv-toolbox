@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { createStringExecutionSelector } from "./ExecutionStrategySelector.ts";
 import type { InternalEngineConfig } from "@/engine/config/InternalEngineConfig.ts";
+import { createStringExecutionSelector } from "./ExecutionStrategySelector.ts";
 
 describe("ExecutionStrategySelector", () => {
   it("should execute GPU path when GPU is enabled and available", async () => {
@@ -11,10 +11,13 @@ describe("ExecutionStrategySelector", () => {
       yield { name: "Bob", age: "69" };
     });
 
-    const selector = createStringExecutionSelector(gpuExecutor as any, jsExecutor as any);
+    const selector = createStringExecutionSelector(
+      gpuExecutor as any,
+      jsExecutor as any,
+    );
 
     // Override the GPU strategy's isAvailable to return true
-    selector["strategies"][0].isAvailable = async () => true;
+    selector.strategies[0].isAvailable = async () => true;
 
     const mockEngineConfig = {
       hasGPU: () => true,
@@ -30,7 +33,11 @@ describe("ExecutionStrategySelector", () => {
     } as unknown as InternalEngineConfig;
 
     const results: any[] = [];
-    for await (const record of selector.execute("csv", undefined, mockEngineConfig)) {
+    for await (const record of selector.execute(
+      "csv",
+      undefined,
+      mockEngineConfig,
+    )) {
       results.push(record);
     }
 
@@ -40,18 +47,21 @@ describe("ExecutionStrategySelector", () => {
   });
 
   it("should fallback to WASM when GPU fails", async () => {
-    const gpuExecutor = vi.fn(async function* (): any {
+    const gpuExecutor = vi.fn(async (): Promise<any> => {
       throw new Error("GPU not available");
     });
     const jsExecutor = vi.fn(function* () {
       yield { name: "Bob", age: "69" };
     });
 
-    const selector = createStringExecutionSelector(gpuExecutor as any, jsExecutor as any);
+    const selector = createStringExecutionSelector(
+      gpuExecutor as any,
+      jsExecutor as any,
+    );
 
     // Override availability checks
-    selector["strategies"][0].isAvailable = async () => true; // GPU available but will fail
-    selector["strategies"][1].isAvailable = async () => true; // WASM available
+    selector.strategies[0].isAvailable = async () => true; // GPU available but will fail
+    selector.strategies[1].isAvailable = async () => true; // WASM available
 
     const onFallback = vi.fn();
     const mockEngineConfig = {
@@ -68,7 +78,11 @@ describe("ExecutionStrategySelector", () => {
     } as unknown as InternalEngineConfig;
 
     const results: any[] = [];
-    for await (const record of selector.execute("csv", undefined, mockEngineConfig)) {
+    for await (const record of selector.execute(
+      "csv",
+      undefined,
+      mockEngineConfig,
+    )) {
       results.push(record);
     }
 
@@ -86,7 +100,10 @@ describe("ExecutionStrategySelector", () => {
       yield { name: "Bob", age: "69" };
     });
 
-    const selector = createStringExecutionSelector(gpuExecutor as any, jsExecutor as any);
+    const selector = createStringExecutionSelector(
+      gpuExecutor as any,
+      jsExecutor as any,
+    );
 
     const mockEngineConfig = {
       hasGPU: () => false,
@@ -102,7 +119,11 @@ describe("ExecutionStrategySelector", () => {
     } as unknown as InternalEngineConfig;
 
     const results: any[] = [];
-    for await (const record of selector.execute("csv", undefined, mockEngineConfig)) {
+    for await (const record of selector.execute(
+      "csv",
+      undefined,
+      mockEngineConfig,
+    )) {
       results.push(record);
     }
 
