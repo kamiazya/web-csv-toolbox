@@ -109,7 +109,7 @@ jobs:
           name: dist
           path: dist
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
+        uses: CodSpeedHQ/action@6a8e2b874c338bf81cc5e8be715ada75908d3871 # v4.3.4
         with:
           run: pnpm test:bench
           token: ${{ secrets.CODSPEED_TOKEN }}
@@ -132,7 +132,7 @@ jobs:
         run: cargo codspeed build
         working-directory: ./web-csv-toolbox-wasm
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@0010eb0ca6e89b80c88e8edaaa07cfe5f3e6664d # v3.5.0
+        uses: CodSpeedHQ/action@6a8e2b874c338bf81cc5e8be715ada75908d3871 # v4.3.4
         with:
           run: cargo codspeed run
           working-directory: ./web-csv-toolbox-wasm
