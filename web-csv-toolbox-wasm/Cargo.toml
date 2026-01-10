@@ -18,7 +18,7 @@ serde_json = "1.0"
 web-sys = { version = "0.3.82", features = ["console"] }
 
 [dev-dependencies]
-criterion = "0.5"
+criterion = "0.7"
 wasm-bindgen-test = "0.3"
 
 [[bench]]
